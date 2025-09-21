@@ -8,13 +8,13 @@ const Counter = ({ amount }) => {
       {amount > 0 ? (
         <>
           <button className={classes.Sub}>
-            <span>-</span>
+            <FontAwesomeIcon icon={faMinus} />
           </button>
           <span className={classes.count}>{amount}</span>
         </>
       ) : null}
       <button className={classes.Add}>
-        <span>+</span>
+        <FontAwesomeIcon icon={faPlus} />
       </button>
     </div>
   );
