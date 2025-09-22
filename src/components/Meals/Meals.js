@@ -5,11 +5,13 @@ import classes from './Meals.module.css';
 /*
  *   食物列表的组件
  * */
-const Meals = () => {
+const Meals = ({ mealsData }) => {
   return (
     /*现在将滚动条设置给了Meals*/
     <div className={classes.Meals}>
-      <Meal />
+      {mealsData.map((meal) => (
+        <Meal key={meal.id} meal={meal} />
+      ))}
     </div>
   );
 };

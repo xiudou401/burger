@@ -5,19 +5,17 @@ import Counter from '../../UI/Counter/Couter';
 /*
  *   食物组件
  * */
-const Meal = () => {
+const Meal = ({ meal }) => {
   return (
     <div className={classes.Meal}>
       <div className={classes.ImgBox}>
-        <img src="/img/meals/1.png" alt="meal" />
+        <img src={meal.img} alt="meal" />
       </div>
       <div>
-        <h2 className={classes.Title}>汉堡包</h2>
-        <p className={classes.Desc}>
-          百分百纯牛肉配搭爽脆酸瓜洋葱粒与美味番茄酱经典滋味让你无法抵挡！
-        </p>
+        <h2 className={classes.Title}>{meal.title}</h2>
+        <p className={classes.Desc}>{meal.desc}</p>
         <div className={classes.PriceWrap}>
-          <span className={classes.Price}>12</span>
+          <span className={classes.Price}>{meal.price}</span>
           <Counter amount={2} />
         </div>
       </div>
