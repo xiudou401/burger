@@ -55,9 +55,42 @@ const MEALS_DATA = [
 
 const App = () => {
   const [mealsData, setMealsData] = useState(MEALS_DATA);
+  const [cartData, setCartData] = useState({
+    items: [],
+    totalAmount: 0,
+    totalPrice: 0,
+  });
+
+  const addMealHandler = (meal) => {
+    const newCart = { ...cartData };
+    if (newCart.items.indexOf(meal) === -1) {
+      newCart.items.push(meal);
+      meal.amount = 1;
+    } else {
+      meal.amount += 1;
+    }
+    newCart.totalAmount += 1;
+    newCart.totalPrice += meal.price;
+    setCartData(newCart);
+  };
+
+  const subMealHandler = (meal) => {
+    const newCart = { ...cartData };
+    meal.amount -= 1;
+    if (meal.amount === 0) {
+      newCart.items.splice(newCart.items.indexOf(meal), 1);
+    }
+    newCart.totalAmount -= 1;
+    newCart.totalPrice -= meal.price;
+    setCartData(newCart);
+  };
   return (
     <div>
-      <Meals mealsData={mealsData} />
+      <Meals
+        mealsData={mealsData}
+        onAdd={addMealHandler}
+        onSub={subMealHandler}
+      />
     </div>
   );
 };

@@ -5,7 +5,7 @@ import Counter from '../../UI/Counter/Couter';
 /*
  *   食物组件
  * */
-const Meal = ({ meal }) => {
+const Meal = ({ meal, onAdd, onSub }) => {
   return (
     <div className={classes.Meal}>
       <div className={classes.ImgBox}>
@@ -16,7 +16,7 @@ const Meal = ({ meal }) => {
         <p className={classes.Desc}>{meal.desc}</p>
         <div className={classes.PriceWrap}>
           <span className={classes.Price}>{meal.price}</span>
-          <Counter amount={2} />
+          <Counter meal={meal} onAdd={onAdd} onSub={onSub} />
         </div>
       </div>
     </div>
