@@ -1,11 +1,11 @@
 import React from 'react';
 import classes from './Meal.module.css';
-import Counter from '../../UI/Counter/Couter';
+import Counter from '../../UI/Counter/Counter';
 
 /*
  *   食物组件
  * */
-const Meal = ({ meal, onAdd, onSub }) => {
+const Meal = ({ meal }) => {
   return (
     <div className={classes.Meal}>
       <div className={classes.ImgBox}>
@@ -16,7 +16,7 @@ const Meal = ({ meal, onAdd, onSub }) => {
         <p className={classes.Desc}>{meal.desc}</p>
         <div className={classes.PriceWrap}>
           <span className={classes.Price}>{meal.price}</span>
-          <Counter meal={meal} onAdd={onAdd} onSub={onSub} />
+          <Counter meal={meal} />
         </div>
       </div>
     </div>

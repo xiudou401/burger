@@ -1,15 +1,18 @@
 import classes from './Counter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { useContext } from 'react';
+import CartContext from '../../../store/CartContext';
 
-const Counter = ({ meal, onAdd, onSub }) => {
+const Counter = ({ meal }) => {
+  const ctx = useContext(CartContext);
   const addButtonHandler = () => {
-    onAdd(meal);
+    ctx.addItem(meal);
   };
 
   // 删除食物的函数
   const subButtonHandler = () => {
-    onSub(meal);
+    ctx.removeItem(meal);
   };
   return (
     <div className={classes.Counter}>
