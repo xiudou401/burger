@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Meals from './components/Meals/Meals';
 import CartContext from './store/CartContext';
+import FilterMeals from './components/FilterMeals/FilterMeals';
 
 const MEALS_DATA = [
   {
@@ -93,9 +94,18 @@ export default function App() {
     newCart.totalPrice -= meal.price;
     setCartData(newCart);
   };
+
+  const onFilter = (keyword) => {
+    const newMealsData = MEALS_DATA.filter((meal) =>
+      meal.title.includes(keyword)
+    );
+    console.log(newMealsData);
+    setMeals(newMealsData);
+  };
   return (
     <CartContext.Provider value={{ ...cartData, addItem, removeItem }}>
       <div>
+        <FilterMeals onFilter={onFilter} />
         <Meals mealsData={meals} />
       </div>
     </CartContext.Provider>
