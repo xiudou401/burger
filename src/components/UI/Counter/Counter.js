@@ -7,8 +7,13 @@ import CartContext from '../../../store/CartContext';
 const Counter = ({ meal }) => {
   const ctx = useContext(CartContext);
 
+  const cartItem = ctx.items.find((item) => item.id === meal.id);
+
+  const amount = cartItem ? cartItem.amount : 0;
+
   const addMeal = () => {
     ctx.addItem(meal);
+    console.log(amount);
   };
 
   const removeMeal = () => {
@@ -16,12 +21,12 @@ const Counter = ({ meal }) => {
   };
   return (
     <div className={classes.Counter}>
-      {meal.amount && meal.amount !== 0 ? (
+      {amount && amount !== 0 ? (
         <>
           <button className={classes.Sub} onClick={removeMeal}>
             <FontAwesomeIcon icon={faMinus} />
           </button>
-          <span className={classes.count}>{meal.amount}</span>
+          <span className={classes.count}>{amount}</span>
         </>
       ) : null}
       <button className={classes.Add} onClick={addMeal}>

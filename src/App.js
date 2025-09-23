@@ -64,12 +64,14 @@ export default function App() {
 
   const addItem = (meal) => {
     const newCart = { ...cartData };
-    if (newCart.items.indexOf(meal) === -1) {
-      newCart.items.push(meal);
-      meal.amount = 1;
+    const existingMeal = newCart.items.find((item) => item.id === meal.id);
+
+    if (!existingMeal) {
+      newCart.items.push({ ...meal, amount: 1 });
     } else {
-      meal.amount += 1;
+      existingMeal.amount += 1;
     }
+
     newCart.totalAmount += 1;
     newCart.totalPrice += meal.price;
 
@@ -78,10 +80,15 @@ export default function App() {
 
   const removeItem = (meal) => {
     const newCart = { ...cartData };
-    meal.amount -= 1;
-    if (meal.amount === 0) {
-      newCart.items.splice(newCart.items.indexOf(meal), 1);
+    const existingMeal = newCart.items.find((item) => item.id === meal.id);
+    if (!existingMeal) return;
+
+    existingMeal.amount -= 1;
+
+    if (existingMeal.amount === 0) {
+      newCart.items = newCart.items.filter((item) => item.id !== meal.id);
     }
+
     newCart.totalAmount -= 1;
     newCart.totalPrice -= meal.price;
     setCartData(newCart);
