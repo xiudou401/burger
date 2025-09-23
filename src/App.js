@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Meals from './components/Meals/Meals';
 import CartContext from './store/CartContext';
 import FilterMeals from './components/FilterMeals/FilterMeals';
+import Cart from './components/Cart/Cart';
 
 const MEALS_DATA = [
   {
@@ -107,6 +108,7 @@ export default function App() {
       <div>
         <FilterMeals onFilter={onFilter} />
         <Meals mealsData={meals} />
+        <Cart />
       </div>
     </CartContext.Provider>
   );
