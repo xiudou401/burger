@@ -1,7 +1,7 @@
 import classes from './FilterMeals.module.css';
 
 const FilterMeals = () => {
-  return <div>Filter</div>;
+  return <div className={classes.FilterMeals}>Filter</div>;
 };
 
 export default FilterMeals;
