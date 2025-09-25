@@ -62,53 +62,11 @@ const INITIAL_MEALS = [
 
 const App = () => {
   const [meals] = useState(INITIAL_MEALS);
-  const [cart, setCart] = useState({
-    items: [],
-    totalQuantity: 0,
-    totalPrice: 0,
-  });
-
-  const addToCart = (meal) => {
-    const updatedCart = { ...cart };
-    const existingItem = updatedCart.items.find((item) => item.id === meal.id);
-
-    if (!existingItem) {
-      updatedCart.items.push({ ...meal, quantity: 1 });
-    } else {
-      existingItem.quantity += 1;
-    }
-
-    updatedCart.totalQuantity += 1;
-    updatedCart.totalPrice += meal.price;
-
-    setCart(updatedCart);
-  };
-
-  const removeFromCart = (meal) => {
-    const updatedCart = { ...cart };
-    const existingItem = updatedCart.items.find((item) => item.id === meal.id);
-
-    if (!existingItem) return;
-
-    existingItem.quantity -= 1;
-    if (existingItem.quantity === 0) {
-      updatedCart.items = updatedCart.items.filter(
-        (item) => item.id !== meal.id
-      );
-    }
-
-    updatedCart.totalQuantity -= 1;
-    updatedCart.totalPrice -= meal.price;
-
-    setCart(updatedCart);
-  };
 
   return (
-    <CartContext.Provider value={{ ...cart, addToCart, removeFromCart }}>
-      <div>
-        <MealsList meals={meals} />
-      </div>
-    </CartContext.Provider>
+    <div>
+      <MealsList meals={meals} />
+    </div>
   );
 };
 
