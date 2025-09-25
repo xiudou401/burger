@@ -3,8 +3,8 @@
   align-items: center;
 }
 
-.Sub,
-.Add {
+.Decrease,
+.Increase {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -17,12 +17,12 @@
   padding: 0;
 }
 
-.Sub {
+.Decrease {
   background-color: white;
   border: 1px solid black;
 }
 
-.count {
+.Quantity {
   font-size: 32rem;
   margin: 0 5px;
 }
