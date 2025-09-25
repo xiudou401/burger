@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Meals from './components/Meals/Meals';
-import { CartContext } from './store/CartContext';
 
 const MEALS_DATA = [
   {
@@ -56,48 +55,11 @@ const MEALS_DATA = [
 
 const App = () => {
   const [meals, setMeals] = useState(MEALS_DATA);
-  const [cartData, setCartData] = useState({
-    items: [],
-    totalAmount: 0,
-    totalPrice: 0,
-  });
-
-  const addMeal = (meal) => {
-    const newCart = { ...cartData };
-    const existingMeal = newCart.items.find((item) => item.id === meal.id);
-
-    if (!existingMeal) {
-      newCart.items.push({ ...meal, amount: 1 });
-    } else {
-      existingMeal.amount += 1;
-    }
-
-    newCart.totalAmount += 1;
-    newCart.totalPrice += meal.price;
-
-    setCartData(newCart);
-  };
-
-  const removeMeal = (meal) => {
-    const newCart = { ...cartData };
-    const existingMeal = newCart.items.find((item) => item.id === meal.id);
-
-    existingMeal.amount -= 1;
-    if (existingMeal.amount === 0) {
-      newCart.items = newCart.items.filter((item) => item.id !== meal.id);
-    }
-    newCart.totalAmount -= 1;
-    newCart.totalPrice -= meal.price;
-    setCartData(newCart);
-    console.log('remove', newCart);
-  };
 
   return (
-    <CartContext.Provider value={{ ...cartData, addMeal, removeMeal }}>
-      <div>
-        <Meals meals={meals} />
-      </div>
-    </CartContext.Provider>
+    <div>
+      <Meals meals={meals} />
+    </div>
   );
 };
 
