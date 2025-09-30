@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
+import FilterMeals from './components/FilterMeals/FilterMeals';
 
 const INITIAL_MEALS = [
   {
@@ -61,7 +62,7 @@ const INITIAL_MEALS = [
 ];
 
 const App = () => {
-  const [meals] = useState(INITIAL_MEALS);
+  const [meals, setMeals] = useState(INITIAL_MEALS);
   const [cart, setCart] = useState({
     items: [],
     totalQuantity: 0,
@@ -93,9 +94,21 @@ const App = () => {
     updatedCart.totalPrice -= meal.price;
     setCart(updatedCart);
   };
+
+  const filterMeals = (keyword) => {
+    if (!keyword) {
+      setMeals(INITIAL_MEALS);
+    }
+
+    const filteredMeals = INITIAL_MEALS.filter((meal) =>
+      meal.name.includes(keyword)
+    );
+    setMeals(filteredMeals);
+  };
   return (
     <CartContext.Provider value={{ ...cart, addToCart, removeFromCart }}>
       <div>
+        <FilterMeals filterMeals={filterMeals} />
         <MealsList meals={meals} />
       </div>
     </CartContext.Provider>
