@@ -2,6 +2,7 @@ import { useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 import FilterMeals from './components/FilterMeals/FilterMeals';
+import Cart from './components/Cart/Cart';
 
 const INITIAL_MEALS = [
   {
@@ -110,6 +111,7 @@ const App = () => {
       <div>
         <FilterMeals filterMeals={filterMeals} />
         <MealsList meals={meals} />
+        <Cart />
       </div>
     </CartContext.Provider>
   );

@@ -1,3 +1,4 @@
+/* Cart.module.css */
 .Cart {
   display: flex;
   justify-content: space-between;
@@ -12,13 +13,13 @@
   margin: auto;
 }
 
-.Icon {
+.CartIcon {
   width: 80rem;
   position: absolute;
   bottom: -6rem;
 }
 
-.Icon img {
+.CartIconImg {
   width: 100%;
 }
 
@@ -50,7 +51,7 @@
   font-size: 24rem;
 }
 
-.Button {
+.BuyButton {
   border: none;
   background-color: #fcbf49;
   width: 200rem;
