@@ -23,7 +23,7 @@
   width: 100%;
 }
 
-.TotalAmount {
+.TotalQuantity {
   position: absolute;
   width: 36rem;
   height: 36rem;
@@ -37,13 +37,18 @@
   right: -10rem;
 }
 
-.Price {
+.Price,
+.NoMeal {
   display: flex;
   align-items: center;
   margin-left: 120rem;
   color: #fff;
   font-weight: bold;
   font-size: 36rem;
+}
+
+.NoMeal {
+  color: #aaa;
 }
 
 .Price::before {
@@ -57,4 +62,9 @@
   width: 200rem;
   border-radius: 20px;
   font-size: 36rem;
+}
+
+.Disabled {
+  background-color: #777;
+  color: #ccc;
 }
