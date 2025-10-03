@@ -45,3 +45,7 @@ img {
   content: '￥';
   font-size: 24rem;
 }
+
+.DescBox {
+  flex: auto;
+}
