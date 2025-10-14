@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classes from './FilterMeals.module.css';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const FilterMeals = ({ filterMeals }) => {
   const [keyword, setKeyword] = useState('');
@@ -10,12 +10,17 @@ const FilterMeals = ({ filterMeals }) => {
   const handleChange = (e) => {
     const value = e.target.value.trim();
     setKeyword(value);
-    if (isComposing.current) return;
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      filterMeals(value);
-    }, 300);
   };
+
+  useEffect(() => {
+    timer.current = setTimeout(() => {
+      filterMeals(keyword);
+    }, 300);
+    return () => {
+      if (isComposing.current) return;
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, [keyword, filterMeals]);
 
   return (
     <div className={classes.FilterMeals}>
