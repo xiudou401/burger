@@ -106,8 +106,21 @@ const App = () => {
     );
     setMeals(filteredMeals);
   };
+
+  const clearCart = () => {
+    const newCart = { ...cart };
+    // 将购物车中商品的数量清0
+    newCart.items.forEach((item) => delete item.amount);
+    newCart.items = [];
+    newCart.totalQuantity = 0;
+    newCart.totalPrice = 0;
+
+    setCart(newCart);
+  };
   return (
-    <CartContext.Provider value={{ ...cart, addToCart, removeFromCart }}>
+    <CartContext.Provider
+      value={{ ...cart, addToCart, removeFromCart, clearCart }}
+    >
       <div>
         <FilterMeals filterMeals={filterMeals} />
         <MealsList meals={meals} />
