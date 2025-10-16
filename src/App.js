@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 import FilterMeals from './components/FilterMeals/FilterMeals';
@@ -62,39 +62,57 @@ const INITIAL_MEALS = [
   },
 ];
 
+const cartReducer = (state, action) => {
+  const updatedCart = { ...state };
+
+  // const existingItem = updatedCart.items.find(
+  //   (item) => item.id === action.meal.id
+  // );
+
+  let existingItem;
+
+  if (action.type === 'ADD' || action.type === 'REMOVE') {
+    existingItem = updatedCart.items.find((item) => item.id === action.meal.id);
+  }
+
+  switch (action.type) {
+    default:
+      return state;
+    case 'ADD':
+      if (!existingItem) {
+        updatedCart.items.push({ ...action.meal, quantity: 1 });
+      } else {
+        existingItem.quantity += 1;
+      }
+      updatedCart.totalQuantity += 1;
+      updatedCart.totalPrice += action.meal.price;
+      return updatedCart;
+    case 'REMOVE':
+      existingItem.quantity -= 1;
+      if (existingItem.quantity === 0) {
+        updatedCart.items = updatedCart.items.filter(
+          (item) => item.id !== action.meal.id
+        );
+      }
+      updatedCart.totalQuantity -= 1;
+      updatedCart.totalPrice -= action.meal.price;
+      return updatedCart;
+    case 'CLEAR':
+      updatedCart.items.forEach((item) => delete item.amount);
+      updatedCart.items = [];
+      updatedCart.totalQuantity = 0;
+      updatedCart.totalPrice = 0;
+      return updatedCart;
+  }
+};
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
-  const [cart, setCart] = useState({
+
+  const [cart, cartDispatch] = useReducer(cartReducer, {
     items: [],
     totalQuantity: 0,
     totalPrice: 0,
   });
-
-  const addToCart = (meal) => {
-    const updatedCart = { ...cart };
-    const existingItem = updatedCart.items.find((item) => item.id === meal.id);
-    if (!existingItem) {
-      updatedCart.items.push({ ...meal, quantity: 1 });
-    } else {
-      existingItem.quantity += 1;
-    }
-    updatedCart.totalQuantity += 1;
-    updatedCart.totalPrice += meal.price;
-    setCart(updatedCart);
-  };
-  const removeFromCart = (meal) => {
-    const updatedCart = { ...cart };
-    const existingItem = updatedCart.items.find((item) => item.id === meal.id);
-    existingItem.quantity -= 1;
-    if (existingItem.quantity === 0) {
-      updatedCart.items = updatedCart.items.filter(
-        (item) => item.id !== meal.id
-      );
-    }
-    updatedCart.totalQuantity -= 1;
-    updatedCart.totalPrice -= meal.price;
-    setCart(updatedCart);
-  };
 
   const filterMeals = (keyword) => {
     if (!keyword) {
@@ -107,20 +125,8 @@ const App = () => {
     setMeals(filteredMeals);
   };
 
-  const clearCart = () => {
-    const newCart = { ...cart };
-    // 将购物车中商品的数量清0
-    newCart.items.forEach((item) => delete item.amount);
-    newCart.items = [];
-    newCart.totalQuantity = 0;
-    newCart.totalPrice = 0;
-
-    setCart(newCart);
-  };
   return (
-    <CartContext.Provider
-      value={{ ...cart, addToCart, removeFromCart, clearCart }}
-    >
+    <CartContext.Provider value={{ ...cart, cartDispatch }}>
       <div>
         <FilterMeals filterMeals={filterMeals} />
         <MealsList meals={meals} />
