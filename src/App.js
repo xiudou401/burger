@@ -1,9 +1,3 @@
-import { useReducer, useState } from 'react';
-import MealsList from './components/Meals/MealsList';
-import { CartContext } from './store/CartContext';
-import FilterMeals from './components/FilterMeals/FilterMeals';
-import Cart from './components/Cart/Cart';
-
 const INITIAL_MEALS = [
   {
     id: '1',
@@ -62,78 +56,8 @@ const INITIAL_MEALS = [
   },
 ];
 
-const cartReducer = (state, action) => {
-  const updatedCart = { ...state };
-
-  // const existingItem = updatedCart.items.find(
-  //   (item) => item.id === action.meal.id
-  // );
-
-  let existingItem;
-
-  if (action.type === 'ADD' || action.type === 'REMOVE') {
-    existingItem = updatedCart.items.find((item) => item.id === action.meal.id);
-  }
-
-  switch (action.type) {
-    default:
-      return state;
-    case 'ADD':
-      if (!existingItem) {
-        updatedCart.items.push({ ...action.meal, quantity: 1 });
-      } else {
-        existingItem.quantity += 1;
-      }
-      updatedCart.totalQuantity += 1;
-      updatedCart.totalPrice += action.meal.price;
-      return updatedCart;
-    case 'REMOVE':
-      existingItem.quantity -= 1;
-      if (existingItem.quantity === 0) {
-        updatedCart.items = updatedCart.items.filter(
-          (item) => item.id !== action.meal.id
-        );
-      }
-      updatedCart.totalQuantity -= 1;
-      updatedCart.totalPrice -= action.meal.price;
-      return updatedCart;
-    case 'CLEAR':
-      updatedCart.items.forEach((item) => delete item.amount);
-      updatedCart.items = [];
-      updatedCart.totalQuantity = 0;
-      updatedCart.totalPrice = 0;
-      return updatedCart;
-  }
-};
 const App = () => {
-  const [meals, setMeals] = useState(INITIAL_MEALS);
-
-  const [cart, cartDispatch] = useReducer(cartReducer, {
-    items: [],
-    totalQuantity: 0,
-    totalPrice: 0,
-  });
-
-  const filterMeals = (keyword) => {
-    if (!keyword) {
-      setMeals(INITIAL_MEALS);
-    }
-
-    const filteredMeals = INITIAL_MEALS.filter((meal) =>
-      meal.name.includes(keyword)
-    );
-    setMeals(filteredMeals);
-  };
-
-  return (
-    <CartContext.Provider value={{ ...cart, cartDispatch }}>
-      <div>
-        <FilterMeals filterMeals={filterMeals} />
-        <MealsList meals={meals} />
-        <Cart />
-      </div>
-    </CartContext.Provider>
-  );
+  return <div>app</div>;
 };
 
 export default App;
