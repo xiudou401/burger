@@ -1,3 +1,7 @@
+import { useReducer, useState } from 'react';
+import MealsList from './components/Meals/MealsList';
+import { CartContext } from './store/CartContext';
+
 const INITIAL_MEALS = [
   {
     id: '1',
@@ -56,8 +60,59 @@ const INITIAL_MEALS = [
   },
 ];
 
+const cartReducer = (state, action) => {
+  const updateCart = { ...state };
+  let existingItem;
+  if (action.type === 'ADD' || action.type === 'REMOVE') {
+    existingItem = updateCart.items.find((item) => item.id === action.meal.id);
+  }
+  switch (action.type) {
+    case 'ADD':
+      if (!existingItem) {
+        updateCart.items.push({ ...action.meal, quantity: 1 });
+        // console.log(updateCart.items);
+        // updateCart.items.push(action.meal);
+        // action.meal.quantity = 1;
+      } else {
+        existingItem.quantity += 1;
+      }
+      updateCart.totalQuantity += 1;
+      updateCart.totalPrice += action.meal.price;
+      return updateCart;
+    case 'REMOVE':
+      existingItem.quantity -= 1;
+      if (existingItem.quantity === 0) {
+        updateCart.items.filter((item) => item.id !== existingItem.id);
+      }
+      updateCart.totalQuantity -= 1;
+      updateCart.totalPrice -= existingItem.price;
+      return updateCart;
+    case 'CLEAR':
+      updateCart.items.forEach((item) => delete item.quantity);
+      updateCart.items = [];
+      updateCart.totalQuantity = 0;
+      updateCart.totalPrice = 0;
+      return updateCart;
+    default:
+      return state;
+  }
+};
+
 const App = () => {
-  return <div>app</div>;
+  const [meals, setMeals] = useState(INITIAL_MEALS);
+  const [cart, cartDispatch] = useReducer(cartReducer, {
+    items: [],
+    totalQuantity: 0,
+    totalPrice: 0,
+  });
+
+  return (
+    <CartContext.Provider value={{ ...cart, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
+  );
 };
 
 export default App;
