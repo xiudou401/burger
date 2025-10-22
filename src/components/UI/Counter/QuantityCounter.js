@@ -7,9 +7,13 @@ import { CartContext } from '../../../store/CartContext';
 const QuantityCounter = ({ meal }) => {
   const cartCtx = useContext(CartContext);
 
+  const cartMeal = cartCtx.items.find((item) => item.id === meal.id);
+
+  const quantity = cartMeal ? cartMeal.quantity : null;
+
   return (
     <div className={classes.Counter}>
-      {meal.quantity && (
+      {quantity ? (
         <>
           <button
             className={classes.Decrease}
@@ -19,9 +23,9 @@ const QuantityCounter = ({ meal }) => {
           >
             <FontAwesomeIcon icon={faMinus} />
           </button>
-          <span className={classes.Quantity}>{meal.quantity}</span>
+          <span className={classes.Quantity}>{quantity}</span>
         </>
-      )}
+      ) : null}
       <button
         className={classes.Increase}
         onClick={() => {

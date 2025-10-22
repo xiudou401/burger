@@ -69,28 +69,35 @@ const App = () => {
   });
 
   const addToCart = (meal) => {
-    const updatedCart = { ...cart };
-    if (!updatedCart.items.includes(meal)) {
-      updatedCart.items.push(meal);
-      meal.quantity = 1;
+    const updatedCart = {
+      ...cart,
+      items: [...cart.items], // create a new array
+    };
+    const existingMeal = updatedCart.items.find((item) => item.id === meal.id);
+    if (!existingMeal) {
+      updatedCart.items.push({ ...meal, quantity: 1 });
     } else {
-      meal.quantity += 1;
+      existingMeal.quantity += 1;
     }
-
     updatedCart.totalQuantity += 1;
     updatedCart.totalPrice += meal.price;
     setCart(updatedCart);
   };
   const removeFromCart = (meal) => {
-    const updatedCart = { ...cart };
-    meal.quantity -= 1;
-    if (meal.quantity === 0) {
-      updatedCart.items.filter((item) => item.id !== meal.id);
+    const updatedCart = {
+      ...cart,
+      items: [...cart.items], // ✅ create a new array here too
+    };
+    const existingMeal = updatedCart.items.find((item) => item.id === meal.id);
+    existingMeal.quantity -= 1;
+    if (existingMeal.quantity === 0) {
+      updatedCart.items = updatedCart.items.filter(
+        (item) => item.id !== meal.id
+      );
     }
     updatedCart.totalQuantity -= 1;
     updatedCart.totalPrice -= meal.price;
     setCart(updatedCart);
-    console.log(meal);
   };
   return (
     <CartContext.Provider value={{ ...cart, removeFromCart, addToCart }}>
