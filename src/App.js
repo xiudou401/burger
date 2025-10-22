@@ -69,10 +69,10 @@ const cartReducer = (state, action) => {
   switch (action.type) {
     case 'ADD':
       if (!existingItem) {
-        updateCart.items.push({ ...action.meal, quantity: 1 });
+        // updateCart.items.push({ ...action.meal, quantity: 1 });
         // console.log(updateCart.items);
-        // updateCart.items.push(action.meal);
-        // action.meal.quantity = 1;
+        updateCart.items.push(action.meal);
+        action.meal.quantity = 1;
       } else {
         existingItem.quantity += 1;
       }

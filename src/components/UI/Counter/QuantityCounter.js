@@ -6,9 +6,8 @@ import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const QuantityCounter = ({ meal }) => {
   const cartCtx = useContext(CartContext);
-  //   console.log(cartCtx.items);
+
   const meal1 = cartCtx.items.find((item) => item.id === meal.id);
-  console.log(meal1);
 
   return (
     <div className={classes.Counter}>
@@ -22,7 +21,7 @@ const QuantityCounter = ({ meal }) => {
           >
             <FontAwesomeIcon icon={faMinus} />
           </button>
-          <span className={classes.Quantity}>{meal1.quantity}</span>
+          <span className={classes.Quantity}>{meal.quantity}</span>
         </>
       )}
       <button
