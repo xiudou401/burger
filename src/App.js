@@ -69,28 +69,23 @@ const App = () => {
   });
 
   const addToCart = (meal) => {
-    const updatedCart = {
-      ...cart,
-      items: [...cart.items], // create a new array
-    };
-    const existingMeal = updatedCart.items.find((item) => item.id === meal.id);
-    if (!existingMeal) {
+    const updatedCart = { ...cart, items: [...cart.items] };
+    const meal1 = updatedCart.items.find((item) => item.id === meal.id);
+    if (!meal1) {
       updatedCart.items.push({ ...meal, quantity: 1 });
     } else {
-      existingMeal.quantity += 1;
+      meal1.quantity += 1;
     }
     updatedCart.totalQuantity += 1;
     updatedCart.totalPrice += meal.price;
+    console.log(updatedCart);
     setCart(updatedCart);
   };
   const removeFromCart = (meal) => {
-    const updatedCart = {
-      ...cart,
-      items: [...cart.items], // ✅ create a new array here too
-    };
-    const existingMeal = updatedCart.items.find((item) => item.id === meal.id);
-    existingMeal.quantity -= 1;
-    if (existingMeal.quantity === 0) {
+    const updatedCart = { ...cart };
+    const meal1 = updatedCart.items.find((item) => item.id === meal.id);
+    meal1.quantity -= 1;
+    if (meal.quantity === 0) {
       updatedCart.items = updatedCart.items.filter(
         (item) => item.id !== meal.id
       );
@@ -99,8 +94,9 @@ const App = () => {
     updatedCart.totalPrice -= meal.price;
     setCart(updatedCart);
   };
+
   return (
-    <CartContext.Provider value={{ ...cart, removeFromCart, addToCart }}>
+    <CartContext.Provider value={{ ...cart, addToCart, removeFromCart }}>
       <div>
         <MealsList meals={meals} />
       </div>
