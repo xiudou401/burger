@@ -68,30 +68,51 @@ const App = () => {
     totalPrice: 0,
   });
 
+  const calculateTotal = (items) => {
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+    return { totalPrice, totalQuantity };
+  };
+
   const addToCart = (meal) => {
     const updatedCart = { ...cart, items: [...cart.items] };
     const meal1 = updatedCart.items.find((item) => item.id === meal.id);
     if (!meal1) {
-      updatedCart.items.push({ ...meal, quantity: 1 });
+      updatedCart.items = [...updatedCart.items, { ...meal, quantity: 1 }];
     } else {
-      meal1.quantity += 1;
+      updatedCart.items = updatedCart.items.map((item) =>
+        item.id === meal1.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : { ...item }
+      );
     }
-    updatedCart.totalQuantity += 1;
-    updatedCart.totalPrice += meal.price;
-    console.log(updatedCart);
+    const { totalQuantity, totalPrice } = calculateTotal(updatedCart.items);
+    updatedCart.totalQuantity = totalQuantity;
+    updatedCart.totalPrice = totalPrice;
     setCart(updatedCart);
   };
   const removeFromCart = (meal) => {
+    if (!cart || !cart.items) {
+      return;
+    }
+
     const updatedCart = { ...cart };
+
+    updatedCart.items = updatedCart.items.map((item) =>
+      item.id === meal.id ? { ...item, quantity: item.quantity - 1 } : item
+    );
     const meal1 = updatedCart.items.find((item) => item.id === meal.id);
-    meal1.quantity -= 1;
-    if (meal.quantity === 0) {
+    if (meal1 && meal1.quantity === 0) {
       updatedCart.items = updatedCart.items.filter(
         (item) => item.id !== meal.id
       );
     }
-    updatedCart.totalQuantity -= 1;
-    updatedCart.totalPrice -= meal.price;
+    const { totalQuantity, totalPrice } = calculateTotal(updatedCart.items);
+    updatedCart.totalQuantity = totalQuantity;
+    updatedCart.totalPrice = totalPrice;
     setCart(updatedCart);
   };
 

@@ -6,30 +6,34 @@ import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const QuantityCounter = ({ meal }) => {
   const cartCtx = useContext(CartContext);
+  if (!cartCtx || !cartCtx.items) {
+    return <div>数据加载中...</div>;
+  }
+
   const meal1 = cartCtx.items.find((item) => item.id === meal.id);
-  const quantity = meal1 ? meal1.quantity : null;
+  const quantity = meal1 ? meal1.quantity : 0;
   return (
     <div className={classes.Counter}>
       {quantity > 0 ? (
         <>
-          <button className={classes.Decrease}>
-            <FontAwesomeIcon
-              icon={faMinus}
-              onClick={() => {
-                cartCtx.removeFromCart(meal);
-              }}
-            />
+          <button
+            className={classes.Decrease}
+            onClick={() => {
+              cartCtx.removeFromCart(meal);
+            }}
+          >
+            <FontAwesomeIcon icon={faMinus} />
           </button>
           <span className={classes.Quantity}>{quantity}</span>
         </>
       ) : null}
-      <button className={classes.Increase}>
-        <FontAwesomeIcon
-          icon={faPlus}
-          onClick={() => {
-            cartCtx.addToCart(meal);
-          }}
-        />
+      <button
+        className={classes.Increase}
+        onClick={() => {
+          cartCtx.addToCart(meal);
+        }}
+      >
+        <FontAwesomeIcon icon={faPlus} />
       </button>
     </div>
   );
