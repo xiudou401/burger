@@ -19,7 +19,7 @@ const QuantityCounter = ({ meal }) => {
           <button
             className={classes.Decrease}
             onClick={() => {
-              cartCtx.removeFromCart(meal);
+              cartCtx.cartDispatch({ type: 'REMOVE', meal });
             }}
           >
             <FontAwesomeIcon icon={faMinus} />
@@ -30,7 +30,7 @@ const QuantityCounter = ({ meal }) => {
       <button
         className={classes.Increase}
         onClick={() => {
-          cartCtx.addToCart(meal);
+          cartCtx.cartDispatch({ type: 'ADD', meal });
         }}
       >
         <FontAwesomeIcon icon={faPlus} />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 
@@ -60,64 +60,69 @@ const INITIAL_MEALS = [
   },
 ];
 
+const cartReducer = (state, action) => {
+  const updatedCart = { ...state };
+  const updateTotals = () => {
+    updatedCart.totalQuantity = updatedCart.items.reduce((sum, item) => {
+      return sum + item.quantity;
+    }, 0);
+    updatedCart.totalPrice = updatedCart.items.reduce((sumPrice, item) => {
+      return sumPrice + item.price * item.quantity;
+    }, 0);
+  };
+
+  switch (action.type) {
+    default:
+      return state;
+    case 'ADD':
+      const existingMeal = state.items.find(
+        (item) => item.id === action.meal.id
+      );
+      if (!existingMeal) {
+        updatedCart.items = [
+          ...updatedCart.items,
+          { ...action.meal, quantity: 1 },
+        ];
+      } else {
+        updatedCart.items = updatedCart.items.map((item) =>
+          item.id === action.meal.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      updateTotals();
+      return updatedCart;
+    case 'REMOVE':
+      updatedCart.items = updatedCart.items.map((item) =>
+        item.id === action.meal.id
+          ? { ...item, quantity: item.quantity - 1 }
+          : item
+      );
+      const updatedMeal = updatedCart.items.find(
+        (item) => item.id === action.meal.id
+      );
+      if (updatedMeal.quantity === 0) {
+        updatedCart.items = updatedCart.items.filter(
+          (item) => item.id !== updatedMeal.id
+        );
+      }
+      updateTotals();
+
+      return updatedCart;
+  }
+};
+
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
-  const [cart, setCart] = useState({
+
+  const [cart, cartDispatch] = useReducer(cartReducer, {
     items: [],
     totalQuantity: 0,
     totalPrice: 0,
   });
 
-  const calculateTotal = (items) => {
-    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-    const totalPrice = items.reduce(
-      (sum, item) => sum + item.price * item.quantity,
-      0
-    );
-    return { totalPrice, totalQuantity };
-  };
-
-  const addToCart = (meal) => {
-    const updatedCart = { ...cart, items: [...cart.items] };
-    const meal1 = updatedCart.items.find((item) => item.id === meal.id);
-    if (!meal1) {
-      updatedCart.items = [...updatedCart.items, { ...meal, quantity: 1 }];
-    } else {
-      updatedCart.items = updatedCart.items.map((item) =>
-        item.id === meal1.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : { ...item }
-      );
-    }
-    const { totalQuantity, totalPrice } = calculateTotal(updatedCart.items);
-    updatedCart.totalQuantity = totalQuantity;
-    updatedCart.totalPrice = totalPrice;
-    setCart(updatedCart);
-  };
-  const removeFromCart = (meal) => {
-    if (!cart || !cart.items) {
-      return;
-    }
-
-    const updatedCart = { ...cart };
-
-    updatedCart.items = updatedCart.items.map((item) =>
-      item.id === meal.id ? { ...item, quantity: item.quantity - 1 } : item
-    );
-    const meal1 = updatedCart.items.find((item) => item.id === meal.id);
-    if (meal1 && meal1.quantity === 0) {
-      updatedCart.items = updatedCart.items.filter(
-        (item) => item.id !== meal.id
-      );
-    }
-    const { totalQuantity, totalPrice } = calculateTotal(updatedCart.items);
-    updatedCart.totalQuantity = totalQuantity;
-    updatedCart.totalPrice = totalPrice;
-    setCart(updatedCart);
-  };
-
   return (
-    <CartContext.Provider value={{ ...cart, addToCart, removeFromCart }}>
+    <CartContext.Provider value={{ ...cart, cartDispatch }}>
       <div>
         <MealsList meals={meals} />
       </div>
