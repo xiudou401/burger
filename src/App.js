@@ -61,54 +61,56 @@ const INITIAL_MEALS = [
 ];
 
 const cartReducer = (state, action) => {
-  const updatedCart = { ...state };
-  const updateTotals = () => {
-    updatedCart.totalQuantity = updatedCart.items.reduce((sum, item) => {
-      return sum + item.quantity;
-    }, 0);
-    updatedCart.totalPrice = updatedCart.items.reduce((sumPrice, item) => {
-      return sumPrice + item.price * item.quantity;
-    }, 0);
+  let updatedCartItems = [...state.items];
+  const updateTotals = (cartItems) => {
+    const totalQuantity = cartItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
+    const totalPrice = cartItems.reduce(
+      (sumPrice, item) => sumPrice + item.price * item.quantity,
+      0
+    );
+    return { totalPrice, totalQuantity };
   };
+
+  const existingMealIndex = updatedCartItems.findIndex(
+    (item) => item.id === action.meal.id
+  );
 
   switch (action.type) {
     default:
       return state;
-    case 'ADD':
-      const existingMeal = state.items.find(
-        (item) => item.id === action.meal.id
-      );
-      if (!existingMeal) {
-        updatedCart.items = [
-          ...updatedCart.items,
+    case 'ADD': {
+      if (existingMealIndex === -1) {
+        updatedCartItems = [
+          ...updatedCartItems,
           { ...action.meal, quantity: 1 },
         ];
       } else {
-        updatedCart.items = updatedCart.items.map((item) =>
-          item.id === action.meal.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
+        updatedCartItems[existingMealIndex] = {
+          ...updatedCartItems[existingMealIndex],
+          quantity: updatedCartItems[existingMealIndex].quantity + 1,
+        };
       }
-      updateTotals();
-      return updatedCart;
-    case 'REMOVE':
-      updatedCart.items = updatedCart.items.map((item) =>
-        item.id === action.meal.id
-          ? { ...item, quantity: item.quantity - 1 }
-          : item
-      );
-      const updatedMeal = updatedCart.items.find(
-        (item) => item.id === action.meal.id
-      );
-      if (updatedMeal.quantity === 0) {
-        updatedCart.items = updatedCart.items.filter(
-          (item) => item.id !== updatedMeal.id
-        );
-      }
-      updateTotals();
+      const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
 
-      return updatedCart;
+      return { totalPrice, totalQuantity, items: updatedCartItems };
+    }
+    case 'REMOVE': {
+      if (updatedCartItems[existingMealIndex].quantity > 1) {
+        updatedCartItems[existingMealIndex] = {
+          ...updatedCartItems[existingMealIndex],
+          quantity: updatedCartItems[existingMealIndex].quantity - 1,
+        };
+      } else {
+        updatedCartItems = updatedCartItems.filter(
+          (item) => item.id !== updatedCartItems[existingMealIndex].id
+        );
+      }
+      const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
+      return { totalPrice, totalQuantity, items: updatedCartItems };
+    }
   }
 };
 
