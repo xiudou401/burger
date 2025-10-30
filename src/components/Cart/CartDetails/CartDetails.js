@@ -11,19 +11,15 @@ const CartDetails = () => {
 
   return (
     <Backdrop>
-      <div
-        className={classes.CartDetails}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-      >
+      <div className={classes.CartDetails} onClick={(e) => e.stopPropagation()}>
         <header className={classes.Header}>
-          <h2 className={classes.Title}>Cart Details</h2>
+          <h2 className={classes.Title}>餐品详情</h2>
           <div className={classes.Clear}>
             <FontAwesomeIcon icon={faTrash} />
-            <span>Clear Cart</span>
+            <span>清空购物车</span>
           </div>
         </header>
+
         <div className={classes.MealList}>
           {cartCtx.items.map((item) => (
             <MealItem noDesc key={item.id} meal={item} />

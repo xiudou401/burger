@@ -3,7 +3,7 @@
   display: flex;
   flex-flow: column;
   width: 750rem;
-  max-height: 1200rem;
+  height: 80vh; /* 💡自适应屏幕高度 */
   background-color: #fff;
   bottom: 0;
   padding-bottom: 120rem;

@@ -3,6 +3,9 @@
   top: 120rem;
   bottom: 0;
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 160rem;
 }
 
 /* .MealsList {
