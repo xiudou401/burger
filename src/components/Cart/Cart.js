@@ -1,6 +1,6 @@
 import classes from './Cart.module.css';
 import iconImg from '../../asset/bag.png';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../../store/CartContext';
 import CartDetails from './CartDetails/CartDetails';
 
@@ -8,6 +8,12 @@ const Cart = () => {
   const cartCtx = useContext(CartContext);
   const [showDetails, setShowDetails] = useState(false);
   //   const [showCheckout, setShowCheckout] = useState(false);
+
+  useEffect(() => {
+    if (cartCtx.totalQuantity === 0) {
+      setShowDetails(false);
+    }
+  }, [cartCtx.totalQuantity]);
 
   const toggleDetailsHandler = () => {
     if (cartCtx.totalQuantity === 0) {
