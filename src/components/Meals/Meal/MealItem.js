@@ -12,7 +12,6 @@ const MealItem = ({ meal, noDesc }) => {
         {noDesc ? null : (
           <p className={classes.Description}>{meal.description}</p>
         )}
-
         <div className={classes.PriceWrapper}>
           <span className={classes.Price}>{meal.price}</span>
           <QuantityCounter meal={meal} />

@@ -8,13 +8,15 @@ import { CartContext } from '../../../store/CartContext';
 
 const CartDetails = () => {
   const cartCtx = useContext(CartContext);
-  const handleDetailsClick = (e) => {
-    e.stopPropagation();
-  };
 
   return (
-    <Backdrop onClick={handleDetailsClick}>
-      <div className={classes.CartDetails}>
+    <Backdrop>
+      <div
+        className={classes.CartDetails}
+        onClick={(e) => {
+          e.stopPropagation();
+        }}
+      >
         <header className={classes.Header}>
           <h2 className={classes.Title}>Cart Details</h2>
           <div className={classes.Clear}>
