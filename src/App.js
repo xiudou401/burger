@@ -61,6 +61,12 @@ const INITIAL_MEALS = [
   },
 ];
 
+const initialCartState = {
+  items: [],
+  totalQuantity: 0,
+  totalPrice: 0,
+};
+
 const cartReducer = (state, action) => {
   let updatedCartItems = [...state.items];
   const updateTotals = (cartItems) => {
@@ -75,42 +81,47 @@ const cartReducer = (state, action) => {
     return { totalPrice, totalQuantity };
   };
 
-  const existingMealIndex = updatedCartItems.findIndex(
-    (item) => item.id === action.meal.id
-  );
-
   switch (action.type) {
     default:
       return state;
-    case 'ADD': {
-      if (existingMealIndex === -1) {
-        updatedCartItems = [
-          ...updatedCartItems,
-          { ...action.meal, quantity: 1 },
-        ];
+    case 'ADD':
+    case 'REMOVE': {
+      if (!action.meal) return state;
+      let existingMealIndex = updatedCartItems.findIndex(
+        (item) => item.id === action.meal.id
+      );
+      if (action.type === 'ADD') {
+        if (existingMealIndex === -1) {
+          updatedCartItems = [
+            ...updatedCartItems,
+            { ...action.meal, quantity: 1 },
+          ];
+        } else {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity + 1,
+          };
+        }
       } else {
-        updatedCartItems[existingMealIndex] = {
-          ...updatedCartItems[existingMealIndex],
-          quantity: updatedCartItems[existingMealIndex].quantity + 1,
-        };
+        if (existingMealIndex === -1) return state;
+        if (updatedCartItems[existingMealIndex].quantity > 1) {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity - 1,
+          };
+        } else {
+          updatedCartItems = updatedCartItems.filter(
+            (item) => item.id !== updatedCartItems[existingMealIndex].id
+          );
+        }
       }
+
       const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
 
       return { totalPrice, totalQuantity, items: updatedCartItems };
     }
-    case 'REMOVE': {
-      if (updatedCartItems[existingMealIndex].quantity > 1) {
-        updatedCartItems[existingMealIndex] = {
-          ...updatedCartItems[existingMealIndex],
-          quantity: updatedCartItems[existingMealIndex].quantity - 1,
-        };
-      } else {
-        updatedCartItems = updatedCartItems.filter(
-          (item) => item.id !== updatedCartItems[existingMealIndex].id
-        );
-      }
-      const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
-      return { totalPrice, totalQuantity, items: updatedCartItems };
+    case 'CLEAR': {
+      return initialCartState;
     }
   }
 };
@@ -118,11 +129,7 @@ const cartReducer = (state, action) => {
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
 
-  const [cart, cartDispatch] = useReducer(cartReducer, {
-    items: [],
-    totalQuantity: 0,
-    totalPrice: 0,
-  });
+  const [cart, cartDispatch] = useReducer(cartReducer, initialCartState);
 
   return (
     <CartContext.Provider value={{ ...cart, cartDispatch }}>
