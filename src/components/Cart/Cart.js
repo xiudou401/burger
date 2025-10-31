@@ -13,6 +13,7 @@ const Cart = () => {
   useEffect(() => {
     if (cartCtx.totalQuantity === 0) {
       setShowDetails(false);
+      setShowCheckout(false);
     }
   }, [cartCtx.totalQuantity]);
 
