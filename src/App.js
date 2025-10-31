@@ -2,6 +2,7 @@ import { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 import Cart from './components/Cart/Cart';
+import FilterMeals from './components/FilterMeals/FilterMeals';
 
 const INITIAL_MEALS = [
   {
@@ -131,8 +132,21 @@ const App = () => {
 
   const [cart, cartDispatch] = useReducer(cartReducer, initialCartState);
 
+  const filterMealsHandler = (keyword) => {
+    if (!keyword) {
+      setMeals(INITIAL_MEALS);
+      return;
+    }
+
+    const filteredMeals = INITIAL_MEALS.filter((meal) =>
+      meal.name.includes(keyword)
+    );
+    setMeals(filteredMeals);
+  };
+
   return (
     <CartContext.Provider value={{ ...cart, cartDispatch }}>
+      <FilterMeals filterMealsHandler={filterMealsHandler} />
       <div>
         <MealsList meals={meals} />
       </div>
