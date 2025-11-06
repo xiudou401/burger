@@ -120,10 +120,12 @@ const App = () => {
   const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
 
   return (
-    <div>
-      <MealsList meals={meals} />
-      <Cart />
-    </div>
+    <CartContext.Provider value={{ ...state, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+        <Cart />
+      </div>
+    </CartContext.Provider>
   );
 };
 
