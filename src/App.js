@@ -1,6 +1,7 @@
 import { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
+import Cart from './components/Cart/Cart';
 
 const INITIAL_MEALS = [
   {
@@ -69,12 +70,12 @@ const initialCartState = {
 const CartReducer = (state, action) => {
   let updatedCartItems = [...state.items];
   const updateTotals = (items) => {
-    const updateQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-    const updatePrice = items.reduce(
+    const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = items.reduce(
       (sumPrice, item) => sumPrice + item.quantity * item.price,
       0
     );
-    return { updatePrice, updateQuantity };
+    return { totalQuantity, totalPrice };
   };
   switch (action.type) {
     default:
@@ -114,6 +115,7 @@ const CartReducer = (state, action) => {
         }
       }
       const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
+      console.log(totalPrice);
       return { items: updatedCartItems, totalQuantity, totalPrice };
   }
 };
@@ -126,6 +128,7 @@ const App = () => {
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div>
         <MealsList meals={meals} />
+        <Cart />
       </div>
     </CartContext.Provider>
   );
