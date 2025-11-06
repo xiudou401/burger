@@ -1,9 +1,9 @@
-import React from 'react';
 import MealItem from './Meal/MealItem';
+import classes from './MealsList.module.css';
 
 const MealsList = ({ meals }) => {
   return (
-    <div>
+    <div className={classes.MealsList}>
       {meals.map((meal) => (
         <MealItem key={meal.id} meal={meal} />
       ))}
