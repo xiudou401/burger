@@ -70,7 +70,7 @@ const CartReducer = (state, action) => {
   let updatedCartItems = [...state.items];
   const updateTotals = (items) => {
     const updateQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-    const updatePrice = items.reducer(
+    const updatePrice = items.reduce(
       (sumPrice, item) => sumPrice + item.quantity * item.price,
       0
     );
@@ -123,9 +123,11 @@ const App = () => {
   const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
 
   return (
-    <div>
-      <MealsList meals={meals} />
-    </div>
+    <CartContext.Provider value={{ ...state, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
   );
 };
 
