@@ -1,11 +1,28 @@
-// import { useContext } from 'react';
+import { useContext } from 'react';
 import classes from './QuantityCounter.module.css';
-// import { CartContext } from '../../../store/CartContext';
-// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-// import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { CartContext } from '../../../store/CartContext';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const QuantityCounter = ({ meal }) => {
-  return <div className={classes.Counter}></div>;
+  const cartCtx = useContext(CartContext);
+  const mealInCart = cartCtx.items.find((item) => item.id === meal.id);
+  const quantity = mealInCart ? mealInCart.quantity : 0;
+  return (
+    <div className={classes.Counter}>
+      {quantity === 0 ? null : (
+        <>
+          <button className={classes.Decrease}>
+            <FontAwesomeIcon icon={faMinus} />
+          </button>
+          <span className={classes.Quantity}>{quantity}</span>
+        </>
+      )}
+      <button className={classes.Increase}>
+        <FontAwesomeIcon icon={faPlus} />
+      </button>
+    </div>
+  );
 };
 
 export default QuantityCounter;

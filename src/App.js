@@ -1,7 +1,7 @@
 import { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
-import Cart from './components/Cart/Cart';
+// import Cart from './components/Cart/Cart';
 
 const INITIAL_MEALS = [
   {
@@ -62,7 +62,7 @@ const INITIAL_MEALS = [
 ];
 
 const initialCartState = {
-  meals: [],
+  items: [],
   totalQuantity: 0,
   totalPrice: 0,
 };
@@ -72,7 +72,8 @@ const CartReducer = (state, action) => {
   const updateTotals = (items) => {
     const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
     const totalPrice = items.reduce(
-      (sum, item) => sum + item.quantity + item.price
+      (sum, item) => sum + item.quantity * item.price,
+      0
     );
     return { totalQuantity, totalPrice };
   };
@@ -89,7 +90,7 @@ const CartReducer = (state, action) => {
           if (existingMealIndex === -1) {
             updatedCartItems = [
               ...updatedCartItems,
-              { ...action.meal, quantity: 0 },
+              { ...action.meal, quantity: 1 },
             ];
           } else {
             updatedCartItems[existingMealIndex] = {
@@ -98,7 +99,7 @@ const CartReducer = (state, action) => {
             };
           }
         } else {
-          if (updatedCartItems[existingMealIndex] > 1) {
+          if (updatedCartItems[existingMealIndex].quantity > 1) {
             updatedCartItems[existingMealIndex] = {
               ...updatedCartItems[existingMealIndex],
               quantity: updatedCartItems[existingMealIndex].quantity - 1,
@@ -123,7 +124,7 @@ const App = () => {
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div>
         <MealsList meals={meals} />
-        <Cart />
+        {/* <Cart /> */}
       </div>
     </CartContext.Provider>
   );
