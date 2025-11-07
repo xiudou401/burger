@@ -81,38 +81,40 @@ const CartReducer = (state, action) => {
     default:
       return state;
     case 'ADD':
-    case 'REMOVE':
-      {
-        const existingMealIndex = updatedCartItems.findIndex(
-          (item) => item.id === action.meal.id
-        );
-        if (action.type === 'ADD') {
-          if (existingMealIndex === -1) {
-            updatedCartItems = [
-              ...updatedCartItems,
-              { ...action.meal, quantity: 1 },
-            ];
-          } else {
-            updatedCartItems[existingMealIndex] = {
-              ...updatedCartItems[existingMealIndex],
-              quantity: updatedCartItems[existingMealIndex].quantity + 1,
-            };
-          }
+    case 'REMOVE': {
+      const existingMealIndex = updatedCartItems.findIndex(
+        (item) => item.id === action.meal.id
+      );
+      if (action.type === 'ADD') {
+        if (existingMealIndex === -1) {
+          updatedCartItems = [
+            ...updatedCartItems,
+            { ...action.meal, quantity: 1 },
+          ];
         } else {
-          if (updatedCartItems[existingMealIndex].quantity > 1) {
-            updatedCartItems[existingMealIndex] = {
-              ...updatedCartItems[existingMealIndex],
-              quantity: updatedCartItems[existingMealIndex].quantity - 1,
-            };
-          } else {
-            updatedCartItems = updatedCartItems.filter(
-              (item) => item.id !== action.meal.id
-            );
-          }
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity + 1,
+          };
+        }
+      } else {
+        if (updatedCartItems[existingMealIndex].quantity > 1) {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity - 1,
+          };
+        } else {
+          updatedCartItems = updatedCartItems.filter(
+            (item) => item.id !== action.meal.id
+          );
         }
       }
       const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
       return { items: updatedCartItems, totalQuantity, totalPrice };
+    }
+    case 'CLEAR':
+      updatedCartItems = initialCartState;
+      return updatedCartItems;
   }
 };
 
