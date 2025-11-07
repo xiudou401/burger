@@ -3,7 +3,7 @@ import classes from './Confirm.module.css';
 
 const Confirm = ({ confirmText, onCancel, onOk }) => {
   return (
-    <Backdrop classes={classes.ConfirmOuter}>
+    <Backdrop className={classes.ConfirmOuter}>
       <div className={classes.Confirm}>
         <p className={classes.ConfirmText}>{confirmText}</p>
         <div>
