@@ -5,6 +5,21 @@ import { useEffect, useRef, useState } from 'react';
 
 const FilterMeals = ({ filterMealsHandler }) => {
   const [keyword, setKeyword] = useState('');
+  const timer = useRef(null);
+  const handleChange = (e) => {
+    setKeyword(e.target.value);
+  };
+
+  useEffect(() => {
+    timer.current = setTimeout(() => {
+      filterMealsHandler(keyword);
+    }, 300);
+    return () => {
+      if (timer.current) {
+        clearTimeout(timer);
+      }
+    };
+  }, [keyword, filterMealsHandler]);
 
   return (
     <div className={classes.FilterMeals}>
@@ -13,6 +28,7 @@ const FilterMeals = ({ filterMealsHandler }) => {
           type="text"
           className={classes.SearchInput}
           placeholder="Key in..."
+          onChange={handleChange}
         />
         <FontAwesomeIcon icon={faSearch} className={classes.SearchIcon} />
       </div>
