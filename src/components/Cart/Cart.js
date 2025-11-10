@@ -21,7 +21,8 @@ const Cart = () => {
     console.log(cartDetails);
   };
 
-  const showCheckoutHandler = () => {
+  const showCheckoutHandler = (e) => {
+    e.stopPropagation();
     setShowCheckout(true);
   };
   const hideCheckoutHandler = () => {
