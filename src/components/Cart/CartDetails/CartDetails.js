@@ -1,15 +1,24 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { CartContext } from '../../../store/CartContext';
 import classes from './CartDetails.module.css';
 import Backdrop from '../../UI/Backdrop/Backdrop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import MealItem from '../../Meals/Meal/MealItem';
+import Confirm from '../../UI/Confirm/Confirm';
 
 const CartDetails = () => {
   const cartCtx = useContext(CartContext);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const onCancel = () => {
+    setShowConfirm(false);
+  };
   return (
     <Backdrop>
+      {showConfirm && (
+        <Confirm onCancel={onCancel} confirmText="Are you sure?" />
+      )}
       <div
         className={classes.CartDetails}
         onClick={(e) => {
@@ -22,7 +31,7 @@ const CartDetails = () => {
             <FontAwesomeIcon icon={faTrash} />
             <span
               onClick={() => {
-                cartCtx.cartDispatch({ type: 'CLEAR' });
+                setShowConfirm(true);
               }}
             >
               清空购物车
