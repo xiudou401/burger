@@ -5,34 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const QuantityCounter = ({ meal }) => {
-  const cartCtx = useContext(CartContext);
-  const mealInCart = cartCtx.items.find((item) => item.id === meal.id);
-  const quantity = mealInCart ? mealInCart.quantity : 0;
-  return (
-    <div className={classes.Counter}>
-      {quantity === 0 ? null : (
-        <>
-          <button
-            className={classes.Decrease}
-            onClick={() => {
-              cartCtx.cartDispatch({ type: 'REMOVE', meal });
-            }}
-          >
-            <FontAwesomeIcon icon={faMinus} />
-          </button>
-          <span className={classes.Quantity}>{quantity}</span>
-        </>
-      )}
-      <button
-        className={classes.Increase}
-        onClick={() => {
-          cartCtx.cartDispatch({ type: 'ADD', meal });
-        }}
-      >
-        <FontAwesomeIcon icon={faPlus} />
-      </button>
-    </div>
-  );
+  return <div className={classes.Counter}></div>;
 };
 
 export default QuantityCounter;

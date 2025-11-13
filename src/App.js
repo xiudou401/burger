@@ -1,5 +1,6 @@
 import { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
+import { CartContext } from './store/CartContext';
 
 const INITIAL_MEALS = [
   {
@@ -127,9 +128,11 @@ const App = () => {
   const [state, cartDispatch] = useReducer(cartReducer, cartInitialState);
 
   return (
-    <div>
-      <MealsList meals={meals} />
-    </div>
+    <CartContext.Provider value={{ ...state, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
   );
 };
 
