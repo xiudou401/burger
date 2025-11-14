@@ -9,6 +9,10 @@ const Cart = () => {
   const [showCartDetails, setShowCartDetails] = useState(false);
 
   const toggleCartDetails = () => {
+    if (cartCtx.totalQuantity === 0) {
+      setShowCartDetails(false);
+      return;
+    }
     setShowCartDetails((prevState) => !prevState);
   };
 
