@@ -12,6 +12,13 @@ const CartDetails = () => {
   const cartItems = cartCtx.items;
 
   const [showConfirm, setShowConfirm] = useState(false);
+
+  const clearCartHandler = () => {
+    cartCtx.cartDispatch({ type: 'CLEAR' });
+  };
+  const hideClearCartHandler = () => {
+    setShowConfirm(false);
+  };
   return (
     <Backdrop>
       <div
@@ -20,12 +27,24 @@ const CartDetails = () => {
           e.stopPropagation();
         }}
       >
-        {showConfirm && <Confirm />}
+        {showConfirm && (
+          <Confirm
+            clearCartHandler={clearCartHandler}
+            hideClearCartHandler={hideClearCartHandler}
+            confirmText="Are you sure?"
+          />
+        )}
         <header className={classes.Header}>
           <h2 className={classes.Title}>餐品详情</h2>
           <div className={classes.Clear}>
             <FontAwesomeIcon icon={faTrash} />
-            <span>Clear Cart</span>
+            <span
+              onClick={() => {
+                setShowConfirm(true);
+              }}
+            >
+              Clear Cart
+            </span>
           </div>
         </header>
         <div className={classes.MealList}>
