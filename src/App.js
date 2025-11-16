@@ -62,90 +62,13 @@ const INITIAL_MEALS = [
   },
 ];
 
-const cartInitialState = {
-  items: [],
-  totalQuantity: 0,
-  totalPrice: 0,
-};
-
-const cartReducer = (state, action) => {
-  let updatedCartItems = [...state.items];
-  const updateTotals = (cartItems) => {
-    const totalQuantity = cartItems.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
-    const totalPrice = cartItems.reduce(
-      (sumPrice, item) => sumPrice + item.quantity * item.price,
-      0
-    );
-
-    return { totalQuantity, totalPrice };
-  };
-
-  switch (action.type) {
-    default:
-      return state;
-    case 'ADD':
-    case 'REMOVE': {
-      if (!action.meal) {
-        return state;
-      }
-      const existingMealIndex = updatedCartItems.findIndex(
-        (item) => item.id === action.meal.id
-      );
-      if (action.type === 'ADD') {
-        if (existingMealIndex === -1) {
-          updatedCartItems = [
-            ...updatedCartItems,
-            { ...action.meal, quantity: 1 },
-          ];
-        } else {
-          updatedCartItems[existingMealIndex] = {
-            ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex].quantity + 1,
-          };
-        }
-      } else {
-        if (existingMealIndex === -1) return state;
-        if (updatedCartItems[existingMealIndex].quantity > 1) {
-          updatedCartItems[existingMealIndex] = {
-            ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex].quantity - 1,
-          };
-        } else {
-          updatedCartItems = updatedCartItems.filter(
-            (item) => item.id !== action.meal.id
-          );
-        }
-      }
-      const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
-      return { items: updatedCartItems, totalPrice, totalQuantity };
-    }
-    case 'CLEAR':
-      return cartInitialState;
-  }
-};
-
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
-  const [state, cartDispatch] = useReducer(cartReducer, cartInitialState);
-
-  const filterMealsHandler = (keyword) => {
-    const filteredMeals = INITIAL_MEALS.filter((item) =>
-      item.name.includes(keyword)
-    );
-    setMeals(filteredMeals);
-  };
 
   return (
-    <CartContext.Provider value={{ ...state, cartDispatch }}>
-      <div>
-        <FilterMeals filterMealsHandler={filterMealsHandler} />
-        <MealsList meals={meals} />
-        <Cart />
-      </div>
-    </CartContext.Provider>
+    <div>
+      <MealsList meals={meals} />
+    </div>
   );
 };
 
