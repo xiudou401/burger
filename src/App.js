@@ -125,6 +125,7 @@ const App = () => {
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div>
         <MealsList meals={meals} />
+        <Cart />
       </div>
     </CartContext.Provider>
   );
