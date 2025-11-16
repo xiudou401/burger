@@ -75,7 +75,7 @@ const CartReducer = (state, action) => {
       (sum, item) => sum + item.quantity,
       0
     );
-    const totalPrice = cartItems.reducer(
+    const totalPrice = cartItems.reduce(
       (sumPrice, item) => sumPrice + item.price * item.quantity,
       0
     );
@@ -100,7 +100,7 @@ const CartReducer = (state, action) => {
             };
           }
         } else {
-          if (action.meal.quantity > 1) {
+          if (updatedItems[existingMealIndex].quantity > 1) {
             updatedItems[existingMealIndex] = {
               ...updatedItems[existingMealIndex],
               quantity: updatedItems[existingMealIndex].quantity - 1,
