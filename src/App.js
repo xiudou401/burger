@@ -62,13 +62,71 @@ const INITIAL_MEALS = [
   },
 ];
 
+const initialCartState = {
+  items: [],
+  totalQuantity: 0,
+  totalPrice: 0,
+};
+
+const CartReducer = (state, action) => {
+  let updatedItems = [...state.items];
+  const updateTotal = (cartItems) => {
+    const totalQuantity = cartItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
+    const totalPrice = cartItems.reducer(
+      (sumPrice, item) => sumPrice + item.price * item.quantity,
+      0
+    );
+    return { totalQuantity, totalPrice };
+  };
+  switch (action.type) {
+    default:
+      return state;
+    case 'ADD':
+    case 'REMOVE':
+      {
+        const existingMealIndex = updatedItems.findIndex(
+          (item) => item.id === action.meal.id
+        );
+        if (action.type === 'ADD') {
+          if (existingMealIndex === -1) {
+            updatedItems = [...updatedItems, { ...action.meal, quantity: 1 }];
+          } else {
+            updatedItems[existingMealIndex] = {
+              ...updatedItems[existingMealIndex],
+              quantity: updatedItems[existingMealIndex].quantity + 1,
+            };
+          }
+        } else {
+          if (action.meal.quantity > 1) {
+            updatedItems[existingMealIndex] = {
+              ...updatedItems[existingMealIndex],
+              quantity: updatedItems[existingMealIndex].quantity - 1,
+            };
+          } else {
+            updatedItems = updatedItems.filter(
+              (item) => item.id !== action.meal.id
+            );
+          }
+        }
+      }
+      const { totalQuantity, totalPrice } = updateTotal(updatedItems);
+      return { items: updatedItems, totalQuantity, totalPrice };
+  }
+};
+
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
+  const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
 
   return (
-    <div>
-      <MealsList meals={meals} />
-    </div>
+    <CartContext.Provider value={{ ...state, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
   );
 };
 
