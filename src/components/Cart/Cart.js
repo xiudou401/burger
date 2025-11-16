@@ -1,6 +1,6 @@
 import classes from './Cart.module.css';
 import iconImg from '../../asset/bag.png';
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../../store/CartContext';
 import CartDetails from './CartDetails/CartDetails';
 const Cart = () => {
@@ -16,6 +16,12 @@ const Cart = () => {
     }
     setShowCartDetails((prev) => !prev);
   };
+
+  useEffect(() => {
+    if (totalQuantity === 0) {
+      setShowCartDetails(false);
+    }
+  }, [totalQuantity]);
 
   return (
     <div className={classes.Cart} onClick={toggleCartDetails}>
