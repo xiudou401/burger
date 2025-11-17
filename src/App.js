@@ -124,9 +124,17 @@ const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
   const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
 
+  const filterMealsHandler = (keyword) => {
+    const filteredMeals = INITIAL_MEALS.filter((item) =>
+      item.name.includes(keyword)
+    );
+    setMeals(filteredMeals);
+  };
+
   return (
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div>
+        <FilterMeals filterMealsHandler={filterMealsHandler} />
         <MealsList meals={meals} />
         <Cart />
       </div>
