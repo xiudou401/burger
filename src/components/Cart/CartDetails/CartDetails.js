@@ -2,14 +2,31 @@ import classes from './CartDetails.module.css';
 import Backdrop from '../../UI/Backdrop/Backdrop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { CartContext } from '../../../store/CartContext';
 import MealItem from '../../Meals/Meal/MealItem';
+import Confirm from '../../UI/Confirm/Confirm';
 
 const CartDetails = () => {
   const cartCtx = useContext(CartContext);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const cancelShowConfirm = (e) => {
+    e.stopPropagation();
+    setShowConfirm(false);
+  };
+  const cartClearHandler = () => {
+    cartCtx.cartDispatch({ type: 'CLEAR' });
+  };
   return (
     <Backdrop>
+      {showConfirm && (
+        <Confirm
+          confirmText="Are you sure?"
+          cancelShowConfirm={cancelShowConfirm}
+          cartClearHandler={cartClearHandler}
+        />
+      )}
       <div
         className={classes.CartDetails}
         onClick={(e) => {
@@ -22,7 +39,7 @@ const CartDetails = () => {
             <FontAwesomeIcon icon={faTrash} />
             <span
               onClick={() => {
-                cartCtx.cartDispatch({ type: 'CLEAR' });
+                setShowConfirm(true);
               }}
             >
               Clear Cart
