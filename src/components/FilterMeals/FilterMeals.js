@@ -30,7 +30,7 @@ const FilterMeals = ({ filterMealsHandler }) => {
         clearTimeout(timer.current);
       }
     };
-  }, [keyword]);
+  }, [keyword, isComposing]);
 
   return (
     <div className={classes.FilterMeals}>
