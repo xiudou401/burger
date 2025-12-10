@@ -62,8 +62,70 @@ const INITIAL_MEALS = [
   },
 ];
 
+const initialCartState = {
+  items: [],
+  totalQuantity: 0,
+  totalPrice: 0,
+};
+
+const cartReducer = (state, action) => {
+  let updatedCartItems = [...state.items];
+  const updateTotals = (cartItems) => {
+    const totalQuantity = cartItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
+    const totalPrice = cartItems.reduce(
+      (sumPrice, item) => sumPrice + item.price * item.quantity,
+      0
+    );
+    return { totalPrice, totalQuantity };
+  };
+  switch (action.type) {
+    default:
+      return state;
+    case 'ADD':
+    case 'REMOVE': {
+      if (!action.meal) {
+        return state;
+      }
+      let existingMealIndex = updatedCartItems.findIndex(
+        (item) => item.id === action.meal.id
+      );
+      if (action.type === 'ADD') {
+        if (existingMealIndex === -1) {
+          updatedCartItems = [
+            ...updatedCartItems,
+            { ...action.meal, quantity: 1 },
+          ];
+        } else {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity + 1,
+          };
+        }
+      } else {
+        if (existingMealIndex === -1) return;
+        if (updatedCartItems[existingMealIndex].quantity > 1) {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex] - 1,
+          };
+        } else {
+          updatedCartItems = updatedCartItems.filter(
+            (item) => item.id !== action.meal.id
+          );
+        }
+        const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
+        return { totalPrice, totalQuantity, items: updatedCartItems };
+      }
+    }
+  }
+};
+
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
+  const [cart, cartDispatch] = useReducer(cartReducer, initialCartState);
 
   return (
     <div>
