@@ -109,16 +109,16 @@ const cartReducer = (state, action) => {
         if (updatedCartItems[existingMealIndex].quantity > 1) {
           updatedCartItems[existingMealIndex] = {
             ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex] - 1,
+            quantity: updatedCartItems[existingMealIndex].quantity - 1,
           };
         } else {
           updatedCartItems = updatedCartItems.filter(
             (item) => item.id !== action.meal.id
           );
         }
-        const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
-        return { totalPrice, totalQuantity, items: updatedCartItems };
       }
+      const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
+      return { totalPrice, totalQuantity, items: updatedCartItems };
     }
   }
 };
@@ -128,9 +128,11 @@ const App = () => {
   const [cart, cartDispatch] = useReducer(cartReducer, initialCartState);
 
   return (
-    <div>
-      <MealsList meals={meals} />
-    </div>
+    <CartContext.Provider value={{ ...cart, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
   );
 };
 
