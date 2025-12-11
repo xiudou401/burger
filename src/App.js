@@ -128,9 +128,11 @@ const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
   return (
-    <div>
-      <MealsList meals={meals} />
-    </div>
+    <CartContext.Provider value={{ ...state, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
   );
 };
 
