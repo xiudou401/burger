@@ -60,13 +60,76 @@ const INITIAL_MEALS = [
   },
 ];
 
+const initialCartState = {
+  items: [],
+  totalQuantity: 0,
+  totalPrice: 0,
+};
+
+const cartReducer = (state, action) => {
+  let updateCartItems = [...state.items];
+  const updateTotals = (cartItems) => {
+    const totalQuantity = cartItems.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    );
+    const totalPrice = cartItems.reduce(
+      (sumPrice, item) => sumPrice + item.quantity * item.price,
+      0
+    );
+    return { totalQuantity, totalPrice };
+  };
+  switch (action.type) {
+    default:
+      return state;
+    case 'ADD':
+    case 'REMOVE': {
+      let existingMealIndex = updateCartItems.findIndex(
+        (item) => item.id === action.meal.id
+      );
+      if (action.type === 'ADD') {
+        if (existingMealIndex === -1) {
+          updateCartItems = [
+            ...updateCartItems,
+            { ...action.meal, quantity: 1 },
+          ];
+        } else {
+          updateCartItems[existingMealIndex] = {
+            ...updateCartItems[existingMealIndex],
+            quantity: updateCartItems[existingMealIndex].quantity + 1,
+          };
+        }
+      } else {
+        if (existingMealIndex === -1) {
+          return state;
+        }
+        if (updateCartItems[existingMealIndex].quantity > 1) {
+          updateCartItems[existingMealIndex] = {
+            ...updateCartItems[existingMealIndex],
+            quantity: updateCartItems[existingMealIndex].quantity - 1,
+          };
+        } else {
+          updateCartItems = updateCartItems.filter(
+            (item) => item.id !== action.meal.id
+          );
+        }
+      }
+      const { totalQuantity, totalPrice } = updateTotals(updateCartItems);
+      return { items: updateCartItems, totalQuantity, totalPrice };
+    }
+  }
+};
+
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
+  const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
   return (
-    <div>
-      <MealsList meals={meals} />
-    </div>
+    <CartContext.Provider value={{ ...state, cartDispatch }}>
+      <div>
+        <MealsList meals={meals} />
+      </div>
+    </CartContext.Provider>
   );
 };
 
