@@ -118,6 +118,8 @@ const cartReducer = (state, action) => {
       const { totalQuantity, totalPrice } = updateTotals(updateCartItems);
       return { items: updateCartItems, totalQuantity, totalPrice };
     }
+    case 'CLEAR':
+      return initialCartState;
   }
 };
 

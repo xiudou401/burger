@@ -18,7 +18,12 @@ const CartDetails = () => {
       >
         <header className={classes.Header}>
           <h2 className={classes.Title}>餐品详情</h2>
-          <div className={classes.Clear}>
+          <div
+            className={classes.Clear}
+            onClick={() => {
+              cartCtx.cartDispatch({ type: 'CLEAR' });
+            }}
+          >
             <FontAwesomeIcon icon={faTrash} />
             <span>清空购物车</span>
           </div>
