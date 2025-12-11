@@ -69,7 +69,7 @@ const initialCartState = {
 };
 
 const cartReducer = (state, action) => {
-  let updatedCartItems = [...state.items];
+  let updateCartItems = [...state.items];
   const updateTotals = (cartItems) => {
     const totalQuantity = cartItems.reduce(
       (sum, item) => sum + item.quantity,
@@ -79,60 +79,58 @@ const cartReducer = (state, action) => {
       (sumPrice, item) => sumPrice + item.price * item.quantity,
       0
     );
-    return { totalPrice, totalQuantity };
+    return { totalQuantity, totalPrice };
   };
+
   switch (action.type) {
     default:
       return state;
     case 'ADD':
     case 'REMOVE': {
-      if (!action.meal) {
-        return state;
-      }
-      let existingMealIndex = updatedCartItems.findIndex(
+      if (!action.meal) return state;
+      let existingMealIndex = updateCartItems.findIndex(
         (item) => item.id === action.meal.id
       );
       if (action.type === 'ADD') {
         if (existingMealIndex === -1) {
-          updatedCartItems = [
-            ...updatedCartItems,
+          updateCartItems = [
+            ...updateCartItems,
             { ...action.meal, quantity: 1 },
           ];
         } else {
-          updatedCartItems[existingMealIndex] = {
-            ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex].quantity + 1,
+          updateCartItems[existingMealIndex] = {
+            ...updateCartItems[existingMealIndex],
+            quantity: updateCartItems[existingMealIndex].quantity + 1,
           };
         }
       } else {
-        if (existingMealIndex === -1) return;
-        if (updatedCartItems[existingMealIndex].quantity > 1) {
-          updatedCartItems[existingMealIndex] = {
-            ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex].quantity - 1,
+        if (existingMealIndex === -1) {
+          return state;
+        }
+        if (updateCartItems[existingMealIndex].quantity > 1) {
+          updateCartItems[existingMealIndex] = {
+            ...updateCartItems[existingMealIndex],
+            quantity: updateCartItems[existingMealIndex].quantity + 1,
           };
         } else {
-          updatedCartItems = updatedCartItems.filter(
+          updateCartItems = updateCartItems.filter(
             (item) => item.id !== action.meal.id
           );
         }
       }
-      const { totalPrice, totalQuantity } = updateTotals(updatedCartItems);
-      return { totalPrice, totalQuantity, items: updatedCartItems };
+      const { totalQuantity, totalPrice } = updateTotals(updateCartItems);
+      return { items: updateCartItems, totalPrice, totalQuantity };
     }
   }
 };
 
 const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
-  const [cart, cartDispatch] = useReducer(cartReducer, initialCartState);
-
+  const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
   return (
-    <CartContext.Provider value={{ ...cart, cartDispatch }}>
-      <div>
-        <MealsList meals={meals} />
-      </div>
-    </CartContext.Provider>
+    <div>
+      <MealsList meals={meals} />
+    </div>
   );
 };
 
