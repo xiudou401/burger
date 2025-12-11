@@ -110,7 +110,7 @@ const cartReducer = (state, action) => {
         if (updateCartItems[existingMealIndex].quantity > 1) {
           updateCartItems[existingMealIndex] = {
             ...updateCartItems[existingMealIndex],
-            quantity: updateCartItems[existingMealIndex].quantity + 1,
+            quantity: updateCartItems[existingMealIndex].quantity - 1,
           };
         } else {
           updateCartItems = updateCartItems.filter(
