@@ -46,7 +46,7 @@ const CartDetails = () => {
         </header>
         <div className={classes.MealList}>
           {cartCtx.items.map((item) => (
-            <MealItem key={item.id} meal={item} />
+            <MealItem key={item.id} meal={item} noDesc />
           ))}
         </div>
       </div>

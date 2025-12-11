@@ -129,7 +129,6 @@ const App = () => {
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
   const onSearch = (keyword) => {
-    console.log(keyword);
     setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
   };
 
