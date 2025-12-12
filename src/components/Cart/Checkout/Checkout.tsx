@@ -9,7 +9,11 @@ import Bar from './Bar/Bar';
 
 const checkoutRoot = document.getElementById('checkout-root');
 
-const Checkout = ({ hideCheckoutHandler }) => {
+interface CheckoutProps {
+  hideCheckoutHandler: () => void;
+}
+
+const Checkout: React.FC<CheckoutProps> = ({ hideCheckoutHandler }) => {
   const cartCtx = useContext(CartContext);
   return ReactDOM.createPortal(
     <div className={classes.Checkout}>

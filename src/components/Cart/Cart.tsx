@@ -1,15 +1,16 @@
 import classes from './Cart.module.css';
 import iconImg from '../../asset/bag.png';
-import { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../../store/CartContext';
 import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
+import { CartContextValue } from '../../types/cart';
 
-const Cart = () => {
-  const cartCtx = useContext(CartContext);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
-  const toggleCartDetails = () => {
+const Cart: React.FC = () => {
+  const cartCtx = useContext<CartContextValue>(CartContext);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+  const [showCheckout, setShowCheckout] = useState<boolean>(false);
+  const toggleCartDetails = (): void => {
     if (cartCtx.totalQuantity === 0) {
       setShowDetails(false);
       return;
@@ -17,7 +18,7 @@ const Cart = () => {
     setShowDetails((prevState) => !prevState);
   };
 
-  const showCheckoutHandler = () => {
+  const showCheckoutHandler = (): void => {
     if (cartCtx.totalQuantity === 0) {
       setShowCheckout(false);
       return;
@@ -25,7 +26,7 @@ const Cart = () => {
     setShowCheckout(true);
   };
 
-  const hideCheckoutHandler = () => {
+  const hideCheckoutHandler = (): void => {
     setShowCheckout(false);
   };
 
@@ -42,7 +43,7 @@ const Cart = () => {
       {showCheckout && <Checkout hideCheckoutHandler={hideCheckoutHandler} />}
       <div className={classes.CartIcon}>
         <img className={classes.CartIconImg} src={iconImg} alt="Shopping bag" />
-        {cartCtx.totalQuantity && (
+        {cartCtx.totalQuantity > 0 && (
           <span className={classes.TotalQuantity}>{cartCtx.totalQuantity}</span>
         )}
       </div>
@@ -55,7 +56,11 @@ const Cart = () => {
         className={`${classes.BuyButton} ${
           cartCtx.totalQuantity === 0 ? classes.Disabled : ''
         }`}
-        onClick={showCheckoutHandler}
+        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+          e.stopPropagation();
+          showCheckoutHandler();
+        }}
+        disabled={cartCtx.totalQuantity === 0}
       >
         Buy
       </button>
