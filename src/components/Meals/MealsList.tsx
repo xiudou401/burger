@@ -1,7 +1,13 @@
 import MealItem from './Meal/MealItem';
 import classes from './MealsList.module.css';
+import type { Meal } from '../../types/cart';
+import React from 'react';
 
-const MealsList = ({ meals }) => {
+interface MealsListProps {
+  meals: Meal[];
+}
+
+const MealsList: React.FC<MealsListProps> = ({ meals }) => {
   return (
     <div className={classes.MealsList}>
       {meals.map((meal) => (

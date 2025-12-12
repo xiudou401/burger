@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "module": "esnext",
+    "jsx": "react", // 启用对 JSX/TSX 的支持
+    "moduleResolution": "node", // 如何解析模块（如 './App'）
+    "esModuleInterop": true, // 允许默认导入 CommonJS 模块
+    "strict": true, // 启用所有严格类型检查选项
+    "skipLibCheck": true, // 跳过声明文件的类型检查
+    "forceConsistentCasingInFileNames": true,
+    "lib": ["dom", "dom.iterable", "esnext"] // 包含的运行时环境库
+  },
+  "include": ["src/**/*"] // 只包含 src 目录下的文件
+}

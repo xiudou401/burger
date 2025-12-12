@@ -1,8 +1,9 @@
-import { useReducer, useState } from 'react';
+import React, { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
-import Cart from './components/Cart/Cart';
-import FilterMeals from './components/FilterMeals/FilterMeals';
+// import Cart from './components/Cart/Cart';
+// import FilterMeals from './components/FilterMeals/FilterMeals';
+import type { CartItem, CartState, CartAction } from './types/cart';
 
 const INITIAL_MEALS = [
   {
@@ -62,15 +63,15 @@ const INITIAL_MEALS = [
   },
 ];
 
-const initialCartState = {
+const initialCartState: CartState = {
   items: [],
   totalQuantity: 0,
   totalPrice: 0,
 };
 
-const cartReducer = (state, action) => {
+const cartReducer = (state: CartState, action: CartAction) => {
   let updateCartItems = [...state.items];
-  const updateTotals = (cartItems) => {
+  const updateTotals = (cartItems: CartItem[]) => {
     const totalQuantity = cartItems.reduce(
       (sum, item) => sum + item.quantity,
       0
@@ -128,17 +129,18 @@ const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
-  const onSearch = (keyword) => {
-    setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
-  };
+  // const onSearch = (keyword) => {
+  //   setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
+  // };
 
   return (
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div>
-        <FilterMeals onSearch={onSearch} />
+        {/* <FilterMeals onSearch={onSearch} /> */}
         <MealsList meals={meals} />
-        <Cart />
+        {/* <Cart /> */}
       </div>
+      //{' '}
     </CartContext.Provider>
   );
 };
