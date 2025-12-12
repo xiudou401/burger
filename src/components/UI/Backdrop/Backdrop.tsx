@@ -1,10 +1,16 @@
 import ReactDOM from 'react-dom';
 import classes from './Backdrop.module.css';
+import React, { PropsWithChildren } from 'react';
 
 const backdropRoot = document.getElementById('backdrop-root');
-const Backdrop = (props) => {
+
+interface BackdropProps {
+  className?: string;
+}
+const Backdrop: React.FC<PropsWithChildren<BackdropProps>> = (props) => {
+  if (!backdropRoot) return null;
   return ReactDOM.createPortal(
-    <div className={`${classes.Backdrop} ${props.className}`}>
+    <div className={`${classes.Backdrop} ${props.className || ''}`}>
       {props.children}
     </div>,
     backdropRoot

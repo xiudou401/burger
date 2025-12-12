@@ -1,15 +1,19 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classes from './FilterMeals.module.css';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import { useEffect, useRef, useState } from 'react';
+import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 
-const FilterMeals = ({ onSearch }) => {
+interface FilterMealsProps {
+  onSearch: (keyword: string) => void;
+}
+
+const FilterMeals: React.FC<FilterMealsProps> = ({ onSearch }) => {
   const [keyword, setKeyword] = useState('');
-  const changeHandler = (e) => {
+  const changeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     setKeyword(e.target.value);
   };
 
-  let timer = useRef(null);
+  let timer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     timer.current = setTimeout(() => {
@@ -21,7 +25,7 @@ const FilterMeals = ({ onSearch }) => {
         clearTimeout(timer.current);
       }
     };
-  }, [keyword]);
+  }, [keyword, onSearch]);
 
   return (
     <div className={classes.FilterMeals}>

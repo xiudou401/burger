@@ -1,7 +1,14 @@
+import React from 'react';
 import Backdrop from '../Backdrop/Backdrop';
 import classes from './Confirm.module.css';
 
-const Confirm = ({ confirmText, onCancel, onOk }) => {
+interface ConfirmProps {
+  confirmText: string;
+  onCancel: () => void;
+  onOk: () => void;
+}
+
+const Confirm: React.FC<ConfirmProps> = ({ confirmText, onCancel, onOk }) => {
   return (
     <Backdrop className={classes.ConfirmOuter}>
       <div className={classes.Confirm}>

@@ -1,9 +1,10 @@
 import React, { useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
-// import Cart from './components/Cart/Cart';
-// import FilterMeals from './components/FilterMeals/FilterMeals';
+
+import FilterMeals from './components/FilterMeals/FilterMeals';
 import type { CartItem, CartState, CartAction } from './types/cart';
+import Cart from './components/Cart/Cart';
 
 const INITIAL_MEALS = [
   {
@@ -129,18 +130,17 @@ const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
-  // const onSearch = (keyword) => {
-  //   setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
-  // };
+  const onSearch = (keyword: string) => {
+    setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
+  };
 
   return (
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div>
-        {/* <FilterMeals onSearch={onSearch} /> */}
+        <FilterMeals onSearch={onSearch} />
         <MealsList meals={meals} />
-        {/* <Cart /> */}
+        <Cart />
       </div>
-      //{' '}
     </CartContext.Provider>
   );
 };
