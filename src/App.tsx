@@ -3,6 +3,7 @@ import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 import Cart from './components/Cart/Cart';
 import FilterMeals from './components/FilterMeals/FilterMeals';
+import { CartAction, CartItem, CartState } from './types/cart';
 
 const INITIAL_MEALS = [
   {
@@ -68,9 +69,9 @@ const initialCartState = {
   totalPrice: 0,
 };
 
-const cartReducer = (state, action) => {
+const cartReducer = (state: CartState, action: CartAction): CartState => {
   let updateCartItems = [...state.items];
-  const updateTotals = (cartItems) => {
+  const updateTotals = (cartItems: CartItem[]) => {
     const totalQuantity = cartItems.reduce(
       (sum, item) => sum + item.quantity,
       0
@@ -128,7 +129,7 @@ const App = () => {
   const [meals, setMeals] = useState(INITIAL_MEALS);
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
-  const onSearch = (keyword) => {
+  const onSearch = (keyword: string) => {
     setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
   };
 

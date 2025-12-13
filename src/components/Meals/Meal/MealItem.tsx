@@ -1,7 +1,13 @@
+import React from 'react';
+import { Meal } from '../../../types/cart';
 import QuantityCounter from '../../UI/Counter/QuantityCounter';
 import classes from './MealItem.module.css';
 
-const MealItem = ({ meal, noDesc }) => {
+interface MealItemProps {
+  meal: Meal;
+  noDesc?: boolean;
+}
+const MealItem: React.FC<MealItemProps> = ({ meal, noDesc }) => {
   return (
     <div className={classes.MealItem}>
       <div className={classes.ImageWrapper}>

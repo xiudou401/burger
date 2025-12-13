@@ -3,8 +3,13 @@ import { CartContext } from '../../../store/CartContext';
 import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Meal } from '../../../types/cart';
 
-const QuantityCounter = ({ meal }) => {
+interface QuantityCounterProps {
+  meal: Meal;
+}
+
+const QuantityCounter: React.FC<QuantityCounterProps> = ({ meal }) => {
   const cartCtx = useContext(CartContext);
   const quantity =
     cartCtx.items.find((item) => item.id === meal.id)?.quantity || 0;
