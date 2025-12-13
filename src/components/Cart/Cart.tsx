@@ -4,11 +4,12 @@ import { useContext, useEffect, useState } from 'react';
 import { CartContext } from '../../store/CartContext';
 import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
+import { CartContextValue } from '../../types/cart';
 
 const Cart = () => {
-  const cartCtx = useContext(CartContext);
-  const [showDetails, setShowDetails] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
+  const cartCtx = useContext<CartContextValue>(CartContext);
+  const [showDetails, setShowDetails] = useState<Boolean>(false);
+  const [showCheckout, setShowCheckout] = useState<Boolean>(false);
   const toggleCartDetails = () => {
     if (cartCtx.totalQuantity === 0) {
       setShowDetails(false);
