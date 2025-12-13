@@ -1,7 +1,12 @@
+import React from 'react';
+import { CartItem } from '../../../../types/cart';
 import QuantityCounter from '../../../UI/Counter/QuantityCounter';
 import classes from './CheckoutItem.module.css';
 
-const CheckoutItem = ({ meal }) => {
+interface CheckoutItemProps {
+  meal: CartItem;
+}
+const CheckoutItem: React.FC<CheckoutItemProps> = ({ meal }) => {
   return (
     <div className={classes.CheckoutItem}>
       <div className={classes.MealImg}>

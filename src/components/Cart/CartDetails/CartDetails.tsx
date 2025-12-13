@@ -2,14 +2,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Backdrop from '../../UI/Backdrop/Backdrop';
 import classes from './CartDetails.module.css';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { useContext, useState } from 'react';
+import { MouseEvent, useContext, useState } from 'react';
 import { CartContext } from '../../../store/CartContext';
 import MealItem from '../../Meals/Meal/MealItem';
 import Confirm from '../../UI/Confirm/Confirm';
+import { CartContextValue } from '../../../types/cart';
 
 const CartDetails = () => {
-  const cartCtx = useContext(CartContext);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const cartCtx = useContext<CartContextValue>(CartContext);
+  const [showConfirm, setShowConfirm] = useState<Boolean>(false);
 
   const onCancel = () => {
     setShowConfirm(false);
@@ -17,11 +18,12 @@ const CartDetails = () => {
   const onOk = () => {
     cartCtx.cartDispatch({ type: 'CLEAR' });
   };
+
   return (
     <Backdrop>
       <div
         className={classes.CartDetails}
-        onClick={(e) => {
+        onClick={(e: MouseEvent<HTMLDivElement>) => {
           e.stopPropagation();
         }}
       >

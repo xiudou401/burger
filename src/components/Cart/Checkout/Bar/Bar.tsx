@@ -1,6 +1,11 @@
+import React from 'react';
 import classes from './Bar.module.css';
 
-const Bar = ({ totalPrice }) => {
+interface BarProps {
+  totalPrice: number;
+}
+
+const Bar: React.FC<BarProps> = ({ totalPrice }) => {
   return (
     <div className={classes.Bar}>
       <div className={classes.TotalPrice}>{totalPrice}</div>
