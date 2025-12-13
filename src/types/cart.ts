@@ -18,10 +18,16 @@ export interface CartState {
   totalPrice: number;
 }
 
+export const CART_ACTIONS = {
+  ADD: 'ADD',
+  REMOVE: 'REMOVE',
+  CLEAR: 'CLEAR',
+} as const;
+
 export type CartAction =
-  | { type: 'ADD'; meal: Meal }
-  | { type: 'REMOVE'; meal: Meal }
-  | { type: 'CLEAR' };
+  | { type: typeof CART_ACTIONS.ADD; meal: Meal }
+  | { type: typeof CART_ACTIONS.REMOVE; meal: Meal }
+  | { type: typeof CART_ACTIONS.CLEAR };
 
 export interface CartContextValue extends CartState {
   cartDispatch: Dispatch<CartAction>;

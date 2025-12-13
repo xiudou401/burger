@@ -3,10 +3,16 @@ import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 
 import FilterMeals from './components/FilterMeals/FilterMeals';
-import type { CartItem, CartState, CartAction } from './types/cart';
+import type {
+  CartItem,
+  CartState,
+  CartAction,
+  Meal,
+  CartContextValue,
+} from './types/cart';
 import Cart from './components/Cart/Cart';
 
-const INITIAL_MEALS = [
+const INITIAL_MEALS: Meal[] = [
   {
     id: '1',
     name: '汉堡包',
@@ -70,17 +76,19 @@ const initialCartState: CartState = {
   totalPrice: 0,
 };
 
-const cartReducer = (state: CartState, action: CartAction) => {
+const cartReducer = (state: CartState, action: CartAction): CartState => {
   let updateCartItems = [...state.items];
   const updateTotals = (cartItems: CartItem[]) => {
     const totalQuantity = cartItems.reduce(
       (sum, item) => sum + item.quantity,
       0
     );
-    const totalPrice = cartItems.reduce(
-      (sumPrice, item) => sumPrice + item.quantity * item.price,
-      0
+    const totalPrice = parseFloat(
+      cartItems
+        .reduce((sumPrice, item) => sumPrice + item.quantity * item.price, 0)
+        .toFixed(2)
     );
+
     return { totalQuantity, totalPrice };
   };
   switch (action.type) {
@@ -131,7 +139,14 @@ const App = () => {
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
   const onSearch = (keyword: string) => {
-    setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
+    const trimmedKeyword = keyword.trim().toLowerCase();
+    if (!trimmedKeyword) {
+      setMeals([...INITIAL_MEALS]);
+      return;
+    }
+    setMeals(
+      INITIAL_MEALS.filter((meal) => meal.name.includes(trimmedKeyword))
+    );
   };
 
   return (
