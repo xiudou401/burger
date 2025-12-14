@@ -3,9 +3,15 @@ import MealsList from './components/Meals/MealsList';
 import { CartContext } from './store/CartContext';
 import Cart from './components/Cart/Cart';
 import FilterMeals from './components/FilterMeals/FilterMeals';
-import { CartAction, CartItem, CartState } from './types/cart';
+import {
+  CART_ACTIONS,
+  CartAction,
+  CartItem,
+  CartState,
+  Meal,
+} from './types/cart';
 
-const INITIAL_MEALS = [
+const INITIAL_MEALS: Meal[] = [
   {
     id: '1',
     name: '汉堡包',
@@ -63,14 +69,14 @@ const INITIAL_MEALS = [
   },
 ];
 
-const initialCartState = {
+const initialCartState: CartState = {
   items: [],
   totalQuantity: 0,
   totalPrice: 0,
 };
 
 const cartReducer = (state: CartState, action: CartAction): CartState => {
-  let updateCartItems = [...state.items];
+  let updateCartItems: CartItem[] = [...state.items];
   const updateTotals = (cartItems: CartItem[]) => {
     const totalQuantity = cartItems.reduce(
       (sum, item) => sum + item.quantity,
@@ -85,12 +91,12 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
   switch (action.type) {
     default:
       return state;
-    case 'ADD':
-    case 'REMOVE': {
+    case CART_ACTIONS.ADD:
+    case CART_ACTIONS.REMOVE: {
       let existingMealIndex = updateCartItems.findIndex(
         (item) => item.id === action.meal.id
       );
-      if (action.type === 'ADD') {
+      if (action.type === CART_ACTIONS.ADD) {
         if (existingMealIndex === -1) {
           updateCartItems = [
             ...updateCartItems,
@@ -107,30 +113,36 @@ const cartReducer = (state: CartState, action: CartAction): CartState => {
           return state;
         }
         if (updateCartItems[existingMealIndex].quantity > 1) {
+          // updateCartItems[existingMealIndex].quantity -= 1;
           updateCartItems[existingMealIndex] = {
             ...updateCartItems[existingMealIndex],
             quantity: updateCartItems[existingMealIndex].quantity - 1,
           };
         } else {
           updateCartItems = updateCartItems.filter(
-            (item) => item.id !== action.meal.id
+            (item: CartItem) => item.id !== action.meal.id
           );
         }
       }
       const { totalQuantity, totalPrice } = updateTotals(updateCartItems);
       return { items: updateCartItems, totalQuantity, totalPrice };
     }
-    case 'CLEAR':
+    case CART_ACTIONS.CLEAR:
       return initialCartState;
   }
 };
 
 const App = () => {
-  const [meals, setMeals] = useState(INITIAL_MEALS);
+  const [meals, setMeals] = useState<Meal[]>(INITIAL_MEALS);
   const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
 
-  const onSearch = (keyword: string) => {
-    setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
+  const onSearch = (keyword: string): void => {
+    const normalizedKeyword = keyword.trim().toLocaleLowerCase();
+    setMeals(
+      INITIAL_MEALS.filter((meal: Meal) =>
+        meal.name.includes(normalizedKeyword)
+      )
+    );
   };
 
   return (

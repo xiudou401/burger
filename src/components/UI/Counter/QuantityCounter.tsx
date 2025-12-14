@@ -3,14 +3,14 @@ import { CartContext } from '../../../store/CartContext';
 import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { Meal } from '../../../types/cart';
+import { CART_ACTIONS, CartContextValue, Meal } from '../../../types/cart';
 
 interface QuantityCounterProps {
   meal: Meal;
 }
 
 const QuantityCounter: React.FC<QuantityCounterProps> = ({ meal }) => {
-  const cartCtx = useContext(CartContext);
+  const cartCtx = useContext<CartContextValue>(CartContext);
   const quantity =
     cartCtx.items.find((item) => item.id === meal.id)?.quantity || 0;
   return (
@@ -20,7 +20,7 @@ const QuantityCounter: React.FC<QuantityCounterProps> = ({ meal }) => {
           <button
             className={classes.Decrease}
             onClick={() => {
-              cartCtx.cartDispatch({ type: 'REMOVE', meal });
+              cartCtx.cartDispatch({ type: CART_ACTIONS.REMOVE, meal });
             }}
           >
             <FontAwesomeIcon icon={faMinus} />
@@ -31,7 +31,7 @@ const QuantityCounter: React.FC<QuantityCounterProps> = ({ meal }) => {
       <button
         className={classes.Increase}
         onClick={() => {
-          cartCtx.cartDispatch({ type: 'ADD', meal });
+          cartCtx.cartDispatch({ type: CART_ACTIONS.ADD, meal });
         }}
       >
         <FontAwesomeIcon icon={faPlus} />
