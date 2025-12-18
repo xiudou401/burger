@@ -1,16 +1,3 @@
-import { useReducer, useState } from 'react';
-import MealsList from './components/Meals/MealsList';
-import { CartContext } from './store/CartContext';
-import Cart from './components/Cart/Cart';
-import FilterMeals from './components/FilterMeals/FilterMeals';
-import {
-  CART_ACTIONS,
-  CartAction,
-  CartItem,
-  CartState,
-  Meal,
-} from './types/cart';
-
 const INITIAL_MEALS: Meal[] = [
   {
     id: '1',
@@ -69,91 +56,8 @@ const INITIAL_MEALS: Meal[] = [
   },
 ];
 
-const initialCartState: CartState = {
-  items: [],
-  totalQuantity: 0,
-  totalPrice: 0,
-};
-
-const cartReducer = (state: CartState, action: CartAction): CartState => {
-  let updateCartItems: CartItem[] = [...state.items];
-  const updateTotals = (cartItems: CartItem[]) => {
-    const totalQuantity = cartItems.reduce(
-      (sum, item) => sum + item.quantity,
-      0
-    );
-    const totalPrice = cartItems.reduce(
-      (sumPrice, item) => sumPrice + item.quantity * item.price,
-      0
-    );
-    return { totalQuantity, totalPrice };
-  };
-  switch (action.type) {
-    default:
-      return state;
-    case CART_ACTIONS.ADD:
-    case CART_ACTIONS.REMOVE: {
-      let existingMealIndex = updateCartItems.findIndex(
-        (item) => item.id === action.meal.id
-      );
-      if (action.type === CART_ACTIONS.ADD) {
-        if (existingMealIndex === -1) {
-          updateCartItems = [
-            ...updateCartItems,
-            { ...action.meal, quantity: 1 },
-          ];
-        } else {
-          updateCartItems[existingMealIndex] = {
-            ...updateCartItems[existingMealIndex],
-            quantity: updateCartItems[existingMealIndex].quantity + 1,
-          };
-        }
-      } else {
-        if (existingMealIndex === -1) {
-          return state;
-        }
-        if (updateCartItems[existingMealIndex].quantity > 1) {
-          // updateCartItems[existingMealIndex].quantity -= 1;
-          updateCartItems[existingMealIndex] = {
-            ...updateCartItems[existingMealIndex],
-            quantity: updateCartItems[existingMealIndex].quantity - 1,
-          };
-        } else {
-          updateCartItems = updateCartItems.filter(
-            (item: CartItem) => item.id !== action.meal.id
-          );
-        }
-      }
-      const { totalQuantity, totalPrice } = updateTotals(updateCartItems);
-      return { items: updateCartItems, totalQuantity, totalPrice };
-    }
-    case CART_ACTIONS.CLEAR:
-      return initialCartState;
-  }
-};
-
 const App = () => {
-  const [meals, setMeals] = useState<Meal[]>(INITIAL_MEALS);
-  const [state, cartDispatch] = useReducer(cartReducer, initialCartState);
-
-  const onSearch = (keyword: string): void => {
-    const normalizedKeyword = keyword.trim().toLocaleLowerCase();
-    setMeals(
-      INITIAL_MEALS.filter((meal: Meal) =>
-        meal.name.includes(normalizedKeyword)
-      )
-    );
-  };
-
-  return (
-    <CartContext.Provider value={{ ...state, cartDispatch }}>
-      <div>
-        <FilterMeals onSearch={onSearch} />
-        <MealsList meals={meals} />
-        <Cart />
-      </div>
-    </CartContext.Provider>
-  );
+  return <div>app</div>;
 };
 
 export default App;
