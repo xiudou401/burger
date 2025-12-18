@@ -1,4 +1,14 @@
-const INITIAL_MEALS: Meal[] = [
+import { useReducer, useState } from 'react';
+import MealsList from './components/Meals/MealsList';
+import {
+  CART_ACTIONS,
+  CartAction,
+  CartMeal,
+  CartState,
+  Meal,
+} from './types/cart';
+
+const INITIAL_MEALS = [
   {
     id: '1',
     name: '汉堡包',
@@ -56,8 +66,78 @@ const INITIAL_MEALS: Meal[] = [
   },
 ];
 
+const initialCartState: CartState = {
+  items: [],
+  totalQuantity: 0,
+  totalPrice: 0,
+};
+
+const CartReducer = (state: CartState, action: CartAction) => {
+  let updatedCartItems = [...state.items];
+  const updateTotals = (cartMeals: CartMeal[]) => {
+    const totalQuantity = cartMeals.reduce(
+      (sumQuantity, meal) => sumQuantity + meal.quantity,
+      0
+    );
+    const totalPrice = cartMeals.reduce(
+      (sumPrice, meal) => sumPrice + meal.price * meal.quantity,
+      0
+    );
+    return { totalQuantity, totalPrice };
+  };
+
+  switch (action.type) {
+    case CART_ACTIONS.ADD:
+    case CART_ACTIONS.REMOVE: {
+      const existingMealIndex = updatedCartItems.findIndex(
+        (item) => item.id === action.meal.id
+      );
+      if (action.type === CART_ACTIONS.ADD) {
+        if (existingMealIndex === -1) {
+          updatedCartItems = [
+            ...updatedCartItems,
+            { ...action.meal, quantity: 1 },
+          ];
+        } else {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity + 1,
+          };
+        }
+      } else {
+        if (existingMealIndex === -1) {
+          return state;
+        }
+        if (updatedCartItems[existingMealIndex].quantity > 1) {
+          updatedCartItems[existingMealIndex] = {
+            ...updatedCartItems[existingMealIndex],
+            quantity: updatedCartItems[existingMealIndex].quantity - 1,
+          };
+        } else {
+          updatedCartItems = updatedCartItems.filter(
+            (item) => item.id !== action.meal.id
+          );
+        }
+      }
+      const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
+
+      return { items: updatedCartItems, totalQuantity, totalPrice };
+    }
+    case CART_ACTIONS.CLEAR:
+      return initialCartState;
+    default:
+      return state;
+  }
+};
+
 const App = () => {
-  return <div>app</div>;
+  const [meals, setMeals] = useState<Meal[]>(INITIAL_MEALS);
+  const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
+  return (
+    <div className="App">
+      <MealsList meals={meals} />
+    </div>
+  );
 };
 
 export default App;
