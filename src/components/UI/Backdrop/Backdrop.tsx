@@ -8,7 +8,7 @@ interface BackdropProps {
 }
 const Backdrop: React.FC<PropsWithChildren<BackdropProps>> = (props) => {
   return ReactDOM.createPortal(
-    <div className={`${classes.Backdrop} ${props.className}`}>
+    <div className={`${classes.Backdrop} ${props.className || ''}`}>
       {props.children}
     </div>,
     backdropRoot
