@@ -1,6 +1,10 @@
 import React from 'react';
 
-const Bar = () => {
+interface BarProps {
+  totalPrice: Number;
+}
+
+const Bar = ({ totalPrice }: BarProps) => {
   return <div></div>;
 };
 

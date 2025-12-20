@@ -29,7 +29,12 @@ const CartDetails = () => {
       {showConfirm && (
         <Confirm confirmText="Are you sure?" onCancel={onCancel} onOk={onOk} />
       )}
-      <div className={classes.CartDetails}>
+      <div
+        className={classes.CartDetails}
+        onClick={(e: MouseEvent<HTMLDivElement>) => {
+          e.stopPropagation();
+        }}
+      >
         <header className={classes.Header}>
           <h2 className={classes.Title}>餐品详情</h2>
           <div className={classes.Clear} onClick={handleClearCart}>
