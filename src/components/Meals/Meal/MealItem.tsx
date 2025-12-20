@@ -17,10 +17,10 @@ const MealItem = ({ meal, noDesc }: MealItemProps) => {
       <div className={classes.DescBox}>
         <h2 className={classes.Name}>{meal.name}</h2>
         {!noDesc && <p className={classes.Description}>{meal.description}</p>}
-      </div>
-      <div className={classes.PriceWrapper}>
-        <span className={classes.Price}>{meal.price}</span>
-        <QuantityCounter meal={meal} />
+        <div className={classes.PriceWrapper}>
+          <span className={classes.Price}>{meal.price}</span>
+          <QuantityCounter meal={meal} />
+        </div>
       </div>
     </div>
   );
