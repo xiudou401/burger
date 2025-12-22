@@ -1,7 +1,7 @@
 import { Dispatch } from 'react';
 
 export interface Meal {
-  id: string;
+  _id: string;
   name: string;
   description: string;
   price: number;

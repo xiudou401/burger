@@ -11,7 +11,7 @@ interface QuantityCounterProps {
 
 const QuantityCounter = ({ meal }: QuantityCounterProps) => {
   const { items, cartDispatch } = useContext(CartContext);
-  const mealInCart = items.find((item) => item.id === meal.id);
+  const mealInCart = items.find((item) => item._id === meal._id);
   const quantity = mealInCart ? mealInCart.quantity : 0;
 
   const onIncrease = () => {
