@@ -77,24 +77,28 @@ const CartReducer = (state: CartState, action: CartAction) => {
 
 const App = () => {
   const [meals, setMeals] = useState<Meal[]>([]);
+  const [allMeals, setAllMeals] = useState<Meal[]>([]);
   const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
 
   useEffect(() => {
     const fetchMeals = async () => {
       const response = await fetch('api/meals');
-      const INITIAL_MEALS = await response.json();
+      const INITIAL_MEALS: Meal[] = await response.json();
       setMeals(INITIAL_MEALS);
+
+      setAllMeals(INITIAL_MEALS);
     };
     fetchMeals();
   }, []);
 
-  // const onSearch = (keyword: string) => {
-  //   setMeals(INITIAL_MEALS.filter((meal) => meal.name.includes(keyword)));
-  // };
+  const onSearch = (keyword: string) => {
+    if (!allMeals.length) return;
+    setMeals(allMeals.filter((meal) => meal.name.includes(keyword)));
+  };
   return (
     <CartContext.Provider value={{ ...state, cartDispatch }}>
       <div className="App">
-        {/* <FilterMeals onSearch={onSearch} /> */}
+        <FilterMeals onSearch={onSearch} />
         <MealsList meals={meals} />
         <Cart />
       </div>
