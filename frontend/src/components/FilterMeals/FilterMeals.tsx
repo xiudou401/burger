@@ -15,7 +15,7 @@ const FilterMeals = ({ onSearch }: FilterMealsProps) => {
   useEffect(() => {
     timer.current = setTimeout(() => {
       onSearch(keyword);
-    }, 3000);
+    }, 300);
     return () => {
       if (timer.current) {
         clearTimeout(timer.current);
