@@ -84,6 +84,7 @@ const App = () => {
     const fetchMeals = async () => {
       const response = await fetch('api/meals');
       const INITIAL_MEALS: Meal[] = await response.json();
+
       setMeals(INITIAL_MEALS);
 
       setAllMeals(INITIAL_MEALS);
