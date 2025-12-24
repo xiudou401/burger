@@ -1,8 +1,8 @@
 import React from 'react';
 import classes from './MealsList.module.css';
 
-import { Meal } from '../../types/cart';
 import MealItem from './Meal/MealItem';
+import { Meal } from '../../types/meal';
 
 interface MealsListProps {
   meals: Meal[];

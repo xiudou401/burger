@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
-import { CART_ACTIONS, Meal } from '../../../types/cart';
+import { CART_ACTIONS } from '../../../types/cart';
 import classes from './QuantityCounter.module.css';
 import { CartContext } from '../../../store/CartContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { Meal } from '../../../types/meal';
 
 interface QuantityCounterProps {
   meal: Meal;

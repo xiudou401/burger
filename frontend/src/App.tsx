@@ -1,15 +1,10 @@
 import { useEffect, useReducer, useState } from 'react';
 import MealsList from './components/Meals/MealsList';
-import {
-  CART_ACTIONS,
-  CartAction,
-  CartMeal,
-  CartState,
-  Meal,
-} from './types/cart';
+import { CART_ACTIONS, CartAction, CartMeal, CartState } from './types/cart';
 import { CartContext } from './store/CartContext';
 import Cart from './components/Cart/Cart';
 import FilterMeals from './components/FilterMeals/FilterMeals';
+import { Meal } from './types/meal';
 
 const initialCartState: CartState = {
   items: [],
@@ -82,19 +77,21 @@ const App = () => {
 
   useEffect(() => {
     const fetchMeals = async () => {
-      const response = await fetch('api/meals');
-      const INITIAL_MEALS: Meal[] = await response.json();
-
-      setMeals(INITIAL_MEALS);
-
-      setAllMeals(INITIAL_MEALS);
+      try {
+        const response = await fetch('api/meals');
+        const INITIAL_MEALS: Meal[] = await response.json();
+        setMeals(INITIAL_MEALS);
+        setAllMeals(INITIAL_MEALS);
+      } catch (error) {
+        console.error('加载数据失败:', error);
+      }
     };
     fetchMeals();
   }, []);
 
   const onSearch = (keyword: string) => {
     if (!allMeals.length) return;
-    setMeals(allMeals.filter((meal) => meal.name.includes(keyword)));
+    setMeals(allMeals.filter((meal) => meal.name.includes(keyword.trim())));
   };
   return (
     <CartContext.Provider value={{ ...state, cartDispatch }}>

@@ -8,7 +8,7 @@ interface FilterMealsProps {
 const FilterMeals = ({ onSearch }: FilterMealsProps) => {
   const [keyword, setKeyword] = useState('');
   const changHandler = (e: ChangeEvent<HTMLInputElement>) => {
-    setKeyword(e.target.value.trim());
+    setKeyword(e.target.value);
   };
 
   const timer = useRef<NodeJS.Timeout | null>(null);

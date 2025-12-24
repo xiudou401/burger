@@ -1,12 +1,5 @@
 import { Dispatch } from 'react';
-
-export interface Meal {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-}
+import { Meal } from './meal';
 
 export interface CartMeal extends Meal {
   quantity: number;

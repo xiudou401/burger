@@ -1,7 +1,7 @@
 import React from 'react';
 import classes from './MealItem.module.css';
-import { Meal } from '../../../types/cart';
 import QuantityCounter from '../../UI/Counter/QuantityCounter';
+import { Meal } from '../../../types/meal';
 
 interface MealItemProps {
   meal: Meal;
