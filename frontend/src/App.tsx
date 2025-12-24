@@ -12,8 +12,19 @@ const initialCartState: CartState = {
   totalPrice: 0,
 };
 
+const getInitialCartState = (): CartState => {
+  const stored = localStorage.getItem('CartState');
+  if (!stored) return initialCartState;
+
+  try {
+    return JSON.parse(stored) as CartState;
+  } catch {
+    return initialCartState;
+  }
+};
+
 const CartReducer = (state: CartState, action: CartAction) => {
-  let updatedCartItems = [...state.items];
+  let updatedCartItems: CartMeal[];
   const updateTotals = (cartMeals: CartMeal[]) => {
     const totalQuantity = cartMeals.reduce(
       (sumQuantity, meal) => sumQuantity + meal.quantity,
@@ -29,35 +40,27 @@ const CartReducer = (state: CartState, action: CartAction) => {
   switch (action.type) {
     case CART_ACTIONS.ADD:
     case CART_ACTIONS.REMOVE: {
-      const existingMealIndex = updatedCartItems.findIndex(
-        (item) => item._id === action.meal._id
-      );
       if (action.type === CART_ACTIONS.ADD) {
-        if (existingMealIndex === -1) {
-          updatedCartItems = [
-            ...updatedCartItems,
-            { ...action.meal, quantity: 1 },
-          ];
+        const existing = state.items.find(
+          (item) => item._id === action.meal._id
+        );
+        if (existing) {
+          updatedCartItems = state.items.map((item) =>
+            item._id === action.meal._id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
         } else {
-          updatedCartItems[existingMealIndex] = {
-            ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex].quantity + 1,
-          };
+          updatedCartItems = [...state.items, { ...action.meal, quantity: 1 }];
         }
       } else {
-        if (existingMealIndex === -1) {
-          return state;
-        }
-        if (updatedCartItems[existingMealIndex].quantity > 1) {
-          updatedCartItems[existingMealIndex] = {
-            ...updatedCartItems[existingMealIndex],
-            quantity: updatedCartItems[existingMealIndex].quantity - 1,
-          };
-        } else {
-          updatedCartItems = updatedCartItems.filter(
-            (item) => item._id !== action.meal._id
-          );
-        }
+        updatedCartItems = state.items
+          .map((item) =>
+            item._id === action.meal._id
+              ? { ...item, quantity: item.quantity - 1 }
+              : item
+          )
+          .filter((item) => item.quantity > 0);
       }
       const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
 
@@ -73,7 +76,11 @@ const CartReducer = (state: CartState, action: CartAction) => {
 const App = () => {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [allMeals, setAllMeals] = useState<Meal[]>([]);
-  const [state, cartDispatch] = useReducer(CartReducer, initialCartState);
+  const [state, cartDispatch] = useReducer(
+    CartReducer,
+    initialCartState,
+    getInitialCartState
+  );
 
   useEffect(() => {
     const fetchMeals = async () => {
@@ -88,6 +95,10 @@ const App = () => {
     };
     fetchMeals();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('CartState', JSON.stringify(state));
+  }, [state]);
 
   const onSearch = (keyword: string) => {
     if (!allMeals.length) return;
