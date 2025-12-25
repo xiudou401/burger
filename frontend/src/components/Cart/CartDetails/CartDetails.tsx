@@ -18,7 +18,7 @@ const CartDetails = () => {
   };
 
   const onOk = () => {
-    cartDispatch({ type: CART_ACTIONS.CLEAR });
+    cartDispatch({ type: CART_ACTIONS.CLEAR_CART });
   };
 
   const onCancel = () => {

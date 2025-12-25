@@ -37,9 +37,9 @@ export const CartReducer = (state: CartState, action: CartAction) => {
   };
 
   switch (action.type) {
-    case CART_ACTIONS.ADD:
-    case CART_ACTIONS.REMOVE: {
-      if (action.type === CART_ACTIONS.ADD) {
+    case CART_ACTIONS.ADD_ITEM:
+    case CART_ACTIONS.REMOVE_ITEM: {
+      if (action.type === CART_ACTIONS.ADD_ITEM) {
         const existing = state.items.find(
           (item) => item._id === action.meal._id
         );
@@ -55,7 +55,7 @@ export const CartReducer = (state: CartState, action: CartAction) => {
       } else {
         updatedCartItems = state.items
           .map((item) =>
-            item._id === action.meal._id
+            item._id === action._id
               ? { ...item, quantity: item.quantity - 1 }
               : item
           )
@@ -65,7 +65,7 @@ export const CartReducer = (state: CartState, action: CartAction) => {
 
       return { items: updatedCartItems, totalQuantity, totalPrice };
     }
-    case CART_ACTIONS.CLEAR:
+    case CART_ACTIONS.CLEAR_CART:
       return initialCartState;
     default:
       return state;

@@ -12,15 +12,17 @@ export interface CartState {
 }
 
 export const CART_ACTIONS = {
-  ADD: 'ADD',
-  REMOVE: 'REMOVE',
-  CLEAR: 'CLEAR',
+  ADD_ITEM: 'ADD_ITEM',
+  REMOVE_ITEM: 'REMOVE_ITEM',
+  DELETE_ITEM: 'DELETE_ITEM',
+  CLEAR_CART: 'CLEAR_CART',
 } as const;
 
 export type CartAction =
-  | { type: typeof CART_ACTIONS.ADD; meal: Meal }
-  | { type: typeof CART_ACTIONS.REMOVE; meal: Meal }
-  | { type: typeof CART_ACTIONS.CLEAR };
+  | { type: typeof CART_ACTIONS.ADD_ITEM; meal: Meal }
+  | { type: typeof CART_ACTIONS.REMOVE_ITEM; _id: string }
+  | { type: typeof CART_ACTIONS.DELETE_ITEM; _id: string }
+  | { type: typeof CART_ACTIONS.CLEAR_CART };
 
 export interface CartContextValue extends CartState {
   cartDispatch: Dispatch<CartAction>;
