@@ -4,6 +4,7 @@ import {
   CartMeal,
   CartState,
 } from '../../types/cart';
+import { updateTotals } from './cart.utils';
 
 export const initialCartState: CartState = {
   items: [],
@@ -24,21 +25,11 @@ export const getInitialCartState = (): CartState => {
 
 export const CartReducer = (state: CartState, action: CartAction) => {
   let updatedCartItems: CartMeal[];
-  const updateTotals = (cartMeals: CartMeal[]) => {
-    const totalQuantity = cartMeals.reduce(
-      (sumQuantity, meal) => sumQuantity + meal.quantity,
-      0
-    );
-    const totalPrice = cartMeals.reduce(
-      (sumPrice, meal) => sumPrice + meal.price * meal.quantity,
-      0
-    );
-    return { totalQuantity, totalPrice };
-  };
 
   switch (action.type) {
     case CART_ACTIONS.ADD_ITEM:
-    case CART_ACTIONS.REMOVE_ITEM: {
+    case CART_ACTIONS.REMOVE_ITEM:
+    case CART_ACTIONS.DELETE_ITEM: {
       if (action.type === CART_ACTIONS.ADD_ITEM) {
         const existing = state.items.find(
           (item) => item._id === action.meal._id
@@ -52,7 +43,7 @@ export const CartReducer = (state: CartState, action: CartAction) => {
         } else {
           updatedCartItems = [...state.items, { ...action.meal, quantity: 1 }];
         }
-      } else {
+      } else if (action.type === CART_ACTIONS.REMOVE_ITEM) {
         updatedCartItems = state.items
           .map((item) =>
             item._id === action._id
@@ -60,11 +51,15 @@ export const CartReducer = (state: CartState, action: CartAction) => {
               : item
           )
           .filter((item) => item.quantity > 0);
+      } else {
+        updatedCartItems = state.items.filter(
+          (item) => item._id !== action._id
+        );
       }
       const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
-
       return { items: updatedCartItems, totalQuantity, totalPrice };
     }
+
     case CART_ACTIONS.CLEAR_CART:
       return initialCartState;
     default:

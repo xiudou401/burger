@@ -1,20 +1,18 @@
 import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { useCartContext } from '../../../hooks/useCart';
 import { Meal } from '../../../types/meal';
 import { useCartActions } from '../../../hooks/useCartActions';
+import { useCartItemQuantity } from '../../../hooks/useCartItemQuantity';
 
 interface QuantityCounterProps {
   meal: Meal;
 }
 
 const QuantityCounter = ({ meal }: QuantityCounterProps) => {
-  const { items } = useCartContext();
   const { addItem, removeItem } = useCartActions();
-  const mealInCart = items.find((item) => item._id === meal._id);
-  const quantity = mealInCart ? mealInCart.quantity : 0;
   const _id = meal._id;
+  const quantity = useCartItemQuantity(_id);
 
   const onIncrease = () => {
     addItem(meal);
