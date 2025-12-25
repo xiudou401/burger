@@ -1,15 +1,15 @@
-import React, { MouseEvent, useContext, useState } from 'react';
+import React, { MouseEvent, useState } from 'react';
 import classes from './CartDetails.module.css';
 import Backdrop from '../../UI/Backdrop/Backdrop';
 import MealItem from '../../Meals/Meal/MealItem';
-import { CartContext } from '../../../store/CartContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
 import { CART_ACTIONS } from '../../../types/cart';
+import { useCartContext } from '../../../hooks/useCartContext';
 
 const CartDetails = () => {
-  const { items, cartDispatch } = useContext(CartContext);
+  const { items, cartDispatch } = useCartContext();
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleClearCart = (e: MouseEvent<HTMLDivElement>) => {

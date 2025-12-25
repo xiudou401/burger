@@ -1,12 +1,12 @@
-import React, { MouseEvent, useContext, useEffect, useState } from 'react';
+import React, { MouseEvent, useEffect, useState } from 'react';
 import classes from './Cart.module.css';
 import iconImg from '../../asset/bag.png';
-import { CartContext } from '../../store/CartContext';
 import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
+import { useCartContext } from '../../hooks/useCartContext';
 
 const Cart = () => {
-  const { totalQuantity, totalPrice } = useContext(CartContext);
+  const { totalQuantity, totalPrice } = useCartContext();
   const [showCartDetails, setShowCartDetails] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 

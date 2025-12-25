@@ -1,17 +1,17 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { CART_ACTIONS } from '../../../types/cart';
 import classes from './QuantityCounter.module.css';
-import { CartContext } from '../../../store/CartContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Meal } from '../../../types/meal';
+import { useCartContext } from '../../../hooks/useCartContext';
 
 interface QuantityCounterProps {
   meal: Meal;
 }
 
 const QuantityCounter = ({ meal }: QuantityCounterProps) => {
-  const { items, cartDispatch } = useContext(CartContext);
+  const { items, cartDispatch } = useCartContext();
   const mealInCart = items.find((item) => item._id === meal._id);
   const quantity = mealInCart ? mealInCart.quantity : 0;
 

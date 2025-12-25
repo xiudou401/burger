@@ -1,11 +1,11 @@
-import React, { MouseEvent, useContext } from 'react';
+import React, { MouseEvent } from 'react';
 import ReactDOM from 'react-dom';
 import classes from './Checkout.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
-import { CartContext } from '../../../store/CartContext';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
+import { useCartContext } from '../../../hooks/useCartContext';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 
@@ -14,7 +14,7 @@ interface CheckoutProps {
 }
 
 const Checkout = ({ offCheckout }: CheckoutProps) => {
-  const { items, totalPrice } = useContext(CartContext);
+  const { items, totalPrice } = useCartContext();
   if (!CheckoutRoot) {
     return null;
   }
