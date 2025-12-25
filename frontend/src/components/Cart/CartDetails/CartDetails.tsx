@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
 import { CART_ACTIONS } from '../../../types/cart';
-import { useCartContext } from '../../../hooks/useCartContext';
+import { useCartContext } from '../../../hooks/useCart';
 
 const CartDetails = () => {
   const { items, cartDispatch } = useCartContext();

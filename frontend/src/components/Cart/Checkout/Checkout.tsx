@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
-import { useCartContext } from '../../../hooks/useCartContext';
+import { useCartContext } from '../../../hooks/useCart';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 

@@ -4,7 +4,7 @@ import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Meal } from '../../../types/meal';
-import { useCartContext } from '../../../hooks/useCartContext';
+import { useCartContext } from '../../../hooks/useCart';
 
 interface QuantityCounterProps {
   meal: Meal;
