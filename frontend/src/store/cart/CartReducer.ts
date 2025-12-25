@@ -4,6 +4,7 @@ import {
   CartMeal,
   CartState,
 } from '../../types/cart';
+import { addItem, deleteItem, removeItem } from './cart.logic';
 import { updateTotals } from './cart.utils';
 
 export const initialCartState: CartState = {
@@ -31,30 +32,11 @@ export const CartReducer = (state: CartState, action: CartAction) => {
     case CART_ACTIONS.REMOVE_ITEM:
     case CART_ACTIONS.DELETE_ITEM: {
       if (action.type === CART_ACTIONS.ADD_ITEM) {
-        const existing = state.items.find(
-          (item) => item._id === action.meal._id
-        );
-        if (existing) {
-          updatedCartItems = state.items.map((item) =>
-            item._id === action.meal._id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          );
-        } else {
-          updatedCartItems = [...state.items, { ...action.meal, quantity: 1 }];
-        }
+        updatedCartItems = addItem(state.items, action.meal);
       } else if (action.type === CART_ACTIONS.REMOVE_ITEM) {
-        updatedCartItems = state.items
-          .map((item) =>
-            item._id === action._id
-              ? { ...item, quantity: item.quantity - 1 }
-              : item
-          )
-          .filter((item) => item.quantity > 0);
+        updatedCartItems = removeItem(state.items, action._id);
       } else {
-        updatedCartItems = state.items.filter(
-          (item) => item._id !== action._id
-        );
+        updatedCartItems = deleteItem(state.items, action._id);
       }
       const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
       return { items: updatedCartItems, totalQuantity, totalPrice };
