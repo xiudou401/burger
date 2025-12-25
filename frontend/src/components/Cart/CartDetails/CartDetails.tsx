@@ -5,12 +5,13 @@ import MealItem from '../../Meals/Meal/MealItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
-import { CART_ACTIONS } from '../../../types/cart';
 import { useCartContext } from '../../../hooks/useCart';
+import { useCartActions } from '../../../hooks/useCartActions';
 
 const CartDetails = () => {
-  const { items, cartDispatch } = useCartContext();
+  const { items } = useCartContext();
   const [showConfirm, setShowConfirm] = useState(false);
+  const { clearCart } = useCartActions();
 
   const handleClearCart = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -18,7 +19,7 @@ const CartDetails = () => {
   };
 
   const onOk = () => {
-    cartDispatch({ type: CART_ACTIONS.CLEAR_CART });
+    clearCart();
   };
 
   const onCancel = () => {
