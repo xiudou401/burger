@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
-import { useCartContext } from '../../../hooks/useCart';
+import { useCartSelectors } from '../../../hooks/useCartSelectors';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 
@@ -14,7 +14,7 @@ interface CheckoutProps {
 }
 
 const Checkout = ({ offCheckout }: CheckoutProps) => {
-  const { items, totalPrice } = useCartContext();
+  const { items, totalPrice } = useCartSelectors();
   if (!CheckoutRoot) {
     return null;
   }
