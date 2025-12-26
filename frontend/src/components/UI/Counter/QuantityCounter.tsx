@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { Meal } from '../../../types/meal';
 import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartItemQuantity } from '../../../hooks/useCartItemQuantity';
+import { useCartSelectors } from '../../../hooks/useCartSelectors';
 
 interface QuantityCounterProps {
   meal: Meal;
@@ -11,8 +11,9 @@ interface QuantityCounterProps {
 
 const QuantityCounter = ({ meal }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
+  const { getItemQuantity } = useCartSelectors();
   const _id = meal._id;
-  const quantity = useCartItemQuantity(_id);
+  const quantity = getItemQuantity(_id);
 
   const onIncrease = () => {
     addItem(meal);
