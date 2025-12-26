@@ -1,6 +1,18 @@
 import { CartMeal } from '../../types/cart';
 import { Meal } from '../../types/meal';
 
+export const updateTotals = (cartMeals: CartMeal[]) => {
+  const totalQuantity = cartMeals.reduce(
+    (sumQuantity, meal) => sumQuantity + meal.quantity,
+    0
+  );
+  const totalPrice = cartMeals.reduce(
+    (sumPrice, meal) => sumPrice + meal.price * meal.quantity,
+    0
+  );
+  return { totalQuantity, totalPrice };
+};
+
 export const addItem = (items: CartMeal[], meal: Meal) => {
   const existing = items.find((item) => item._id === meal._id);
   if (existing) {
