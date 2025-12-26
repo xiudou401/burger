@@ -5,11 +5,11 @@ import MealItem from '../../Meals/Meal/MealItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
-import { useCartContext } from '../../../hooks/useCart';
 import { useCartActions } from '../../../hooks/useCartActions';
+import { useCartSelectors } from '../../../hooks/useCartSelectors';
 
 const CartDetails = () => {
-  const { items } = useCartContext();
+  const { items } = useCartSelectors();
   const [showConfirm, setShowConfirm] = useState(false);
   const { clearCart } = useCartActions();
 

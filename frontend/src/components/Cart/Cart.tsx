@@ -3,10 +3,10 @@ import classes from './Cart.module.css';
 import iconImg from '../../asset/bag.png';
 import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
-import { useCartContext } from '../../hooks/useCart';
+import { useCartSelectors } from '../../hooks/useCartSelectors';
 
 const Cart = () => {
-  const { totalQuantity, totalPrice } = useCartContext();
+  const { totalQuantity, totalPrice } = useCartSelectors();
   const [showCartDetails, setShowCartDetails] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 
