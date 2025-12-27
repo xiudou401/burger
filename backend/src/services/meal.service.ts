@@ -1,4 +1,3 @@
-import { Query } from './../../node_modules/sift/lib/core.d';
 import { AppError } from '../errors/AppError';
 import Meal from '../model/meal.model';
 
@@ -8,12 +7,22 @@ interface MealQuery {
   maxPrice?: number;
   page?: number;
   limit?: number;
+  sort?: SortOption;
 }
+
+type SortOption = 'price_asc' | 'price_desc' | 'created_asc' | 'created_desc';
+
+const SORT_MAP: Record<SortOption, any> = {
+  price_asc: { price: 1 },
+  price_desc: { price: -1 },
+  created_asc: { createdAt: 1 },
+  created_desc: { createdAt: -1 },
+};
 
 export const findAllMeals = async (query: MealQuery = {}) => {
   try {
-    const { keyword, minPrice, maxPrice, page = 1, limit = 8 } = query;
-
+    const { keyword, minPrice, maxPrice, page = 1, limit = 8, sort } = query;
+    const sortOption = sort ? SORT_MAP[sort] : { createdAt: -1 };
     const mongoQuery: any = {};
 
     if (keyword) {
@@ -32,7 +41,7 @@ export const findAllMeals = async (query: MealQuery = {}) => {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      Meal.find(mongoQuery).skip(skip).limit(limit).lean(),
+      Meal.find(mongoQuery).sort(sortOption).skip(skip).limit(limit).lean(),
       Meal.countDocuments(mongoQuery),
     ]);
 

@@ -2,9 +2,12 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "rootDir": "src",
-    "outDir": "dist",
+    "rootDir": "./", // 改为项目根目录（覆盖原来的 src）
+    "outDir": "dist", // 编译产物仍输出到 dist
     "strict": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "skipLibCheck": true // 可选：跳过库文件检查，减少无关报错
+  },
+  "include": ["src/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
