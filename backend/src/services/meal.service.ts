@@ -1,5 +1,6 @@
 import { AppError } from '../errors/AppError';
 import Meal from '../model/meal.model';
+import type { SortOrder } from 'mongoose';
 
 interface MealQuery {
   keyword?: string;
@@ -10,9 +11,13 @@ interface MealQuery {
   sort?: SortOption;
 }
 
-type SortOption = 'price_asc' | 'price_desc' | 'created_asc' | 'created_desc';
+export type SortOption =
+  | 'price_asc'
+  | 'price_desc'
+  | 'created_asc'
+  | 'created_desc';
 
-const SORT_MAP: Record<SortOption, any> = {
+const SORT_MAP: Record<SortOption, Record<string, SortOrder>> = {
   price_asc: { price: 1 },
   price_desc: { price: -1 },
   created_asc: { createdAt: 1 },
@@ -22,8 +27,13 @@ const SORT_MAP: Record<SortOption, any> = {
 export const findAllMeals = async (query: MealQuery = {}) => {
   try {
     const { keyword, minPrice, maxPrice, page = 1, limit = 8, sort } = query;
-    const sortOption = sort ? SORT_MAP[sort] : { createdAt: -1 };
-    const mongoQuery: any = {};
+
+    // ✅ sortOption 在函数内 + 明确类型
+    const sortOption: Record<string, SortOrder> = sort
+      ? SORT_MAP[sort]
+      : { createdAt: -1 };
+
+    const mongoQuery: Record<string, any> = {};
 
     if (keyword) {
       mongoQuery.$or = [
