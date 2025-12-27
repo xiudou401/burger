@@ -4,7 +4,7 @@ import {
   CartMeal,
   CartState,
 } from '../../types/cart';
-import { addItem, deleteItem, removeItem, updateTotals } from './cart.logic';
+import { addItem, deleteItem, removeItem, updateTotals } from './cart-logic';
 
 export const initialCartState: CartState = {
   items: [],

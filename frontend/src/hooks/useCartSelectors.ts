@@ -4,7 +4,7 @@ import {
   selectCartItems,
   selectCartTotalPrice,
   selectCartTotalQuantity,
-} from '../store/cart/cart.selectors';
+} from '../store/cart/cart-selectors';
 import { useCartContext } from './useCart';
 
 export const useCartSelectors = () => {

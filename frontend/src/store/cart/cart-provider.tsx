@@ -1,10 +1,10 @@
 import { ReactNode, useEffect, useReducer } from 'react';
-import { CartContext } from './CartContext';
+import { CartContext } from './cart-context';
 import {
   CartReducer,
   getInitialCartState,
   initialCartState,
-} from './CartReducer';
+} from './cart-reducer';
 
 interface CartContextProviderProps {
   children: ReactNode;
