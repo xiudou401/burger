@@ -56,6 +56,10 @@ const meals = [
 ];
 
 const seedMeals = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('❌ Cannot seed database in production');
+  }
+
   if (!process.env.MONGO_URI) {
     throw new Error('MONGO_URI is not defined');
   }

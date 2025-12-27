@@ -14,10 +14,10 @@ export const updateTotals = (cartMeals: CartMeal[]) => {
 };
 
 export const addItem = (items: CartMeal[], meal: Meal) => {
-  const existing = items.find((item) => item._id === meal._id);
+  const existing = items.find((item) => item.id === meal.id);
   if (existing) {
     return items.map((item) =>
-      item._id === meal._id ? { ...item, quantity: item.quantity + 1 } : item
+      item.id === meal.id ? { ...item, quantity: item.quantity + 1 } : item
     );
   } else {
     return [...items, { ...meal, quantity: 1 }];
@@ -26,10 +26,10 @@ export const addItem = (items: CartMeal[], meal: Meal) => {
 export const removeItem = (items: CartMeal[], _id: string) => {
   return items
     .map((item) =>
-      item._id === _id ? { ...item, quantity: item.quantity - 1 } : item
+      item.id === _id ? { ...item, quantity: item.quantity - 1 } : item
     )
     .filter((item) => item.quantity > 0);
 };
-export const deleteItem = (items: CartMeal[], _id: string) => {
-  return items.filter((item) => item._id !== _id);
+export const deleteItem = (items: CartMeal[], id: string) => {
+  return items.filter((item) => item.id !== id);
 };

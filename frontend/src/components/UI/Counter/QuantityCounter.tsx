@@ -12,15 +12,15 @@ interface QuantityCounterProps {
 const QuantityCounter = ({ meal }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
   const { getItemQuantity } = useCartSelectors();
-  const _id = meal._id;
-  const quantity = getItemQuantity(_id);
+  const id = meal.id;
+  const quantity = getItemQuantity(id);
 
   const onIncrease = () => {
     addItem(meal);
   };
 
   const onDecrease = () => {
-    removeItem(_id);
+    removeItem(id);
   };
 
   return (

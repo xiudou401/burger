@@ -7,5 +7,5 @@ export const selectCartTotalQuantity = (state: CartState) =>
 
 export const selectCartTotalPrice = (state: CartState) => state.totalPrice;
 
-export const selectCartItemQuantity = (state: CartState, _id: string) =>
-  state.items.find((item) => item._id === _id)?.quantity ?? 0;
+export const selectCartItemQuantity = (state: CartState, id: string) =>
+  state.items.find((item) => item.id === id)?.quantity ?? 0;

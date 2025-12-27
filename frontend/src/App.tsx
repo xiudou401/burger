@@ -12,9 +12,11 @@ const App = () => {
     const fetchMeals = async () => {
       try {
         const response = await fetch('api/meals');
-        const INITIAL_MEALS: Meal[] = await response.json();
+        const data = await response.json();
+        const INITIAL_MEALS: Meal[] = data.items;
         setMeals(INITIAL_MEALS);
         setAllMeals(INITIAL_MEALS);
+        console.log(meals);
       } catch (error) {
         console.error('加载数据失败:', error);
       }

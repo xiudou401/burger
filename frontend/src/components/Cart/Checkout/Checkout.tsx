@@ -38,7 +38,7 @@ const Checkout = ({ offCheckout }: CheckoutProps) => {
         </header>
         <div>
           {items.map((item) => (
-            <CheckoutItem key={item._id} meal={item} />
+            <CheckoutItem key={item.id} meal={item} />
           ))}
         </div>
         <footer className={classes.Footer}>
