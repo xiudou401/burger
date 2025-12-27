@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Meal from '../src/model/Meal.model';
+import Meal from '../src/model/meal.model';
 
 dotenv.config();
 
