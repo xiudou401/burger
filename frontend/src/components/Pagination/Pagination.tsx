@@ -1,3 +1,4 @@
+import classes from './Pagination.module.css';
 interface Props {
   page: number;
   totalPages: number;
@@ -8,7 +9,7 @@ const Pagination = ({ page, totalPages, onChange }: Props) => {
   if (totalPages <= 1) return null;
 
   return (
-    <div>
+    <div className={classes.Pagination}>
       <button disabled={page === 1} onClick={() => onChange(page - 1)}>
         上一页
       </button>

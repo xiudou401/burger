@@ -11,26 +11,47 @@
   border-bottom: 1px solid #f2f2f2;
 }
 
+/* 统一rem基准（如果是移动端，建议配合html {font-size: 100vw/7.5;}） */
 .InputOuter {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: flex; /* 弹性布局让子元素同行 */
+  align-items: center; /* 垂直居中（你写的justified-between是错的） */
+  width: 650rem; /* 容器宽度和input一致（根据你的需求调整） */
 }
 
 .SearchInput {
-  width: 650rem;
+  width: 100%; /* 占满容器宽度，避免固定宽度适配问题 */
   height: 70rem;
   border: none;
   border-radius: 16px;
   background-color: #f2f2f2;
-  padding-left: 60rem;
+  padding-left: 60rem; /* 给左侧图标留空间 */
+  padding-right: 70rem; /* 给右侧按钮留空间（可选） */
   outline: none;
   font-size: 32rem;
+  box-sizing: border-box; /* 关键：padding不会撑大宽度 */
 }
 
 .SearchIcon {
   font-size: 40rem;
-  position: absolute;
-  left: 10rem;
   color: #aaa;
+  /* 定位到input左侧（如果要放右侧，改left为right: 20rem） */
+  position: absolute;
+  left: 15rem;
+  top: 50%;
+  transform: translateY(-50%); /* 绝对定位垂直居中 */
+}
+
+/* 按钮样式优化：去掉默认样式，避免遮挡input */
+.SearchButton {
+  position: absolute;
+  right: 15rem; /* 右侧间距 */
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #aaa;
+  font-size: 40rem; /* 和图标大小一致 */
 }

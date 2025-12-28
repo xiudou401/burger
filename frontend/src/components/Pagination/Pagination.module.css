@@ -1,0 +1,42 @@
+.Pagination {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100rem;
+  background: #fff;
+  border-top: 1px solid #f2f2f2;
+  z-index: 998;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20rem;
+}
+
+.Pagination button {
+  height: 64rem;
+  padding: 0 32rem;
+  font-size: 28rem;
+  border-radius: 12rem;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  cursor: pointer;
+  color: #333;
+}
+
+.Pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.Pagination button:not(:disabled):hover {
+  background-color: #f2f2f2;
+}
+
+.Pagination span {
+  font-size: 28rem;
+  color: #333;
+  min-width: 120rem;
+  text-align: center;
+}

@@ -1,15 +1,8 @@
 .MealsList {
   position: absolute;
   top: 120rem;
-  bottom: 0;
-  overflow: auto;
+  bottom: 0; /* 占满 */
+  overflow-y: auto;
+  padding-bottom: 260rem; /* 👈 关键：给 Cart + Pagination 让路 */
+  box-sizing: border-box;
 }
-
-/* .MealsList {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  padding: 1rem;
-  max-width: 800px;
-  margin: 0 auto;
-} */

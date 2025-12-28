@@ -13,21 +13,25 @@ const App = () => {
   const [keyword, setKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const loadMeals = async (options?: { page?: number; keyword?: string }) => {
+  const loadMeals = async ({
+    page,
+    keyword,
+  }: {
+    page: number;
+    keyword?: string;
+  }) => {
     try {
       setIsLoading(true);
 
       const data = await fetchMeals({
-        page: options?.page ?? page,
-        keyword: options?.keyword ?? keyword,
-        limit: 2,
+        page,
+        keyword,
+        limit: 4,
       });
 
       setMeals(data.items);
       setPage(data.page);
       setTotalPages(data.totalPages);
-    } catch (err) {
-      console.error(err);
     } finally {
       setIsLoading(false);
     }
@@ -37,39 +41,21 @@ const App = () => {
     loadMeals({ page: 1 });
   }, []);
 
-  // useEffect(() => {
-  //   const fetchMeals = async () => {
-  //     try {
-  //       const response = await fetch('api/meals');
-  //       const data = await response.json();
-  //       const INITIAL_MEALS: Meal[] = data.items;
-  //       setMeals(INITIAL_MEALS);
-  //       setAllMeals(INITIAL_MEALS);
-  //       console.log(meals);
-  //     } catch (error) {
-  //       console.error('加载数据失败:', error);
-  //     }
-  //   };
-  //   fetchMeals();
-  // }, []);
-
-  const onSearch = (keyword: string) => {
-    setKeyword(keyword);
-    loadMeals({ keyword, page: 1 });
+  const onSearch = (value: string) => {
+    const k = value.trim();
+    setKeyword(k);
+    loadMeals({ page: 1, keyword: k || undefined });
   };
 
   const onPageChange = (newPage: number) => {
-    loadMeals({ page: newPage });
+    loadMeals({ page: newPage, keyword: keyword || undefined });
   };
 
   return (
     <div className="App">
       <FilterMeals onSearch={onSearch} />
       {isLoading ? <p>加载中...</p> : <MealsList meals={meals} />}
-
       <Pagination page={page} totalPages={totalPages} onChange={onPageChange} />
-      {/* 
-      <MealsList meals={meals} /> */}
       <Cart />
     </div>
   );
