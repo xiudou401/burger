@@ -5,3 +5,11 @@ export interface Meal {
   price: number;
   image: string;
 }
+
+export interface PaginatedMeals {
+  items: Meal[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
