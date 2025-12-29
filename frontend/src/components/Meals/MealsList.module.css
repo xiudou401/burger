@@ -1,8 +1,9 @@
 .MealsList {
   position: absolute;
-  top: 120rem;
-  bottom: 0; /* 占满 */
-  overflow-y: auto;
-  padding-bottom: 260rem; /* 👈 关键：给 Cart + Pagination 让路 */
-  box-sizing: border-box;
+  top: 120px; /* 搜索栏下方 */
+  bottom: 80px; /* 给底部 Cart 留出空间 */
+  left: 0;
+  right: 0;
+  overflow-y: auto; /* 必须有这个，IntersectionObserver 的 root 才能生效 */
+  padding: 10px;
 }
