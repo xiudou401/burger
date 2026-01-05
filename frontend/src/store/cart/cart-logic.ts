@@ -23,10 +23,10 @@ export const addItem = (items: CartMeal[], meal: Meal) => {
     return [...items, { ...meal, quantity: 1 }];
   }
 };
-export const removeItem = (items: CartMeal[], _id: string) => {
+export const removeItem = (items: CartMeal[], id: string) => {
   return items
     .map((item) =>
-      item.id === _id ? { ...item, quantity: item.quantity - 1 } : item
+      item.id === id ? { ...item, quantity: item.quantity - 1 } : item
     )
     .filter((item) => item.quantity > 0);
 };

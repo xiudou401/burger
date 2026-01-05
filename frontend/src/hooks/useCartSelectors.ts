@@ -11,7 +11,7 @@ export const useCartSelectors = () => {
   const state = useCartContext();
 
   const getItemQuantity = useCallback(
-    (_id: string) => selectCartItemQuantity(state, _id),
+    (id: string) => selectCartItemQuantity(state, id),
     [state]
   );
 

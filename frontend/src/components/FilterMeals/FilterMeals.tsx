@@ -22,11 +22,11 @@ const FilterMeals = ({ onSearch }: Props) => {
           onChange={(e) => setValue(e.target.value)}
           placeholder="搜索菜品"
         />
-        {/* 给按钮加专属类名，避免样式冲突 */}
+
         <button
           className={classes.SearchButton}
           onClick={submitHandler}
-          type="button" // 避免表单默认提交
+          type="button"
         >
           <FontAwesomeIcon icon={faSearch} />
         </button>
