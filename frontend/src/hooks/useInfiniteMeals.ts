@@ -102,26 +102,20 @@ export const useInfiniteMeals = ({
     return () => observer.disconnect();
   }, [hasMore, isLoading, meals.length]);
 
-  const onSearch = useCallback(
-    (value: string) => {
-      const k = value.trim();
+  const onSearch = useCallback((value: string) => {
+    const k = value.trim();
 
-      // 更新状态（批量更新 OK）
-      setKeyword(k);
-      setMeals([]);
-      setHasMore(true);
+    // 先重置分页相关
+    setMeals([]);
+    setHasMore(true);
 
-      // ⚠️ 关键：避免重复请求
-      // - 若当前 page 不是 1：只 setPage(1)，让 useEffect 触发 loadMeals(1,k)
-      // - 若当前 page 已是 1：setPage(1) 不会触发 effect，所以手动 loadMeals(1,k)
-      if (page === 1) {
-        loadMeals(1, k);
-      } else {
-        setPage(1);
-      }
-    },
-    [page, loadMeals]
-  );
+    // 关键：只通过 state 变化触发请求，不要手动再 loadMeals
+    setPage(1);
+    setKeyword(k);
+
+    // 可选：如果你希望“立刻锁住”，避免 observer 抢跑
+    loadingRef.current = false;
+  }, []);
 
   return {
     meals,

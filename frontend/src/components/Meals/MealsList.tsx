@@ -8,19 +8,18 @@ interface MealsListProps {
   sentinelRef: React.RefObject<HTMLDivElement | null>;
 }
 
-const MealsList = forwardRef<HTMLDivElement, MealsListProps>((props, ref) => {
-  return (
-    <div className={classes.MealsList} ref={ref}>
-      {props.meals.map((meal) => (
-        <MealItem key={meal.id} meal={meal} />
-      ))}
+const MealsList = forwardRef<HTMLDivElement, MealsListProps>(
+  ({ meals, sentinelRef }, ref) => {
+    return (
+      <div className={classes.MealsList} ref={ref}>
+        {meals.map((meal) => (
+          <MealItem key={meal.id} meal={meal} />
+        ))}
 
-      <div
-        ref={props.sentinelRef}
-        style={{ height: '30px', background: 'transparent' }}
-      />
-    </div>
-  );
-});
+        <div ref={sentinelRef} style={{ height: 30 }} />
+      </div>
+    );
+  }
+);
 
 export default MealsList;
