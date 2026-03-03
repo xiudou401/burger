@@ -1,26 +1,29 @@
 import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { Meal } from '../../../types/meal';
 import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartSelectors } from '../../../hooks/useCartSelectors';
 
 interface QuantityCounterProps {
-  meal: Meal;
+  id: string;
+  quantity: number;
+  onFirstInteract?: () => void;
 }
 
-const QuantityCounter = ({ meal }: QuantityCounterProps) => {
+const QuantityCounter = ({
+  id,
+  quantity,
+  onFirstInteract,
+}: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
-  const { getItemQuantity } = useCartSelectors();
-  const id = meal.id;
-  const quantity = getItemQuantity(id);
-
-  const onIncrease = () => {
-    addItem(meal);
-  };
 
   const onDecrease = () => {
+    onFirstInteract?.();
     removeItem(id);
+  };
+
+  const onIncrease = () => {
+    onFirstInteract?.();
+    addItem(id);
   };
 
   return (
@@ -30,6 +33,7 @@ const QuantityCounter = ({ meal }: QuantityCounterProps) => {
           <button className={classes.Decrease} onClick={onDecrease}>
             <FontAwesomeIcon icon={faMinus} />
           </button>
+
           <span className={classes.Quantity}>{quantity}</span>
         </>
       )}

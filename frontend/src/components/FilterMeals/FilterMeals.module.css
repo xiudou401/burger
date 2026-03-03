@@ -32,15 +32,15 @@
   box-sizing: border-box; /* 关键：padding不会撑大宽度 */
 }
 
-.SearchIcon {
+/* .SearchIcon {
   font-size: 40rem;
-  color: #aaa;
-  /* 定位到input左侧（如果要放右侧，改left为right: 20rem） */
-  position: absolute;
+  color: #aaa; */
+/* 定位到input左侧（如果要放右侧，改left为right: 20rem） */
+/* position: absolute;
   left: 15rem;
-  top: 50%;
-  transform: translateY(-50%); /* 绝对定位垂直居中 */
-}
+  top: 50%; */
+/* transform: translateY(-50%); 绝对定位垂直居中
+} */
 
 /* 按钮样式优化：去掉默认样式，避免遮挡input */
 .SearchButton {

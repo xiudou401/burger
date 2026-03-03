@@ -1,49 +1,64 @@
 import {
-  CART_ACTIONS,
-  CartAction,
-  CartMeal,
   CartState,
+  CartStoredItem,
+  CartAction,
+  CART_ACTIONS,
 } from '../../types/cart';
-import { addItem, deleteItem, removeItem, updateTotals } from './cart-logic';
+import { addItem, removeItem, deleteItem } from './cart-logic';
 
 export const initialCartState: CartState = {
   items: [],
   totalQuantity: 0,
-  totalPrice: 0,
 };
 
-export const getInitialCartState = (): CartState => {
-  const stored = localStorage.getItem('CartState');
+export const loadCartState = (): CartState => {
+  const stored = localStorage.getItem('CartItemsState');
   if (!stored) return initialCartState;
 
   try {
-    return JSON.parse(stored) as CartState;
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return initialCartState;
+
+    const items: CartStoredItem[] = parsed
+      .filter(
+        (x: any) =>
+          x &&
+          typeof x.id === 'string' &&
+          typeof x.quantity === 'number' &&
+          x.quantity > 0,
+      )
+      .map((x: any) => ({ id: x.id, quantity: Math.floor(x.quantity) }));
+
+    const totalQuantity = items.reduce((s, i) => s + i.quantity, 0);
+    return { items, totalQuantity };
   } catch {
     return initialCartState;
   }
 };
 
-export const CartReducer = (state: CartState, action: CartAction) => {
-  let updatedCartItems: CartMeal[];
+export const CartReducer = (
+  state: CartState,
+  action: CartAction,
+): CartState => {
+  let updatedItems: CartStoredItem[];
 
   switch (action.type) {
     case CART_ACTIONS.ADD_ITEM:
+      updatedItems = addItem(state.items, action.id);
+      break;
     case CART_ACTIONS.REMOVE_ITEM:
-    case CART_ACTIONS.DELETE_ITEM: {
-      if (action.type === CART_ACTIONS.ADD_ITEM) {
-        updatedCartItems = addItem(state.items, action.meal);
-      } else if (action.type === CART_ACTIONS.REMOVE_ITEM) {
-        updatedCartItems = removeItem(state.items, action._id);
-      } else {
-        updatedCartItems = deleteItem(state.items, action._id);
-      }
-      const { totalQuantity, totalPrice } = updateTotals(updatedCartItems);
-      return { items: updatedCartItems, totalQuantity, totalPrice };
-    }
-
+      updatedItems = removeItem(state.items, action.id);
+      break;
+    case CART_ACTIONS.DELETE_ITEM:
+      updatedItems = deleteItem(state.items, action.id);
+      break;
     case CART_ACTIONS.CLEAR_CART:
       return initialCartState;
     default:
       return state;
   }
+
+  const totalQuantity = updatedItems.reduce((sum, i) => sum + i.quantity, 0);
+
+  return { items: updatedItems, totalQuantity };
 };

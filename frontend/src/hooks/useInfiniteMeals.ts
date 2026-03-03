@@ -48,11 +48,11 @@ export const useInfiniteMeals = ({
 
           const existingIds = new Set(prev.map((m) => m.id));
           const newItems = data.items.filter(
-            (item) => !existingIds.has(item.id)
+            (item) => !existingIds.has(item.id),
           );
 
           console.log(
-            `✅ 第 ${pageToLoad} 页返回 ${data.items.length} 条，实际新增 ${newItems.length} 条`
+            `✅ 第 ${pageToLoad} 页返回 ${data.items.length} 条，实际新增 ${newItems.length} 条`,
           );
 
           return [...prev, ...newItems];
@@ -70,7 +70,7 @@ export const useInfiniteMeals = ({
         }, 500);
       }
     },
-    [fetchMeals, limit]
+    [fetchMeals, limit],
   );
 
   // page / keyword 变化 -> 自动加载
@@ -95,15 +95,15 @@ export const useInfiniteMeals = ({
         root: listRef.current,
         threshold: 0.1,
         rootMargin: '0px',
-      }
+      },
     );
 
     if (sentinelRef.current) observer.observe(sentinelRef.current);
     return () => observer.disconnect();
-  }, [hasMore, isLoading, meals.length]);
+  }, [hasMore, isLoading]);
 
   const onSearch = useCallback((value: string) => {
-    const k = value.trim();
+    const k = value;
 
     // 先重置分页相关
     setMeals([]);

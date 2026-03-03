@@ -52,10 +52,10 @@
   color: #aaa;
 }
 
-.Price::before {
+/* .Price::before {
   content: '￥';
   font-size: 24rem;
-}
+} */
 
 .BuyButton {
   border: none;

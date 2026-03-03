@@ -7,7 +7,7 @@ interface FetchMealsParams {
 }
 
 export const fetchMeals = async (
-  params: FetchMealsParams
+  params: FetchMealsParams,
 ): Promise<PaginatedMeals> => {
   const query = new URLSearchParams();
   if (params.keyword) query.append('keyword', params.keyword);

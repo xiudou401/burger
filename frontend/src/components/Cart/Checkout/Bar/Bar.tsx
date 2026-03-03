@@ -8,7 +8,7 @@ interface BarProps {
 const Bar = ({ totalPrice }: BarProps) => {
   return (
     <div className={classes.Bar}>
-      <div className={classes.TotalPrice}>{totalPrice}</div>
+      <div className={classes.TotalPrice}>{totalPrice.toFixed(2)}</div>
       <button className={classes.Button}>Pay</button>
     </div>
   );

@@ -1,9 +1,9 @@
 .MealsList {
   position: absolute;
-  top: 120px; /* 搜索栏下方 */
-  bottom: 80px; /* 给底部 Cart 留出空间 */
+  top: 120rem; /* 搜索栏下方 */
+  bottom: 80rem; /* 给底部 Cart 留出空间 */
   left: 0;
   right: 0;
   overflow-y: auto; /* 必须有这个，IntersectionObserver 的 root 才能生效 */
-  padding: 10px;
+  padding: 10rem;
 }

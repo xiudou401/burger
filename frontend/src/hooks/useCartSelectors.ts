@@ -1,24 +1,31 @@
 import { useCallback } from 'react';
+import { useCartContext } from './useCart';
 import {
   selectCartItemQuantity,
   selectCartItems,
-  selectCartTotalPrice,
   selectCartTotalQuantity,
 } from '../store/cart/cart-selectors';
-import { useCartContext } from './useCart';
 
 export const useCartSelectors = () => {
-  const state = useCartContext();
+  const ctx = useCartContext();
 
   const getItemQuantity = useCallback(
-    (id: string) => selectCartItemQuantity(state, id),
-    [state]
+    (id: string) => selectCartItemQuantity(ctx, id),
+    [ctx],
   );
 
   return {
-    items: selectCartItems(state),
-    totalPrice: selectCartTotalPrice(state),
-    totalQuantity: selectCartTotalQuantity(state),
+    items: selectCartItems(ctx),
+    totalQuantity: selectCartTotalQuantity(ctx),
     getItemQuantity,
+
+    // ✅ pricing layer
+    menuVersion: ctx.menuVersion,
+    quote: ctx.quote,
+    quoteStale: ctx.quoteStale,
+    quoteMismatch: ctx.quoteMismatch,
+    estimatedTotalPrice: ctx.estimatedTotalPrice,
+    ensureQuote: ctx.ensureQuote,
+    clearQuote: ctx.clearQuote,
   };
 };

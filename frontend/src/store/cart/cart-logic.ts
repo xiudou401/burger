@@ -1,35 +1,21 @@
-import { CartMeal } from '../../types/cart';
-import { Meal } from '../../types/meal';
+import { CartStoredItem } from '../../types/cart';
 
-export const updateTotals = (cartMeals: CartMeal[]) => {
-  const totalQuantity = cartMeals.reduce(
-    (sumQuantity, meal) => sumQuantity + meal.quantity,
-    0
-  );
-  const totalPrice = cartMeals.reduce(
-    (sumPrice, meal) => sumPrice + meal.price * meal.quantity,
-    0
-  );
-  return { totalQuantity, totalPrice };
-};
-
-export const addItem = (items: CartMeal[], meal: Meal) => {
-  const existing = items.find((item) => item.id === meal.id);
+export const addItem = (items: CartStoredItem[], id: string) => {
+  const existing = items.find((i) => i.id === id);
   if (existing) {
-    return items.map((item) =>
-      item.id === meal.id ? { ...item, quantity: item.quantity + 1 } : item
+    return items.map((i) =>
+      i.id === id ? { ...i, quantity: i.quantity + 1 } : i,
     );
-  } else {
-    return [...items, { ...meal, quantity: 1 }];
   }
+  return [...items, { id, quantity: 1 }];
 };
-export const removeItem = (items: CartMeal[], id: string) => {
+
+export const removeItem = (items: CartStoredItem[], id: string) => {
   return items
-    .map((item) =>
-      item.id === id ? { ...item, quantity: item.quantity - 1 } : item
-    )
-    .filter((item) => item.quantity > 0);
+    .map((i) => (i.id === id ? { ...i, quantity: i.quantity - 1 } : i))
+    .filter((i) => i.quantity > 0);
 };
-export const deleteItem = (items: CartMeal[], id: string) => {
-  return items.filter((item) => item.id !== id);
+
+export const deleteItem = (items: CartStoredItem[], id: string) => {
+  return items.filter((i) => i.id !== id);
 };
