@@ -1,6 +1,7 @@
 import { AppError } from '../errors/AppError';
 import Meal from '../model/meal.model';
 import type { SortOrder } from 'mongoose';
+import { getMenuVersion } from './menu.service'; // ✅ 新增
 
 interface MealQuery {
   keyword?: string;
@@ -28,7 +29,6 @@ export const findAllMeals = async (query: MealQuery = {}) => {
   try {
     const { keyword, minPrice, maxPrice, page = 1, limit = 8, sort } = query;
 
-    // ✅ sortOption 在函数内 + 明确类型
     const sortOption: Record<string, SortOrder> = sort
       ? SORT_MAP[sort]
       : { createdAt: -1 };
@@ -50,12 +50,15 @@ export const findAllMeals = async (query: MealQuery = {}) => {
 
     const skip = (page - 1) * limit;
 
-    const [items, total] = await Promise.all([
+    // ✅ 修正：解构出 menuVersion
+    const [items, total, menuVersion] = await Promise.all([
       Meal.find(mongoQuery).sort(sortOption).skip(skip).limit(limit).lean(),
       Meal.countDocuments(mongoQuery),
+      getMenuVersion(),
     ]);
 
     return {
+      menuVersion,
       items: items.map((meal) => ({
         id: meal._id.toString(),
         name: meal.name,

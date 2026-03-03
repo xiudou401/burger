@@ -3,7 +3,7 @@ import { findAllMeals, SortOption } from '../services/meal.service';
 
 const isSortOption = (value: any): value is SortOption => {
   return ['price_asc', 'price_desc', 'created_asc', 'created_desc'].includes(
-    value
+    value,
   );
 };
 
@@ -15,7 +15,7 @@ const toNumber = (value: any): number | undefined => {
 export const getMeals = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     const { keyword, minPrice, maxPrice, page, limit, sort } = req.query;
