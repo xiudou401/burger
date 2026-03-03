@@ -78,6 +78,9 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     if (state.items.length === 0) return;
 
     const needValidate = !quote || quoteStale || quoteMismatch;
+    console.log(quoteMismatch);
+    console.log('itemsSig', itemsSig);
+    console.log('quoteSig', quoteSig);
     if (!needValidate) return;
 
     if (validatingRef.current) return;
@@ -90,6 +93,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         meals: res.items,
         ts: Date.now(),
       });
+      console.log('quote', quote);
     } finally {
       validatingRef.current = false;
     }

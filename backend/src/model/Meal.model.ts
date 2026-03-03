@@ -28,6 +28,7 @@ mealSchema.post(
     'findOneAndUpdate',
     'deleteOne',
     'findOneAndDelete',
+    'deleteMany',
   ],
   async () => {
     await updateMenuVersion();

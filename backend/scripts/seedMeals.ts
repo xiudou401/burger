@@ -1,6 +1,6 @@
+import { MealModel } from './../src/model/meal.model';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Meal from '../src/model/meal.model';
 
 dotenv.config();
 
@@ -69,10 +69,10 @@ const seedMeals = async () => {
   console.log('MongoDB connected');
 
   // ⚠️ 可选：先清空
-  await Meal.deleteMany();
+  await MealModel.deleteMany();
   console.log('Old meals removed');
 
-  await Meal.insertMany(meals);
+  await MealModel.insertMany(meals);
   console.log('Meals seeded successfully');
 
   await mongoose.disconnect();
