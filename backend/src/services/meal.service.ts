@@ -1,5 +1,6 @@
+import { MealModel } from './../model/meal.model';
 import { AppError } from '../errors/AppError';
-import Meal from '../model/meal.model';
+
 import type { SortOrder } from 'mongoose';
 import { getMenuVersion } from './menu.service'; // ✅ 新增
 
@@ -52,8 +53,12 @@ export const findAllMeals = async (query: MealQuery = {}) => {
 
     // ✅ 修正：解构出 menuVersion
     const [items, total, menuVersion] = await Promise.all([
-      Meal.find(mongoQuery).sort(sortOption).skip(skip).limit(limit).lean(),
-      Meal.countDocuments(mongoQuery),
+      MealModel.find(mongoQuery)
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      MealModel.countDocuments(mongoQuery),
       getMenuVersion(),
     ]);
 

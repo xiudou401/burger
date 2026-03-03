@@ -1,4 +1,4 @@
-import Meal from '../model/meal.model';
+import { MealModel } from '../model/meal.model';
 
 interface CartStoredItem {
   id: string;
@@ -10,7 +10,7 @@ export const validateCart = async (items: CartStoredItem[]) => {
   const ids = items.map((i) => i.id);
 
   // 2. 查数据库拿最新 meal
-  const meals = await Meal.find({ _id: { $in: ids } }).lean();
+  const meals = await MealModel.find({ _id: { $in: ids } }).lean();
 
   // 3. 组装 CartMeal（最新价格 + 前端数量）
   const mealMap = new Map(meals.map((meal) => [meal._id.toString(), meal]));
