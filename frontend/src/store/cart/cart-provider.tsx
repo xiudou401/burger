@@ -74,13 +74,12 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   const quoteStale = !quote || quote.menuVersion !== menuVersion;
 
   // ✅ 确保 quote 最新：menuVersion 变了 或 items 集合变了（新增/删除 id）都要校验
-  const ensureQuote = useCallback(async () => {
-    if (state.items.length === 0) return;
 
-    const needValidate = !quote || quoteStale || quoteMismatch;
-    console.log(quoteMismatch);
-    console.log('itemsSig', itemsSig);
-    console.log('quoteSig', quoteSig);
+  const needValidate = useMemo(() => {
+    return state.items.length > 0 && (!quote || quoteStale || quoteMismatch);
+  }, [state.items, quote, quoteStale, quoteMismatch]);
+
+  const ensureQuote = useCallback(async () => {
     if (!needValidate) return;
 
     if (validatingRef.current) return;
@@ -96,21 +95,14 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     } finally {
       validatingRef.current = false;
     }
-  }, [state.items, quote, quoteStale, quoteMismatch]);
-
+  }, [needValidate, state.items]);
   // ✅ 防抖：狂点 +/- 时只触发一次 validate
   useEffect(() => {
-    if (state.items.length === 0) return;
-
-    const needValidate = !quote || quoteStale || quoteMismatch;
     if (!needValidate) return;
 
-    const t = window.setTimeout(() => {
-      ensureQuote();
-    }, 150);
-
-    return () => window.clearTimeout(t);
-  }, [state.items, quote, quoteStale, quoteMismatch, ensureQuote]);
+    const t = setTimeout(ensureQuote, 150);
+    return () => clearTimeout(t);
+  }, [needValidate, ensureQuote]);
 
   const clearQuote = useCallback(() => setQuote(null), []);
 
