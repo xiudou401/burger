@@ -93,7 +93,6 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         meals: res.items,
         ts: Date.now(),
       });
-      console.log('quote', quote);
     } finally {
       validatingRef.current = false;
     }

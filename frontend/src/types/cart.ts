@@ -15,11 +15,11 @@ export interface CartState {
   totalQuantity: number;
 }
 
-export type Quote = {
+export interface Quote {
   menuVersion: string;
   meals: CartMeal[];
   ts: number;
-};
+}
 
 export const CART_ACTIONS = {
   ADD_ITEM: 'ADD_ITEM',
