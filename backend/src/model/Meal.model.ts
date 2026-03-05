@@ -20,19 +20,41 @@ const mealSchema = new Schema<Meal>(
   { timestamps: true },
 );
 
+// let versionUpdateTimer: NodeJS.Timeout | null = null;
+
+// function scheduleMenuVersionUpdate() {
+//   if (versionUpdateTimer) return;
+
+//   versionUpdateTimer = setTimeout(async () => {
+//     try {
+//       await updateMenuVersion();
+//     } catch (err) {
+//       console.error('updateMenuVersion failed', err);
+//     } finally {
+//       versionUpdateTimer = null;
+//     }
+//   }, 50);
+
+// }
+
+let versionUpdatePromise: Promise<void> | null = null;
+
+function scheduleMenuVersionUpdate() {
+  if (versionUpdatePromise) return;
+
+  versionUpdatePromise = (async () => {
+    try {
+      await updateMenuVersion();
+    } catch (err) {
+      console.error('updateMenuVersion failed', err);
+    } finally {
+      versionUpdatePromise = null;
+    }
+  })();
+}
 mealSchema.post(
-  [
-    'save',
-    'updateOne',
-    'updateMany',
-    'findOneAndUpdate',
-    'deleteOne',
-    'findOneAndDelete',
-    'deleteMany',
-  ],
-  async () => {
-    await updateMenuVersion();
-  },
+  ['save', 'updateMany', 'findOneAndUpdate', 'findOneAndDelete', 'deleteMany'],
+  scheduleMenuVersionUpdate,
 );
 
 // 通用方法：更新Menu集合的版本号为当前时间戳
