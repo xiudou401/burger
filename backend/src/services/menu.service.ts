@@ -9,7 +9,7 @@
 //   if (!latest?.updatedAt) return '0';
 //   return String(new Date(latest.updatedAt).getTime());
 // };
-import { MenuModel } from '../model/menu.model';
+import { MenuModel } from '../models/menu.model';
 
 export const getMenuVersion = async (): Promise<string> => {
   const menuDoc = await MenuModel.findById('main').select('version').lean();

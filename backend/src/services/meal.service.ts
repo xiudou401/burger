@@ -1,4 +1,4 @@
-import { MealModel } from './../model/meal.model';
+import { MealModel } from '../models/meal.model';
 import { AppError } from '../errors/AppError';
 
 import type { SortOrder } from 'mongoose';

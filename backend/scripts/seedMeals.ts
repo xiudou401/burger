@@ -1,4 +1,4 @@
-import { MealModel } from './../src/model/meal.model';
+import { MealModel } from '../src/models/meal.model';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 

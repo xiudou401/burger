@@ -53,7 +53,15 @@ function scheduleMenuVersionUpdate() {
   })();
 }
 mealSchema.post(
-  ['save', 'updateMany', 'findOneAndUpdate', 'findOneAndDelete', 'deleteMany'],
+  [
+    'save',
+    'updateOne',
+    'updateMany',
+    'findOneAndUpdate',
+    'deleteOne',
+    'findOneAndDelete',
+    'deleteMany',
+  ],
   scheduleMenuVersionUpdate,
 );
 

@@ -1,4 +1,4 @@
-import { MealModel } from '../model/meal.model';
+import { MealModel } from '../models/meal.model';
 
 interface CartStoredItem {
   id: string;
