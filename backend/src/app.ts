@@ -4,31 +4,33 @@ import cartRoutes from './routes/cart.routes';
 import menuVersionRoutes from './routes/menuVersion.routes';
 import path from 'path';
 import cors from 'cors';
+
 import { AppError } from './errors/AppError';
+import { errorHandler } from './middleware/errorHandler';
+import { logger } from './middleware/logger';
 
 const app = express();
 
-// app.use(cors({ origin: 'http://localhost:3000' }));
+// middleware
+app.use(cors({ origin: 'http://localhost:3000' }));
 app.use(express.json());
 
+// static files
 app.use('/img', express.static(path.join(__dirname, '../public/img')));
 
-app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(req.path, req.method);
-  next();
-});
-
+// logger middleware
+app.use(logger);
+// routes
 app.use('/api/meals', mealRoutes);
-
 app.use('/api/cart', cartRoutes);
-
 app.use('/api/menuVersion', menuVersionRoutes);
 
-app.use((err: AppError, req: Request, res: Response, next: NextFunction) => {
-  const status = err.statusCode || 500;
-  res.status(status).json({
-    message: err.message || '服务器内部错误',
-  });
+// 404 handler
+app.use((req: Request, res: Response, next: NextFunction) => {
+  next(new AppError('Route not found', 404));
 });
+
+// global error handler
+app.use(errorHandler);
 
 export default app;

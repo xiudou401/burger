@@ -3,6 +3,7 @@ import { connectDB } from './config/db';
 import { env } from './config/env';
 
 // 异步启动服务器（先连数据库，再启动接口）
+
 const startServer = async () => {
   try {
     await connectDB();
