@@ -13,6 +13,8 @@ const MealsList = forwardRef<HTMLDivElement, MealsListProps>(
   ({ meals, sentinelRef }, ref) => {
     const { getItemQuantity, ensureQuote } = useCartSelectors();
 
+    // console.log(meals);
+
     return (
       <div className={classes.MealsList} ref={ref}>
         {meals.map((meal) => (

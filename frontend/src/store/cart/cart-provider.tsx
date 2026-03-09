@@ -11,7 +11,7 @@ import { CartContext } from './cart-context';
 import { CartReducer, loadCartState, initialCartState } from './cart-reducer';
 import type { Quote } from '../../types/cart';
 import { validateCart } from '../../api/cart';
-import { fetchMenuVersion } from '../../api/menu';
+import { fetchMenuVersion } from '../../api/menuVersion';
 
 const MENU_POLL_MS = 30_000;
 

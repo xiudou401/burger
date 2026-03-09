@@ -2,7 +2,7 @@ import React from 'react';
 import classes from './MealItem.module.css';
 import QuantityCounter from '../../UI/Counter/QuantityCounter';
 import { Meal } from '../../../types/meal';
-import { useCartSelectors } from '../../../hooks/useCartSelectors';
+// import { useCartSelectors } from '../../../hooks/useCartSelectors';
 
 interface MealItemProps {
   meal: Meal;

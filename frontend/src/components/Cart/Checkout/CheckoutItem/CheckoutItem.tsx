@@ -2,14 +2,14 @@ import React from 'react';
 import type { CartMeal } from '../../../../types/cart';
 import classes from './CheckoutItem.module.css';
 import QuantityCounter from '../../../UI/Counter/QuantityCounter';
-import { useCartSelectors } from '../../../../hooks/useCartSelectors';
+// import { useCartSelectors } from '../../../../hooks/useCartSelectors';
 
 interface CheckoutItemProps {
   meal: CartMeal;
 }
 
 const CheckoutItem = ({ meal }: CheckoutItemProps) => {
-  const { getItemQuantity } = useCartSelectors();
+  // const { getItemQuantity } = useCartSelectors();
   // const quantity = getItemQuantity(meal.id); // ✅ 实时数量（来自 CartStoredItem）
 
   // ✅ 数量为 0 时直接不渲染（这样就“从列表移除”了）
