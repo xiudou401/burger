@@ -9,20 +9,15 @@ export const validateCartHandler = async (
 ) => {
   try {
     const items = req.body?.items;
+    const clientMenuVersion = req.body?.menuVersion ?? 0;
 
     if (!Array.isArray(items)) {
       return res.status(400).json({ message: 'Invalid cart items' });
     }
 
-    const [validatedMeals, menuVersion] = await Promise.all([
-      validateCart(items),
-      getMenuVersion(),
-    ]);
+    const result = await validateCart(items, clientMenuVersion);
 
-    res.status(200).json({
-      menuVersion,
-      items: validatedMeals,
-    });
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

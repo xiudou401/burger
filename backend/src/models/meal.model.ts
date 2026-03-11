@@ -67,7 +67,7 @@ mealSchema.post(
 
 // 通用方法：更新Menu集合的版本号为当前时间戳
 async function updateMenuVersion() {
-  const newVersion = String(Date.now());
+  const newVersion = Date.now();
   // upsert: true 表示如果"main"这条记录不存在，就自动创建
   await MenuModel.updateOne(
     { _id: 'main' },

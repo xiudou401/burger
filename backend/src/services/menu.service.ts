@@ -11,9 +11,8 @@
 // };
 import { MenuModel } from '../models/menu.model';
 
-export const getMenuVersion = async (): Promise<string> => {
+export const getMenuVersion = async (): Promise<number> => {
   const menuDoc = await MenuModel.findById('main').select('version').lean();
-  console.log(menuDoc);
 
-  return menuDoc?.version ?? '0';
+  return menuDoc?.version ?? 0;
 };
