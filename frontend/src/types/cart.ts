@@ -8,6 +8,7 @@ export interface CartStoredItem {
 
 export interface CartMeal extends Meal {
   quantity: number;
+  subtotal: number;
 }
 
 export interface CartState {
@@ -16,7 +17,7 @@ export interface CartState {
 }
 
 export interface Quote {
-  menuVersion: string;
+  menuVersion: number;
   meals: CartMeal[];
   ts: number;
 }
@@ -38,7 +39,7 @@ export interface CartContextValue extends CartState {
   cartDispatch: Dispatch<CartAction>;
 
   // ✅ pricing layer
-  menuVersion: string;
+  menuVersion: number;
   quote: Quote | null;
   quoteStale: boolean;
   quoteMismatch: boolean;

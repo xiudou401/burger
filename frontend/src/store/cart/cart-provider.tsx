@@ -39,7 +39,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   }, [state.items]);
 
   // ✅ 当前菜单版本（轮询）
-  const [menuVersion, setMenuVersion] = useState<string>('0');
+  const [menuVersion, setMenuVersion] = useState<number>(0);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -86,23 +86,26 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     validatingRef.current = true;
 
     try {
-      const res = await validateCart(state.items);
+      const res = await validateCart(state.items, menuVersion);
+
       setQuote({
         menuVersion: res.menuVersion,
         meals: res.items,
         ts: Date.now(),
       });
+    } catch (err: any) {
+      if (err.status === 409) {
+        // 菜单更新 → 强制刷新 menuVersion
+        const newVersion = await fetchMenuVersion();
+        setMenuVersion(newVersion);
+
+        // 清 quote 触发重新 validate
+        setQuote(null);
+      }
     } finally {
       validatingRef.current = false;
     }
-  }, [needValidate, state.items]);
-  // ✅ 防抖：狂点 +/- 时只触发一次 validate
-  useEffect(() => {
-    if (!needValidate) return;
-
-    const t = setTimeout(ensureQuote, 150);
-    return () => clearTimeout(t);
-  }, [needValidate, ensureQuote]);
+  }, [needValidate, state.items, menuVersion]);
 
   const clearQuote = useCallback(() => setQuote(null), []);
 

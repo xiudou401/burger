@@ -29,6 +29,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
   // ✅ 用“quote 的商品信息” + “cart 的实时 quantity”来展示
   const mealsWithLiveQty = useMemo(() => {
     const meals = quote?.meals ?? [];
+    console.log(meals);
     return meals
       .map((m) => ({ ...m, quantity: getItemQuantity(m.id) }))
       .filter((m) => m.quantity > 0);
