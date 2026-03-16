@@ -1,6 +1,6 @@
 import { MealModel } from '../models/meal.model';
-import { AppError } from '../errors/AppError';
 import { getMenuVersion } from './menu.service'; // ✅ 新增
+import { ServiceError } from '../errors/ServiceError';
 
 interface CartStoredItem {
   id: string;
@@ -14,7 +14,7 @@ export const validateCart = async (
   const currentVersion = await getMenuVersion();
 
   if (clientMenuVersion !== currentVersion) {
-    throw new AppError('Menu updated', 409);
+    throw new ServiceError('Menu updated', 409);
   }
 
   const ids = items.map((i) => i.id);
@@ -29,7 +29,7 @@ export const validateCart = async (
     const meal = mealMap.get(item.id);
 
     if (!meal) {
-      throw new AppError('Meal removed', 400);
+      throw new ServiceError('Meal removed', 400);
     }
 
     const subtotal = meal.price * item.quantity;

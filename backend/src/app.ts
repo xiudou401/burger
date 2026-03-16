@@ -11,15 +11,13 @@ import { logger } from './middleware/logger';
 
 const app = express();
 
-// middleware
-// app.use(cors({ origin: 'http://localhost:5001' }));
+// logger first
+app.use(logger);
+
 app.use(express.json());
 
-// static files
 app.use('/img', express.static(path.join(__dirname, '../public/img')));
 
-// logger middleware
-app.use(logger);
 // routes
 app.use('/api/meals', mealRoutes);
 app.use('/api/cart', cartRoutes);
