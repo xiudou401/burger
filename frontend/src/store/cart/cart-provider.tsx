@@ -12,6 +12,7 @@ import { CartReducer, loadCartState, initialCartState } from './cart-reducer';
 import type { Quote } from '../../types/cart';
 import { validateCart } from '../../api/cart';
 import { fetchMenuVersion } from '../../api/menuVersion';
+import { ApiError } from '../../api/request';
 
 const MENU_POLL_MS = 30_000;
 
@@ -93,14 +94,19 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         meals: res.items,
         ts: Date.now(),
       });
-    } catch (err: any) {
-      if (err.status === 409) {
-        // 菜单更新 → 强制刷新 menuVersion
-        const newVersion = await fetchMenuVersion();
-        setMenuVersion(newVersion);
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        if (err.statusCode === 409) {
+          const newVersion = await fetchMenuVersion();
+          setMenuVersion(newVersion);
+          setQuote(null);
+          return;
+        }
 
-        // 清 quote 触发重新 validate
-        setQuote(null);
+        if (err.statusCode >= 500) {
+          // 可加 toast / UI 提示
+          console.error('Server error');
+        }
       }
     } finally {
       validatingRef.current = false;

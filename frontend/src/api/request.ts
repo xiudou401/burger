@@ -2,14 +2,19 @@ const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
 
-// ✅ 标准化前端错误
-export class ApiError extends Error {
-  status: number;
-  body: any;
+interface ErrorResponse {
+  message: string;
+  statusCode?: number;
+  type?: string;
+}
 
-  constructor(status: number, body: any) {
-    super(body?.message || `API ${status}`);
-    this.status = status;
+export class ApiError extends Error {
+  statusCode: number;
+  body: ErrorResponse;
+
+  constructor(statusCode: number, body: ErrorResponse) {
+    super(body?.message || `API ${statusCode}`);
+    this.statusCode = statusCode;
     this.body = body;
   }
 }
@@ -55,7 +60,11 @@ export const request = async <T>(
       return {} as T;
     }
 
-    return res.json();
+    try {
+      return await res.json();
+    } catch {
+      return {} as T;
+    }
   } catch (err: any) {
     // ✅ timeout
     if (err.name === 'AbortError') {
@@ -65,7 +74,7 @@ export const request = async <T>(
     // ❗ 如果已经是 ApiError，不要 retry（关键）
     if (err instanceof ApiError) {
       // 👉 只对 5xx retry（很关键）
-      if (err.status >= 500 && retry > 0) {
+      if (err.statusCode >= 500 && retry > 0) {
         console.warn('Retry (server error):', path);
         return request<T>(path, options, retry - 1);
       }
