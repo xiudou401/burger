@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../errors/AppError';
 import { ServiceError } from '../errors/ServiceError';
 import { InfrastructureError } from '../errors/InfrastructureError';
+import { BaseError } from '../errors/BaseError';
 
 export const errorHandler = (
   err: unknown,
@@ -9,41 +10,23 @@ export const errorHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  // ✅ AppError
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      message: err.message,
-      statusCode: err.statusCode,
-      type: 'AppError',
-    });
-  }
-
-  // ✅ ServiceError（业务错误）
-  if (err instanceof ServiceError) {
-    console.warn('Service error:', err.message);
+  if (err instanceof BaseError) {
+    // 🔥 统一处理
+    if (!err.isOperational) {
+      console.error('Critical error:', err);
+    }
 
     return res.status(err.statusCode).json({
-      message: err.message,
+      message: err.isOperational ? err.message : 'Internal server error',
       statusCode: err.statusCode,
-      type: 'ServiceError', // ⭐ 很关键
+      type: err.constructor.name,
     });
   }
 
-  // ✅ InfrastructureError（不暴露细节）
-  if (err instanceof InfrastructureError) {
-    console.error('Infrastructure error:', err);
-
-    return res.status(500).json({
-      message: 'Internal server error',
-      statusCode: 500,
-      type: 'InfrastructureError',
-    });
-  }
-
-  // ✅ fallback
+  // ❗未知错误
   console.error('Unknown error:', err);
 
-  res.status(500).json({
+  return res.status(500).json({
     message: 'Internal server error',
     statusCode: 500,
     type: 'UnknownError',

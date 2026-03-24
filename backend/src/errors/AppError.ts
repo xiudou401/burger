@@ -1,12 +1,7 @@
-export class AppError extends Error {
-  statusCode: number;
-  isOperational: boolean;
+import { BaseError } from './BaseError';
 
+export class AppError extends BaseError {
   constructor(message: string, statusCode = 500) {
-    super(message);
-    this.statusCode = statusCode;
-    this.isOperational = true;
-
-    Error.captureStackTrace(this, this.constructor);
+    super(message, statusCode);
   }
 }

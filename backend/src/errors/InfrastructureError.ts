@@ -1,6 +1,7 @@
-export class InfrastructureError extends Error {
-  constructor(message: string) {
-    super(message);
-    Error.captureStackTrace(this, this.constructor);
+import { BaseError } from './BaseError';
+
+export class InfrastructureError extends BaseError {
+  constructor(message: string, statusCode = 500) {
+    super(message, statusCode, false); // ❗关键
   }
 }

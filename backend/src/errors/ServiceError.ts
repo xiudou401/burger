@@ -1,10 +1,7 @@
-export class ServiceError extends Error {
-  statusCode: number;
+import { BaseError } from './BaseError';
 
+export class ServiceError extends BaseError {
   constructor(message: string, statusCode = 400) {
-    super(message);
-    this.statusCode = statusCode;
-
-    Error.captureStackTrace(this, this.constructor);
+    super(message, statusCode);
   }
 }
