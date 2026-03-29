@@ -14,6 +14,7 @@ export class ApiError extends Error {
 
   constructor(statusCode: number, body: ErrorResponse) {
     super(body?.message || `API ${statusCode}`);
+    this.name = 'ApiError'; // ⭐
     this.statusCode = statusCode;
     this.body = body;
   }
