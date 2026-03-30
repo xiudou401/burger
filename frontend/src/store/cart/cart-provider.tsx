@@ -21,9 +21,10 @@ interface CartContextProviderProps {
   children: ReactNode;
 }
 
-const idsSignature = (arr: { id: string }[]) =>
+// 比较完整 cart：id + quantity
+const cartSignature = (arr: { id: string; quantity: number }[]) =>
   arr
-    .map((x) => x.id)
+    .map((x) => `${x.id}:${x.quantity}`)
     .sort()
     .join('|');
 
@@ -59,7 +60,9 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     tick();
 
     return () => {
-      if (timer) window.clearTimeout(timer);
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+      }
     };
   }, []);
 
@@ -72,10 +75,19 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   // debounce timer
   const debounceTimerRef = useRef<number | null>(null);
 
-  const itemsSig = useMemo(() => idsSignature(state.items), [state.items]);
-  const quoteSig = useMemo(() => idsSignature(quote?.meals ?? []), [quote]);
+  // 当前购物车签名：包含 quantity
+  const itemsSig = useMemo(() => cartSignature(state.items), [state.items]);
 
+  // quote 也包含 quantity 的前提下，才能做完整比较
+  const quoteSig = useMemo(() => {
+    if (!quote) return '';
+    return cartSignature(quote.meals);
+  }, [quote]);
+
+  // quote 和当前 cart 是否不一致（现在会检查数量）
   const quoteMismatch = !!quote && itemsSig !== quoteSig;
+
+  // quote 是否过期
   const quoteStale = !!quote && quote.menuVersion !== menuVersion;
 
   // 总体是否需要校验
@@ -84,7 +96,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   }, [state.items.length, quote, quoteStale, quoteMismatch]);
 
   // 只用于“购物车变化”的 debounce 校验
-  // 注意：这里故意不包含 quoteStale
+  // 故意不包含 quoteStale，因为菜单变化要立即校验
   const needDebouncedValidate = useMemo(() => {
     return state.items.length > 0 && (!quote || quoteMismatch);
   }, [state.items.length, quote, quoteMismatch]);
@@ -129,7 +141,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       // 只接受最新请求
       if (requestId !== requestIdRef.current) return;
 
-      // 请求回来后，如果 items 已经变了，丢弃旧结果
+      // 请求回来后，如果 cart 已变，丢弃旧结果
       if (snapshotSig !== latestRef.current.itemsSig) return;
 
       setQuote({
@@ -178,13 +190,14 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     }
   }, [state.totalQuantity]);
 
-  // 对“购物车变化”做 debounce
+  // 购物车变化时：debounce 校验
   useEffect(() => {
     if (!needDebouncedValidate) return;
     if (state.items.length === 0) return;
 
     if (debounceTimerRef.current !== null) {
       window.clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
 
     debounceTimerRef.current = window.setTimeout(() => {
@@ -200,12 +213,12 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     };
   }, [itemsSig, needDebouncedValidate, state.items.length, ensureQuote]);
 
-  // menuVersion 变化导致 quote 过期时，立即校验
+  // 菜单版本变化导致 quote 过期时：立即校验
   useEffect(() => {
     if (!quoteStale) return;
     if (latestRef.current.items.length === 0) return;
 
-    // 避免和旧的 debounce 计时器重叠
+    // 避免和旧的 debounce timer 重叠
     if (debounceTimerRef.current !== null) {
       window.clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = null;
@@ -218,6 +231,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     if (!quote) return 0;
 
     const qtyMap = new Map(state.items.map((i) => [i.id, i.quantity]));
+
     return quote.meals.reduce((sum, meal) => {
       const q = qtyMap.get(meal.id) ?? 0;
       return sum + meal.price * q;
