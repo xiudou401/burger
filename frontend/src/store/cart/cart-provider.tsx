@@ -21,7 +21,6 @@ interface CartContextProviderProps {
   children: ReactNode;
 }
 
-// 比较完整 cart：id + quantity
 const cartSignature = (arr: { id: string; quantity: number }[]) =>
   arr
     .map((x) => `${x.id}:${x.quantity}`)
@@ -35,21 +34,23 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     loadCartState,
   );
 
-  // localStorage：只存 items
+  const [menuVersion, setMenuVersion] = useState<number>(0);
+  const [quote, setQuote] = useState<Quote | null>(null);
+
+  const requestIdRef = useRef(0);
+  const debounceTimerRef = useRef<number | null>(null);
+
   useEffect(() => {
     localStorage.setItem('CartItemsState', JSON.stringify(state.items));
   }, [state.items]);
-
-  // 当前菜单版本（轮询）
-  const [menuVersion, setMenuVersion] = useState<number>(0);
 
   useEffect(() => {
     let timer: number | undefined;
 
     const tick = async () => {
       try {
-        const v = await fetchMenuVersion();
-        setMenuVersion((prev) => (prev === v ? prev : v));
+        const version = await fetchMenuVersion();
+        setMenuVersion((prev) => (prev === version ? prev : version));
       } catch {
         // ignore
       } finally {
@@ -66,47 +67,29 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     };
   }, []);
 
-  // quote（只在 validate 时更新）
-  const [quote, setQuote] = useState<Quote | null>(null);
-
-  // 只接受最新请求
-  const requestIdRef = useRef(0);
-
-  // debounce timer
-  const debounceTimerRef = useRef<number | null>(null);
-
-  // 当前购物车签名：包含 quantity
   const itemsSig = useMemo(() => cartSignature(state.items), [state.items]);
 
-  // quote 也包含 quantity 的前提下，才能做完整比较
   const quoteSig = useMemo(() => {
     if (!quote) return '';
     return cartSignature(quote.meals);
   }, [quote]);
 
-  // quote 和当前 cart 是否不一致（现在会检查数量）
   const quoteMismatch = !!quote && itemsSig !== quoteSig;
-
-  // quote 是否过期
   const quoteStale = !!quote && quote.menuVersion !== menuVersion;
 
-  // 总体是否需要校验
-  const needValidate = useMemo(() => {
-    return state.items.length > 0 && (!quote || quoteStale || quoteMismatch);
-  }, [state.items.length, quote, quoteStale, quoteMismatch]);
+  // 统一兜底：当前是否应该校验
+  const shouldValidate =
+    state.items.length > 0 && (!quote || quoteStale || quoteMismatch);
 
-  // 只用于“购物车变化”的 debounce 校验
-  // 故意不包含 quoteStale，因为菜单变化要立即校验
-  const needDebouncedValidate = useMemo(() => {
-    return state.items.length > 0 && (!quote || quoteMismatch);
-  }, [state.items.length, quote, quoteMismatch]);
+  // 仅用于购物车变化后的防抖校验
+  const shouldDebounceValidate =
+    state.items.length > 0 && (!quote || quoteMismatch);
 
-  // 用 ref 保存最新值，让 ensureQuote 保持稳定
   const latestRef = useRef({
     items: state.items,
     itemsSig,
     menuVersion,
-    needValidate,
+    shouldValidate,
   });
 
   useEffect(() => {
@@ -114,23 +97,28 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       items: state.items,
       itemsSig,
       menuVersion,
-      needValidate,
+      shouldValidate,
     };
-  }, [state.items, itemsSig, menuVersion, needValidate]);
+  }, [state.items, itemsSig, menuVersion, shouldValidate]);
+
+  const clearDebounceTimer = useCallback(() => {
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, []);
 
   const ensureQuote = useCallback(async () => {
     const {
       items: latestItems,
       itemsSig: latestItemsSig,
       menuVersion: latestMenuVersion,
-      needValidate: latestNeedValidate,
+      shouldValidate: latestShouldValidate,
     } = latestRef.current;
 
-    if (!latestNeedValidate) return;
-    if (latestItems.length === 0) return;
+    if (!latestShouldValidate) return;
 
     const requestId = ++requestIdRef.current;
-
     const snapshotItems = latestItems;
     const snapshotSig = latestItemsSig;
     const snapshotVersion = latestMenuVersion;
@@ -138,10 +126,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     try {
       const res = await validateCart(snapshotItems, snapshotVersion);
 
-      // 只接受最新请求
       if (requestId !== requestIdRef.current) return;
-
-      // 请求回来后，如果 cart 已变，丢弃旧结果
       if (snapshotSig !== latestRef.current.itemsSig) return;
 
       setQuote({
@@ -152,24 +137,24 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     } catch (err: unknown) {
       if (requestId !== requestIdRef.current) return;
 
-      if (err instanceof ApiError) {
-        if (err.statusCode === 409) {
-          try {
-            const newVersion = await fetchMenuVersion();
+      if (!(err instanceof ApiError)) return;
 
-            if (requestId !== requestIdRef.current) return;
+      if (err.statusCode === 409) {
+        try {
+          const newVersion = await fetchMenuVersion();
 
-            setMenuVersion(newVersion);
-            setQuote(null);
-          } catch {
-            // ignore
-          }
-          return;
+          if (requestId !== requestIdRef.current) return;
+
+          setMenuVersion(newVersion);
+          setQuote(null);
+        } catch {
+          // ignore
         }
+        return;
+      }
 
-        if (err.statusCode >= 500) {
-          console.error('Server error');
-        }
+      if (err.statusCode >= 500) {
+        console.error('Server error');
       }
     }
   }, []);
@@ -178,63 +163,41 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     setQuote(null);
   }, []);
 
-  // cart 清空 → 清 quote，并清掉 debounce
   useEffect(() => {
-    if (state.totalQuantity === 0) {
-      setQuote(null);
+    if (state.totalQuantity !== 0) return;
 
-      if (debounceTimerRef.current !== null) {
-        window.clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-    }
-  }, [state.totalQuantity]);
+    setQuote(null);
+    clearDebounceTimer();
+  }, [state.totalQuantity, clearDebounceTimer]);
 
-  // 购物车变化时：debounce 校验
   useEffect(() => {
-    if (!needDebouncedValidate) return;
-    if (state.items.length === 0) return;
+    if (!shouldDebounceValidate) return;
 
-    if (debounceTimerRef.current !== null) {
-      window.clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
+    clearDebounceTimer();
 
     debounceTimerRef.current = window.setTimeout(() => {
       ensureQuote();
       debounceTimerRef.current = null;
     }, VALIDATE_DEBOUNCE_MS);
 
-    return () => {
-      if (debounceTimerRef.current !== null) {
-        window.clearTimeout(debounceTimerRef.current);
-        debounceTimerRef.current = null;
-      }
-    };
-  }, [itemsSig, needDebouncedValidate, state.items.length, ensureQuote]);
+    return clearDebounceTimer;
+  }, [itemsSig, shouldDebounceValidate, ensureQuote, clearDebounceTimer]);
 
-  // 菜单版本变化导致 quote 过期时：立即校验
   useEffect(() => {
     if (!quoteStale) return;
-    if (latestRef.current.items.length === 0) return;
 
-    // 避免和旧的 debounce timer 重叠
-    if (debounceTimerRef.current !== null) {
-      window.clearTimeout(debounceTimerRef.current);
-      debounceTimerRef.current = null;
-    }
-
+    clearDebounceTimer();
     ensureQuote();
-  }, [quoteStale, ensureQuote]);
+  }, [quoteStale, ensureQuote, clearDebounceTimer]);
 
   const estimatedTotalPrice = useMemo(() => {
     if (!quote) return 0;
 
-    const qtyMap = new Map(state.items.map((i) => [i.id, i.quantity]));
+    const qtyMap = new Map(state.items.map((item) => [item.id, item.quantity]));
 
     return quote.meals.reduce((sum, meal) => {
-      const q = qtyMap.get(meal.id) ?? 0;
-      return sum + meal.price * q;
+      const quantity = qtyMap.get(meal.id) ?? 0;
+      return sum + meal.price * quantity;
     }, 0);
   }, [quote, state.items]);
 
@@ -243,13 +206,11 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       value={{
         ...state,
         cartDispatch,
-
         menuVersion,
         quote,
         quoteStale,
         quoteMismatch,
         estimatedTotalPrice,
-
         ensureQuote,
         clearQuote,
       }}
