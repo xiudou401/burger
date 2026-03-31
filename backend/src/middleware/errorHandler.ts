@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AppError } from '../errors/AppError';
-import { ServiceError } from '../errors/ServiceError';
-import { InfrastructureError } from '../errors/InfrastructureError';
+
 import { BaseError } from '../errors/BaseError';
 
 export const errorHandler = (
