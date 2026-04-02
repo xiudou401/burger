@@ -25,8 +25,8 @@ export const useInfiniteMeals = ({
   const listRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // 用 ref 做“请求锁”，避免重复请求
   const loadingRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   const loadMeals = useCallback(
     async (pageToLoad: number, searchKeyword: string) => {
@@ -34,7 +34,9 @@ export const useInfiniteMeals = ({
 
       loadingRef.current = true;
       setIsLoading(true);
-      console.log(`📡 发起请求: 第 ${pageToLoad} 页`);
+
+      const requestId = ++requestIdRef.current;
+      console.log(`📡 发起请求: 第 ${pageToLoad} 页, keyword=${searchKeyword}`);
 
       try {
         const data = await fetchMeals({
@@ -43,8 +45,16 @@ export const useInfiniteMeals = ({
           limit,
         });
 
+        // ✅ 如果不是最新请求，直接丢弃
+        if (requestId !== requestIdRef.current) {
+          console.log('⏭️ 旧请求结果已丢弃');
+          return;
+        }
+
         setMeals((prev) => {
-          if (pageToLoad === 1) return data.items;
+          if (pageToLoad === 1) {
+            return data.items;
+          }
 
           const existingIds = new Set(prev.map((m) => m.id));
           const newItems = data.items.filter(
@@ -60,36 +70,40 @@ export const useInfiniteMeals = ({
 
         setHasMore(data.page < data.totalPages);
       } catch (error) {
-        console.error('加载失败', error);
+        // ✅ 只有最新请求才处理 loading / error 的语义
+        if (requestId === requestIdRef.current) {
+          console.error('加载失败', error);
+        }
       } finally {
-        // 你原来有 500ms 的“解锁延迟”，我保持不变
-        setTimeout(() => {
+        // ✅ 只有当前请求仍然是最新请求时才解锁
+        if (requestId === requestIdRef.current) {
           setIsLoading(false);
           loadingRef.current = false;
           console.log('🔓 锁已释放，可以进行下一次翻页');
-        }, 500);
+        }
       }
     },
     [fetchMeals, limit],
   );
 
-  // page / keyword 变化 -> 自动加载
   useEffect(() => {
     loadMeals(page, keyword);
   }, [page, keyword, loadMeals]);
 
-  // 无限滚动：观察 sentinel
   useEffect(() => {
-    if (!hasMore || isLoading || loadingRef.current) return;
+    if (!hasMore || isLoading) return;
+    if (!listRef.current || !sentinelRef.current) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !loadingRef.current) {
-          setPage((prev) => {
-            console.log(`🚀 确认触底，允许从第 ${prev} 页翻到 ${prev + 1} 页`);
-            return prev + 1;
-          });
-        }
+        const entry = entries[0];
+        if (!entry.isIntersecting) return;
+        if (loadingRef.current) return;
+
+        setPage((prev) => {
+          console.log(`🚀 确认触底，允许从第 ${prev} 页翻到 ${prev + 1} 页`);
+          return prev + 1;
+        });
       },
       {
         root: listRef.current,
@@ -98,23 +112,33 @@ export const useInfiniteMeals = ({
       },
     );
 
-    if (sentinelRef.current) observer.observe(sentinelRef.current);
+    observer.observe(sentinelRef.current);
+
     return () => observer.disconnect();
   }, [hasMore, isLoading]);
 
   const onSearch = useCallback((value: string) => {
-    const k = value;
+    const k = value.trim();
 
-    // 先重置分页相关
+    // ✅ 使旧请求全部失效
+    requestIdRef.current += 1;
+
+    // ✅ 重置显示状态
+    loadingRef.current = false;
+    setIsLoading(false);
     setMeals([]);
     setHasMore(true);
-
-    // 关键：只通过 state 变化触发请求，不要手动再 loadMeals
     setPage(1);
     setKeyword(k);
+  }, []);
 
-    // 可选：如果你希望“立刻锁住”，避免 observer 抢跑
+  const reload = useCallback(() => {
+    requestIdRef.current += 1;
     loadingRef.current = false;
+    setIsLoading(false);
+    setMeals([]);
+    setHasMore(true);
+    setPage(1);
   }, []);
 
   return {
@@ -126,7 +150,6 @@ export const useInfiniteMeals = ({
     listRef,
     sentinelRef,
     onSearch,
-    // 如果你未来想手动触发刷新，也可以暴露：
-    reload: () => loadMeals(1, keyword),
+    reload,
   };
 };
