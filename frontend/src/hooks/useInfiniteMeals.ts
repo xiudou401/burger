@@ -91,7 +91,7 @@ export const useInfiniteMeals = ({
   }, [page, keyword, loadMeals]);
 
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    if (!hasMore) return;
     if (!listRef.current || !sentinelRef.current) return;
 
     const observer = new IntersectionObserver(
@@ -115,7 +115,7 @@ export const useInfiniteMeals = ({
     observer.observe(sentinelRef.current);
 
     return () => observer.disconnect();
-  }, [hasMore, isLoading]);
+  }, [hasMore]);
 
   const onSearch = useCallback((value: string) => {
     const k = value.trim();
@@ -123,7 +123,7 @@ export const useInfiniteMeals = ({
     // ✅ 使旧请求全部失效
     requestIdRef.current += 1;
 
-    // ✅ 重置显示状态
+    // 重置锁状态，允许新的搜索请求正常发起
     loadingRef.current = false;
     setIsLoading(false);
     setMeals([]);
