@@ -6,23 +6,16 @@ import { useCartActions } from '../../../hooks/useCartActions';
 interface QuantityCounterProps {
   id: string;
   quantity: number;
-  onFirstInteract?: () => void;
 }
 
-const QuantityCounter = ({
-  id,
-  quantity,
-  onFirstInteract,
-}: QuantityCounterProps) => {
+const QuantityCounter = ({ id, quantity }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
 
   const onDecrease = () => {
-    onFirstInteract?.();
     removeItem(id);
   };
 
   const onIncrease = () => {
-    onFirstInteract?.();
     addItem(id);
   };
 

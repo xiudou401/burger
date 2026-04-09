@@ -74,7 +74,6 @@ const CartDetails = ({ open }: CartDetailsProps) => {
               meal={meal} // meal 提供 name/price/image/desc
               noDesc
               quantity={meal.quantity} // ✅ 实时 quantity
-              onFirstInteract={ensureQuote} // ✅ 继续保证新增 id 时能补齐 quote
             />
           ))}
 

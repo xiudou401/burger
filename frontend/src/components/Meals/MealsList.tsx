@@ -11,7 +11,7 @@ interface MealsListProps {
 
 const MealsList = forwardRef<HTMLDivElement, MealsListProps>(
   ({ meals, sentinelRef }, ref) => {
-    const { getItemQuantity, ensureQuote } = useCartSelectors();
+    const { getItemQuantity } = useCartSelectors();
 
     // console.log(meals);
 
@@ -22,7 +22,6 @@ const MealsList = forwardRef<HTMLDivElement, MealsListProps>(
             key={meal.id}
             meal={meal}
             quantity={getItemQuantity(meal.id)}
-            onFirstInteract={ensureQuote}
           />
         ))}
 

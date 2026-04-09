@@ -8,15 +8,9 @@ interface MealItemProps {
   meal: Meal;
   noDesc?: boolean;
   quantity?: number; // ✅ 新增
-  onFirstInteract?: () => void; // ✅ 新增
 }
 
-const MealItem = ({
-  meal,
-  noDesc,
-  quantity = 0,
-  onFirstInteract,
-}: MealItemProps) => {
+const MealItem = ({ meal, noDesc, quantity = 0 }: MealItemProps) => {
   // const { getItemQuantity } = useCartSelectors();
   // const quantity = getItemQuantity(meal.id); // ✅ 实时 quantity
 
@@ -35,11 +29,7 @@ const MealItem = ({
           <span className={classes.Price}>{meal.price.toFixed(2)}</span>
 
           {/* ✅ Quantity 来自 cart state，不来自 meal */}
-          <QuantityCounter
-            id={meal.id}
-            quantity={quantity}
-            onFirstInteract={onFirstInteract}
-          />
+          <QuantityCounter id={meal.id} quantity={quantity} />
         </div>
       </div>
     </div>
