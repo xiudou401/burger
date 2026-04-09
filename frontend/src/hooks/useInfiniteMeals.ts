@@ -21,6 +21,7 @@ export const useInfiniteMeals = ({
   const [keyword, setKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -45,7 +46,6 @@ export const useInfiniteMeals = ({
           limit,
         });
 
-        // ✅ 如果不是最新请求，直接丢弃
         if (requestId !== requestIdRef.current) {
           console.log('⏭️ 旧请求结果已丢弃');
           return;
@@ -70,15 +70,13 @@ export const useInfiniteMeals = ({
 
         setHasMore(data.page < data.totalPages);
       } catch (error) {
-        // ✅ 只有最新请求才处理 loading / error 的语义
         if (requestId === requestIdRef.current) {
           console.error('加载失败', error);
         }
       } finally {
-        // ✅ 只有当前请求仍然是最新请求时才解锁
         if (requestId === requestIdRef.current) {
-          setIsLoading(false);
           loadingRef.current = false;
+          setIsLoading(false);
           console.log('🔓 锁已释放，可以进行下一次翻页');
         }
       }
@@ -88,7 +86,7 @@ export const useInfiniteMeals = ({
 
   useEffect(() => {
     loadMeals(page, keyword);
-  }, [page, keyword, loadMeals]);
+  }, [page, keyword, reloadKey, loadMeals]);
 
   useEffect(() => {
     if (!hasMore) return;
@@ -117,29 +115,30 @@ export const useInfiniteMeals = ({
     return () => observer.disconnect();
   }, [hasMore]);
 
-  const onSearch = useCallback((value: string) => {
-    const k = value.trim();
-
-    // ✅ 使旧请求全部失效
+  const resetAndInvalidate = useCallback(() => {
     requestIdRef.current += 1;
-
-    // 重置锁状态，允许新的搜索请求正常发起
     loadingRef.current = false;
     setIsLoading(false);
     setMeals([]);
     setHasMore(true);
     setPage(1);
-    setKeyword(k);
   }, []);
+
+  const onSearch = useCallback(
+    (value: string) => {
+      const k = value.trim();
+
+      resetAndInvalidate();
+      setKeyword(k);
+      setReloadKey((prev) => prev + 1);
+    },
+    [resetAndInvalidate],
+  );
 
   const reload = useCallback(() => {
-    requestIdRef.current += 1;
-    loadingRef.current = false;
-    setIsLoading(false);
-    setMeals([]);
-    setHasMore(true);
-    setPage(1);
-  }, []);
+    resetAndInvalidate();
+    setReloadKey((prev) => prev + 1);
+  }, [resetAndInvalidate]);
 
   return {
     meals,
