@@ -21,15 +21,18 @@ const Cart = () => {
   const [showCartDetails, setShowCartDetails] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
 
-  const toggleCartDetailsHandler = async () => {
+  const toggleCartDetailsHandler = () => {
     if (totalQuantity === 0) return;
 
-    // ✅ 打开详情前先确保有 quote（只会校验一次，且有去重锁）
     if (!showCartDetails) {
-      await ensureQuote();
+      setShowCartDetails(true);
+      ensureQuote().catch(() => {
+        // 可选：这里可以不处理，或者做 toast
+      });
+      return;
     }
 
-    setShowCartDetails((prev) => !prev);
+    setShowCartDetails(false);
   };
 
   const onCheckout = async (e: MouseEvent<HTMLButtonElement>) => {
@@ -37,7 +40,7 @@ const Cart = () => {
     if (totalQuantity === 0) return;
 
     try {
-      await ensureQuote(); // ✅ 同样：需要时才校验，不重复
+      await ensureQuote();
       setShowCheckout(true);
     } catch {
       alert('购物车校验失败，请稍后重试');

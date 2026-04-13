@@ -39,6 +39,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
 
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef<number | null>(null);
+  const inFlightPromiseRef = useRef<Promise<void> | null>(null);
 
   useEffect(() => {
     localStorage.setItem('CartItemsState', JSON.stringify(state.items));
@@ -77,11 +78,9 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   const quoteMismatch = !!quote && itemsSig !== quoteSig;
   const quoteStale = !!quote && quote.menuVersion !== menuVersion;
 
-  // 统一兜底：当前是否应该校验
   const shouldValidate =
     state.items.length > 0 && (!quote || quoteStale || quoteMismatch);
 
-  // 仅用于购物车变化后的防抖校验
   const shouldDebounceValidate =
     state.items.length > 0 && (!quote || quoteMismatch);
 
@@ -108,55 +107,80 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     }
   }, []);
 
-  const ensureQuote = useCallback(async () => {
-    const {
-      items: latestItems,
-      itemsSig: latestItemsSig,
-      menuVersion: latestMenuVersion,
-      shouldValidate: latestShouldValidate,
-    } = latestRef.current;
-
-    if (!latestShouldValidate) return;
-
-    const requestId = ++requestIdRef.current;
-    const snapshotItems = latestItems;
-    const snapshotSig = latestItemsSig;
-    const snapshotVersion = latestMenuVersion;
-
-    try {
-      const res = await validateCart(snapshotItems, snapshotVersion);
-
-      if (requestId !== requestIdRef.current) return;
-      if (snapshotSig !== latestRef.current.itemsSig) return;
-
-      setQuote({
-        menuVersion: res.menuVersion,
-        meals: res.items,
-        ts: Date.now(),
-      });
-    } catch (err: unknown) {
-      if (requestId !== requestIdRef.current) return;
-
-      if (!(err instanceof ApiError)) return;
-
-      if (err.statusCode === 409) {
-        try {
-          const newVersion = await fetchMenuVersion();
-
-          if (requestId !== requestIdRef.current) return;
-
-          setMenuVersion(newVersion);
-          setQuote(null);
-        } catch {
-          // ignore
-        }
-        return;
-      }
-
-      if (err.statusCode >= 500) {
-        console.error('Server error');
-      }
+  const ensureQuote = useCallback((): Promise<void> => {
+    // 已经有校验在进行：直接复用
+    if (inFlightPromiseRef.current) {
+      return inFlightPromiseRef.current;
     }
+
+    const run = async () => {
+      const {
+        items: latestItems,
+        itemsSig: latestItemsSig,
+        menuVersion: latestMenuVersion,
+        shouldValidate: latestShouldValidate,
+      } = latestRef.current;
+
+      // 当前不需要校验，直接结束
+      if (!latestShouldValidate) return;
+
+      const requestId = ++requestIdRef.current;
+      const snapshotItems = latestItems;
+      const snapshotSig = latestItemsSig;
+      const snapshotVersion = latestMenuVersion;
+
+      try {
+        const res = await validateCart(snapshotItems, snapshotVersion);
+
+        // 不是最新请求，丢弃
+        if (requestId !== requestIdRef.current) return;
+
+        // 请求期间购物车变了，丢弃
+        if (snapshotSig !== latestRef.current.itemsSig) return;
+
+        setQuote({
+          menuVersion: res.menuVersion,
+          meals: res.items,
+          ts: Date.now(),
+        });
+      } catch (err: unknown) {
+        // 不是最新请求，丢弃
+        if (requestId !== requestIdRef.current) return;
+
+        if (!(err instanceof ApiError)) {
+          throw err;
+        }
+
+        if (err.statusCode === 409) {
+          try {
+            const newVersion = await fetchMenuVersion();
+
+            if (requestId !== requestIdRef.current) return;
+
+            setMenuVersion(newVersion);
+            setQuote(null);
+            return;
+          } catch (fetchErr) {
+            throw fetchErr;
+          }
+        }
+
+        if (err.statusCode >= 500) {
+          console.error('Server error');
+        }
+
+        throw err;
+      } finally {
+        // 只有当前这一轮 promise 才能清空自己
+        if (inFlightPromiseRef.current === promise) {
+          inFlightPromiseRef.current = null;
+        }
+      }
+    };
+
+    const promise = run();
+    inFlightPromiseRef.current = promise;
+    return promise;
   }, []);
 
   const clearQuote = useCallback(() => {
@@ -176,7 +200,9 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     clearDebounceTimer();
 
     debounceTimerRef.current = window.setTimeout(() => {
-      ensureQuote();
+      ensureQuote().catch(() => {
+        // 自动校验失败：这里先吞掉，避免未处理 Promise
+      });
       debounceTimerRef.current = null;
     }, VALIDATE_DEBOUNCE_MS);
 
@@ -187,7 +213,10 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     if (!quoteStale) return;
 
     clearDebounceTimer();
-    ensureQuote();
+
+    ensureQuote().catch(() => {
+      // 自动校验失败：先吞掉
+    });
   }, [quoteStale, ensureQuote, clearDebounceTimer]);
 
   const estimatedTotalPrice = useMemo(() => {
