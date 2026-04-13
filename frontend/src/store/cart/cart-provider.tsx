@@ -108,12 +108,11 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   }, []);
 
   const ensureQuote = useCallback((): Promise<void> => {
-    // 已经有校验在进行：直接复用
     if (inFlightPromiseRef.current) {
       return inFlightPromiseRef.current;
     }
 
-    const run = async () => {
+    const promise = (async () => {
       const {
         items: latestItems,
         itemsSig: latestItemsSig,
@@ -121,7 +120,6 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         shouldValidate: latestShouldValidate,
       } = latestRef.current;
 
-      // 当前不需要校验，直接结束
       if (!latestShouldValidate) return;
 
       const requestId = ++requestIdRef.current;
@@ -132,10 +130,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       try {
         const res = await validateCart(snapshotItems, snapshotVersion);
 
-        // 不是最新请求，丢弃
         if (requestId !== requestIdRef.current) return;
-
-        // 请求期间购物车变了，丢弃
         if (snapshotSig !== latestRef.current.itemsSig) return;
 
         setQuote({
@@ -144,7 +139,6 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
           ts: Date.now(),
         });
       } catch (err: unknown) {
-        // 不是最新请求，丢弃
         if (requestId !== requestIdRef.current) return;
 
         if (!(err instanceof ApiError)) {
@@ -152,17 +146,13 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         }
 
         if (err.statusCode === 409) {
-          try {
-            const newVersion = await fetchMenuVersion();
+          const newVersion = await fetchMenuVersion();
 
-            if (requestId !== requestIdRef.current) return;
+          if (requestId !== requestIdRef.current) return;
 
-            setMenuVersion(newVersion);
-            setQuote(null);
-            return;
-          } catch (fetchErr) {
-            throw fetchErr;
-          }
+          setMenuVersion(newVersion);
+          setQuote(null);
+          return;
         }
 
         if (err.statusCode >= 500) {
@@ -170,16 +160,17 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         }
 
         throw err;
-      } finally {
-        // 只有当前这一轮 promise 才能清空自己
-        if (inFlightPromiseRef.current === promise) {
-          inFlightPromiseRef.current = null;
-        }
       }
-    };
+    })();
 
-    const promise = run();
     inFlightPromiseRef.current = promise;
+
+    promise.finally(() => {
+      if (inFlightPromiseRef.current === promise) {
+        inFlightPromiseRef.current = null;
+      }
+    });
+
     return promise;
   }, []);
 
