@@ -1,5 +1,19 @@
 import { NextFunction, Request, Response } from 'express';
-import { validateCart } from '../services/cart.service';
+import { validateCart, CartStoredItem } from '../services/cart.service';
+
+const isValidCartItem = (item: unknown): item is CartStoredItem => {
+  if (!item || typeof item !== 'object') return false;
+
+  const candidate = item as Record<string, unknown>;
+
+  return (
+    typeof candidate.id === 'string' &&
+    candidate.id.trim().length > 0 &&
+    typeof candidate.quantity === 'number' &&
+    Number.isInteger(candidate.quantity) &&
+    candidate.quantity > 0
+  );
+};
 
 export const validateCartHandler = async (
   req: Request,
@@ -8,15 +22,23 @@ export const validateCartHandler = async (
 ) => {
   try {
     const items = req.body?.items;
-    const clientMenuVersion = req.body?.menuVersion ?? 0;
+    const menuVersion = req.body?.menuVersion;
 
-    if (!Array.isArray(items)) {
-      return res.status(400).json({ message: 'Invalid cart items' });
+    if (!Array.isArray(items) || !items.every(isValidCartItem)) {
+      return res.status(400).json({
+        message: 'Invalid cart items',
+      });
     }
 
-    const result = await validateCart(items, clientMenuVersion);
+    if (typeof menuVersion !== 'number' || !Number.isInteger(menuVersion)) {
+      return res.status(400).json({
+        message: 'Invalid menu version',
+      });
+    }
 
-    res.status(200).json(result);
+    const result = await validateCart(items, menuVersion);
+
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }

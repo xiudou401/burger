@@ -1,31 +1,56 @@
 import { MealModel } from '../models/meal.model';
-import { getMenuVersion } from './menu.service'; // ✅ 新增
+import { getMenuVersion } from './menu.service';
 import { ServiceError } from '../errors/ServiceError';
 
-interface CartStoredItem {
+export interface CartStoredItem {
   id: string;
   quantity: number;
 }
 
+export interface ValidatedCartMeal {
+  id: string;
+  name: string;
+  image?: string;
+  price: number;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface ValidateCartResult {
+  items: ValidatedCartMeal[];
+  total: number;
+  menuVersion: number;
+}
+
 export const validateCart = async (
   items: CartStoredItem[],
-  clientMenuVersion: number,
-) => {
+  menuVersion: number,
+): Promise<ValidateCartResult> => {
   const currentVersion = await getMenuVersion();
 
-  if (clientMenuVersion !== currentVersion) {
+  if (menuVersion !== currentVersion) {
     throw new ServiceError('Menu updated', 409);
   }
 
-  const ids = items.map((i) => i.id);
+  if (items.length === 0) {
+    return {
+      items: [],
+      total: 0,
+      menuVersion: currentVersion,
+    };
+  }
 
-  const meals = await MealModel.find({ _id: { $in: ids } }).lean();
+  const ids = items.map((item) => item.id);
+
+  const meals = await MealModel.find({
+    _id: { $in: ids },
+  }).lean();
 
   const mealMap = new Map(meals.map((meal) => [meal._id.toString(), meal]));
 
   let total = 0;
 
-  const result = items.map((item) => {
+  const result: ValidatedCartMeal[] = items.map((item) => {
     const meal = mealMap.get(item.id);
 
     if (!meal) {
@@ -33,7 +58,6 @@ export const validateCart = async (
     }
 
     const subtotal = meal.price * item.quantity;
-
     total += subtotal;
 
     return {
