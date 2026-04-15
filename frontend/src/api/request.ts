@@ -14,49 +14,69 @@ export class ApiError extends Error {
 
   constructor(statusCode: number, body: ErrorResponse) {
     super(body?.message || `API ${statusCode}`);
-    this.name = 'ApiError'; // ⭐
+    this.name = 'ApiError';
     this.statusCode = statusCode;
     this.body = body;
   }
 }
 
+interface RequestOptions extends RequestInit {
+  signal?: AbortSignal;
+}
+
 export const request = async <T>(
   path: string,
-  options?: RequestInit,
+  options: RequestOptions = {},
   retry = RETRY_COUNT,
 ): Promise<T> => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT);
+  const timeoutController = new AbortController();
+  const externalSignal = options.signal;
+
+  let didTimeout = false;
+
+  const timeoutId = window.setTimeout(() => {
+    didTimeout = true;
+    timeoutController.abort();
+  }, DEFAULT_TIMEOUT);
+
+  const onExternalAbort = () => {
+    timeoutController.abort();
+  };
 
   try {
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        timeoutController.abort();
+      } else {
+        externalSignal.addEventListener('abort', onExternalAbort);
+      }
+    }
+
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
-      signal: controller.signal,
+      signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
-        ...options?.headers,
+        ...options.headers,
       },
     });
 
-    // ✅ 处理非 2xx
     if (!res.ok) {
-      // 401 特殊处理
       if (res.status === 401) {
         console.warn('Unauthorized');
       }
 
-      let body: any;
+      let body: ErrorResponse;
 
       try {
-        body = await res.json(); // ✅ 优先 JSON（配合后端 errorHandler）
+        body = await res.json();
       } catch {
-        body = { message: await res.text() }; // fallback
+        body = { message: await res.text() };
       }
 
       throw new ApiError(res.status, body);
     }
 
-    // ✅ 有些接口可能没有 body（204）
     if (res.status === 204) {
       return {} as T;
     }
@@ -66,15 +86,16 @@ export const request = async <T>(
     } catch {
       return {} as T;
     }
-  } catch (err: any) {
-    // ✅ timeout
-    if (err.name === 'AbortError') {
-      throw new ApiError(408, { message: 'Request timeout' });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      if (didTimeout) {
+        throw new ApiError(408, { message: 'Request timeout' });
+      }
+
+      throw new ApiError(499, { message: 'Request cancelled' });
     }
 
-    // ❗ 如果已经是 ApiError，不要 retry（关键）
     if (err instanceof ApiError) {
-      // 👉 只对 5xx retry（很关键）
       if (err.statusCode >= 500 && retry > 0) {
         console.warn('Retry (server error):', path);
         return request<T>(path, options, retry - 1);
@@ -83,14 +104,18 @@ export const request = async <T>(
       throw err;
     }
 
-    // ✅ 网络错误（fetch failed）
     if (retry > 0) {
       console.warn('Retry (network error):', path);
       return request<T>(path, options, retry - 1);
     }
 
-    throw new ApiError(0, { message: err.message || 'Network error' });
+    const message = err instanceof Error ? err.message : 'Network error';
+    throw new ApiError(0, { message });
   } finally {
-    clearTimeout(timeoutId);
+    window.clearTimeout(timeoutId);
+
+    if (externalSignal) {
+      externalSignal.removeEventListener('abort', onExternalAbort);
+    }
   }
 };

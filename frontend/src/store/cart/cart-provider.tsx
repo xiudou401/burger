@@ -27,6 +27,15 @@ const cartSignature = (arr: { id: string; quantity: number }[]) =>
     .sort()
     .join('|');
 
+const buildQuoteKey = (itemsSig: string, menuVersion: number) =>
+  `${itemsSig}::${menuVersion}`;
+
+type InFlightEntry = {
+  key: string;
+  promise: Promise<void>;
+  controller: AbortController;
+};
+
 export const CartProvider = ({ children }: CartContextProviderProps) => {
   const [state, cartDispatch] = useReducer(
     CartReducer,
@@ -39,7 +48,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
 
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef<number | null>(null);
-  const inFlightPromiseRef = useRef<Promise<void> | null>(null);
+  const inFlightRef = useRef<InFlightEntry | null>(null);
 
   useEffect(() => {
     localStorage.setItem('CartItemsState', JSON.stringify(state.items));
@@ -108,29 +117,52 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   }, []);
 
   const ensureQuote = useCallback((): Promise<void> => {
-    if (inFlightPromiseRef.current) {
-      return inFlightPromiseRef.current;
+    const {
+      items: latestItems,
+      itemsSig: latestItemsSig,
+      menuVersion: latestMenuVersion,
+      shouldValidate: latestShouldValidate,
+    } = latestRef.current;
+
+    if (!latestShouldValidate) {
+      return Promise.resolve();
     }
 
-    const promise = (async () => {
-      const {
-        items: latestItems,
-        itemsSig: latestItemsSig,
-        menuVersion: latestMenuVersion,
-        shouldValidate: latestShouldValidate,
-      } = latestRef.current;
+    const key = buildQuoteKey(latestItemsSig, latestMenuVersion);
+    const currentInFlight = inFlightRef.current;
 
-      if (!latestShouldValidate) return;
+    // 1) same-key: 复用当前正在飞的请求
+    if (currentInFlight && currentInFlight.key === key) {
+      return currentInFlight.promise;
+    }
 
-      const requestId = ++requestIdRef.current;
-      const snapshotItems = latestItems;
-      const snapshotSig = latestItemsSig;
-      const snapshotVersion = latestMenuVersion;
+    // 2) different-key: 当前飞的请求已经不是我们要的那份 quote，取消它
+    if (currentInFlight) {
+      currentInFlight.controller.abort();
+      inFlightRef.current = null;
+    }
 
+    const controller = new AbortController();
+    const requestId = ++requestIdRef.current;
+
+    const snapshotItems = latestItems;
+    const snapshotSig = latestItemsSig;
+    const snapshotVersion = latestMenuVersion;
+
+    let promise!: Promise<void>;
+
+    promise = (async () => {
       try {
-        const res = await validateCart(snapshotItems, snapshotVersion);
+        const res = await validateCart(
+          snapshotItems,
+          snapshotVersion,
+          controller.signal,
+        );
 
+        // latest-wins：不是最新请求，直接丢弃
         if (requestId !== requestIdRef.current) return;
+
+        // 请求回来时，购物车内容已经变了，也丢弃
         if (snapshotSig !== latestRef.current.itemsSig) return;
 
         setQuote({
@@ -139,6 +171,13 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
           ts: Date.now(),
         });
       } catch (err: unknown) {
+        if (
+          controller.signal.aborted ||
+          (err instanceof ApiError && err.statusCode === 499)
+        ) {
+          return;
+        }
+
         if (requestId !== requestIdRef.current) return;
 
         if (!(err instanceof ApiError)) {
@@ -148,6 +187,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         if (err.statusCode === 409) {
           const newVersion = await fetchMenuVersion();
 
+          if (controller.signal.aborted) return;
           if (requestId !== requestIdRef.current) return;
 
           setMenuVersion(newVersion);
@@ -160,26 +200,35 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
         }
 
         throw err;
+      } finally {
+        if (inFlightRef.current?.promise === promise) {
+          inFlightRef.current = null;
+        }
       }
     })();
 
-    inFlightPromiseRef.current = promise;
-
-    promise.finally(() => {
-      if (inFlightPromiseRef.current === promise) {
-        inFlightPromiseRef.current = null;
-      }
-    });
+    inFlightRef.current = {
+      key,
+      promise,
+      controller,
+    };
 
     return promise;
   }, []);
 
   const clearQuote = useCallback(() => {
+    // 如果你希望手动 clearQuote 时，也顺便取消当前 quote 请求，可以打开下面两行
+    // inFlightRef.current?.controller.abort();
+    // inFlightRef.current = null;
+
     setQuote(null);
   }, []);
 
   useEffect(() => {
     if (state.totalQuantity !== 0) return;
+
+    inFlightRef.current?.controller.abort();
+    inFlightRef.current = null;
 
     setQuote(null);
     clearDebounceTimer();
@@ -192,7 +241,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
 
     debounceTimerRef.current = window.setTimeout(() => {
       ensureQuote().catch(() => {
-        // 自动校验失败：这里先吞掉，避免未处理 Promise
+        // 自动校验失败：先吞掉，避免未处理 Promise
       });
       debounceTimerRef.current = null;
     }, VALIDATE_DEBOUNCE_MS);
