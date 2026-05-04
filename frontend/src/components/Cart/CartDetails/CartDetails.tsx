@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
 import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartSelectors } from '../../../hooks/useCartSelectors';
+import { useCartSelector } from '../../../hooks/useCart';
 
 interface CartDetailsProps {
   open: boolean;
@@ -15,25 +15,24 @@ interface CartDetailsProps {
 const CartDetails = ({ open }: CartDetailsProps) => {
   const { clearCart } = useCartActions();
 
-  const { items, quote, ensureQuote, getItemQuantity } = useCartSelectors();
+  // ✅ 精确订阅
+  const itemsLength = useCartSelector((ctx) => ctx.items.length);
+  const quote = useCartSelector((ctx) => ctx.quote);
+  const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
 
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // ✅ 打开时确保有 quote（只会在需要时请求）
+  // ✅ 打开时请求 quote
   useEffect(() => {
     if (!open) return;
-    if (items.length === 0) return;
+    if (itemsLength === 0) return;
     ensureQuote();
-  }, [open, items.length, ensureQuote]);
+  }, [open, itemsLength, ensureQuote]);
 
-  // ✅ 用“quote 的商品信息” + “cart 的实时 quantity”来展示
-  const mealsWithLiveQty = useMemo(() => {
-    const meals = quote?.meals ?? [];
-    console.log(meals);
-    return meals
-      .map((m) => ({ ...m, quantity: getItemQuantity(m.id) }))
-      .filter((m) => m.quantity > 0);
-  }, [quote, getItemQuantity]);
+  // ✅ 只用 quote.meals，不拼 quantity
+  const meals = useMemo(() => {
+    return quote?.meals ?? [];
+  }, [quote]);
 
   const handleClearCart = (e: MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -62,23 +61,18 @@ const CartDetails = ({ open }: CartDetailsProps) => {
         </header>
 
         <div className={classes.MealList}>
-          {/* ✅ quote 还没到时的状态 */}
-          {!quote && items.length > 0 && (
+          {/* 加载中 */}
+          {!quote && itemsLength > 0 && (
             <p style={{ padding: 12 }}>加载中...</p>
           )}
 
-          {/* ✅ 用实时 quantity 渲染 */}
-          {mealsWithLiveQty.map((meal) => (
-            <MealItem
-              key={meal.id}
-              meal={meal} // meal 提供 name/price/image/desc
-              noDesc
-              quantity={meal.quantity} // ✅ 实时 quantity
-            />
+          {/* ✅ 不再传 quantity */}
+          {meals.map((meal) => (
+            <MealItem key={meal.id} meal={meal} noDesc />
           ))}
 
-          {/* ✅ 如果 quote 到了但 list 为空（比如全部减到 0） */}
-          {quote && mealsWithLiveQty.length === 0 && (
+          {/* 空状态 */}
+          {quote && meals.length === 0 && (
             <p style={{ padding: 12, color: '#999' }}>购物车为空</p>
           )}
         </div>

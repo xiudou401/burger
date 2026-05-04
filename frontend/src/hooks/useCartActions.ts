@@ -1,8 +1,8 @@
 import { CART_ACTIONS } from '../types/cart';
-import { useCartContext } from './useCart';
+import { useCartSelector } from './useCart';
 
 export const useCartActions = () => {
-  const { cartDispatch } = useCartContext();
+  const cartDispatch = useCartSelector((ctx) => ctx.cartDispatch);
 
   const addItem = (id: string) => {
     cartDispatch({ type: CART_ACTIONS.ADD_ITEM, id });

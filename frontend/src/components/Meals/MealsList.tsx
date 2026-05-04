@@ -2,7 +2,6 @@ import React, { forwardRef } from 'react';
 import classes from './MealsList.module.css';
 import MealItem from './Meal/MealItem';
 import { Meal } from '../../types/meal';
-import { useCartSelectors } from '../../hooks/useCartSelectors';
 
 interface MealsListProps {
   meals: Meal[];
@@ -11,24 +10,19 @@ interface MealsListProps {
 
 const MealsList = forwardRef<HTMLDivElement, MealsListProps>(
   ({ meals, sentinelRef }, ref) => {
-    const { getItemQuantity } = useCartSelectors();
-
-    // console.log(meals);
-
     return (
       <div className={classes.MealsList} ref={ref}>
         {meals.map((meal) => (
-          <MealItem
-            key={meal.id}
-            meal={meal}
-            quantity={getItemQuantity(meal.id)}
-          />
+          <MealItem key={meal.id} meal={meal} />
         ))}
 
+        {/* 用于无限滚动 / IntersectionObserver */}
         <div ref={sentinelRef} style={{ height: 30 }} />
       </div>
     );
   },
 );
+
+MealsList.displayName = 'MealsList';
 
 export default MealsList;

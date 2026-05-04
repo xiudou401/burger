@@ -1,10 +1,14 @@
-import { useContext } from 'react';
+import { useContextSelector } from 'use-context-selector';
 import { CartContext } from '../store/cart/cart-context';
+import type { CartContextValue } from '../types/cart';
 
-export const useCartContext = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCartContext must be used inside a CartProvider');
-  }
-  return context;
+export const useCartSelector = <T>(
+  selector: (ctx: CartContextValue) => T,
+): T => {
+  return useContextSelector(CartContext, (ctx) => {
+    if (!ctx) {
+      throw new Error('useCartSelector must be used inside a CartProvider');
+    }
+    return selector(ctx);
+  });
 };

@@ -2,17 +2,19 @@ import React from 'react';
 import classes from './MealItem.module.css';
 import QuantityCounter from '../../UI/Counter/QuantityCounter';
 import { Meal } from '../../../types/meal';
-// import { useCartSelectors } from '../../../hooks/useCartSelectors';
+// import { useCartSelector } from '../../../hooks/useCart';
+// import { selectCartItemQuantity } from '../../../store/cart/cart-selectors';
 
 interface MealItemProps {
   meal: Meal;
   noDesc?: boolean;
-  quantity?: number; // ✅ 新增
 }
 
-const MealItem = ({ meal, noDesc, quantity = 0 }: MealItemProps) => {
-  // const { getItemQuantity } = useCartSelectors();
-  // const quantity = getItemQuantity(meal.id); // ✅ 实时 quantity
+const MealItem = ({ meal, noDesc }: MealItemProps) => {
+  // 🎯 只订阅当前商品的 quantity
+  // const quantity = useCartSelector((ctx) =>
+  //   selectCartItemQuantity(ctx, meal.id),
+  // );
 
   return (
     <div className={classes.MealItem}>
@@ -28,12 +30,15 @@ const MealItem = ({ meal, noDesc, quantity = 0 }: MealItemProps) => {
         <div className={classes.PriceWrapper}>
           <span className={classes.Price}>{meal.price.toFixed(2)}</span>
 
-          {/* ✅ Quantity 来自 cart state，不来自 meal */}
-          <QuantityCounter id={meal.id} quantity={quantity} />
+          {/* 不再传 quantity */}
+          <QuantityCounter id={meal.id} />
+
+          {/* 如果你想显示数量（可选） */}
+          {/* {quantity > 0 && <span className={classes.QtyText}>x{quantity}</span>} */}
         </div>
       </div>
     </div>
   );
 };
 
-export default MealItem;
+export default React.memo(MealItem);

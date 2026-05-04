@@ -2,14 +2,18 @@ import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useCartActions } from '../../../hooks/useCartActions';
+import { useCartSelector } from '../../../hooks/useCart';
+import { selectCartItemQuantity } from '../../../store/cart/cart-selectors';
 
 interface QuantityCounterProps {
   id: string;
-  quantity: number;
 }
 
-const QuantityCounter = ({ id, quantity }: QuantityCounterProps) => {
+const QuantityCounter = ({ id }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
+
+  // 🎯 核心：只订阅当前 item
+  const quantity = useCartSelector((ctx) => selectCartItemQuantity(ctx, id));
 
   const onDecrease = () => {
     removeItem(id);
@@ -30,6 +34,7 @@ const QuantityCounter = ({ id, quantity }: QuantityCounterProps) => {
           <span className={classes.Quantity}>{quantity}</span>
         </>
       )}
+
       <button className={classes.Increase} onClick={onIncrease}>
         <FontAwesomeIcon icon={faPlus} />
       </button>

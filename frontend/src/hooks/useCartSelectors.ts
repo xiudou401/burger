@@ -1,31 +1,34 @@
-import { useCallback } from 'react';
-import { useCartContext } from './useCart';
-import {
-  selectCartItemQuantity,
-  selectCartItems,
-  selectCartTotalQuantity,
-} from '../store/cart/cart-selectors';
+// import { useCallback } from 'react';
+import { useCartSelector } from './useCart';
+// import {
+//   selectCartItemQuantity,
+//   selectCartItems,
+//   selectCartTotalQuantity,
+// } from '../store/cart/cart-selectors';
 
 export const useCartSelectors = () => {
-  const ctx = useCartContext();
+  const items = useCartSelector((ctx) => ctx.items);
+  const totalQuantity = useCartSelector((ctx) => ctx.totalQuantity);
 
-  const getItemQuantity = useCallback(
-    (id: string) => selectCartItemQuantity(ctx, id),
-    [ctx],
-  );
+  const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
+  const quote = useCartSelector((ctx) => ctx.quote);
+  const quoteStale = useCartSelector((ctx) => ctx.quoteStale);
+  const quoteMismatch = useCartSelector((ctx) => ctx.quoteMismatch);
+  const estimatedTotalPrice = useCartSelector((ctx) => ctx.estimatedTotalPrice);
+
+  const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
+  const clearQuote = useCartSelector((ctx) => ctx.clearQuote);
 
   return {
-    items: selectCartItems(ctx),
-    totalQuantity: selectCartTotalQuantity(ctx),
-    getItemQuantity,
+    items,
+    totalQuantity,
 
-    // ✅ pricing layer
-    menuVersion: ctx.menuVersion,
-    quote: ctx.quote,
-    quoteStale: ctx.quoteStale,
-    quoteMismatch: ctx.quoteMismatch,
-    estimatedTotalPrice: ctx.estimatedTotalPrice,
-    ensureQuote: ctx.ensureQuote,
-    clearQuote: ctx.clearQuote,
+    menuVersion,
+    quote,
+    quoteStale,
+    quoteMismatch,
+    estimatedTotalPrice,
+    ensureQuote,
+    clearQuote,
   };
 };

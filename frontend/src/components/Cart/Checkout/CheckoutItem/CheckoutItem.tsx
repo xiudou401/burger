@@ -2,30 +2,37 @@ import React from 'react';
 import type { CartMeal } from '../../../../types/cart';
 import classes from './CheckoutItem.module.css';
 import QuantityCounter from '../../../UI/Counter/QuantityCounter';
-// import { useCartSelectors } from '../../../../hooks/useCartSelectors';
+import { useCartSelector } from '../../../../hooks/useCart';
+import { selectCartItemQuantity } from '../../../../store/cart/cart-selectors';
 
 interface CheckoutItemProps {
   meal: CartMeal;
 }
 
 const CheckoutItem = ({ meal }: CheckoutItemProps) => {
-  // const { getItemQuantity } = useCartSelectors();
-  // const quantity = getItemQuantity(meal.id); // ✅ 实时数量（来自 CartStoredItem）
+  // 🎯 从 cart state 获取“真实数量”
+  const quantity = useCartSelector((ctx) =>
+    selectCartItemQuantity(ctx, meal.id),
+  );
 
-  // ✅ 数量为 0 时直接不渲染（这样就“从列表移除”了）
-  // if (quantity === 0) return null;
+  // ✅ 数量为 0 → 自动从 UI 移除
+  if (quantity === 0) return null;
 
   return (
     <div className={classes.CheckoutItem}>
       <div className={classes.MealImg}>
-        <img src={meal.image} alt="Meal" />
+        <img src={meal.image} alt={meal.name} />
       </div>
+
       <div className={classes.Desc}>
         <h2 className={classes.Title}>{meal.name}</h2>
+
         <div className={classes.PriceOuter}>
-          <QuantityCounter id={meal.id} quantity={meal.quantity} />
+          {/* ❗ 不再传 quantity */}
+          <QuantityCounter id={meal.id} />
+
           <div className={classes.Price}>
-            {(meal.price * meal.quantity).toFixed(2)}
+            {(meal.price * quantity).toFixed(2)}
           </div>
         </div>
       </div>
@@ -33,4 +40,4 @@ const CheckoutItem = ({ meal }: CheckoutItemProps) => {
   );
 };
 
-export default CheckoutItem;
+export default React.memo(CheckoutItem);

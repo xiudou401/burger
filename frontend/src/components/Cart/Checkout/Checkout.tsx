@@ -6,8 +6,9 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
 import type { CartMeal } from '../../../types/cart';
-import { calculateTotals } from './checkout-utils';
-import { useCartSelectors } from '../../../hooks/useCartSelectors';
+import { useCartSelector } from '../../../hooks/useCart';
+
+console.log('CHECKOUT NEW VERSION');
 
 const CheckoutRoot = document.getElementById('checkout-root');
 
@@ -17,21 +18,19 @@ interface CheckoutProps {
 }
 
 const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
-  const { getItemQuantity } = useCartSelectors();
+  // ✅ 只订阅 totalPrice（已经帮你算好的）
+  const estimatedTotalPrice = useCartSelector((ctx) => ctx.estimatedTotalPrice);
 
-  // ✅ Hook 一定要在最外层
-  const mealsWithLiveQty = useMemo(() => {
-    return meals
-      .map((m) => ({ ...m, quantity: getItemQuantity(m.id) }))
-      .filter((m) => m.quantity > 0);
-  }, [meals, getItemQuantity]);
+  // ❗ 如果你仍然想用 quote meals（推荐）
+  const items = useCartSelector((ctx) => ctx.items);
 
-  const { totalPrice } = useMemo(
-    () => calculateTotals(mealsWithLiveQty),
-    [mealsWithLiveQty],
-  );
+  // ✅ 只过滤“有数量的 meal”，不计算 quantity
+  const visibleMeals = useMemo(() => {
+    const qtyMap = new Map(items.map((i) => [i.id, i.quantity]));
 
-  // ✅ 所有 Hook 调完之后，再判断是否 return
+    return meals.filter((m) => (qtyMap.get(m.id) ?? 0) > 0);
+  }, [meals, items]);
+
   if (!CheckoutRoot) return null;
 
   const offCheckoutHandler = () => offCheckout();
@@ -51,17 +50,17 @@ const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
         </header>
 
         <div>
-          {mealsWithLiveQty.map((meal) => (
+          {visibleMeals.map((meal) => (
             <CheckoutItem key={meal.id} meal={meal} />
           ))}
         </div>
 
         <footer className={classes.Footer}>
-          <p className={classes.TotalPrice}>{totalPrice.toFixed(2)}</p>
+          <p className={classes.TotalPrice}>{estimatedTotalPrice.toFixed(2)}</p>
         </footer>
       </div>
 
-      <Bar totalPrice={totalPrice} />
+      <Bar totalPrice={estimatedTotalPrice} />
     </div>,
     CheckoutRoot,
   );
