@@ -1,5 +1,5 @@
 import { CART_ACTIONS } from '../types/cart';
-import { useCartSelector } from './useCart';
+import { useCartSelector } from './useCartSelector';
 
 export const useCartActions = () => {
   const cartDispatch = useCartSelector((ctx) => ctx.cartDispatch);

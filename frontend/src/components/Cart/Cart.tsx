@@ -3,20 +3,17 @@ import classes from './Cart.module.css';
 import iconImg from '../../asset/bag.png';
 import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
-import { useCartSelectors } from '../../hooks/useCartSelectors';
+import { useCartSelector } from '../../hooks/useCartSelector';
 
 const Cart = () => {
-  const {
-    totalQuantity,
-
-    quote,
-    quoteStale,
-    quoteMismatch,
-    estimatedTotalPrice,
-
-    ensureQuote,
-    clearQuote,
-  } = useCartSelectors();
+  // ✅ 精确订阅（一个字段一个 selector）
+  const totalQuantity = useCartSelector((ctx) => ctx.totalQuantity);
+  const quote = useCartSelector((ctx) => ctx.quote);
+  const quoteStale = useCartSelector((ctx) => ctx.quoteStale);
+  const quoteMismatch = useCartSelector((ctx) => ctx.quoteMismatch);
+  const estimatedTotalPrice = useCartSelector((ctx) => ctx.estimatedTotalPrice);
+  const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
+  const clearQuote = useCartSelector((ctx) => ctx.clearQuote);
 
   const [showCartDetails, setShowCartDetails] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
@@ -26,9 +23,7 @@ const Cart = () => {
 
     if (!showCartDetails) {
       setShowCartDetails(true);
-      ensureQuote().catch(() => {
-        // 可选：这里可以不处理，或者做 toast
-      });
+      ensureQuote().catch(() => {});
       return;
     }
 
@@ -49,7 +44,6 @@ const Cart = () => {
 
   const offCheckout = () => setShowCheckout(false);
 
-  // ✅ 清空购物车时：关闭面板 + 清 quote
   useEffect(() => {
     if (totalQuantity === 0) {
       setShowCheckout(false);

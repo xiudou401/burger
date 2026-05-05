@@ -2,7 +2,7 @@ import React from 'react';
 import type { CartMeal } from '../../../../types/cart';
 import classes from './CheckoutItem.module.css';
 import QuantityCounter from '../../../UI/Counter/QuantityCounter';
-import { useCartSelector } from '../../../../hooks/useCart';
+import { useCartSelector } from '../../../../hooks/useCartSelector';
 import { selectCartItemQuantity } from '../../../../store/cart/cart-selectors';
 
 interface CheckoutItemProps {

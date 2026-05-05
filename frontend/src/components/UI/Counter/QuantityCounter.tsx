@@ -2,7 +2,7 @@ import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartSelector } from '../../../hooks/useCart';
+import { useCartSelector } from '../../../hooks/useCartSelector';
 import { selectCartItemQuantity } from '../../../store/cart/cart-selectors';
 
 interface QuantityCounterProps {

@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
 import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartSelector } from '../../../hooks/useCart';
+import { useCartSelector } from '../../../hooks/useCartSelector';
 
 interface CartDetailsProps {
   open: boolean;
