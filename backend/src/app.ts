@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import mealRoutes from './routes/meal.routes';
 import cartRoutes from './routes/cart.routes';
-import menuVersionRoutes from './routes/menuVersion.routes';
+import menuVersionRoutes from './routes/menu-version.routes';
 import path from 'path';
 import cors from 'cors';
 
@@ -21,7 +21,7 @@ app.use('/img', express.static(path.join(__dirname, '../public/img')));
 // routes
 app.use('/api/meals', mealRoutes);
 app.use('/api/cart', cartRoutes);
-app.use('/api/menuVersion', menuVersionRoutes);
+app.use('/api/menu-version', menuVersionRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response, next: NextFunction) => {

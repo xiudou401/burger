@@ -45,7 +45,6 @@ function scheduleMenuVersionUpdate() {
   versionUpdatePromise = (async () => {
     try {
       await updateMenuVersion();
-      console.log(await versionUpdatePromise);
     } catch (err) {
       console.error('updateMenuVersion failed', err);
     } finally {

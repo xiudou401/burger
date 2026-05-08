@@ -37,7 +37,6 @@ export const useInfiniteMeals = ({
       setIsLoading(true);
 
       const requestId = ++requestIdRef.current;
-      console.log(`📡 发起请求: 第 ${pageToLoad} 页, keyword=${searchKeyword}`);
 
       try {
         const data = await fetchMeals({
@@ -47,7 +46,6 @@ export const useInfiniteMeals = ({
         });
 
         if (requestId !== requestIdRef.current) {
-          console.log('⏭️ 旧请求结果已丢弃');
           return;
         }
 
@@ -59,10 +57,6 @@ export const useInfiniteMeals = ({
           const existingIds = new Set(prev.map((m) => m.id));
           const newItems = data.items.filter(
             (item) => !existingIds.has(item.id),
-          );
-
-          console.log(
-            `✅ 第 ${pageToLoad} 页返回 ${data.items.length} 条，实际新增 ${newItems.length} 条`,
           );
 
           return [...prev, ...newItems];
@@ -77,7 +71,6 @@ export const useInfiniteMeals = ({
         if (requestId === requestIdRef.current) {
           loadingRef.current = false;
           setIsLoading(false);
-          console.log('🔓 锁已释放，可以进行下一次翻页');
         }
       }
     },
@@ -98,10 +91,7 @@ export const useInfiniteMeals = ({
         if (!entry.isIntersecting) return;
         if (loadingRef.current) return;
 
-        setPage((prev) => {
-          console.log(`🚀 确认触底，允许从第 ${prev} 页翻到 ${prev + 1} 页`);
-          return prev + 1;
-        });
+        setPage((prev) => prev + 1);
       },
       {
         root: listRef.current,

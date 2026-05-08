@@ -1,5 +1,5 @@
 import express from 'express';
-import { findMenuVersion } from '../controllers/menuVersion.controller';
+import { findMenuVersion } from '../controllers/menu-version.controller';
 
 const router = express.Router();
 

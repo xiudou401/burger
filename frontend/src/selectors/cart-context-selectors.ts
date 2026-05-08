@@ -1,4 +1,4 @@
-// selectors/cart-selectors.ts
+// selectors/cart-context-selectors.ts
 
 import type { CartContextValue } from '../types/cart';
 

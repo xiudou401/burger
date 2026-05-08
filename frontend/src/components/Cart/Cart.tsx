@@ -16,7 +16,7 @@ import {
   selectEstimatedTotalPrice,
   selectEnsureQuote,
   selectClearQuote,
-} from '../../selectors/cart-selectors';
+} from '../../selectors/cart-context-selectors';
 
 const Cart = () => {
   // =========================

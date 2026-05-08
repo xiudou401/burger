@@ -8,8 +8,6 @@ import Bar from './Bar/Bar';
 import type { CartMeal } from '../../../types/cart';
 import { useCartSelector } from '../../../hooks/useCartSelector';
 
-console.log('CHECKOUT NEW VERSION');
-
 const CheckoutRoot = document.getElementById('checkout-root');
 
 interface CheckoutProps {

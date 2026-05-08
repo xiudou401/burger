@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchMenuVersion } from '../../../api/menuVersion';
+import { fetchMenuVersion } from '../../../api/menu-version';
 
 const MENU_POLL_MS = 30_000;
 

@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react';
 import { validateCart } from '../../../api/cart';
-import { fetchMenuVersion } from '../../../api/menuVersion';
+import { fetchMenuVersion } from '../../../api/menu-version';
 import { ApiError } from '../../../api/request';
 import type { CartStoredItem, Quote } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
