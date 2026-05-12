@@ -50,3 +50,68 @@ export const meHandler = (req: Request, res: Response, next: NextFunction) => {
     user: req.user,
   });
 };
+
+export const verifyEmailHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await authService.verifyEmail(getString(req.body?.token));
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resendVerificationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user) {
+    return next(new ServiceError('Unauthorized', 401));
+  }
+
+  try {
+    const result = await authService.resendVerificationEmail(req.user.id);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPasswordHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await authService.requestPasswordReset(
+      getString(req.body?.email),
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPasswordHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await authService.resetPassword(
+      getString(req.body?.token),
+      getString(req.body?.password),
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

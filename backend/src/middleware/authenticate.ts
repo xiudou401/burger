@@ -29,6 +29,7 @@ export const authenticate = async (
       id: user._id.toString(),
       email: user.email,
       name: user.name,
+      emailVerified: user.emailVerified,
     };
 
     next();
