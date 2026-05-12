@@ -52,11 +52,14 @@ export const request = async <T>(
       }
     }
 
+    const accessToken = localStorage.getItem('accessToken');
+
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...options.headers,
       },
     });
