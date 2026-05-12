@@ -82,3 +82,25 @@ export const sendPasswordResetEmail = async ({
     `,
   });
 };
+
+export const sendWelcomeEmail = async ({
+  email,
+  name,
+}: {
+  email: string;
+  name: string;
+}) => {
+  const menuUrl = `${env.FRONTEND_URL}/`;
+
+  await sendEmail({
+    to: email,
+    subject: 'Welcome to Burger Club',
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#292929">
+        <h1>Welcome${name ? `, ${name}` : ''}!</h1>
+        <p>Your Burger Club account is ready. You can now keep your cart, profile, and future orders together.</p>
+        <p><a href="${menuUrl}" style="display:inline-block;background:#ffc72c;color:#292929;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Start ordering</a></p>
+      </div>
+    `,
+  });
+};

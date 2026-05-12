@@ -7,6 +7,7 @@ import { createSecureToken, hashToken } from '../utils/secure-token';
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
+  sendWelcomeEmail,
 } from './email.service';
 import { env } from '../config/env';
 
@@ -257,6 +258,7 @@ export const loginWithOAuth = async ({
   }
 
   let user = await UserModel.findOne({ email: normalizedEmail }).exec();
+  let isNewUser = false;
 
   if (!user) {
     user = await UserModel.create({
@@ -265,6 +267,7 @@ export const loginWithOAuth = async ({
       passwordHash: hashPassword(createSecureToken()),
       emailVerified,
     });
+    isNewUser = true;
   } else {
     user.name = user.name || normalizedName;
     user.emailVerified = user.emailVerified || emailVerified;
@@ -272,6 +275,13 @@ export const loginWithOAuth = async ({
   }
 
   const publicUser = toPublicUser(user);
+
+  if (isNewUser) {
+    await sendWelcomeEmail({
+      email: publicUser.email,
+      name: publicUser.name,
+    });
+  }
 
   return {
     accessToken: signAuthToken({
