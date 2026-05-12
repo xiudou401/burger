@@ -3,9 +3,17 @@ import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
 import { loginWithOAuth } from '../services/auth.service';
 
-const redirectWithError = (res: Response, message: string) => {
+const redirectWithError = (
+  res: Response,
+  message: string,
+  target: 'login' | 'signup' = 'login',
+) => {
   const params = new URLSearchParams({ error: message });
-  return res.redirect(`${env.FRONTEND_URL}/login?${params.toString()}`);
+  return res.redirect(`${env.FRONTEND_URL}/${target}?${params.toString()}`);
+};
+
+const getOAuthMode = (value: unknown): 'login' | 'signup' => {
+  return value === 'signup' ? 'signup' : 'login';
 };
 
 export const oauthStartHandler = (
@@ -14,10 +22,15 @@ export const oauthStartHandler = (
   next: NextFunction,
 ) => {
   const provider = req.params.provider;
+  const mode = getOAuthMode(req.query.mode);
 
   if (provider === 'google') {
     if (!env.GOOGLE_CLIENT_ID) {
-      return redirectWithError(res, 'Google sign in is not configured yet');
+      return redirectWithError(
+        res,
+        'Google sign in is not configured yet',
+        mode,
+      );
     }
 
     const params = new URLSearchParams({
@@ -26,6 +39,7 @@ export const oauthStartHandler = (
       response_type: 'code',
       scope: 'openid email profile',
       prompt: 'select_account',
+      state: mode,
     });
 
     return res.redirect(
@@ -35,7 +49,11 @@ export const oauthStartHandler = (
 
   if (provider === 'apple') {
     if (!env.APPLE_CLIENT_ID) {
-      return redirectWithError(res, 'Apple sign in is not configured yet');
+      return redirectWithError(
+        res,
+        'Apple sign in is not configured yet',
+        mode,
+      );
     }
 
     const params = new URLSearchParams({
@@ -44,6 +62,7 @@ export const oauthStartHandler = (
       response_type: 'code',
       scope: 'name email',
       response_mode: 'form_post',
+      state: mode,
     });
 
     return res.redirect(
@@ -84,6 +103,7 @@ export const oauthCallbackHandler = async (
   next: NextFunction,
 ) => {
   const provider = req.params.provider;
+  const mode = getOAuthMode(req.query.state);
 
   try {
     if (provider !== 'google') {
@@ -91,13 +111,21 @@ export const oauthCallbackHandler = async (
     }
 
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-      return redirectWithError(res, 'Google sign in is not configured yet');
+      return redirectWithError(
+        res,
+        'Google sign in is not configured yet',
+        mode,
+      );
     }
 
     const code = typeof req.query.code === 'string' ? req.query.code : '';
 
     if (!code) {
-      return redirectWithError(res, 'Google did not return an authorization code');
+      return redirectWithError(
+        res,
+        'Google did not return an authorization code',
+        mode,
+      );
     }
 
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -120,6 +148,7 @@ export const oauthCallbackHandler = async (
       return redirectWithError(
         res,
         tokenBody.error_description || 'Google token exchange failed',
+        mode,
       );
     }
 
@@ -132,14 +161,27 @@ export const oauthCallbackHandler = async (
       return redirectWithError(
         res,
         userInfo.error_description || 'Google user lookup failed',
+        mode,
       );
     }
 
-    const result = await loginWithOAuth({
-      email: userInfo.email,
-      name: userInfo.name ?? userInfo.email,
-      emailVerified: userInfo.email_verified === true || userInfo.email_verified === 'true',
-    });
+    let result: Awaited<ReturnType<typeof loginWithOAuth>>;
+
+    try {
+      result = await loginWithOAuth({
+        email: userInfo.email,
+        name: userInfo.name ?? userInfo.email,
+        emailVerified:
+          userInfo.email_verified === true || userInfo.email_verified === 'true',
+        mode,
+      });
+    } catch (error) {
+      if (error instanceof ServiceError) {
+        return redirectWithError(res, error.message, mode);
+      }
+
+      throw error;
+    }
 
     return redirectWithAuth(res, result);
   } catch (error) {

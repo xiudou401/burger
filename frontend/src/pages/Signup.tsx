@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signup } from '../api/auth';
 import { useAuth } from '../store/auth/hooks/useAuth';
 import classes from './Auth.module.css';
@@ -8,6 +8,7 @@ const API_ORIGIN = process.env.REACT_APP_API_URL ?? 'http://localhost:5001';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const loginFn = useAuth((ctx) => ctx.login);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -52,7 +53,7 @@ const Signup = () => {
   };
 
   const oauthLogin = (provider: 'google' | 'apple') => {
-    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}`);
+    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}?mode=signup`);
   };
 
   return (
@@ -85,6 +86,10 @@ const Signup = () => {
             <h1>Sign up</h1>
             <p>Save your details and get back to the menu in seconds.</p>
           </header>
+
+          {searchParams.get('error') && (
+            <p className={classes.Error}>{searchParams.get('error')}</p>
+          )}
 
           <div className={classes.SocialStack}>
             <button

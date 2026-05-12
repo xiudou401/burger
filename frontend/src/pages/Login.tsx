@@ -47,7 +47,7 @@ const Login = () => {
   };
 
   const oauthLogin = (provider: 'google' | 'apple') => {
-    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}`);
+    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}?mode=login`);
   };
 
   return (

@@ -245,10 +245,12 @@ export const loginWithOAuth = async ({
   email,
   name,
   emailVerified,
+  mode = 'login',
 }: {
   email: string;
   name: string;
   emailVerified: boolean;
+  mode?: 'login' | 'signup';
 }): Promise<AuthResult> => {
   const normalizedEmail = normalizeEmail(email ?? '');
   const normalizedName = name?.trim() || normalizedEmail.split('@')[0];
@@ -269,6 +271,10 @@ export const loginWithOAuth = async ({
     });
     isNewUser = true;
   } else {
+    if (mode === 'signup') {
+      throw new ServiceError('Email already registered. Please log in instead.', 409);
+    }
+
     user.name = user.name || normalizedName;
     user.emailVerified = user.emailVerified || emailVerified;
     await user.save();
