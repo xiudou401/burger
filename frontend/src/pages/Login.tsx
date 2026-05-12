@@ -1,11 +1,22 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { login } from '../api/auth';
 import { useAuth } from '../store/auth/hooks/useAuth';
 import classes from './Auth.module.css';
 
+const API_ORIGIN = process.env.REACT_APP_API_URL ?? 'http://localhost:5001';
+
+interface LoginLocationState {
+  from?: {
+    pathname: string;
+    search?: string;
+  };
+}
+
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const loginFn = useAuth((ctx) => ctx.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,13 +33,21 @@ const Login = () => {
 
       loginFn(res.accessToken, res.user);
 
-      navigate('/');
+      const state = location.state as LoginLocationState | null;
+      const from = state?.from;
+      const redirectTo = `${from?.pathname ?? '/'}${from?.search ?? ''}`;
+
+      navigate(redirectTo, { replace: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const oauthLogin = (provider: 'google' | 'apple') => {
+    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}`);
   };
 
   return (
@@ -63,6 +82,33 @@ const Login = () => {
             <p>Use your email and password to continue ordering.</p>
           </header>
 
+          {searchParams.get('error') && (
+            <p className={classes.Error}>{searchParams.get('error')}</p>
+          )}
+
+          <div className={classes.SocialStack}>
+            <button
+              className={classes.GoogleButton}
+              type="button"
+              onClick={() => oauthLogin('google')}
+            >
+              <span className={classes.GoogleIcon}>G</span>
+              Continue with Google
+            </button>
+            <button
+              className={classes.AppleButton}
+              type="button"
+              onClick={() => oauthLogin('apple')}
+            >
+              <span className={classes.AppleIcon}>Apple</span>
+              Continue with Apple
+            </button>
+          </div>
+
+          <div className={classes.Divider}>
+            <span>or</span>
+          </div>
+
           <form className={classes.Form} onSubmit={submit}>
             <label className={classes.Field}>
               Email
@@ -86,6 +132,9 @@ const Login = () => {
                 required
               />
             </label>
+            <Link className={classes.ForgotLink} to="/forgot-password">
+              Forgot password?
+            </Link>
             {error && <p className={classes.Error}>{error}</p>}
             <button
               className={classes.Submit}

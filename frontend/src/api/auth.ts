@@ -1,6 +1,12 @@
 import { request } from './request';
 import type { AuthResponse } from '../types/auth';
 
+interface MessageResponse {
+  message: string;
+  resetToken?: string;
+  emailVerificationToken?: string;
+}
+
 export const signup = (name: string, email: string, password: string) => {
   return request<AuthResponse>('/auth/signup', {
     method: 'POST',
@@ -19,5 +25,32 @@ export const login = (email: string, password: string) => {
       email,
       password,
     }),
+  });
+};
+
+export const verifyEmail = (token: string) => {
+  return request<MessageResponse>('/auth/verify-email', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+};
+
+export const resendVerificationEmail = () => {
+  return request<MessageResponse>('/auth/resend-verification', {
+    method: 'POST',
+  });
+};
+
+export const forgotPassword = (email: string) => {
+  return request<MessageResponse>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+};
+
+export const resetPassword = (token: string, password: string) => {
+  return request<MessageResponse>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token, password }),
   });
 };

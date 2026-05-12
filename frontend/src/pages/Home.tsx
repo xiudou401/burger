@@ -1,6 +1,7 @@
 import MealsList from '../components/Meals/MealsList';
 import Cart from '../components/Cart/Cart';
 import FilterMeals from '../components/FilterMeals/FilterMeals';
+import AccountBar from '../components/Auth/AccountBar';
 import { fetchMeals } from '../api/meals';
 import { useInfiniteMeals } from '../hooks/useInfiniteMeals';
 
@@ -10,6 +11,7 @@ const Home = () => {
 
   return (
     <div className="App">
+      <AccountBar />
       <FilterMeals onSearch={onSearch} />
 
       <MealsList meals={meals} ref={listRef} sentinelRef={sentinelRef} />
