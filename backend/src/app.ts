@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import mealRoutes from './routes/meal.routes';
 import cartRoutes from './routes/cart.routes';
 import menuVersionRoutes from './routes/menu-version.routes';
+import authRoutes from './routes/auth.routes';
 import path from 'path';
 import cors from 'cors';
 
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use('/img', express.static(path.join(__dirname, '../public/img')));
 
 // routes
+app.use('/api/auth', authRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/menu-version', menuVersionRoutes);

@@ -6,11 +6,13 @@ dotenv.config();
 interface Env {
   PORT: string;
   MONGO_URI: string;
+  JWT_SECRET: string;
 }
 
 export const env: Env = {
   PORT: process.env.PORT ?? '3000',
   MONGO_URI: process.env.MONGO_URI!,
+  JWT_SECRET: process.env.JWT_SECRET ?? 'dev-secret-change-me',
 };
 
 // 核心配置校验
