@@ -16,8 +16,7 @@ const MealsList = forwardRef<HTMLDivElement, MealsListProps>(
           <MealItem key={meal.id} meal={meal} />
         ))}
 
-        {/* 用于无限滚动 / IntersectionObserver */}
-        <div ref={sentinelRef} style={{ height: 30 }} />
+        <div className={classes.Sentinel} ref={sentinelRef} />
       </div>
     );
   },

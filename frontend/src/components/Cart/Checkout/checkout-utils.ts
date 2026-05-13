@@ -1,4 +1,3 @@
-// checkout-utils.ts
 import { CartMeal } from '../../../types/cart';
 
 export const calculateTotals = (meals: CartMeal[]) => {

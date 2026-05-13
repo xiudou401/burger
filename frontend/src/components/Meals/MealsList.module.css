@@ -7,3 +7,7 @@
   overflow-y: auto; /* 必须有这个，IntersectionObserver 的 root 才能生效 */
   padding: 10rem;
 }
+
+.Sentinel {
+  height: 30rem;
+}

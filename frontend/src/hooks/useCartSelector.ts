@@ -10,6 +10,5 @@ export const useCartSelector = <T>(
       throw new Error('useCartSelector must be used inside a CartProvider');
     }
     return selector(ctx);
-    // return ((ctx) => ctx.totalQuantity)(ctx);
   });
 };

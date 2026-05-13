@@ -16,13 +16,10 @@ interface CheckoutProps {
 }
 
 const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
-  // ✅ 只订阅 totalPrice（已经帮你算好的）
   const estimatedTotalPrice = useCartSelector((ctx) => ctx.estimatedTotalPrice);
 
-  // ❗ 如果你仍然想用 quote meals（推荐）
   const items = useCartSelector((ctx) => ctx.items);
 
-  // ✅ 只过滤“有数量的 meal”，不计算 quantity
   const visibleMeals = useMemo(() => {
     const qtyMap = new Map(items.map((i) => [i.id, i.quantity]));
 

@@ -15,21 +15,18 @@ interface CartDetailsProps {
 const CartDetails = ({ open }: CartDetailsProps) => {
   const { clearCart } = useCartActions();
 
-  // ✅ 精确订阅
   const itemsLength = useCartSelector((ctx) => ctx.items.length);
   const quote = useCartSelector((ctx) => ctx.quote);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
 
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // ✅ 打开时请求 quote
   useEffect(() => {
     if (!open) return;
     if (itemsLength === 0) return;
     ensureQuote();
   }, [open, itemsLength, ensureQuote]);
 
-  // ✅ 只用 quote.meals，不拼 quantity
   const meals = useMemo(() => {
     return quote?.meals ?? [];
   }, [quote]);
@@ -61,17 +58,14 @@ const CartDetails = ({ open }: CartDetailsProps) => {
         </header>
 
         <div className={classes.MealList}>
-          {/* 加载中 */}
           {!quote && itemsLength > 0 && (
             <p style={{ padding: 12 }}>加载中...</p>
           )}
 
-          {/* ✅ 不再传 quantity */}
           {meals.map((meal) => (
             <MealItem key={meal.id} meal={meal} noDesc />
           ))}
 
-          {/* 空状态 */}
           {quote && meals.length === 0 && (
             <p style={{ padding: 12, color: '#999' }}>购物车为空</p>
           )}

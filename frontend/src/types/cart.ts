@@ -38,7 +38,6 @@ export type CartAction =
 export interface CartContextValue extends CartState {
   cartDispatch: Dispatch<CartAction>;
 
-  // ✅ pricing layer
   menuVersion: number;
   quote: Quote | null;
   quoteStale: boolean;
