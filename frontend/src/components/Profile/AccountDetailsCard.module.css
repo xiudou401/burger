@@ -1,0 +1,91 @@
+.Card {
+  composes: Card from './ProfileCard.module.css';
+}
+
+.CardHeader {
+  composes: CardHeader from './ProfileCard.module.css';
+}
+
+.CardTitle {
+  composes: CardTitle from './ProfileCard.module.css';
+}
+
+.Actions {
+  composes: Actions from './ProfileCard.module.css';
+}
+
+.PrimaryAction {
+  composes: PrimaryAction from './ProfileCard.module.css';
+}
+
+.Badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36rem;
+  padding: 0 14rem;
+  border-radius: 999rem;
+  background: #fff3d1;
+  color: #8f0011;
+  font-size: 15rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.Rows {
+  display: grid;
+  gap: 16rem;
+}
+
+.Row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rem;
+  padding-bottom: 16rem;
+  border-bottom: 1rem solid #f0e4d0;
+}
+
+.Row:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.Label {
+  color: #8b7350;
+  font-size: 17rem;
+  font-weight: 800;
+}
+
+.Value {
+  min-width: 0;
+  color: #292929;
+  font-size: 18rem;
+  font-weight: 900;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.StatusMessage {
+  margin: 16rem 0 0;
+  color: #1f7a3f;
+  font-size: 16rem;
+  font-weight: 800;
+}
+
+.ErrorMessage {
+  margin: 16rem 0 0;
+  color: #bd0017;
+  font-size: 16rem;
+  font-weight: 800;
+}
+
+@media (max-width: 520px) {
+  .Row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .Value {
+    text-align: left;
+  }
+}

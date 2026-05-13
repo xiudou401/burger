@@ -1,0 +1,63 @@
+.Card {
+  composes: Card from './ProfileCard.module.css';
+}
+
+.CardHeader {
+  composes: CardHeader from './ProfileCard.module.css';
+}
+
+.CardTitle {
+  composes: CardTitle from './ProfileCard.module.css';
+}
+
+.Actions {
+  composes: Actions from './ProfileCard.module.css';
+}
+
+.PrimaryAction {
+  composes: PrimaryAction from './ProfileCard.module.css';
+}
+
+.CartSummary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14rem;
+  margin-bottom: 20rem;
+}
+
+.Metric {
+  padding: 18rem;
+  border-radius: 8rem;
+  background: #fff8eb;
+}
+
+.MetricValue {
+  display: block;
+  color: #bd0017;
+  font-size: 32rem;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.MetricLabel {
+  display: block;
+  margin-top: 8rem;
+  color: #8b7350;
+  font-size: 15rem;
+  font-weight: 800;
+}
+
+.EmptyState {
+  padding: 24rem;
+  border-radius: 8rem;
+  background: #fff8eb;
+  color: #5b4a35;
+  font-size: 18rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 520px) {
+  .CartSummary {
+    grid-template-columns: 1fr;
+  }
+}

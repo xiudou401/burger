@@ -1,0 +1,37 @@
+.ProfilePage {
+  min-height: 100vh;
+  padding: 160rem 28rem 56rem;
+  background: #f6f2ea;
+  color: #292929;
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+.Shell {
+  width: min(1040rem, 100%);
+  margin: 0 auto;
+}
+
+.Grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280rem, 0.65fr);
+  gap: 24rem;
+  margin-top: 24rem;
+}
+
+.Stack {
+  display: grid;
+  gap: 24rem;
+}
+
+@media (max-width: 820px) {
+  .ProfilePage {
+    padding: 144rem 18rem 42rem;
+  }
+
+  .Grid {
+    grid-template-columns: 1fr;
+  }
+}
