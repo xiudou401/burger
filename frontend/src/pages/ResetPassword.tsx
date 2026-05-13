@@ -8,6 +8,11 @@ import {
   AuthSwitch,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
+import {
+  PASSWORD_INPUT_PATTERN,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
+} from '../utils/password-policy';
 import { useResetPasswordPage } from './hooks/useResetPasswordPage';
 
 const ResetPassword = () => {
@@ -25,7 +30,10 @@ const ResetPassword = () => {
 
   return (
     <AuthCenteredPage>
-      <AuthHeader title="Choose new password" subtitle="Use at least 6 characters." />
+      <AuthHeader
+        title="Choose new password"
+        subtitle="Use uppercase, lowercase, a number, and a special character."
+      />
 
       <AuthFormElement onSubmit={submit}>
         <AuthField
@@ -35,7 +43,9 @@ const ResetPassword = () => {
             onChange: (event) => setPassword(event.target.value),
             type: 'password',
             autoComplete: 'new-password',
-            minLength: 6,
+            minLength: PASSWORD_MIN_LENGTH,
+            pattern: PASSWORD_INPUT_PATTERN,
+            title: PASSWORD_POLICY_MESSAGE,
             required: true,
           }}
         />
@@ -46,7 +56,9 @@ const ResetPassword = () => {
             onChange: (event) => setConfirmPassword(event.target.value),
             type: 'password',
             autoComplete: 'new-password',
-            minLength: 6,
+            minLength: PASSWORD_MIN_LENGTH,
+            pattern: PASSWORD_INPUT_PATTERN,
+            title: PASSWORD_POLICY_MESSAGE,
             required: true,
           }}
         />

@@ -11,6 +11,11 @@ import {
   AuthTextLink,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
+import {
+  PASSWORD_INPUT_PATTERN,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
+} from '../utils/password-policy';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useSignupPage } from './hooks/useSignupPage';
 
@@ -83,7 +88,9 @@ const Signup = () => {
               onChange: (event) => setPassword(event.target.value),
               type: 'password',
               autoComplete: 'new-password',
-              minLength: 6,
+              minLength: PASSWORD_MIN_LENGTH,
+              pattern: PASSWORD_INPUT_PATTERN,
+              title: PASSWORD_POLICY_MESSAGE,
               required: true,
             }}
           />
@@ -94,7 +101,9 @@ const Signup = () => {
               onChange: (event) => setConfirmPassword(event.target.value),
               type: 'password',
               autoComplete: 'new-password',
-              minLength: 6,
+              minLength: PASSWORD_MIN_LENGTH,
+              pattern: PASSWORD_INPUT_PATTERN,
+              title: PASSWORD_POLICY_MESSAGE,
               required: true,
             }}
           />

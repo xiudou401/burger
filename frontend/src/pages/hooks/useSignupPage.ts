@@ -2,6 +2,10 @@ import { FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signup } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import {
+  PASSWORD_POLICY_MESSAGE,
+  validatePasswordPolicy,
+} from '../../utils/password-policy';
 import { useAuthSubmit } from './useAuthSubmit';
 
 export const useSignupPage = () => {
@@ -24,6 +28,11 @@ export const useSignupPage = () => {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (!validatePasswordPolicy(password)) {
+      setError(PASSWORD_POLICY_MESSAGE);
       return;
     }
 

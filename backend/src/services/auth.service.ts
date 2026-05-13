@@ -10,6 +10,10 @@ import {
   sendWelcomeEmail,
 } from './email.service';
 import { env } from '../config/env';
+import {
+  PASSWORD_POLICY_MESSAGE,
+  validatePasswordPolicy,
+} from '../utils/password-policy';
 
 interface AuthResult {
   accessToken: string;
@@ -40,13 +44,23 @@ const toPublicUser = (user: {
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
 
-const assertCredentials = (email: string, password: string) => {
+const assertEmail = (email: string) => {
   if (!email || !email.includes('@')) {
     throw new ServiceError('Invalid email', 400);
   }
+};
 
-  if (!password || password.length < 6) {
-    throw new ServiceError('Password must be at least 6 characters', 400);
+const assertPasswordPresent = (password: string) => {
+  if (!password) {
+    throw new ServiceError('Password is required', 400);
+  }
+};
+
+const assertNewPassword = (password: string) => {
+  assertPasswordPresent(password);
+
+  if (!validatePasswordPolicy(password)) {
+    throw new ServiceError(PASSWORD_POLICY_MESSAGE, 400);
   }
 };
 
@@ -62,7 +76,8 @@ export const signup = async (
     throw new ServiceError('Name is required', 400);
   }
 
-  assertCredentials(normalizedEmail, password);
+  assertEmail(normalizedEmail);
+  assertNewPassword(password);
 
   const existingUser = await UserModel.exists({ email: normalizedEmail });
 
@@ -97,7 +112,8 @@ export const login = async (
 ): Promise<AuthResult> => {
   const normalizedEmail = normalizeEmail(email ?? '');
 
-  assertCredentials(normalizedEmail, password);
+  assertEmail(normalizedEmail);
+  assertPasswordPresent(password);
 
   const user = await UserModel.findOne({ email: normalizedEmail })
     .select('+passwordHash')
@@ -218,9 +234,7 @@ export const resetPassword = async (
     throw new ServiceError('Reset token is required', 400);
   }
 
-  if (!password || password.length < 6) {
-    throw new ServiceError('Password must be at least 6 characters', 400);
-  }
+  assertNewPassword(password);
 
   const user = await UserModel.findOne({
     passwordResetTokenHash: hashToken(token),

@@ -1,6 +1,10 @@
 import { FormEvent, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { resetPassword } from '../../api/auth';
+import {
+  PASSWORD_POLICY_MESSAGE,
+  validatePasswordPolicy,
+} from '../../utils/password-policy';
 import { useAuthSubmit } from './useAuthSubmit';
 
 export const useResetPasswordPage = () => {
@@ -19,6 +23,11 @@ export const useResetPasswordPage = () => {
 
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+
+    if (!validatePasswordPolicy(password)) {
+      setError(PASSWORD_POLICY_MESSAGE);
       return;
     }
 
