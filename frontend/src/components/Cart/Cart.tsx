@@ -9,45 +9,33 @@ import Checkout from './Checkout/Checkout';
 import { useCartSelector } from '../../hooks/useCartSelector';
 
 import {
-  selectTotalQuantity,
-  selectQuote,
-  selectQuoteStale,
-  selectQuoteMismatch,
-  selectEstimatedTotalPrice,
-  selectEnsureQuote,
-  selectClearQuote,
-} from '../../selectors/cart-context-selectors';
+  getTotalQuantity,
+  getQuote,
+  getQuoteStale,
+  getQuoteMismatch,
+  getEstimatedTotalPrice,
+  getEnsureQuote,
+  getClearQuote,
+} from '../../store/cart/context-accessors';
 
 const Cart = () => {
-  // =========================
-  // selectors
-  // =========================
+  const totalQuantity = useCartSelector(getTotalQuantity);
 
-  const totalQuantity = useCartSelector(selectTotalQuantity);
+  const quote = useCartSelector(getQuote);
 
-  const quote = useCartSelector(selectQuote);
+  const quoteStale = useCartSelector(getQuoteStale);
 
-  const quoteStale = useCartSelector(selectQuoteStale);
+  const quoteMismatch = useCartSelector(getQuoteMismatch);
 
-  const quoteMismatch = useCartSelector(selectQuoteMismatch);
+  const estimatedTotalPrice = useCartSelector(getEstimatedTotalPrice);
 
-  const estimatedTotalPrice = useCartSelector(selectEstimatedTotalPrice);
+  const ensureQuote = useCartSelector(getEnsureQuote);
 
-  const ensureQuote = useCartSelector(selectEnsureQuote);
-
-  const clearQuote = useCartSelector(selectClearQuote);
-
-  // =========================
-  // local state
-  // =========================
+  const clearQuote = useCartSelector(getClearQuote);
 
   const [showCartDetails, setShowCartDetails] = useState(false);
 
   const [showCheckout, setShowCheckout] = useState(false);
-
-  // =========================
-  // handlers
-  // =========================
 
   const toggleCartDetailsHandler = () => {
     if (totalQuantity === 0) return;
@@ -81,10 +69,6 @@ const Cart = () => {
     setShowCheckout(false);
   };
 
-  // =========================
-  // effects
-  // =========================
-
   useEffect(() => {
     if (totalQuantity === 0) {
       setShowCheckout(false);
@@ -94,10 +78,6 @@ const Cart = () => {
       clearQuote();
     }
   }, [totalQuantity, clearQuote]);
-
-  // =========================
-  // render
-  // =========================
 
   return (
     <div className={classes.Cart} onClick={toggleCartDetailsHandler}>

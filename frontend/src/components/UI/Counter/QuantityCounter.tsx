@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useCartActions } from '../../../hooks/useCartActions';
 import { useCartSelector } from '../../../hooks/useCartSelector';
-import { selectCartItemQuantity } from '../../../store/cart/cart-selectors';
+import { getCartItemQuantity } from '../../../store/cart/context-accessors';
 
 interface QuantityCounterProps {
   id: string;
@@ -12,8 +12,7 @@ interface QuantityCounterProps {
 const QuantityCounter = ({ id }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
 
-  // 🎯 核心：只订阅当前 item
-  const quantity = useCartSelector((ctx) => selectCartItemQuantity(ctx, id));
+  const quantity = useCartSelector((ctx) => getCartItemQuantity(ctx, id));
 
   const onDecrease = () => {
     removeItem(id);
