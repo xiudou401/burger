@@ -1,6 +1,4 @@
-import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { forgotPassword } from '../api/auth';
 import {
   AuthField,
   AuthFormElement,
@@ -11,32 +9,18 @@ import {
   AuthTextLink,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
+import { useForgotPasswordPage } from './hooks/useForgotPasswordPage';
 
 const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [devResetToken, setDevResetToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMessage(null);
-    setDevResetToken(null);
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      const res = await forgotPassword(email);
-      setMessage(res.message);
-      setDevResetToken(res.resetToken ?? null);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Request failed';
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    email,
+    setEmail,
+    message,
+    devResetToken,
+    error,
+    isSubmitting,
+    submit,
+  } = useForgotPasswordPage();
 
   return (
     <AuthCenteredPage>

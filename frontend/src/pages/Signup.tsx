@@ -1,6 +1,4 @@
-import { FormEvent, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { signup } from '../api/auth';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   AuthCard,
   AuthField,
@@ -13,59 +11,26 @@ import {
   AuthTextLink,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
-import { useAuth } from '../store/auth/hooks/useAuth';
-
-const API_ORIGIN = process.env.REACT_APP_API_URL ?? 'http://localhost:5001';
+import { useOAuthLogin } from './hooks/useOAuthLogin';
+import { useSignupPage } from './hooks/useSignupPage';
 
 const Signup = () => {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const loginFn = useAuth((ctx) => ctx.login);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [devVerificationToken, setDevVerificationToken] = useState<string | null>(
-    null,
-  );
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    setDevVerificationToken(null);
-    setIsSubmitting(true);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      setIsSubmitting(false);
-      return;
-    }
-
-    try {
-      const res = await signup(name, email, password);
-
-      loginFn(res.accessToken, res.user);
-
-      if (res.emailVerificationToken) {
-        navigate(`/verify-email?token=${res.emailVerificationToken}`);
-        return;
-      }
-
-      setDevVerificationToken(null);
-      navigate('/verify-email');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Signup failed';
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const oauthLogin = (provider: 'google' | 'apple') => {
-    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}?mode=signup`);
-  };
+  const {
+    name,
+    setName,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    error,
+    devVerificationToken,
+    isSubmitting,
+    submit,
+  } = useSignupPage();
+  const { oauthLogin } = useOAuthLogin('signup');
 
   return (
     <AuthSplitPage

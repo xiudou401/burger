@@ -1,6 +1,4 @@
-import { FormEvent, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { resetPassword } from '../api/auth';
+import { Link } from 'react-router-dom';
 import {
   AuthField,
   AuthFormElement,
@@ -10,38 +8,20 @@ import {
   AuthSwitch,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
+import { useResetPasswordPage } from './hooks/useResetPasswordPage';
 
 const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') ?? '';
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setMessage(null);
-    setError(null);
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const res = await resetPassword(token, password);
-      setMessage(res.message);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Reset failed';
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const {
+    token,
+    password,
+    setPassword,
+    confirmPassword,
+    setConfirmPassword,
+    message,
+    error,
+    isSubmitting,
+    submit,
+  } = useResetPasswordPage();
 
   return (
     <AuthCenteredPage>

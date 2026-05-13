@@ -1,6 +1,4 @@
-import { FormEvent, useState } from 'react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { login } from '../api/auth';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   AuthCard,
   AuthField,
@@ -13,53 +11,21 @@ import {
   AuthTextLink,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
-import { useAuth } from '../store/auth/hooks/useAuth';
-
-const API_ORIGIN = process.env.REACT_APP_API_URL ?? 'http://localhost:5001';
-
-interface LoginLocationState {
-  from?: {
-    pathname: string;
-    search?: string;
-  };
-}
+import { useLoginPage } from './hooks/useLoginPage';
+import { useOAuthLogin } from './hooks/useOAuthLogin';
 
 const Login = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const loginFn = useAuth((ctx) => ctx.login);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      const res = await login(email, password);
-
-      loginFn(res.accessToken, res.user);
-
-      const state = location.state as LoginLocationState | null;
-      const from = state?.from;
-      const redirectTo = `${from?.pathname ?? '/'}${from?.search ?? ''}`;
-
-      navigate(redirectTo, { replace: true });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const oauthLogin = (provider: 'google' | 'apple') => {
-    window.location.assign(`${API_ORIGIN}/api/auth/oauth/${provider}?mode=login`);
-  };
+  const {
+    email,
+    setEmail,
+    password,
+    setPassword,
+    error,
+    isSubmitting,
+    submit,
+  } = useLoginPage();
+  const { oauthLogin } = useOAuthLogin('login');
 
   return (
     <AuthSplitPage
