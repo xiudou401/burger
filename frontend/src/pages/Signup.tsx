@@ -1,8 +1,19 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { signup } from '../api/auth';
+import {
+  AuthCard,
+  AuthField,
+  AuthFormElement,
+  AuthHeader,
+  AuthSocialButtons,
+  AuthStatus,
+  AuthSubmitButton,
+  AuthSwitch,
+  AuthTextLink,
+} from '../components/Auth/AuthForm/AuthForm';
+import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
 import { useAuth } from '../store/auth/hooks/useAuth';
-import classes from './Auth.module.css';
 
 const API_ORIGIN = process.env.REACT_APP_API_URL ?? 'http://localhost:5001';
 
@@ -57,134 +68,89 @@ const Signup = () => {
   };
 
   return (
-    <main className={classes.Page}>
-      <section className={classes.BrandPanel}>
-        <div className={classes.Logo}>M</div>
-        <div className={classes.BrandCopy}>
-          <p className={classes.Eyebrow}>Burger Club</p>
-          <h1 className={classes.Title}>Join the crave-worthy side.</h1>
-          <p className={classes.Subtitle}>
-            Create an account and your next burger run starts a little faster.
-          </p>
-        </div>
-        <div className={classes.FoodRow}>
-          <div className={classes.FoodTile}>
-            <img src="/img/meals/4.png" alt="" />
-          </div>
-          <div className={classes.FoodTile}>
-            <img src="/img/meals/5.png" alt="" />
-          </div>
-          <div className={classes.FoodTile}>
-            <img src="/img/meals/6.png" alt="" />
-          </div>
-        </div>
-      </section>
+    <AuthSplitPage
+      title="Join the crave-worthy side."
+      subtitle="Create an account and your next burger run starts a little faster."
+      imageIds={[4, 5, 6]}
+    >
+      <AuthCard>
+        <AuthHeader
+          title="Sign up"
+          subtitle="Save your details and get back to the menu in seconds."
+        />
 
-      <section className={classes.FormPanel}>
-        <div className={classes.FormCard}>
-          <header className={classes.FormHeader}>
-            <h1>Sign up</h1>
-            <p>Save your details and get back to the menu in seconds.</p>
-          </header>
+        {searchParams.get('error') && (
+          <AuthStatus tone="error">{searchParams.get('error')}</AuthStatus>
+        )}
 
-          {searchParams.get('error') && (
-            <p className={classes.Error}>{searchParams.get('error')}</p>
-          )}
+        <AuthSocialButtons
+          googleLabel="Sign up with Google"
+          appleLabel="Sign up with Apple"
+          onGoogle={() => oauthLogin('google')}
+          onApple={() => oauthLogin('apple')}
+        />
 
-          <div className={classes.SocialStack}>
-            <button
-              className={classes.GoogleButton}
-              type="button"
-              onClick={() => oauthLogin('google')}
-            >
-              <span className={classes.GoogleIcon}>G</span>
-              Sign up with Google
-            </button>
-            <button
-              className={classes.AppleButton}
-              type="button"
-              onClick={() => oauthLogin('apple')}
-            >
-              <span className={classes.AppleIcon}>Apple</span>
-              Sign up with Apple
-            </button>
-          </div>
-
-          <div className={classes.Divider}>
-            <span>or</span>
-          </div>
-
-          <form className={classes.Form} onSubmit={submit}>
-            <label className={classes.Field}>
-              Name
-              <input
-                className={classes.Input}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                type="text"
-                autoComplete="name"
-                required
-              />
-            </label>
-            <label className={classes.Field}>
-              Email
-              <input
-                className={classes.Input}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                type="email"
-                autoComplete="email"
-                required
-              />
-            </label>
-            <label className={classes.Field}>
-              Password
-              <input
-                className={classes.Input}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                type="password"
-                autoComplete="new-password"
-                minLength={6}
-                required
-              />
-            </label>
-            <label className={classes.Field}>
-              Confirm password
-              <input
-                className={classes.Input}
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                type="password"
-                autoComplete="new-password"
-                minLength={6}
-                required
-              />
-            </label>
-            {devVerificationToken && (
-              <Link
-                className={classes.DevLink}
-                to={`/verify-email?token=${devVerificationToken}`}
-              >
+        <AuthFormElement onSubmit={submit}>
+          <AuthField
+            label="Name"
+            inputProps={{
+              value: name,
+              onChange: (event) => setName(event.target.value),
+              type: 'text',
+              autoComplete: 'name',
+              required: true,
+            }}
+          />
+          <AuthField
+            label="Email"
+            inputProps={{
+              value: email,
+              onChange: (event) => setEmail(event.target.value),
+              type: 'email',
+              autoComplete: 'email',
+              required: true,
+            }}
+          />
+          <AuthField
+            label="Password"
+            inputProps={{
+              value: password,
+              onChange: (event) => setPassword(event.target.value),
+              type: 'password',
+              autoComplete: 'new-password',
+              minLength: 6,
+              required: true,
+            }}
+          />
+          <AuthField
+            label="Confirm password"
+            inputProps={{
+              value: confirmPassword,
+              onChange: (event) => setConfirmPassword(event.target.value),
+              type: 'password',
+              autoComplete: 'new-password',
+              minLength: 6,
+              required: true,
+            }}
+          />
+          {devVerificationToken && (
+            <AuthTextLink>
+              <Link to={`/verify-email?token=${devVerificationToken}`}>
                 Open local verification link
               </Link>
-            )}
-            {error && <p className={classes.Error}>{error}</p>}
-            <button
-              className={classes.Submit}
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Creating account...' : 'Create account'}
-            </button>
-          </form>
+            </AuthTextLink>
+          )}
+          {error && <AuthStatus tone="error">{error}</AuthStatus>}
+          <AuthSubmitButton disabled={isSubmitting}>
+            {isSubmitting ? 'Creating account...' : 'Create account'}
+          </AuthSubmitButton>
+        </AuthFormElement>
 
-          <p className={classes.Switch}>
-            Already have an account? <Link to="/login">Log in</Link>
-          </p>
-        </div>
-      </section>
-    </main>
+        <AuthSwitch>
+          Already have an account? <Link to="/login">Log in</Link>
+        </AuthSwitch>
+      </AuthCard>
+    </AuthSplitPage>
   );
 };
 

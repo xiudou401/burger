@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { verifyEmail } from '../api/auth';
+import {
+  AuthHeader,
+  AuthStatus,
+  AuthSwitch,
+} from '../components/Auth/AuthForm/AuthForm';
+import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
 import { useAuth } from '../store/auth/hooks/useAuth';
-import classes from './Auth.module.css';
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
@@ -46,21 +51,18 @@ const VerifyEmail = () => {
   }, [accessToken, loginFn, token, user]);
 
   return (
-    <main className={classes.CenterPage}>
-      <section className={classes.SimpleCard}>
-        <div className={classes.Logo}>M</div>
-        <header className={classes.FormHeader}>
-          <h1>Email verification</h1>
-          <p>Your account security matters before checkout.</p>
-        </header>
+    <AuthCenteredPage>
+      <AuthHeader
+        title="Email verification"
+        subtitle="Your account security matters before checkout."
+      />
 
-        <p className={isError ? classes.Error : classes.Success}>{message}</p>
+      <AuthStatus tone={isError ? 'error' : 'success'}>{message}</AuthStatus>
 
-        <p className={classes.Switch}>
-          Continue to <Link to="/">menu</Link>
-        </p>
-      </section>
-    </main>
+      <AuthSwitch>
+        Continue to <Link to="/">menu</Link>
+      </AuthSwitch>
+    </AuthCenteredPage>
   );
 };
 

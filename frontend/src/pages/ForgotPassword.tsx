@@ -1,7 +1,16 @@
 import { FormEvent, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { forgotPassword } from '../api/auth';
-import classes from './Auth.module.css';
+import {
+  AuthField,
+  AuthFormElement,
+  AuthHeader,
+  AuthStatus,
+  AuthSubmitButton,
+  AuthSwitch,
+  AuthTextLink,
+} from '../components/Auth/AuthForm/AuthForm';
+import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -30,50 +39,41 @@ const ForgotPassword = () => {
   };
 
   return (
-    <main className={classes.CenterPage}>
-      <section className={classes.SimpleCard}>
-        <div className={classes.Logo}>M</div>
-        <header className={classes.FormHeader}>
-          <h1>Reset password</h1>
-          <p>Enter your email and we will send a reset link.</p>
-        </header>
+    <AuthCenteredPage>
+      <AuthHeader
+        title="Reset password"
+        subtitle="Enter your email and we will send a reset link."
+      />
 
-        <form className={classes.Form} onSubmit={submit}>
-          <label className={classes.Field}>
-            Email
-            <input
-              className={classes.Input}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              type="email"
-              autoComplete="email"
-              required
-            />
-          </label>
-          {message && <p className={classes.Success}>{message}</p>}
-          {devResetToken && (
-            <Link
-              className={classes.DevLink}
-              to={`/reset-password?token=${devResetToken}`}
-            >
+      <AuthFormElement onSubmit={submit}>
+        <AuthField
+          label="Email"
+          inputProps={{
+            value: email,
+            onChange: (event) => setEmail(event.target.value),
+            type: 'email',
+            autoComplete: 'email',
+            required: true,
+          }}
+        />
+        {message && <AuthStatus tone="success">{message}</AuthStatus>}
+        {devResetToken && (
+          <AuthTextLink>
+            <Link to={`/reset-password?token=${devResetToken}`}>
               Open local reset link
             </Link>
-          )}
-          {error && <p className={classes.Error}>{error}</p>}
-          <button
-            className={classes.Submit}
-            type="submit"
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? 'Sending...' : 'Send reset link'}
-          </button>
-        </form>
+          </AuthTextLink>
+        )}
+        {error && <AuthStatus tone="error">{error}</AuthStatus>}
+        <AuthSubmitButton disabled={isSubmitting}>
+          {isSubmitting ? 'Sending...' : 'Send reset link'}
+        </AuthSubmitButton>
+      </AuthFormElement>
 
-        <p className={classes.Switch}>
-          Remembered it? <Link to="/login">Log in</Link>
-        </p>
-      </section>
-    </main>
+      <AuthSwitch>
+        Remembered it? <Link to="/login">Log in</Link>
+      </AuthSwitch>
+    </AuthCenteredPage>
   );
 };
 

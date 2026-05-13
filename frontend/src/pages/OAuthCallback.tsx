@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import {
+  AuthHeader,
+  AuthStatus,
+  AuthSwitch,
+} from '../components/Auth/AuthForm/AuthForm';
+import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
 import { useAuth } from '../store/auth/hooks/useAuth';
 import type { User } from '../types/auth';
-import classes from './Auth.module.css';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -36,26 +41,20 @@ const OAuthCallback = () => {
   }, [loginFn, navigate]);
 
   return (
-    <main className={classes.CenterPage}>
-      <section className={classes.SimpleCard}>
-        <div className={classes.Logo}>M</div>
-        <header className={classes.FormHeader}>
-          <h1>Signing you in</h1>
-          <p>Finishing your secure sign in.</p>
-        </header>
+    <AuthCenteredPage>
+      <AuthHeader title="Signing you in" subtitle="Finishing your secure sign in." />
 
-        {error ? (
-          <>
-            <p className={classes.Error}>{error}</p>
-            <p className={classes.Switch}>
-              Back to <Link to="/login">log in</Link>
-            </p>
-          </>
-        ) : (
-          <p className={classes.Success}>Almost there...</p>
-        )}
-      </section>
-    </main>
+      {error ? (
+        <>
+          <AuthStatus tone="error">{error}</AuthStatus>
+          <AuthSwitch>
+            Back to <Link to="/login">log in</Link>
+          </AuthSwitch>
+        </>
+      ) : (
+        <AuthStatus tone="success">Almost there...</AuthStatus>
+      )}
+    </AuthCenteredPage>
   );
 };
 
