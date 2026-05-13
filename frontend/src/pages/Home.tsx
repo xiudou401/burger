@@ -2,6 +2,8 @@ import MealsList from '../components/Meals/MealsList';
 import Cart from '../components/Cart/Cart';
 import FilterMeals from '../components/FilterMeals/FilterMeals';
 import AccountBar from '../components/Auth/AccountBar';
+import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
+import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
 import { fetchMeals } from '../api/meals';
 import { useInfiniteMeals } from '../hooks/useInfiniteMeals';
 
@@ -10,33 +12,20 @@ const Home = () => {
     useInfiniteMeals({ fetchMeals, limit: 4 });
 
   return (
-    <div className="App">
+    <MenuLayout>
       <AccountBar />
       <FilterMeals onSearch={onSearch} />
 
       <MealsList meals={meals} ref={listRef} sentinelRef={sentinelRef} />
 
-      {!hasMore && meals.length > 0 && (
-        <p style={{ textAlign: 'center', color: '#999', padding: '10px' }}>
-          没有更多餐点供选择了
-        </p>
-      )}
-
-      {isLoading && (
-        <p
-          style={{
-            textAlign: 'center',
-            position: 'fixed',
-            bottom: '100px',
-            width: '100%',
-          }}
-        >
-          加载中...
-        </p>
-      )}
+      <MenuFeedStatus
+        hasMore={hasMore}
+        hasMeals={meals.length > 0}
+        isLoading={isLoading}
+      />
 
       <Cart />
-    </div>
+    </MenuLayout>
   );
 };
 

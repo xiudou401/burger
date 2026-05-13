@@ -1,0 +1,47 @@
+.LoadingStatus,
+.EndStatus {
+  left: 50%;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999rem;
+  font-size: 15rem;
+  font-weight: 800;
+  box-shadow: 0 10rem 24rem rgba(67, 0, 8, 0.18);
+  transform: translateX(-50%);
+}
+
+.LoadingStatus {
+  position: fixed;
+  bottom: 104rem;
+  gap: 10rem;
+  padding: 10rem 18rem;
+  background: #ffc72c;
+  color: #292929;
+}
+
+.EndStatus {
+  position: absolute;
+  right: 24rem;
+  bottom: 96rem;
+  padding: 9rem 16rem;
+  background: #fff8eb;
+  color: #7a5a18;
+  border: 1rem solid #ead8b5;
+}
+
+.Spinner {
+  width: 14rem;
+  height: 14rem;
+  border: 3rem solid rgba(41, 41, 41, 0.22);
+  border-top-color: #bd0017;
+  border-radius: 50%;
+  animation: spin 720ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
