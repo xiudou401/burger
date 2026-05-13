@@ -6,11 +6,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import OAuthCallback from './pages/OAuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
+import Profile from './pages/Profile';
 import RequireAuth from './components/Auth/RequireAuth';
-
-const Profile = () => {
-  return <div>Profile</div>;
-};
 
 const App = () => {
   return (
