@@ -2,6 +2,23 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Architecture conventions
+
+### Hooks (placement rules)
+
+Use these rules for **new** hooks. Existing files can stay where they are until a change in that area makes a move worthwhile (incremental migration, not a big-bang directory rewrite).
+
+1. **`store/<domain>/hooks/`** — hooks bound to **one** domain context or store (read/write that API only).  
+   Examples: `useAuth`, cart persistence / quote hooks that only touch cart context.
+
+2. **`features/<domain>/hooks/`** — **feature-level** behavior: business logic that is not “just” store wiring (e.g. infinite list + request orchestration, checkout flow, order polling).  
+   If the repo does not yet have a `features/` tree, keep these temporarily under `src/hooks/` and move them when that layout exists.
+
+3. **`src/hooks/`** (or a future **`shared/hooks/`**) — **generic, reusable** hooks with no domain ownership.  
+   Examples: `useDebounce`, `useLocalStorage`, `useIntersectionObserver`.
+
+**Why three layers:** with only `store/.../hooks` and `src/hooks/`, feature-level hooks tend to pile into `src/hooks/` until it becomes a junk drawer. The middle layer keeps feature logic discoverable as the app grows (orders, payments, profile, etc.).
+
 ## Available Scripts
 
 In the project directory, you can run:
