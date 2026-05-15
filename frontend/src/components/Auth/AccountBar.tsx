@@ -9,6 +9,13 @@ const AccountBar = () => {
   const logout = useAuth((ctx) => ctx.logout);
 
   const initial = user?.name?.trim().charAt(0).toUpperCase() || 'B';
+  const memberStatus = user?.email
+    ? user.emailVerified
+      ? 'Ready to order'
+      : 'Email not verified'
+    : user?.phoneVerified
+      ? 'Phone verified'
+      : 'Phone login';
 
   const resendVerification = async () => {
     try {
@@ -31,11 +38,9 @@ const AccountBar = () => {
           <div className={classes.Avatar}>{initial}</div>
           <div className={classes.UserText}>
             <span className={classes.Greeting}>Hi, {user.name}</span>
-            <span className={classes.Member}>
-              {user.emailVerified ? 'Ready to order' : 'Email not verified'}
-            </span>
+            <span className={classes.Member}>{memberStatus}</span>
           </div>
-          {!user.emailVerified && (
+          {user.email && !user.emailVerified && (
             <button
               className={classes.VerifyButton}
               type="button"

@@ -18,7 +18,18 @@ const Profile = () => {
     verificationMessage,
     verificationError,
     isSendingVerification,
+    phone,
+    setPhone,
+    smsCode,
+    setSmsCode,
+    smsMessage,
+    smsError,
+    devSmsCode,
+    isSendingSms,
+    isVerifyingSms,
     resendVerification,
+    sendPhoneCode,
+    verifyPhoneCode,
     logout,
   } = useProfilePage();
 
@@ -29,7 +40,7 @@ const Profile = () => {
           initial={initial}
           firstName={firstName}
           accountStatus={accountStatus}
-          email={user?.email}
+          contact={user?.email ?? user?.phone}
         />
       }
       main={
@@ -40,6 +51,17 @@ const Profile = () => {
             verificationError={verificationError}
             isSendingVerification={isSendingVerification}
             onResendVerification={resendVerification}
+            phone={phone}
+            onPhoneChange={setPhone}
+            smsCode={smsCode}
+            onSmsCodeChange={setSmsCode}
+            smsMessage={smsMessage}
+            smsError={smsError}
+            devSmsCode={devSmsCode}
+            isSendingSms={isSendingSms}
+            isVerifyingSms={isVerifyingSms}
+            onSendPhoneCode={sendPhoneCode}
+            onVerifyPhoneCode={verifyPhoneCode}
           />
           <RecentOrdersCard />
         </>

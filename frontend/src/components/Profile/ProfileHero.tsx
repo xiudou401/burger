@@ -4,14 +4,14 @@ interface ProfileHeroProps {
   initial: string;
   firstName: string;
   accountStatus: string;
-  email?: string;
+  contact?: string;
 }
 
 const ProfileHero = ({
   initial,
   firstName,
   accountStatus,
-  email,
+  contact,
 }: ProfileHeroProps) => {
   return (
     <section className={classes.Hero}>
@@ -30,7 +30,7 @@ const ProfileHero = ({
       <aside className={classes.HeroPanel}>
         <span className={classes.StatusLabel}>Account status</span>
         <span className={classes.StatusValue}>{accountStatus}</span>
-        <span className={classes.MetaLabel}>{email}</span>
+        <span className={classes.MetaLabel}>{contact}</span>
       </aside>
     </section>
   );

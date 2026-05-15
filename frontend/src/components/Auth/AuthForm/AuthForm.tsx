@@ -46,6 +46,15 @@ interface AuthTextLinkProps {
   align?: 'start' | 'end';
 }
 
+interface AuthTabsProps {
+  value: string;
+  options: Array<{
+    value: string;
+    label: string;
+  }>;
+  onChange: (value: string) => void;
+}
+
 export const AuthCard = ({ children }: AuthCardProps) => {
   return <div className={classes.FormCard}>{children}</div>;
 };
@@ -144,4 +153,27 @@ export const AuthTextLink = ({
     align === 'end' ? `${classes.TextLink} ${classes.TextLinkEnd}` : classes.TextLink;
 
   return <span className={className}>{children}</span>;
+};
+
+export const AuthTabs = ({ value, options, onChange }: AuthTabsProps) => {
+  return (
+    <div className={classes.Tabs} role="tablist" aria-label="Login method">
+      {options.map((option) => (
+        <button
+          key={option.value}
+          className={
+            option.value === value
+              ? `${classes.Tab} ${classes.TabActive}`
+              : classes.Tab
+          }
+          type="button"
+          role="tab"
+          aria-selected={option.value === value}
+          onClick={() => onChange(option.value)}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
 };
