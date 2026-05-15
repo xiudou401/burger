@@ -5,10 +5,12 @@ import {
   forgotPasswordHandler,
   resendVerificationHandler,
   resetPasswordHandler,
+  sendSmsCodeHandler,
   signupHandler,
   verifyEmailHandler,
+  verifySmsCodeHandler,
 } from '../controllers/auth.controller';
-import { authenticate } from '../middleware/authenticate';
+import { authenticate, optionalAuthenticate } from '../middleware/authenticate';
 import {
   oauthCallbackHandler,
   oauthStartHandler,
@@ -23,6 +25,8 @@ router.post('/verify-email', verifyEmailHandler);
 router.post('/resend-verification', authenticate, resendVerificationHandler);
 router.post('/forgot-password', forgotPasswordHandler);
 router.post('/reset-password', resetPasswordHandler);
+router.post('/sms/send', optionalAuthenticate, sendSmsCodeHandler);
+router.post('/sms/verify', verifySmsCodeHandler);
 router.get('/oauth/:provider/callback', oauthCallbackHandler);
 router.get('/oauth/:provider', oauthStartHandler);
 

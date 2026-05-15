@@ -115,3 +115,37 @@ export const resetPasswordHandler = async (
     next(error);
   }
 };
+
+export const sendSmsCodeHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await authService.sendSmsCode(
+      getString(req.body?.phone),
+      req.user?.id,
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifySmsCodeHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await authService.verifySmsCode(
+      getString(req.body?.phone),
+      getString(req.body?.code),
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};

@@ -30,10 +30,26 @@ export const authenticate = async (
       email: user.email,
       name: user.name,
       emailVerified: user.emailVerified,
+      phone: user.phone,
+      phoneVerified: user.phoneVerified,
     };
 
     next();
   } catch (error) {
     next(error);
   }
+};
+
+export const optionalAuthenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return next();
+  }
+
+  return authenticate(req, res, next);
 };

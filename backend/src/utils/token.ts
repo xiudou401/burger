@@ -53,7 +53,7 @@ export const verifyAuthToken = (token: string): AuthTokenPayload => {
     throw new ServiceError('Invalid token', 401);
   }
 
-  if (!payload.sub || !payload.email || !payload.exp) {
+  if (!payload.sub || !payload.exp) {
     throw new ServiceError('Invalid token', 401);
   }
 

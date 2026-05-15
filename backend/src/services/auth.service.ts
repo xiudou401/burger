@@ -9,6 +9,12 @@ import {
   sendVerificationEmail,
   sendWelcomeEmail,
 } from './email.service';
+import {
+  createSmsCode,
+  isDevSmsMode,
+  sendSmsVerificationCode,
+  SMS_CODE_TTL_MS,
+} from './sms.service';
 import { env } from '../config/env';
 import {
   PASSWORD_POLICY_MESSAGE,
@@ -25,28 +31,40 @@ interface MessageResult {
   message: string;
   resetToken?: string;
   emailVerificationToken?: string;
+  devSmsCode?: string;
 }
 
 const toPublicUser = (user: {
   _id: unknown;
-  email: string;
+  email?: string;
   name: string;
   emailVerified: boolean;
+  phone?: string;
+  phoneVerified: boolean;
 }): AuthenticatedUser => {
   return {
     id: String(user._id),
     email: user.email,
     name: user.name,
     emailVerified: user.emailVerified,
+    phone: user.phone,
+    phoneVerified: user.phoneVerified,
   };
 };
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const normalizePhone = (phone: string) => phone.trim().replace(/[()\s-]/g, '');
 const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
 
 const assertEmail = (email: string) => {
   if (!email || !email.includes('@')) {
     throw new ServiceError('Invalid email', 400);
+  }
+};
+
+const assertPhone = (phone: string) => {
+  if (!phone || !/^\+[1-9]\d{7,14}$/.test(phone)) {
+    throw new ServiceError('Phone must use E.164 format, for example +61412345678', 400);
   }
 };
 
@@ -100,6 +118,7 @@ export const signup = async (
     accessToken: signAuthToken({
       sub: publicUser.id,
       email: publicUser.email,
+      phone: publicUser.phone,
     }),
     user: publicUser,
     ...(isDevEmailMode() ? { emailVerificationToken } : {}),
@@ -119,7 +138,7 @@ export const login = async (
     .select('+passwordHash')
     .exec();
 
-  if (!user || !verifyPassword(password, user.passwordHash)) {
+  if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
     throw new ServiceError('Invalid email or password', 401);
   }
 
@@ -129,6 +148,7 @@ export const login = async (
     accessToken: signAuthToken({
       sub: publicUser.id,
       email: publicUser.email,
+      phone: publicUser.phone,
     }),
     user: publicUser,
   };
@@ -161,6 +181,10 @@ export const resendVerificationEmail = async (
 
   if (user.emailVerified) {
     return { message: 'Email already verified' };
+  }
+
+  if (!user.email) {
+    throw new ServiceError('Email is not linked to this account', 400);
   }
 
   const emailVerificationToken = await createEmailVerificationToken(
@@ -218,6 +242,10 @@ export const requestPasswordReset = async (
   user.passwordResetExpiresAt = new Date(Date.now() + 1000 * 60 * 30);
   await user.save();
 
+  if (!user.email) {
+    return { message: 'If the email exists, a reset link has been sent' };
+  }
+
   await sendPasswordResetEmail({ email: user.email, token: resetToken });
 
   return {
@@ -253,6 +281,96 @@ export const resetPassword = async (
   await user.save();
 
   return { message: 'Password reset successfully' };
+};
+
+export const sendSmsCode = async (
+  phone: string,
+  userId?: string,
+): Promise<MessageResult> => {
+  const normalizedPhone = normalizePhone(phone ?? '');
+  assertPhone(normalizedPhone);
+
+  const existingUser = await UserModel.findOne({ phone: normalizedPhone }).exec();
+
+  if (userId && existingUser && String(existingUser._id) !== userId) {
+    throw new ServiceError('Phone is already linked to another account', 409);
+  }
+
+  let user = existingUser;
+
+  if (userId && !user) {
+    user = await UserModel.findById(userId).exec();
+
+    if (!user) {
+      throw new ServiceError('User not found', 404);
+    }
+
+    user.phone = normalizedPhone;
+    user.phoneVerified = false;
+  }
+
+  if (!user) {
+    user = await UserModel.create({
+      name: `Burger fan ${normalizedPhone.slice(-4)}`,
+      phone: normalizedPhone,
+      phoneVerified: false,
+    });
+  }
+
+  const code = createSmsCode();
+  user.smsVerificationCodeHash = hashToken(code);
+  user.smsVerificationExpiresAt = new Date(Date.now() + SMS_CODE_TTL_MS);
+  await user.save();
+
+  await sendSmsVerificationCode({
+    phone: normalizedPhone,
+    code,
+  });
+
+  return {
+    message: 'SMS verification code sent',
+    ...(isDevSmsMode() ? { devSmsCode: code } : {}),
+  };
+};
+
+export const verifySmsCode = async (
+  phone: string,
+  code: string,
+): Promise<AuthResult> => {
+  const normalizedPhone = normalizePhone(phone ?? '');
+  assertPhone(normalizedPhone);
+
+  if (!code || !/^\d{6}$/.test(code)) {
+    throw new ServiceError('SMS code must be 6 digits', 400);
+  }
+
+  const user = await UserModel.findOne({
+    phone: normalizedPhone,
+    smsVerificationCodeHash: hashToken(code),
+    smsVerificationExpiresAt: { $gt: new Date() },
+  })
+    .select('+smsVerificationCodeHash +smsVerificationExpiresAt')
+    .exec();
+
+  if (!user) {
+    throw new ServiceError('SMS code is invalid or expired', 400);
+  }
+
+  user.phoneVerified = true;
+  user.smsVerificationCodeHash = undefined;
+  user.smsVerificationExpiresAt = undefined;
+  await user.save();
+
+  const publicUser = toPublicUser(user);
+
+  return {
+    accessToken: signAuthToken({
+      sub: publicUser.id,
+      email: publicUser.email,
+      phone: publicUser.phone,
+    }),
+    user: publicUser,
+  };
 };
 
 export const loginWithOAuth = async ({
@@ -298,7 +416,7 @@ export const loginWithOAuth = async ({
 
   if (isNewUser) {
     await sendWelcomeEmail({
-      email: publicUser.email,
+      email: publicUser.email!,
       name: publicUser.name,
     });
   }
@@ -307,6 +425,7 @@ export const loginWithOAuth = async ({
     accessToken: signAuthToken({
       sub: publicUser.id,
       email: publicUser.email,
+      phone: publicUser.phone,
     }),
     user: publicUser,
   };
