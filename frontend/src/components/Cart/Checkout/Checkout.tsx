@@ -55,7 +55,7 @@ const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
         </footer>
       </div>
 
-      <Bar totalPrice={estimatedTotalPrice} />
+      <Bar totalPrice={estimatedTotalPrice} onOrderComplete={offCheckout} />
     </div>,
     CheckoutRoot,
   );

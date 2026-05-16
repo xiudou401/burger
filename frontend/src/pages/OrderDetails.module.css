@@ -1,0 +1,169 @@
+.Page {
+  min-height: 100vh;
+  padding: 160rem 28rem 56rem;
+  background: #f6f2ea;
+  color: #292929;
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
+}
+
+.Shell {
+  width: min(860rem, 100%);
+  margin: 0 auto;
+}
+
+.BackLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44rem;
+  margin-bottom: 18rem;
+  color: #bd0017;
+  font-size: 17rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.Hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24rem;
+  margin-bottom: 24rem;
+}
+
+.Eyebrow {
+  margin: 0 0 8rem;
+  color: #7a6954;
+  font-size: 16rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.Title {
+  margin: 0;
+  color: #292929;
+  font-size: 42rem;
+  line-height: 1.05;
+}
+
+.Meta,
+.StateText {
+  margin: 10rem 0 0;
+  color: #5b4a35;
+  font-size: 18rem;
+  line-height: 1.45;
+}
+
+.Status {
+  padding: 8rem 14rem;
+  border-radius: 8rem;
+  background: rgba(39, 134, 82, 0.12);
+  color: #1d7c49;
+  font-size: 16rem;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.Card {
+  padding: 28rem;
+  border-radius: 8rem;
+  background: #fff;
+  border: 1rem solid #ead8b5;
+  box-shadow: 0 10rem 26rem rgba(68, 40, 0, 0.07);
+}
+
+.CardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rem;
+  margin-bottom: 20rem;
+}
+
+.CardTitle {
+  margin: 0;
+  color: #292929;
+  font-size: 26rem;
+  line-height: 1.15;
+  font-weight: 900;
+}
+
+.Total {
+  color: #bd0017;
+  font-size: 28rem;
+}
+
+.ItemList {
+  display: grid;
+  gap: 14rem;
+}
+
+.Item {
+  display: grid;
+  grid-template-columns: 78rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16rem;
+  padding: 14rem 0;
+  border-bottom: 1rem solid rgba(91, 74, 53, 0.18);
+}
+
+.Item:last-child {
+  border-bottom: 0;
+}
+
+.ItemImage {
+  width: 78rem;
+  height: 78rem;
+  object-fit: contain;
+  border-radius: 8rem;
+  background: #fff7e0;
+}
+
+.ItemInfo {
+  min-width: 0;
+}
+
+.ItemName {
+  margin: 0;
+  color: #292929;
+  font-size: 21rem;
+  line-height: 1.2;
+}
+
+.ItemMeta {
+  margin: 6rem 0 0;
+  color: #7a6954;
+  font-size: 16rem;
+}
+
+.Subtotal {
+  color: #292929;
+  font-size: 20rem;
+}
+
+@media (max-width: 560px) {
+  .Page {
+    padding: 144rem 18rem 42rem;
+  }
+
+  .Hero,
+  .CardHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .Item {
+    grid-template-columns: 64rem minmax(0, 1fr);
+  }
+
+  .ItemImage {
+    width: 64rem;
+    height: 64rem;
+  }
+
+  .Subtotal {
+    grid-column: 2;
+  }
+}

@@ -41,3 +41,63 @@
   font-size: 18rem;
   line-height: 1.45;
 }
+
+.Error {
+  margin: 0;
+  color: #bd0017;
+  font-size: 18rem;
+  line-height: 1.35;
+}
+
+.OrderList {
+  display: grid;
+  gap: 12rem;
+}
+
+.OrderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18rem;
+  padding: 14rem 0;
+  border-bottom: 1px solid rgba(91, 74, 53, 0.18);
+  text-decoration: none;
+}
+
+.OrderRow:last-child {
+  border-bottom: 0;
+}
+
+.OrderRow:hover .OrderSummary {
+  color: #bd0017;
+}
+
+.OrderMeta {
+  display: flex;
+  align-items: center;
+  gap: 10rem;
+  color: #7a6954;
+  font-size: 15rem;
+}
+
+.Status {
+  padding: 3rem 8rem;
+  border-radius: 6rem;
+  background: rgba(39, 134, 82, 0.12);
+  color: #1d7c49;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.OrderSummary {
+  margin: 6rem 0 0;
+  color: #292929;
+  font-size: 18rem;
+  line-height: 1.3;
+}
+
+.OrderTotal {
+  flex: 0 0 auto;
+  color: #bd0017;
+  font-size: 20rem;
+}

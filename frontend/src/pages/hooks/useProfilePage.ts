@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   resendVerificationEmail,
   sendSmsCode,
   verifySmsCode,
 } from '../../api/auth';
+import { fetchMyOrders } from '../../api/orders';
 import { useCartSelector } from '../../hooks/useCartSelector';
 import {
   getEstimatedTotalPrice,
   getTotalQuantity,
 } from '../../store/cart/context-accessors';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import type { Order } from '../../types/order';
 
 export const useProfilePage = () => {
   const user = useAuth((ctx) => ctx.user);
@@ -30,6 +32,9 @@ export const useProfilePage = () => {
   const [devSmsCode, setDevSmsCode] = useState<string | null>(null);
   const [isSendingSms, setIsSendingSms] = useState(false);
   const [isVerifyingSms, setIsVerifyingSms] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
 
   const initial = user?.name?.trim().charAt(0).toUpperCase() || 'B';
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Burger fan';
@@ -41,6 +46,39 @@ export const useProfilePage = () => {
       ? 'Phone verified'
       : 'Phone pending';
   const hasCartItems = totalQuantity > 0;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadOrders = async () => {
+      setIsLoadingOrders(true);
+      setOrdersError(null);
+
+      try {
+        const res = await fetchMyOrders(5);
+
+        if (!cancelled) {
+          setOrders(res.orders);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setOrdersError(
+            err instanceof Error ? err.message : 'Could not load orders',
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingOrders(false);
+        }
+      }
+    };
+
+    loadOrders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const resendVerification = async () => {
     setVerificationMessage(null);
@@ -106,6 +144,9 @@ export const useProfilePage = () => {
     totalQuantity,
     estimatedTotalPrice,
     hasCartItems,
+    orders,
+    isLoadingOrders,
+    ordersError,
     verificationMessage,
     verificationError,
     isSendingVerification,

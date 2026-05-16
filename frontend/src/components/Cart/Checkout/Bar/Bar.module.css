@@ -27,10 +27,34 @@
   font-size: 24rem;
 }
 
+.Actions {
+  display: flex;
+  align-items: center;
+  gap: 18rem;
+}
+
+.Message,
+.Error {
+  max-width: 220rem;
+  margin: 0;
+  color: #fff;
+  font-size: 18rem;
+  line-height: 1.2;
+}
+
+.Error {
+  color: #ffb3b3;
+}
+
 .Button {
   border: none;
   background-color: #fcbf49;
   width: 200rem;
   border-radius: 20px;
   font-size: 36rem;
+}
+
+.Button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }

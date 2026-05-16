@@ -15,6 +15,9 @@ const Profile = () => {
     totalQuantity,
     estimatedTotalPrice,
     hasCartItems,
+    orders,
+    isLoadingOrders,
+    ordersError,
     verificationMessage,
     verificationError,
     isSendingVerification,
@@ -63,7 +66,11 @@ const Profile = () => {
             onSendPhoneCode={sendPhoneCode}
             onVerifyPhoneCode={verifyPhoneCode}
           />
-          <RecentOrdersCard />
+          <RecentOrdersCard
+            orders={orders}
+            isLoading={isLoadingOrders}
+            error={ordersError}
+          />
         </>
       }
       side={
