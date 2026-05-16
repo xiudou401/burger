@@ -7,7 +7,14 @@ import OAuthCallback from './pages/OAuthCallback';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import Profile from './pages/Profile';
+import OrderDetails from './pages/OrderDetails';
+import AdminOrders from './pages/AdminOrders';
+import AdminOrderDetails from './pages/AdminOrderDetails';
+import AdminLogin from './pages/AdminLogin';
+import AdminStaff from './pages/AdminStaff';
+import AcceptStaffInvite from './pages/AcceptStaffInvite';
 import RequireAuth from './components/Auth/RequireAuth';
+import RequireAdmin from './components/Auth/RequireAdmin';
 
 const App = () => {
   return (
@@ -20,9 +27,21 @@ const App = () => {
         <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/invitations/accept"
+          element={<AcceptStaffInvite />}
+        />
 
         <Route element={<RequireAuth />}>
           <Route path="/profile" element={<Profile />} />
+          <Route path="/orders/:orderId" element={<OrderDetails />} />
+        </Route>
+
+        <Route element={<RequireAdmin />}>
+          <Route path="/admin/orders" element={<AdminOrders />} />
+          <Route path="/admin/orders/:orderId" element={<AdminOrderDetails />} />
+          <Route path="/admin/staff" element={<AdminStaff />} />
         </Route>
       </Routes>
     </BrowserRouter>

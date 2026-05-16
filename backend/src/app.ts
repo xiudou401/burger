@@ -3,6 +3,8 @@ import mealRoutes from './routes/meal.routes';
 import cartRoutes from './routes/cart.routes';
 import menuVersionRoutes from './routes/menu-version.routes';
 import authRoutes from './routes/auth.routes';
+import orderRoutes from './routes/order.routes';
+import staffInviteRoutes from './routes/staff-invite.routes';
 import path from 'path';
 import cors from 'cors';
 
@@ -23,6 +25,8 @@ app.use('/img', express.static(path.join(__dirname, '../public/img')));
 app.use('/api/auth', authRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/staff-invites', staffInviteRoutes);
 app.use('/api/menu-version', menuVersionRoutes);
 
 // 404 handler
