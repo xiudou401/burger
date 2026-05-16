@@ -29,6 +29,7 @@ export const authenticate = async (
       id: user._id.toString(),
       email: user.email,
       name: user.name,
+      role: user.role ?? 'customer',
       emailVerified: user.emailVerified,
       phone: user.phone,
       phoneVerified: user.phoneVerified,

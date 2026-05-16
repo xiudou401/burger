@@ -6,7 +6,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc",
     "start": "node dist/src/server.js",
-    "seed:meals": "ts-node scripts/seedMeals.ts"
+    "seed:meals": "ts-node scripts/seedMeals.ts",
+    "make:admin": "ts-node scripts/makeAdmin.ts"
   },
   "author": "",
   "license": "ISC",

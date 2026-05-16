@@ -4,6 +4,7 @@ export interface User {
   name: string;
   email?: string;
   passwordHash?: string;
+  role: 'customer' | 'admin' | 'staff';
   emailVerified: boolean;
   phone?: string;
   phoneVerified: boolean;
@@ -35,6 +36,12 @@ const userSchema = new Schema<User>(
     passwordHash: {
       type: String,
       select: false,
+    },
+    role: {
+      type: String,
+      enum: ['customer', 'admin', 'staff'],
+      required: true,
+      default: 'customer',
     },
     emailVerified: {
       type: Boolean,

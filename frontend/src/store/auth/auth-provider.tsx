@@ -13,7 +13,13 @@ export const AuthProvider = ({ children }: Props) => {
 
   const [user, setUser] = useState<User | null>(() => {
     const raw = localStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as User;
+    return {
+      ...parsed,
+      role: parsed.role ?? 'customer',
+    };
   });
 
   const login = useCallback((token: string, user: User) => {

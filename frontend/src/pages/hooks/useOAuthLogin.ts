@@ -1,4 +1,4 @@
-type OAuthMode = 'login' | 'signup';
+type OAuthMode = 'login' | 'signup' | 'admin';
 type OAuthProvider = 'google' | 'apple';
 
 const API_ORIGIN = process.env.REACT_APP_API_URL ?? 'http://localhost:5001';

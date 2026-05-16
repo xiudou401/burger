@@ -19,6 +19,7 @@ export const useOAuthCallback = () => {
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const accessToken = params.get('accessToken');
     const rawUser = params.get('user');
+    const redirectTo = params.get('redirectTo');
 
     if (!accessToken || !rawUser) {
       setError('Sign in did not return account details.');
@@ -28,7 +29,16 @@ export const useOAuthCallback = () => {
     try {
       const user = JSON.parse(rawUser) as User;
       loginFn(accessToken, user);
-      navigate('/', { replace: true });
+      const pendingInviteToken = localStorage.getItem('pendingStaffInviteToken');
+
+      if (pendingInviteToken) {
+        navigate(`/admin/invitations/accept?token=${pendingInviteToken}`, {
+          replace: true,
+        });
+        return;
+      }
+
+      navigate(redirectTo || '/', { replace: true });
     } catch {
       setError('Could not finish sign in.');
     }

@@ -38,6 +38,7 @@ const toPublicUser = (user: {
   _id: unknown;
   email?: string;
   name: string;
+  role?: 'customer' | 'admin' | 'staff';
   emailVerified: boolean;
   phone?: string;
   phoneVerified: boolean;
@@ -46,6 +47,7 @@ const toPublicUser = (user: {
     id: String(user._id),
     email: user.email,
     name: user.name,
+    role: user.role ?? 'customer',
     emailVerified: user.emailVerified,
     phone: user.phone,
     phoneVerified: user.phoneVerified,

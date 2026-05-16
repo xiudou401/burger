@@ -6,14 +6,25 @@ import { loginWithOAuth } from '../services/auth.service';
 const redirectWithError = (
   res: Response,
   message: string,
-  target: 'login' | 'signup' = 'login',
+  target: 'login' | 'signup' | 'admin/login' = 'login',
 ) => {
   const params = new URLSearchParams({ error: message });
   return res.redirect(`${env.FRONTEND_URL}/${target}?${params.toString()}`);
 };
 
-const getOAuthMode = (value: unknown): 'login' | 'signup' => {
-  return value === 'signup' ? 'signup' : 'login';
+const getOAuthMode = (value: unknown): 'login' | 'signup' | 'admin' => {
+  if (value === 'signup' || value === 'admin') {
+    return value;
+  }
+
+  return 'login';
+};
+
+const getOAuthErrorTarget = (
+  mode: ReturnType<typeof getOAuthMode>,
+): 'login' | 'signup' | 'admin/login' => {
+  if (mode === 'admin') return 'admin/login';
+  return mode;
 };
 
 export const oauthStartHandler = (
@@ -29,7 +40,7 @@ export const oauthStartHandler = (
       return redirectWithError(
         res,
         'Google sign in is not configured yet',
-        mode,
+        getOAuthErrorTarget(mode),
       );
     }
 
@@ -52,7 +63,7 @@ export const oauthStartHandler = (
       return redirectWithError(
         res,
         'Apple sign in is not configured yet',
-        mode,
+        getOAuthErrorTarget(mode),
       );
     }
 
@@ -92,6 +103,9 @@ const redirectWithAuth = (
   const params = new URLSearchParams({
     accessToken: result.accessToken,
     user: JSON.stringify(result.user),
+    ...(result.user.role === 'admin' || result.user.role === 'staff'
+      ? { redirectTo: '/admin/orders' }
+      : {}),
   });
 
   return res.redirect(`${env.FRONTEND_URL}/oauth/callback#${params.toString()}`);
@@ -114,7 +128,7 @@ export const oauthCallbackHandler = async (
       return redirectWithError(
         res,
         'Google sign in is not configured yet',
-        mode,
+        getOAuthErrorTarget(mode),
       );
     }
 
@@ -124,7 +138,7 @@ export const oauthCallbackHandler = async (
       return redirectWithError(
         res,
         'Google did not return an authorization code',
-        mode,
+        getOAuthErrorTarget(mode),
       );
     }
 
@@ -148,7 +162,7 @@ export const oauthCallbackHandler = async (
       return redirectWithError(
         res,
         tokenBody.error_description || 'Google token exchange failed',
-        mode,
+        getOAuthErrorTarget(mode),
       );
     }
 
@@ -161,7 +175,7 @@ export const oauthCallbackHandler = async (
       return redirectWithError(
         res,
         userInfo.error_description || 'Google user lookup failed',
-        mode,
+        getOAuthErrorTarget(mode),
       );
     }
 
@@ -173,11 +187,23 @@ export const oauthCallbackHandler = async (
         name: userInfo.name ?? userInfo.email,
         emailVerified:
           userInfo.email_verified === true || userInfo.email_verified === 'true',
-        mode,
+        mode: mode === 'signup' ? 'signup' : 'login',
       });
+
+      if (
+        mode === 'admin' &&
+        result.user.role !== 'admin' &&
+        result.user.role !== 'staff'
+      ) {
+        return redirectWithError(
+          res,
+          'Admin access required',
+          getOAuthErrorTarget(mode),
+        );
+      }
     } catch (error) {
       if (error instanceof ServiceError) {
-        return redirectWithError(res, error.message, mode);
+        return redirectWithError(res, error.message, getOAuthErrorTarget(mode));
       }
 
       throw error;
