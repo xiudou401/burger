@@ -37,16 +37,28 @@ const AdminLayout = ({
             Orders
           </NavLink>
           {user?.role === 'admin' && (
-            <NavLink
-              className={({ isActive }) =>
-                isActive
-                  ? `${classes.NavLink} ${classes.NavLinkActive}`
-                  : classes.NavLink
-              }
-              to="/admin/staff"
-            >
-              Staff
-            </NavLink>
+            <>
+              <NavLink
+                className={({ isActive }) =>
+                  isActive
+                    ? `${classes.NavLink} ${classes.NavLinkActive}`
+                    : classes.NavLink
+                }
+                to="/admin/menu"
+              >
+                Menu
+              </NavLink>
+              <NavLink
+                className={({ isActive }) =>
+                  isActive
+                    ? `${classes.NavLink} ${classes.NavLinkActive}`
+                    : classes.NavLink
+                }
+                to="/admin/staff"
+              >
+                Staff
+              </NavLink>
+            </>
           )}
         </nav>
       </aside>

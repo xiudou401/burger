@@ -12,6 +12,7 @@ import AdminOrders from './pages/AdminOrders';
 import AdminOrderDetails from './pages/AdminOrderDetails';
 import AdminLogin from './pages/AdminLogin';
 import AdminStaff from './pages/AdminStaff';
+import AdminMenu from './pages/AdminMenu';
 import AcceptStaffInvite from './pages/AcceptStaffInvite';
 import RequireAuth from './components/Auth/RequireAuth';
 import RequireAdmin from './components/Auth/RequireAdmin';
@@ -41,6 +42,7 @@ const App = () => {
         <Route element={<RequireAdmin />}>
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route path="/admin/orders/:orderId" element={<AdminOrderDetails />} />
+          <Route path="/admin/menu" element={<AdminMenu />} />
           <Route path="/admin/staff" element={<AdminStaff />} />
         </Route>
       </Routes>
