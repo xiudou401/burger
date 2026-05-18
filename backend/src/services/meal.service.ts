@@ -1,5 +1,6 @@
 import { MealModel } from '../models/meal.model';
 import { AppError } from '../errors/AppError';
+import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
 import { getMenuVersion } from './menu.service'; // ✅ 新增
@@ -11,6 +12,13 @@ interface MealQuery {
   page?: number;
   limit?: number;
   sort?: SortOption;
+}
+
+interface MealPayload {
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
 }
 
 export type SortOption =
@@ -80,4 +88,73 @@ export const findAllMeals = async (query: MealQuery = {}) => {
     console.error('分页查询菜品失败：', error);
     throw new AppError('获取菜品数据失败，请稍后重试', 500);
   }
+};
+
+const normalizeMealPayload = (payload: Partial<MealPayload>): MealPayload => {
+  const name = payload.name?.trim() ?? '';
+  const description = payload.description?.trim();
+  const image = payload.image?.trim();
+  const price = Number(payload.price);
+
+  if (!name) {
+    throw new ServiceError('Meal name is required', 400);
+  }
+
+  if (!Number.isFinite(price) || price < 0) {
+    throw new ServiceError('Meal price must be a positive number', 400);
+  }
+
+  return {
+    name,
+    description,
+    price,
+    image,
+  };
+};
+
+const toPublicMeal = (meal: {
+  _id: unknown;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+}) => ({
+  id: String(meal._id),
+  name: meal.name,
+  description: meal.description,
+  price: meal.price,
+  image: meal.image,
+});
+
+export const createMeal = async (payload: Partial<MealPayload>) => {
+  const meal = await MealModel.create(normalizeMealPayload(payload));
+
+  return toPublicMeal(meal);
+};
+
+export const updateMeal = async (
+  mealId: string,
+  payload: Partial<MealPayload>,
+) => {
+  const meal = await MealModel.findByIdAndUpdate(
+    mealId,
+    normalizeMealPayload(payload),
+    { new: true, runValidators: true },
+  ).exec();
+
+  if (!meal) {
+    throw new ServiceError('Meal not found', 404);
+  }
+
+  return toPublicMeal(meal);
+};
+
+export const deleteMeal = async (mealId: string) => {
+  const meal = await MealModel.findByIdAndDelete(mealId).exec();
+
+  if (!meal) {
+    throw new ServiceError('Meal not found', 404);
+  }
+
+  return toPublicMeal(meal);
 };

@@ -1,5 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import { findAllMeals, SortOption } from '../services/meal.service';
+import {
+  createMeal,
+  deleteMeal,
+  findAllMeals,
+  SortOption,
+  updateMeal,
+} from '../services/meal.service';
 
 const isSortOption = (value: any): value is SortOption => {
   return ['price_asc', 'price_desc', 'created_asc', 'created_desc'].includes(
@@ -30,6 +36,48 @@ export const getMeals = async (
     });
 
     res.status(200).json(meals);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createMealHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const meal = await createMeal(req.body);
+
+    res.status(201).json({ meal });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateMealHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const meal = await updateMeal(req.params.mealId, req.body);
+
+    res.status(200).json({ meal });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteMealHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const meal = await deleteMeal(req.params.mealId);
+
+    res.status(200).json({ meal });
   } catch (error) {
     next(error);
   }
