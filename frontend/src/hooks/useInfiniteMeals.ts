@@ -13,6 +13,20 @@ interface UseInfiniteMealsOptions {
   limit?: number;
 }
 
+type InFlightEntry = {
+  key: string;
+  promise: Promise<void>;
+  controller: AbortController;
+};
+
+const buildLoadKey = (
+  keyword: string,
+  page: number,
+  limit: number,
+  reloadKey: number,
+) =>
+  `${keyword}::${page}::${limit}::${reloadKey}`;
+
 export const useInfiniteMeals = ({
   fetchMeals,
   limit = 4,
@@ -28,72 +42,115 @@ export const useInfiniteMeals = ({
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const loadingRef = useRef(false);
+  const pageAdvanceLockedRef = useRef(false);
   const requestIdRef = useRef(0);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const inFlightRef = useRef<InFlightEntry | null>(null);
+
+  const latestRef = useRef({
+    keyword,
+    reloadKey,
+  });
+
+  useEffect(() => {
+    latestRef.current = {
+      keyword,
+      reloadKey,
+    };
+  }, [keyword, reloadKey]);
 
   const loadMeals = useCallback(
-    async (pageToLoad: number, searchKeyword: string) => {
-      if (loadingRef.current) return;
+    (pageToLoad: number, searchKeyword: string, currentReloadKey: number) => {
+      const key = buildLoadKey(
+        searchKeyword,
+        pageToLoad,
+        limit,
+        currentReloadKey,
+      );
+      const currentInFlight = inFlightRef.current;
 
+      if (currentInFlight && currentInFlight.key === key) {
+        return currentInFlight.promise;
+      }
+
+      if (currentInFlight) {
+        currentInFlight.controller.abort();
+        inFlightRef.current = null;
+      }
+
+      pageAdvanceLockedRef.current = false;
       loadingRef.current = true;
       setIsLoading(true);
 
       const requestId = ++requestIdRef.current;
       const controller = new AbortController();
-      abortControllerRef.current = controller;
+      const snapshotKeyword = searchKeyword;
+      const snapshotReloadKey = currentReloadKey;
 
-      try {
-        const data = await fetchMeals({
-          page: pageToLoad,
-          keyword: searchKeyword || undefined,
-          limit,
-          signal: controller.signal,
-        });
+      let promise!: Promise<void>;
 
-        if (requestId !== requestIdRef.current) {
-          return;
-        }
+      promise = (async () => {
+        try {
+          const data = await fetchMeals({
+            page: pageToLoad,
+            keyword: snapshotKeyword || undefined,
+            limit,
+            signal: controller.signal,
+          });
 
-        setMeals((prev) => {
-          if (pageToLoad === 1) {
-            return data.items;
+          if (requestId !== requestIdRef.current) return;
+          if (snapshotKeyword !== latestRef.current.keyword) return;
+          if (snapshotReloadKey !== latestRef.current.reloadKey) return;
+
+          setMeals((prev) => {
+            if (pageToLoad === 1) {
+              return data.items;
+            }
+
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newItems = data.items.filter(
+              (item) => !existingIds.has(item.id),
+            );
+
+            return [...prev, ...newItems];
+          });
+
+          setHasMore(data.page < data.totalPages);
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          if (requestId !== requestIdRef.current) return;
+
+          console.error('加载失败', error);
+        } finally {
+          if (inFlightRef.current?.promise === promise) {
+            inFlightRef.current = null;
           }
 
-          const existingIds = new Set(prev.map((m) => m.id));
-          const newItems = data.items.filter(
-            (item) => !existingIds.has(item.id),
-          );
-
-          return [...prev, ...newItems];
-        });
-
-        setHasMore(data.page < data.totalPages);
-      } catch (error) {
-        if (controller.signal.aborted) {
-          return;
+          if (requestId === requestIdRef.current) {
+            loadingRef.current = false;
+            pageAdvanceLockedRef.current = false;
+            setIsLoading(false);
+          }
         }
+      })();
 
-        if (requestId === requestIdRef.current) {
-          console.error('加载失败', error);
-        }
-      } finally {
-        if (requestId === requestIdRef.current) {
-          abortControllerRef.current = null;
-          loadingRef.current = false;
-          setIsLoading(false);
-        }
-      }
+      inFlightRef.current = {
+        key,
+        promise,
+        controller,
+      };
+
+      return promise;
     },
     [fetchMeals, limit],
   );
 
   useEffect(() => {
-    loadMeals(page, keyword);
+    loadMeals(page, keyword, reloadKey);
   }, [page, keyword, reloadKey, loadMeals]);
 
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort();
+      inFlightRef.current?.controller.abort();
     };
   }, []);
 
@@ -106,7 +163,9 @@ export const useInfiniteMeals = ({
         const entry = entries[0];
         if (!entry.isIntersecting) return;
         if (loadingRef.current) return;
+        if (pageAdvanceLockedRef.current) return;
 
+        pageAdvanceLockedRef.current = true;
         setPage((prev) => prev + 1);
       },
       {
@@ -122,10 +181,11 @@ export const useInfiniteMeals = ({
   }, [hasMore]);
 
   const resetAndInvalidate = useCallback(() => {
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = null;
+    inFlightRef.current?.controller.abort();
+    inFlightRef.current = null;
     requestIdRef.current += 1;
     loadingRef.current = false;
+    pageAdvanceLockedRef.current = false;
     setIsLoading(false);
     setMeals([]);
     setHasMore(true);
