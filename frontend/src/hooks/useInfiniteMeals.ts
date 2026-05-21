@@ -5,6 +5,7 @@ type FetchMealsFn = (params: {
   keyword?: string;
   page?: number;
   limit?: number;
+  signal?: AbortSignal;
 }) => Promise<PaginatedMeals>;
 
 interface UseInfiniteMealsOptions {
@@ -28,6 +29,7 @@ export const useInfiniteMeals = ({
 
   const loadingRef = useRef(false);
   const requestIdRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const loadMeals = useCallback(
     async (pageToLoad: number, searchKeyword: string) => {
@@ -37,12 +39,15 @@ export const useInfiniteMeals = ({
       setIsLoading(true);
 
       const requestId = ++requestIdRef.current;
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
 
       try {
         const data = await fetchMeals({
           page: pageToLoad,
           keyword: searchKeyword || undefined,
           limit,
+          signal: controller.signal,
         });
 
         if (requestId !== requestIdRef.current) {
@@ -64,11 +69,16 @@ export const useInfiniteMeals = ({
 
         setHasMore(data.page < data.totalPages);
       } catch (error) {
+        if (controller.signal.aborted) {
+          return;
+        }
+
         if (requestId === requestIdRef.current) {
           console.error('加载失败', error);
         }
       } finally {
         if (requestId === requestIdRef.current) {
+          abortControllerRef.current = null;
           loadingRef.current = false;
           setIsLoading(false);
         }
@@ -80,6 +90,12 @@ export const useInfiniteMeals = ({
   useEffect(() => {
     loadMeals(page, keyword);
   }, [page, keyword, reloadKey, loadMeals]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
     if (!hasMore) return;
@@ -106,6 +122,8 @@ export const useInfiniteMeals = ({
   }, [hasMore]);
 
   const resetAndInvalidate = useCallback(() => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     requestIdRef.current += 1;
     loadingRef.current = false;
     setIsLoading(false);

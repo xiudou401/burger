@@ -5,6 +5,7 @@ interface FetchMealsParams {
   keyword?: string;
   page?: number;
   limit?: number;
+  signal?: AbortSignal;
 }
 
 export const fetchMeals = (params: FetchMealsParams) => {
@@ -14,7 +15,9 @@ export const fetchMeals = (params: FetchMealsParams) => {
   if (params.page) query.append('page', String(params.page));
   if (params.limit) query.append('limit', String(params.limit));
 
-  return request<PaginatedMeals>(`/meals?${query.toString()}`);
+  return request<PaginatedMeals>(`/meals?${query.toString()}`, {
+    signal: params.signal,
+  });
 };
 
 export interface MealPayload {
