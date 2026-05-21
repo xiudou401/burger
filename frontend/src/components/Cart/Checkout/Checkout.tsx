@@ -6,7 +6,7 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
 import type { CartMeal } from '../../../types/cart';
-import { useCartSelector } from '../../../hooks/useCartSelector';
+import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 

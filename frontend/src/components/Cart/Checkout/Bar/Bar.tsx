@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import classes from './Bar.module.css';
 import { createOrder } from '../../../../api/orders';
-import { useCartSelector } from '../../../../hooks/useCartSelector';
+import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { CART_ACTIONS } from '../../../../types/cart';
 
 interface BarProps {

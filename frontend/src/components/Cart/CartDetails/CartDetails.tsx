@@ -5,8 +5,8 @@ import MealItem from '../../Meals/Meal/MealItem';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
-import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartSelector } from '../../../hooks/useCartSelector';
+import { useCartActions } from '../../../store/cart/hooks/useCartActions';
+import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 
 interface CartDetailsProps {
   open: boolean;

@@ -6,7 +6,7 @@ import iconImg from '../../asset/bag.png';
 import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
 
-import { useCartSelector } from '../../hooks/useCartSelector';
+import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 
 import {
   getTotalQuantity,

@@ -1,6 +1,6 @@
 import { useContextSelector } from 'use-context-selector';
-import { CartContext } from '../store/cart/cart-context';
-import type { CartContextValue } from '../types/cart';
+import { CartContext } from '../cart-context';
+import type { CartContextValue } from '../../../types/cart';
 
 export const useCartSelector = <T>(
   selector: (ctx: CartContextValue) => T,

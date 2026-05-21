@@ -1,8 +1,8 @@
 import classes from './QuantityCounter.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
-import { useCartActions } from '../../../hooks/useCartActions';
-import { useCartSelector } from '../../../hooks/useCartSelector';
+import { useCartActions } from '../../../store/cart/hooks/useCartActions';
+import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import { getCartItemQuantity } from '../../../store/cart/context-accessors';
 
 interface QuantityCounterProps {

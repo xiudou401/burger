@@ -5,7 +5,7 @@ import {
   verifySmsCode,
 } from '../../api/auth';
 import { fetchMyOrders } from '../../api/orders';
-import { useCartSelector } from '../../hooks/useCartSelector';
+import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 import {
   getEstimatedTotalPrice,
   getTotalQuantity,

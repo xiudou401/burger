@@ -1,4 +1,4 @@
-import { CART_ACTIONS } from '../types/cart';
+import { CART_ACTIONS } from '../../../types/cart';
 import { useCartSelector } from './useCartSelector';
 
 export const useCartActions = () => {
