@@ -1,5 +1,6 @@
 .LoadingStatus,
-.EndStatus {
+.EndStatus,
+.ErrorStatus {
   left: 50%;
   z-index: 2;
   display: inline-flex;
@@ -29,6 +30,26 @@
   background: #fff8eb;
   color: #7a5a18;
   border: 1rem solid #ead8b5;
+}
+
+.ErrorStatus {
+  position: fixed;
+  bottom: 104rem;
+  gap: 8rem;
+  padding: 10rem 18rem;
+  border: 0;
+  background: #bd0017;
+  color: #fff;
+  cursor: pointer;
+}
+
+.ErrorStatus:hover {
+  background: #9f0014;
+}
+
+.ErrorStatus:focus-visible {
+  outline: 3rem solid rgba(255, 199, 44, 0.8);
+  outline-offset: 3rem;
 }
 
 .Spinner {

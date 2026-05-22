@@ -34,6 +34,7 @@ export const useInfiniteMeals = ({
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -77,6 +78,7 @@ export const useInfiniteMeals = ({
 
       pageAdvanceLockedRef.current = false;
       setIsLoading(true);
+      setError(null);
 
       const requestId = ++requestIdRef.current;
       const controller = new AbortController();
@@ -117,6 +119,7 @@ export const useInfiniteMeals = ({
           if (requestId !== requestIdRef.current) return;
 
           console.error('加载失败', error);
+          setError('加载失败，点击重试');
         } finally {
           if (inFlightRef.current?.promise === promise) {
             inFlightRef.current = null;
@@ -151,6 +154,7 @@ export const useInfiniteMeals = ({
   }, []);
 
   useEffect(() => {
+    if (error) return;
     if (!hasMore) return;
     if (!listRef.current || !sentinelRef.current) return;
 
@@ -174,7 +178,7 @@ export const useInfiniteMeals = ({
     observer.observe(sentinelRef.current);
 
     return () => observer.disconnect();
-  }, [hasMore]);
+  }, [error, hasMore]);
 
   const resetAndInvalidate = useCallback(() => {
     inFlightRef.current?.controller.abort();
@@ -182,6 +186,7 @@ export const useInfiniteMeals = ({
     requestIdRef.current += 1;
     pageAdvanceLockedRef.current = false;
     setIsLoading(false);
+    setError(null);
     setMeals([]);
     setHasMore(true);
     setPage(1);
@@ -203,9 +208,15 @@ export const useInfiniteMeals = ({
     setReloadKey((prev) => prev + 1);
   }, [resetAndInvalidate]);
 
+  const retry = useCallback(() => {
+    setError(null);
+    loadMeals(page, keyword, reloadKey);
+  }, [keyword, loadMeals, page, reloadKey]);
+
   return {
     meals,
     isLoading,
+    error,
     hasMore,
     page,
     keyword,
@@ -213,5 +224,6 @@ export const useInfiniteMeals = ({
     sentinelRef,
     onSearch,
     reload,
+    retry,
   };
 };

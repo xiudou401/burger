@@ -4,12 +4,16 @@ interface MenuFeedStatusProps {
   hasMore: boolean;
   hasMeals: boolean;
   isLoading: boolean;
+  error: string | null;
+  onRetry: () => void;
 }
 
 const MenuFeedStatus = ({
   hasMore,
   hasMeals,
   isLoading,
+  error,
+  onRetry,
 }: MenuFeedStatusProps) => {
   if (isLoading) {
     return (
@@ -17,6 +21,19 @@ const MenuFeedStatus = ({
         <span className={classes.Spinner} aria-hidden="true" />
         正在准备菜单
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <button
+        className={classes.ErrorStatus}
+        type="button"
+        onClick={onRetry}
+        aria-live="polite"
+      >
+        {error}
+      </button>
     );
   }
 

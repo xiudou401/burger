@@ -8,7 +8,16 @@ import { fetchMeals } from '../api/meals';
 import { useInfiniteMeals } from '../hooks/useInfiniteMeals';
 
 const Home = () => {
-  const { meals, isLoading, hasMore, listRef, sentinelRef, onSearch } =
+  const {
+    meals,
+    isLoading,
+    error,
+    hasMore,
+    listRef,
+    sentinelRef,
+    onSearch,
+    retry,
+  } =
     useInfiniteMeals({ fetchMeals, limit: 4 });
 
   return (
@@ -22,6 +31,8 @@ const Home = () => {
         hasMore={hasMore}
         hasMeals={meals.length > 0}
         isLoading={isLoading}
+        error={error}
+        onRetry={retry}
       />
 
       <Cart />
