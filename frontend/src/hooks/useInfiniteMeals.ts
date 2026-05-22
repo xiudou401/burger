@@ -24,8 +24,7 @@ const buildLoadKey = (
   page: number,
   limit: number,
   reloadKey: number,
-) =>
-  `${keyword}::${page}::${limit}::${reloadKey}`;
+) => `${keyword}::${page}::${limit}::${reloadKey}`;
 
 export const useInfiniteMeals = ({
   fetchMeals,
@@ -41,7 +40,6 @@ export const useInfiniteMeals = ({
   const listRef = useRef<HTMLDivElement | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const loadingRef = useRef(false);
   const pageAdvanceLockedRef = useRef(false);
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<InFlightEntry | null>(null);
@@ -78,7 +76,6 @@ export const useInfiniteMeals = ({
       }
 
       pageAdvanceLockedRef.current = false;
-      loadingRef.current = true;
       setIsLoading(true);
 
       const requestId = ++requestIdRef.current;
@@ -126,7 +123,6 @@ export const useInfiniteMeals = ({
           }
 
           if (requestId === requestIdRef.current) {
-            loadingRef.current = false;
             pageAdvanceLockedRef.current = false;
             setIsLoading(false);
           }
@@ -162,7 +158,7 @@ export const useInfiniteMeals = ({
       (entries) => {
         const entry = entries[0];
         if (!entry.isIntersecting) return;
-        if (loadingRef.current) return;
+        if (inFlightRef.current) return;
         if (pageAdvanceLockedRef.current) return;
 
         pageAdvanceLockedRef.current = true;
@@ -184,7 +180,6 @@ export const useInfiniteMeals = ({
     inFlightRef.current?.controller.abort();
     inFlightRef.current = null;
     requestIdRef.current += 1;
-    loadingRef.current = false;
     pageAdvanceLockedRef.current = false;
     setIsLoading(false);
     setMeals([]);
