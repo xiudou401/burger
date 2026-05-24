@@ -19,6 +19,8 @@ type InFlightEntry = {
   controller: AbortController;
 };
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 const buildLoadKey = (
   keyword: string,
   page: number,
@@ -44,6 +46,8 @@ export const useInfiniteMeals = ({
   const pageAdvanceLockedRef = useRef(false);
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<InFlightEntry | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
+  const loadedIdsRef = useRef(new Set<string>());
 
   const latestRef = useRef({
     keyword,
@@ -56,6 +60,13 @@ export const useInfiniteMeals = ({
       reloadKey,
     };
   }, [keyword, reloadKey]);
+
+  const clearDebounceTimer = useCallback(() => {
+    if (debounceTimerRef.current === null) return;
+
+    window.clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = null;
+  }, []);
 
   const loadMeals = useCallback(
     (pageToLoad: number, searchKeyword: string, currentReloadKey: number) => {
@@ -76,7 +87,6 @@ export const useInfiniteMeals = ({
         inFlightRef.current = null;
       }
 
-      pageAdvanceLockedRef.current = false;
       setIsLoading(true);
       setError(null);
 
@@ -102,13 +112,18 @@ export const useInfiniteMeals = ({
 
           setMeals((prev) => {
             if (pageToLoad === 1) {
+              loadedIdsRef.current = new Set(data.items.map((item) => item.id));
               return data.items;
             }
 
-            const existingIds = new Set(prev.map((m) => m.id));
-            const newItems = data.items.filter(
-              (item) => !existingIds.has(item.id),
-            );
+            const newItems: Meal[] = [];
+
+            data.items.forEach((item) => {
+              if (loadedIdsRef.current.has(item.id)) return;
+
+              loadedIdsRef.current.add(item.id);
+              newItems.push(item);
+            });
 
             return [...prev, ...newItems];
           });
@@ -150,8 +165,9 @@ export const useInfiniteMeals = ({
   useEffect(() => {
     return () => {
       inFlightRef.current?.controller.abort();
+      clearDebounceTimer();
     };
-  }, []);
+  }, [clearDebounceTimer]);
 
   useEffect(() => {
     if (error) return;
@@ -181,26 +197,33 @@ export const useInfiniteMeals = ({
   }, [error, hasMore]);
 
   const resetAndInvalidate = useCallback(() => {
+    clearDebounceTimer();
     inFlightRef.current?.controller.abort();
     inFlightRef.current = null;
     requestIdRef.current += 1;
     pageAdvanceLockedRef.current = false;
+    loadedIdsRef.current.clear();
     setIsLoading(false);
     setError(null);
     setMeals([]);
     setHasMore(true);
     setPage(1);
-  }, []);
+  }, [clearDebounceTimer]);
 
   const onSearch = useCallback(
     (value: string) => {
-      const k = value.trim();
+      clearDebounceTimer();
 
-      resetAndInvalidate();
-      setKeyword(k);
-      setReloadKey((prev) => prev + 1);
+      debounceTimerRef.current = window.setTimeout(() => {
+        const k = value.trim();
+
+        resetAndInvalidate();
+        setKeyword(k);
+        setReloadKey((prev) => prev + 1);
+        debounceTimerRef.current = null;
+      }, SEARCH_DEBOUNCE_MS);
     },
-    [resetAndInvalidate],
+    [clearDebounceTimer, resetAndInvalidate],
   );
 
   const reload = useCallback(() => {
