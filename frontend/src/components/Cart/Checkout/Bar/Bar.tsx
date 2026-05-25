@@ -4,6 +4,7 @@ import classes from './Bar.module.css';
 import { createOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { CART_ACTIONS } from '../../../../types/cart';
+import { useToast } from '../../../UI/Toast/ToastContext';
 
 interface BarProps {
   totalPrice: number;
@@ -17,6 +18,7 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
   const clearQuote = useCartSelector((ctx) => ctx.clearQuote);
   const cartDispatch = useCartSelector((ctx) => ctx.cartDispatch);
+  const { showToast } = useToast();
   const [isPaying, setIsPaying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,10 +36,15 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
       cartDispatch({ type: CART_ACTIONS.CLEAR_CART });
       clearQuote();
       setMessage('Order placed');
+      showToast({ message: 'Order placed', tone: 'success' });
       onOrderComplete();
       navigate('/profile');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not place order');
+      const errorMessage =
+        err instanceof Error ? err.message : 'Could not place order';
+
+      setError(errorMessage);
+      showToast({ message: errorMessage, tone: 'error' });
     } finally {
       setIsPaying(false);
     }

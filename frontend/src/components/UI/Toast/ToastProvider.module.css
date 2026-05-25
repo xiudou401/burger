@@ -1,0 +1,47 @@
+.ToastViewport {
+  position: fixed;
+  top: 18rem;
+  right: 18rem;
+  z-index: 1000;
+  display: flex;
+  width: min(340rem, calc(100vw - 36rem));
+  flex-direction: column;
+  gap: 10rem;
+  pointer-events: none;
+}
+
+.Toast {
+  display: flex;
+  width: 100%;
+  min-height: 44rem;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 11rem 14rem;
+  border: 0;
+  border-radius: 8rem;
+  color: #fff;
+  font-size: 14rem;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 14rem 28rem rgba(34, 26, 21, 0.22);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.success {
+  background: #18794e;
+}
+
+.error {
+  background: #bd0017;
+}
+
+.info {
+  background: #2f3437;
+}
+
+.Toast:focus-visible {
+  outline: 3rem solid rgba(255, 199, 44, 0.85);
+  outline-offset: 3rem;
+}

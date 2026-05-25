@@ -1,12 +1,14 @@
 import { Link } from 'react-router-dom';
 import { resendVerificationEmail } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import { useToast } from '../UI/Toast/ToastContext';
 import classes from './AccountBar.module.css';
 
 const AccountBar = () => {
   const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const logout = useAuth((ctx) => ctx.logout);
+  const { showToast } = useToast();
 
   const initial = user?.name?.trim().charAt(0).toUpperCase() || 'B';
   const memberStatus = user?.email
@@ -20,9 +22,12 @@ const AccountBar = () => {
   const resendVerification = async () => {
     try {
       const res = await resendVerificationEmail();
-      alert(res.message);
+      showToast({ message: res.message, tone: 'success' });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Could not send email');
+      showToast({
+        message: err instanceof Error ? err.message : 'Could not send email',
+        tone: 'error',
+      });
     }
   };
 

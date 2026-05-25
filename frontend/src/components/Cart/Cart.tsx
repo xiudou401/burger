@@ -7,6 +7,7 @@ import CartDetails from './CartDetails/CartDetails';
 import Checkout from './Checkout/Checkout';
 
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
+import { useToast } from '../UI/Toast/ToastContext';
 
 import {
   getTotalQuantity,
@@ -32,6 +33,7 @@ const Cart = () => {
   const ensureQuote = useCartSelector(getEnsureQuote);
 
   const clearQuote = useCartSelector(getClearQuote);
+  const { showToast } = useToast();
 
   const [showCartDetails, setShowCartDetails] = useState(false);
 
@@ -61,7 +63,7 @@ const Cart = () => {
 
       setShowCheckout(true);
     } catch {
-      alert('购物车校验失败，请稍后重试');
+      showToast({ message: '购物车校验失败，请稍后重试', tone: 'error' });
     }
   };
 
