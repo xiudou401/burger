@@ -17,8 +17,9 @@ const Home = () => {
     sentinelRef,
     onSearch,
     retry,
-  } =
-    useInfiniteMeals({ fetchMeals, limit: 4 });
+  } = useInfiniteMeals({ fetchMeals, limit: 4 });
+
+  // console.log(meals);
 
   return (
     <MenuLayout>
