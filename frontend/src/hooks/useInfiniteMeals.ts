@@ -47,7 +47,7 @@ export const useInfiniteMeals = ({
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<InFlightEntry | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
-  const loadedIdsRef = useRef(new Set<string>());
+  const loadedPageRef = useRef(0);
 
   const latestRef = useRef({
     keyword,
@@ -112,22 +112,18 @@ export const useInfiniteMeals = ({
 
           setMeals((prev) => {
             if (pageToLoad === 1) {
-              loadedIdsRef.current = new Set(data.items.map((item) => item.id));
               return data.items;
             }
 
-            const newItems: Meal[] = [];
-
-            data.items.forEach((item) => {
-              if (loadedIdsRef.current.has(item.id)) return;
-
-              loadedIdsRef.current.add(item.id);
-              newItems.push(item);
-            });
+            const existingIds = new Set(prev.map((m) => m.id));
+            const newItems = data.items.filter(
+              (item) => !existingIds.has(item.id),
+            );
 
             return [...prev, ...newItems];
           });
 
+          loadedPageRef.current = Math.max(loadedPageRef.current, pageToLoad);
           setHasMore(data.page < data.totalPages);
         } catch (error) {
           if (controller.signal.aborted) return;
@@ -165,6 +161,7 @@ export const useInfiniteMeals = ({
   useEffect(() => {
     return () => {
       inFlightRef.current?.controller.abort();
+      inFlightRef.current = null;
       clearDebounceTimer();
     };
   }, [clearDebounceTimer]);
@@ -179,6 +176,7 @@ export const useInfiniteMeals = ({
         const entry = entries[0];
         if (!entry.isIntersecting) return;
         if (inFlightRef.current) return;
+        if (loadedPageRef.current < page) return;
         if (pageAdvanceLockedRef.current) return;
 
         pageAdvanceLockedRef.current = true;
@@ -194,7 +192,7 @@ export const useInfiniteMeals = ({
     observer.observe(sentinelRef.current);
 
     return () => observer.disconnect();
-  }, [error, hasMore]);
+  }, [error, hasMore, page]);
 
   const resetAndInvalidate = useCallback(() => {
     clearDebounceTimer();
@@ -202,7 +200,7 @@ export const useInfiniteMeals = ({
     inFlightRef.current = null;
     requestIdRef.current += 1;
     pageAdvanceLockedRef.current = false;
-    loadedIdsRef.current.clear();
+    loadedPageRef.current = 0;
     setIsLoading(false);
     setError(null);
     setMeals([]);
