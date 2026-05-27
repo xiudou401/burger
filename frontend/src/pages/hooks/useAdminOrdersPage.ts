@@ -6,6 +6,7 @@ import {
 import type { Order, OrderStatus } from '../../types/order';
 
 const nextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
+  pending_payment: ['paid', 'cancelled'],
   paid: ['preparing', 'cancelled'],
   preparing: ['ready', 'cancelled'],
   ready: ['completed'],

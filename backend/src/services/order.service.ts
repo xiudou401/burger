@@ -5,7 +5,7 @@ import {
   ValidatedCartMeal,
 } from './cart.service';
 import { OrderModel } from '../models/order.model';
-import type { OrderStatus } from '../models/order.model';
+import type { OrderStatus, PaymentStatus } from '../models/order.model';
 import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import { sendOrderConfirmationEmail } from './email.service';
@@ -25,6 +25,14 @@ export interface PublicOrder {
   total: number;
   menuVersion: number;
   status: OrderStatus;
+  payment?: {
+    provider?: 'stripe';
+    providerPaymentId?: string;
+    status: PaymentStatus;
+    amount: number;
+    currency: string;
+    paidAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -51,6 +59,14 @@ const toPublicOrder = (order: {
   total: number;
   menuVersion: number;
   status: OrderStatus;
+  payment?: {
+    provider?: 'stripe';
+    providerPaymentId?: string;
+    status: PaymentStatus;
+    amount: number;
+    currency: string;
+    paidAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }): PublicOrder => ({
@@ -66,6 +82,16 @@ const toPublicOrder = (order: {
   total: order.total,
   menuVersion: order.menuVersion,
   status: order.status,
+  payment: order.payment
+    ? {
+        provider: order.payment.provider,
+        providerPaymentId: order.payment.providerPaymentId,
+        status: order.payment.status,
+        amount: order.payment.amount,
+        currency: order.payment.currency,
+        paidAt: order.payment.paidAt,
+      }
+    : undefined,
   createdAt: order.createdAt,
   updatedAt: order.updatedAt,
 });
@@ -95,6 +121,7 @@ const sendOrderConfirmationIfPossible = async (
 };
 
 const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
+  pending_payment: ['paid', 'cancelled'],
   paid: ['preparing', 'cancelled'],
   preparing: ['ready', 'cancelled'],
   ready: ['completed'],
@@ -104,7 +131,14 @@ const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
 
 const parseOrderStatus = (status: string): OrderStatus => {
   if (
-    !['paid', 'preparing', 'ready', 'completed', 'cancelled'].includes(status)
+    ![
+      'pending_payment',
+      'paid',
+      'preparing',
+      'ready',
+      'completed',
+      'cancelled',
+    ].includes(status)
   ) {
     throw new ServiceError('Invalid order status', 400);
   }
@@ -132,13 +166,15 @@ export const createOrder = async (
     items: validatedCart.items.map(toOrderItem),
     total: validatedCart.total,
     menuVersion: validatedCart.menuVersion,
-    status: 'paid',
+    status: 'pending_payment',
+    payment: {
+      status: 'unpaid',
+      amount: validatedCart.total,
+      currency: 'cny',
+    },
   });
 
-  const publicOrder = toPublicOrder(order);
-  await sendOrderConfirmationIfPossible(userId, publicOrder);
-
-  return publicOrder;
+  return toPublicOrder(order);
 };
 
 export const listOrdersForUser = async (
@@ -230,7 +266,25 @@ export const updateOrderStatus = async (
   }
 
   order.status = parsedNextStatus;
+
+  if (parsedNextStatus === 'paid') {
+    order.payment = order.payment ?? {
+      status: 'unpaid',
+      amount: order.total,
+      currency: 'cny',
+    };
+    order.payment.status = 'paid';
+    order.payment.amount = order.total;
+    order.payment.paidAt = order.payment.paidAt ?? new Date();
+  }
+
   await order.save();
 
-  return toPublicOrder(order);
+  const publicOrder = toPublicOrder(order);
+
+  if (parsedNextStatus === 'paid') {
+    await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
+  }
+
+  return publicOrder;
 };

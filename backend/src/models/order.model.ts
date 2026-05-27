@@ -1,11 +1,20 @@
 import { model, Schema, Types } from 'mongoose';
 
 export type OrderStatus =
+  | 'pending_payment'
   | 'paid'
   | 'preparing'
   | 'ready'
   | 'completed'
   | 'cancelled';
+
+export type PaymentStatus =
+  | 'unpaid'
+  | 'requires_payment'
+  | 'paid'
+  | 'failed'
+  | 'cancelled'
+  | 'refunded';
 
 export interface OrderItem {
   mealId: Types.ObjectId;
@@ -22,6 +31,14 @@ export interface Order {
   total: number;
   menuVersion: number;
   status: OrderStatus;
+  payment: {
+    provider?: 'stripe';
+    providerPaymentId?: string;
+    status: PaymentStatus;
+    amount: number;
+    currency: string;
+    paidAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -85,9 +102,53 @@ const orderSchema = new Schema<Order>(
     },
     status: {
       type: String,
-      enum: ['paid', 'preparing', 'ready', 'completed', 'cancelled'],
+      enum: [
+        'pending_payment',
+        'paid',
+        'preparing',
+        'ready',
+        'completed',
+        'cancelled',
+      ],
       required: true,
-      default: 'paid',
+      default: 'pending_payment',
+    },
+    payment: {
+      provider: {
+        type: String,
+        enum: ['stripe'],
+      },
+      providerPaymentId: {
+        type: String,
+        trim: true,
+        index: true,
+      },
+      status: {
+        type: String,
+        enum: [
+          'unpaid',
+          'requires_payment',
+          'paid',
+          'failed',
+          'cancelled',
+          'refunded',
+        ],
+        required: true,
+        default: 'unpaid',
+      },
+      amount: {
+        type: Number,
+        required: true,
+        min: 0,
+      },
+      currency: {
+        type: String,
+        required: true,
+        trim: true,
+        lowercase: true,
+        default: 'cny',
+      },
+      paidAt: Date,
     },
   },
   { timestamps: true },
