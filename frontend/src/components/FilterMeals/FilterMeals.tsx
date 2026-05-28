@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import classes from './FilterMeals.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { faSearch, faXmark } from '@fortawesome/free-solid-svg-icons';
+
 interface Props {
   onSearch: (keyword: string) => void;
 }
@@ -9,9 +10,18 @@ interface Props {
 const FilterMeals = ({ onSearch }: Props) => {
   const [value, setValue] = useState('');
 
+  const clearHandler = () => {
+    setValue('');
+    onSearch('');
+  };
+
   return (
     <div className={classes.FilterMeals}>
       <div className={classes.InputOuter}>
+        <span className={classes.SearchIcon} aria-hidden="true">
+          <FontAwesomeIcon icon={faSearch} />
+        </span>
+
         <input
           className={classes.SearchInput}
           value={value}
@@ -23,9 +33,16 @@ const FilterMeals = ({ onSearch }: Props) => {
           placeholder="搜索菜品"
         />
 
-        <span className={classes.SearchButton} aria-hidden="true">
-          <FontAwesomeIcon icon={faSearch} />
-        </span>
+        {value && (
+          <button
+            type="button"
+            onClick={clearHandler}
+            className={classes.ClearButton}
+            aria-label="清空搜索"
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
       </div>
     </div>
   );
