@@ -9,27 +9,23 @@ interface Props {
 const FilterMeals = ({ onSearch }: Props) => {
   const [value, setValue] = useState('');
 
-  const submitHandler = () => {
-    onSearch(value.trim());
-  };
-
   return (
     <div className={classes.FilterMeals}>
       <div className={classes.InputOuter}>
         <input
           className={classes.SearchInput}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value;
+            setValue(next);
+            onSearch(next);
+          }}
           placeholder="搜索菜品"
         />
 
-        <button
-          className={classes.SearchButton}
-          onClick={submitHandler}
-          type="button"
-        >
+        <span className={classes.SearchButton} aria-hidden="true">
           <FontAwesomeIcon icon={faSearch} />
-        </button>
+        </span>
       </div>
     </div>
   );
