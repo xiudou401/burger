@@ -1,7 +1,4 @@
 import { NextFunction, Request, Response } from 'express';
-import {
-  CartStoredItem,
-} from '../services/cart.service';
 import { ServiceError } from '../errors/ServiceError';
 import {
   createOrder,
@@ -11,20 +8,10 @@ import {
   listOrdersForUser,
   updateOrderStatus,
 } from '../services/order.service';
-
-const isValidCartItem = (item: unknown): item is CartStoredItem => {
-  if (!item || typeof item !== 'object') return false;
-
-  const candidate = item as Record<string, unknown>;
-
-  return (
-    typeof candidate.id === 'string' &&
-    candidate.id.trim().length > 0 &&
-    typeof candidate.quantity === 'number' &&
-    Number.isInteger(candidate.quantity) &&
-    candidate.quantity > 0
-  );
-};
+import type {
+  CreateOrderPayload,
+  UpdateOrderStatusPayload,
+} from '../validation/order.schema';
 
 export const createOrderHandler = async (
   req: Request,
@@ -36,20 +23,7 @@ export const createOrderHandler = async (
   }
 
   try {
-    const items = req.body?.items;
-    const menuVersion = req.body?.menuVersion;
-
-    if (!Array.isArray(items) || !items.every(isValidCartItem)) {
-      return res.status(400).json({
-        message: 'Invalid cart items',
-      });
-    }
-
-    if (typeof menuVersion !== 'number' || !Number.isInteger(menuVersion)) {
-      return res.status(400).json({
-        message: 'Invalid menu version',
-      });
-    }
+    const { items, menuVersion } = req.body as CreateOrderPayload;
 
     const order = await createOrder(req.user.id, items, menuVersion);
 
@@ -117,13 +91,7 @@ export const updateOrderStatusHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const status = req.body?.status;
-
-    if (typeof status !== 'string') {
-      return res.status(400).json({
-        message: 'Invalid order status',
-      });
-    }
+    const { status } = req.body as UpdateOrderStatusPayload;
 
     const order = await updateOrderStatus(req.params.orderId, status);
 
