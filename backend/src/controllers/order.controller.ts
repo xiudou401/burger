@@ -10,6 +10,8 @@ import {
 } from '../services/order.service';
 import type {
   CreateOrderPayload,
+  ListOrdersQueryPayload,
+  OrderParamsPayload,
   UpdateOrderStatusPayload,
 } from '../validation/order.schema';
 
@@ -43,8 +45,8 @@ export const listMyOrdersHandler = async (
   }
 
   try {
-    const rawLimit = Number(req.query.limit ?? 5);
-    const orders = await listOrdersForUser(req.user.id, rawLimit);
+    const { limit } = req.query as unknown as ListOrdersQueryPayload;
+    const orders = await listOrdersForUser(req.user.id, limit);
 
     return res.status(200).json({ orders });
   } catch (error) {
@@ -62,7 +64,8 @@ export const getMyOrderHandler = async (
   }
 
   try {
-    const order = await getOrderForUser(req.user.id, req.params.orderId);
+    const { orderId } = req.params as OrderParamsPayload;
+    const order = await getOrderForUser(req.user.id, orderId);
 
     return res.status(200).json({ order });
   } catch (error) {
@@ -76,8 +79,8 @@ export const listAdminOrdersHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const rawLimit = Number(req.query.limit ?? 25);
-    const orders = await listAllOrders(rawLimit);
+    const { limit } = req.query as unknown as ListOrdersQueryPayload;
+    const orders = await listAllOrders(limit);
 
     return res.status(200).json({ orders });
   } catch (error) {
@@ -92,8 +95,9 @@ export const updateOrderStatusHandler = async (
 ) => {
   try {
     const { status } = req.body as UpdateOrderStatusPayload;
+    const { orderId } = req.params as OrderParamsPayload;
 
-    const order = await updateOrderStatus(req.params.orderId, status);
+    const order = await updateOrderStatus(orderId, status);
 
     return res.status(200).json({ order });
   } catch (error) {
@@ -107,7 +111,8 @@ export const getAdminOrderHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const order = await getOrderById(req.params.orderId);
+    const { orderId } = req.params as OrderParamsPayload;
+    const order = await getOrderById(orderId);
 
     return res.status(200).json({ order });
   } catch (error) {

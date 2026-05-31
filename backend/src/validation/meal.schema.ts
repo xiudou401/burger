@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ObjectIdSchema, paginationLimit } from './common.schema';
 
 export const MealSortSchema = z.enum([
   'price_asc',
@@ -19,7 +20,7 @@ export const MealQuerySchema = z
       z.coerce.number().min(0, 'Maximum price must be non-negative').optional(),
     ),
     page: z.coerce.number().int().positive().default(1),
-    limit: z.coerce.number().int().positive().max(100).default(8),
+    limit: paginationLimit(8, 100),
     sort: MealSortSchema.optional(),
   })
   .strict()
@@ -45,9 +46,7 @@ export const MealPayloadSchema = z
 
 export const MealParamsSchema = z
   .object({
-    mealId: z
-      .string()
-      .regex(/^[0-9a-fA-F]{24}$/, 'Meal id must be a valid ObjectId'),
+    mealId: ObjectIdSchema,
   })
   .strict();
 

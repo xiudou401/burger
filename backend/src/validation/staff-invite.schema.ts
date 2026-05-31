@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ObjectIdSchema } from './common.schema';
 
 export const CreateStaffInviteSchema = z
   .object({
@@ -13,9 +14,16 @@ export const AcceptStaffInviteSchema = z
   })
   .strict();
 
+export const StaffInviteParamsSchema = z
+  .object({
+    inviteId: ObjectIdSchema,
+  })
+  .strict();
+
 export type CreateStaffInvitePayload = z.infer<
   typeof CreateStaffInviteSchema
 >;
 export type AcceptStaffInvitePayload = z.infer<
   typeof AcceptStaffInviteSchema
 >;
+export type StaffInviteParamsPayload = z.infer<typeof StaffInviteParamsSchema>;

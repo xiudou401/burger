@@ -7,10 +7,11 @@ import {
 } from '../controllers/staff-invite.controller';
 import { authenticate } from '../middleware/authenticate';
 import { requireAdminRole } from '../middleware/requireAdmin';
-import { validateBody } from '../middleware/validate';
+import { validateBody, validateParams } from '../middleware/validate';
 import {
   AcceptStaffInviteSchema,
   CreateStaffInviteSchema,
+  StaffInviteParamsSchema,
 } from '../validation/staff-invite.schema';
 
 const router = express.Router();
@@ -30,6 +31,10 @@ router.post(
   validateBody(CreateStaffInviteSchema, 'Create staff invite payload'),
   createStaffInviteHandler,
 );
-router.post('/:inviteId/revoke', revokeStaffInviteHandler);
+router.post(
+  '/:inviteId/revoke',
+  validateParams(StaffInviteParamsSchema, 'Staff invite params'),
+  revokeStaffInviteHandler,
+);
 
 export default router;

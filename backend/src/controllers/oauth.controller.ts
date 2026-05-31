@@ -2,6 +2,12 @@ import { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
 import { loginWithOAuth } from '../services/auth.service';
+import {
+  OAuthCallbackQuerySchema,
+  OAuthProviderParamsSchema,
+  OAuthStartQuerySchema,
+} from '../validation/oauth.schema';
+import type { OAuthStartQueryPayload } from '../validation/oauth.schema';
 
 const redirectWithError = (
   res: Response,
@@ -12,16 +18,8 @@ const redirectWithError = (
   return res.redirect(`${env.FRONTEND_URL}/${target}?${params.toString()}`);
 };
 
-const getOAuthMode = (value: unknown): 'login' | 'signup' | 'admin' => {
-  if (value === 'signup' || value === 'admin') {
-    return value;
-  }
-
-  return 'login';
-};
-
 const getOAuthErrorTarget = (
-  mode: ReturnType<typeof getOAuthMode>,
+  mode: OAuthStartQueryPayload['mode'],
 ): 'login' | 'signup' | 'admin/login' => {
   if (mode === 'admin') return 'admin/login';
   return mode;
@@ -32,8 +30,15 @@ export const oauthStartHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  const provider = req.params.provider;
-  const mode = getOAuthMode(req.query.mode);
+  const params = OAuthProviderParamsSchema.safeParse(req.params);
+  const query = OAuthStartQuerySchema.parse(req.query);
+
+  if (!params.success) {
+    return next(new ServiceError('Unsupported sign in provider', 400));
+  }
+
+  const { provider } = params.data;
+  const { mode } = query;
 
   if (provider === 'google') {
     if (!env.GOOGLE_CLIENT_ID) {
@@ -116,10 +121,18 @@ export const oauthCallbackHandler = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const provider = req.params.provider;
-  const mode = getOAuthMode(req.query.state);
+  const params = OAuthProviderParamsSchema.safeParse(req.params);
+  const query = OAuthCallbackQuerySchema.parse(req.query);
+  const mode = query.state;
+  const { code } = query;
 
   try {
+    if (!params.success) {
+      throw new ServiceError('Unsupported sign in provider', 400);
+    }
+
+    const { provider } = params.data;
+
     if (provider !== 'google') {
       throw new ServiceError('Unsupported sign in provider', 400);
     }
@@ -131,8 +144,6 @@ export const oauthCallbackHandler = async (
         getOAuthErrorTarget(mode),
       );
     }
-
-    const code = typeof req.query.code === 'string' ? req.query.code : '';
 
     if (!code) {
       return redirectWithError(

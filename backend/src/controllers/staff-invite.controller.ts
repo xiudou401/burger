@@ -9,6 +9,7 @@ import {
 import type {
   AcceptStaffInvitePayload,
   CreateStaffInvitePayload,
+  StaffInviteParamsPayload,
 } from '../validation/staff-invite.schema';
 
 export const createStaffInviteHandler = async (
@@ -54,7 +55,8 @@ export const revokeStaffInviteHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const invite = await revokeStaffInvite(req.params.inviteId);
+    const { inviteId } = req.params as StaffInviteParamsPayload;
+    const invite = await revokeStaffInvite(inviteId);
 
     return res.status(200).json({ invite });
   } catch (error) {

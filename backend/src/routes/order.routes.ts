@@ -9,9 +9,12 @@ import {
 } from '../controllers/order.controller';
 import { authenticate } from '../middleware/authenticate';
 import { requireAdmin } from '../middleware/requireAdmin';
-import { validateBody } from '../middleware/validate';
+import { validateBody, validateParams, validateQuery } from '../middleware/validate';
 import {
   CreateOrderSchema,
+  ListAdminOrdersQuerySchema,
+  ListMyOrdersQuerySchema,
+  OrderParamsSchema,
   UpdateOrderStatusSchema,
 } from '../validation/order.schema';
 
@@ -24,15 +27,34 @@ router.post(
   validateBody(CreateOrderSchema, 'Create order payload'),
   createOrderHandler,
 );
-router.get('/me', listMyOrdersHandler);
-router.get('/admin/all', requireAdmin, listAdminOrdersHandler);
-router.get('/admin/:orderId', requireAdmin, getAdminOrderHandler);
+router.get(
+  '/me',
+  validateQuery(ListMyOrdersQuerySchema, 'List my orders query'),
+  listMyOrdersHandler,
+);
+router.get(
+  '/admin/all',
+  requireAdmin,
+  validateQuery(ListAdminOrdersQuerySchema, 'List admin orders query'),
+  listAdminOrdersHandler,
+);
+router.get(
+  '/admin/:orderId',
+  requireAdmin,
+  validateParams(OrderParamsSchema, 'Order params'),
+  getAdminOrderHandler,
+);
 router.patch(
   '/:orderId/status',
   requireAdmin,
+  validateParams(OrderParamsSchema, 'Order params'),
   validateBody(UpdateOrderStatusSchema, 'Update order status payload'),
   updateOrderStatusHandler,
 );
-router.get('/:orderId', getMyOrderHandler);
+router.get(
+  '/:orderId',
+  validateParams(OrderParamsSchema, 'Order params'),
+  getMyOrderHandler,
+);
 
 export default router;
