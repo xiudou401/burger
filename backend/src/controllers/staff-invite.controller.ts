@@ -6,10 +6,10 @@ import {
   listStaffInvites,
   revokeStaffInvite,
 } from '../services/staff-invite.service';
-
-const getString = (value: unknown) => {
-  return typeof value === 'string' ? value : '';
-};
+import type {
+  AcceptStaffInvitePayload,
+  CreateStaffInvitePayload,
+} from '../validation/staff-invite.schema';
 
 export const createStaffInviteHandler = async (
   req: Request,
@@ -21,9 +21,10 @@ export const createStaffInviteHandler = async (
   }
 
   try {
+    const { email, role } = req.body as CreateStaffInvitePayload;
     const invite = await createStaffInvite({
-      email: getString(req.body?.email),
-      role: getString(req.body?.role),
+      email,
+      role,
       invitedBy: req.user.id,
     });
 
@@ -71,8 +72,9 @@ export const acceptStaffInviteHandler = async (
   }
 
   try {
+    const { token } = req.body as AcceptStaffInvitePayload;
     const result = await acceptStaffInvite({
-      token: getString(req.body?.token),
+      token,
       userId: req.user.id,
     });
 

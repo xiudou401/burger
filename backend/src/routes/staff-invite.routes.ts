@@ -7,15 +7,29 @@ import {
 } from '../controllers/staff-invite.controller';
 import { authenticate } from '../middleware/authenticate';
 import { requireAdminRole } from '../middleware/requireAdmin';
+import { validateBody } from '../middleware/validate';
+import {
+  AcceptStaffInviteSchema,
+  CreateStaffInviteSchema,
+} from '../validation/staff-invite.schema';
 
 const router = express.Router();
 
-router.post('/accept', authenticate, acceptStaffInviteHandler);
+router.post(
+  '/accept',
+  authenticate,
+  validateBody(AcceptStaffInviteSchema, 'Accept staff invite payload'),
+  acceptStaffInviteHandler,
+);
 
 router.use(authenticate, requireAdminRole);
 
 router.get('/', listStaffInvitesHandler);
-router.post('/', createStaffInviteHandler);
+router.post(
+  '/',
+  validateBody(CreateStaffInviteSchema, 'Create staff invite payload'),
+  createStaffInviteHandler,
+);
 router.post('/:inviteId/revoke', revokeStaffInviteHandler);
 
 export default router;

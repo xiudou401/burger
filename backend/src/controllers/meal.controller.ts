@@ -3,20 +3,13 @@ import {
   createMeal,
   deleteMeal,
   findAllMeals,
-  SortOption,
   updateMeal,
 } from '../services/meal.service';
-
-const isSortOption = (value: any): value is SortOption => {
-  return ['price_asc', 'price_desc', 'created_asc', 'created_desc'].includes(
-    value,
-  );
-};
-
-const toNumber = (value: any): number | undefined => {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : undefined;
-};
+import type {
+  MealParamsPayload,
+  MealPayload,
+  MealQueryPayload,
+} from '../validation/meal.schema';
 
 export const getMeals = async (
   req: Request,
@@ -24,16 +17,9 @@ export const getMeals = async (
   next: NextFunction,
 ) => {
   try {
-    const { keyword, minPrice, maxPrice, page, limit, sort } = req.query;
+    const query = req.query as unknown as MealQueryPayload;
 
-    const meals = await findAllMeals({
-      keyword: typeof keyword === 'string' ? keyword : undefined,
-      minPrice: toNumber(minPrice),
-      maxPrice: toNumber(maxPrice),
-      page: toNumber(page) ?? 1,
-      limit: toNumber(limit) ?? 8,
-      sort: isSortOption(sort) ? sort : undefined,
-    });
+    const meals = await findAllMeals(query);
 
     res.status(200).json(meals);
   } catch (error) {
@@ -47,7 +33,8 @@ export const createMealHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const meal = await createMeal(req.body);
+    const payload = req.body as MealPayload;
+    const meal = await createMeal(payload);
 
     res.status(201).json({ meal });
   } catch (error) {
@@ -61,7 +48,9 @@ export const updateMealHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const meal = await updateMeal(req.params.mealId, req.body);
+    const { mealId } = req.params as MealParamsPayload;
+    const payload = req.body as MealPayload;
+    const meal = await updateMeal(mealId, payload);
 
     res.status(200).json({ meal });
   } catch (error) {
@@ -75,7 +64,8 @@ export const deleteMealHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const meal = await deleteMeal(req.params.mealId);
+    const { mealId } = req.params as MealParamsPayload;
+    const meal = await deleteMeal(mealId);
 
     res.status(200).json({ meal });
   } catch (error) {
