@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { BaseError } from '../errors/BaseError';
+import { ValidationError } from '../errors/ValidationError';
 
 export const errorHandler = (
   err: unknown,
@@ -14,11 +15,22 @@ export const errorHandler = (
       console.error('Critical error:', err);
     }
 
-    return res.status(err.statusCode).json({
+    const body: {
+      message: string;
+      statusCode: number;
+      type: string;
+      issues?: ValidationError['issues'];
+    } = {
       message: err.isOperational ? err.message : 'Internal server error',
       statusCode: err.statusCode,
       type: err.constructor.name,
-    });
+    };
+
+    if (err instanceof ValidationError) {
+      body.issues = err.issues;
+    }
+
+    return res.status(err.statusCode).json(body);
   }
 
   // ❗未知错误

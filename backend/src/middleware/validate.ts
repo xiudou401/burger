@@ -1,18 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
 import { ZodError, ZodTypeAny } from 'zod';
-import { ServiceError } from '../errors/ServiceError';
+import { ValidationError, ValidationIssue } from '../errors/ValidationError';
 
-const formatValidationMessage = (schemaName: string, error: ZodError) => {
-  const issues = error.issues
-    .map((issue) => {
-      const path =
-        issue.path.length > 0 ? `${issue.path.map(String).join('.')}: ` : '';
-      return `${path}${issue.message}`;
-    })
-    .join('; ');
-
-  return `${schemaName} validation failed${issues ? `: ${issues}` : ''}`;
-};
+const toValidationIssues = (error: ZodError): ValidationIssue[] =>
+  error.issues.map((issue) => ({
+    path: issue.path.map(String).join('.'),
+    message: issue.message,
+  }));
 
 const validate =
   (
@@ -25,12 +19,7 @@ const validate =
     const result = schema.safeParse(getValue(req));
 
     if (!result.success) {
-      return next(
-        new ServiceError(
-          formatValidationMessage(schemaName, result.error),
-          400,
-        ),
-      );
+      return next(new ValidationError(toValidationIssues(result.error)));
     }
 
     setValue(req, result.data);
