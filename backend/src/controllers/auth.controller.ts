@@ -1,10 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
 import * as authService from '../services/auth.service';
 import { ServiceError } from '../errors/ServiceError';
-
-const getString = (value: unknown) => {
-  return typeof value === 'string' ? value : '';
-};
+import type {
+  ForgotPasswordPayload,
+  LoginPayload,
+  ResetPasswordPayload,
+  SendSmsCodePayload,
+  SignupPayload,
+  VerifyEmailPayload,
+  VerifySmsCodePayload,
+} from '../validation/auth.schema';
 
 export const signupHandler = async (
   req: Request,
@@ -12,11 +17,8 @@ export const signupHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.signup(
-      getString(req.body?.name),
-      getString(req.body?.email),
-      getString(req.body?.password),
-    );
+    const { name, email, password } = req.body as SignupPayload;
+    const result = await authService.signup(name, email, password);
 
     res.status(201).json(result);
   } catch (error) {
@@ -30,10 +32,8 @@ export const loginHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.login(
-      getString(req.body?.email),
-      getString(req.body?.password),
-    );
+    const { email, password } = req.body as LoginPayload;
+    const result = await authService.login(email, password);
 
     res.status(200).json(result);
   } catch (error) {
@@ -57,7 +57,8 @@ export const verifyEmailHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.verifyEmail(getString(req.body?.token));
+    const { token } = req.body as VerifyEmailPayload;
+    const result = await authService.verifyEmail(token);
 
     res.status(200).json(result);
   } catch (error) {
@@ -89,9 +90,8 @@ export const forgotPasswordHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.requestPasswordReset(
-      getString(req.body?.email),
-    );
+    const { email } = req.body as ForgotPasswordPayload;
+    const result = await authService.requestPasswordReset(email);
 
     res.status(200).json(result);
   } catch (error) {
@@ -105,10 +105,8 @@ export const resetPasswordHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.resetPassword(
-      getString(req.body?.token),
-      getString(req.body?.password),
-    );
+    const { token, password } = req.body as ResetPasswordPayload;
+    const result = await authService.resetPassword(token, password);
 
     res.status(200).json(result);
   } catch (error) {
@@ -122,10 +120,8 @@ export const sendSmsCodeHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.sendSmsCode(
-      getString(req.body?.phone),
-      req.user?.id,
-    );
+    const { phone } = req.body as SendSmsCodePayload;
+    const result = await authService.sendSmsCode(phone, req.user?.id);
 
     res.status(200).json(result);
   } catch (error) {
@@ -139,10 +135,8 @@ export const verifySmsCodeHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.verifySmsCode(
-      getString(req.body?.phone),
-      getString(req.body?.code),
-    );
+    const { phone, code } = req.body as VerifySmsCodePayload;
+    const result = await authService.verifySmsCode(phone, code);
 
     res.status(200).json(result);
   } catch (error) {

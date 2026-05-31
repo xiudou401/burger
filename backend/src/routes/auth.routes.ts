@@ -15,18 +15,49 @@ import {
   oauthCallbackHandler,
   oauthStartHandler,
 } from '../controllers/oauth.controller';
+import { validateBody } from '../middleware/validate';
+import {
+  ForgotPasswordSchema,
+  LoginSchema,
+  ResetPasswordSchema,
+  SendSmsCodeSchema,
+  SignupSchema,
+  VerifyEmailSchema,
+  VerifySmsCodeSchema,
+} from '../validation/auth.schema';
 
 const router = express.Router();
 
-router.post('/signup', signupHandler);
-router.post('/login', loginHandler);
+router.post('/signup', validateBody(SignupSchema, 'Signup payload'), signupHandler);
+router.post('/login', validateBody(LoginSchema, 'Login payload'), loginHandler);
 router.get('/me', authenticate, meHandler);
-router.post('/verify-email', verifyEmailHandler);
+router.post(
+  '/verify-email',
+  validateBody(VerifyEmailSchema, 'Verify email payload'),
+  verifyEmailHandler,
+);
 router.post('/resend-verification', authenticate, resendVerificationHandler);
-router.post('/forgot-password', forgotPasswordHandler);
-router.post('/reset-password', resetPasswordHandler);
-router.post('/sms/send', optionalAuthenticate, sendSmsCodeHandler);
-router.post('/sms/verify', verifySmsCodeHandler);
+router.post(
+  '/forgot-password',
+  validateBody(ForgotPasswordSchema, 'Forgot password payload'),
+  forgotPasswordHandler,
+);
+router.post(
+  '/reset-password',
+  validateBody(ResetPasswordSchema, 'Reset password payload'),
+  resetPasswordHandler,
+);
+router.post(
+  '/sms/send',
+  optionalAuthenticate,
+  validateBody(SendSmsCodeSchema, 'Send SMS code payload'),
+  sendSmsCodeHandler,
+);
+router.post(
+  '/sms/verify',
+  validateBody(VerifySmsCodeSchema, 'Verify SMS code payload'),
+  verifySmsCodeHandler,
+);
 router.get('/oauth/:provider/callback', oauthCallbackHandler);
 router.get('/oauth/:provider', oauthStartHandler);
 
