@@ -1,5 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import * as authService from '../services/auth.service';
+import {
+  REFRESH_SESSION_TTL_MS,
+  revokeAuthSession,
+  rotateAuthSession,
+} from '../services/auth-session.service';
 import { ServiceError } from '../errors/ServiceError';
 import type {
   ForgotPasswordPayload,
@@ -11,6 +16,51 @@ import type {
   VerifySmsCodePayload,
 } from '../validation/auth.schema';
 
+const REFRESH_COOKIE_NAME = 'refreshToken';
+
+const setRefreshCookie = (res: Response, refreshToken: string) => {
+  res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/auth',
+    maxAge: REFRESH_SESSION_TTL_MS,
+  });
+};
+
+const clearRefreshCookie = (res: Response) => {
+  res.clearCookie(REFRESH_COOKIE_NAME, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/auth',
+  });
+};
+
+const getCookie = (req: Request, name: string) => {
+  const rawCookie = req.headers.cookie;
+
+  if (!rawCookie) {
+    return '';
+  }
+
+  const cookies = rawCookie.split(';').map((cookie) => cookie.trim());
+  const target = cookies.find((cookie) => cookie.startsWith(`${name}=`));
+
+  return target ? decodeURIComponent(target.slice(name.length + 1)) : '';
+};
+
+const sendAuthResult = (
+  res: Response,
+  status: number,
+  result: Awaited<ReturnType<typeof authService.login>>,
+) => {
+  setRefreshCookie(res, result.refreshToken);
+  const { refreshToken, ...body } = result;
+
+  return res.status(status).json(body);
+};
+
 export const signupHandler = async (
   req: Request,
   res: Response,
@@ -20,7 +70,7 @@ export const signupHandler = async (
     const { name, email, password } = req.body as SignupPayload;
     const result = await authService.signup(name, email, password);
 
-    res.status(201).json(result);
+    sendAuthResult(res, 201, result);
   } catch (error) {
     next(error);
   }
@@ -35,7 +85,37 @@ export const loginHandler = async (
     const { email, password } = req.body as LoginPayload;
     const result = await authService.login(email, password);
 
-    res.status(200).json(result);
+    sendAuthResult(res, 200, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const refreshHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await rotateAuthSession(getCookie(req, REFRESH_COOKIE_NAME));
+
+    sendAuthResult(res, 200, result);
+  } catch (error) {
+    clearRefreshCookie(res);
+    next(error);
+  }
+};
+
+export const logoutHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    await revokeAuthSession(getCookie(req, REFRESH_COOKIE_NAME));
+    clearRefreshCookie(res);
+
+    res.status(204).send();
   } catch (error) {
     next(error);
   }
@@ -138,7 +218,7 @@ export const verifySmsCodeHandler = async (
     const { phone, code } = req.body as VerifySmsCodePayload;
     const result = await authService.verifySmsCode(phone, code);
 
-    res.status(200).json(result);
+    sendAuthResult(res, 200, result);
   } catch (error) {
     next(error);
   }

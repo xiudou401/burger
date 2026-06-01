@@ -1,9 +1,12 @@
 import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import { hashPassword, verifyPassword } from '../utils/password';
-import { signAuthToken } from '../utils/token';
 import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
+import {
+  createAuthSession,
+  revokeUserSessions,
+} from './auth-session.service';
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
@@ -23,6 +26,7 @@ import {
 
 interface AuthResult {
   accessToken: string;
+  refreshToken: string;
   user: AuthenticatedUser;
   emailVerificationToken?: string;
 }
@@ -84,6 +88,18 @@ const assertNewPassword = (password: string) => {
   }
 };
 
+const createAuthResult = async (
+  user: AuthenticatedUser,
+  extra?: Omit<AuthResult, 'accessToken' | 'refreshToken' | 'user'>,
+): Promise<AuthResult> => {
+  const session = await createAuthSession(user);
+
+  return {
+    ...session,
+    ...extra,
+  };
+};
+
 export const signup = async (
   name: string,
   email: string,
@@ -116,15 +132,9 @@ export const signup = async (
   );
   const publicUser = toPublicUser(user);
 
-  return {
-    accessToken: signAuthToken({
-      sub: publicUser.id,
-      email: publicUser.email,
-      phone: publicUser.phone,
-    }),
-    user: publicUser,
+  return createAuthResult(publicUser, {
     ...(isDevEmailMode() ? { emailVerificationToken } : {}),
-  };
+  });
 };
 
 export const login = async (
@@ -146,14 +156,7 @@ export const login = async (
 
   const publicUser = toPublicUser(user);
 
-  return {
-    accessToken: signAuthToken({
-      sub: publicUser.id,
-      email: publicUser.email,
-      phone: publicUser.phone,
-    }),
-    user: publicUser,
-  };
+  return createAuthResult(publicUser);
 };
 
 export const createEmailVerificationToken = async (
@@ -281,6 +284,7 @@ export const resetPassword = async (
   user.passwordResetTokenHash = undefined;
   user.passwordResetExpiresAt = undefined;
   await user.save();
+  await revokeUserSessions(String(user._id));
 
   return { message: 'Password reset successfully' };
 };
@@ -365,14 +369,7 @@ export const verifySmsCode = async (
 
   const publicUser = toPublicUser(user);
 
-  return {
-    accessToken: signAuthToken({
-      sub: publicUser.id,
-      email: publicUser.email,
-      phone: publicUser.phone,
-    }),
-    user: publicUser,
-  };
+  return createAuthResult(publicUser);
 };
 
 export const loginWithOAuth = async ({
@@ -423,12 +420,5 @@ export const loginWithOAuth = async ({
     });
   }
 
-  return {
-    accessToken: signAuthToken({
-      sub: publicUser.id,
-      email: publicUser.email,
-      phone: publicUser.phone,
-    }),
-    user: publicUser,
-  };
+  return createAuthResult(publicUser);
 };

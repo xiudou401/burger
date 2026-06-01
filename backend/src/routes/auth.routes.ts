@@ -1,8 +1,10 @@
 import express from 'express';
 import {
   loginHandler,
+  logoutHandler,
   meHandler,
   forgotPasswordHandler,
+  refreshHandler,
   resendVerificationHandler,
   resetPasswordHandler,
   sendSmsCodeHandler,
@@ -30,6 +32,8 @@ const router = express.Router();
 
 router.post('/signup', validateBody(SignupSchema, 'Signup payload'), signupHandler);
 router.post('/login', validateBody(LoginSchema, 'Login payload'), loginHandler);
+router.post('/refresh', refreshHandler);
+router.post('/logout', logoutHandler);
 router.get('/me', authenticate, meHandler);
 router.post(
   '/verify-email',

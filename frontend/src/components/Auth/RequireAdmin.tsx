@@ -4,7 +4,12 @@ import { useAuth } from '../../store/auth/hooks/useAuth';
 const RequireAdmin = () => {
   const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
+  const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
   const location = useLocation();
+
+  if (isAuthLoading) {
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace state={{ from: location }} />;

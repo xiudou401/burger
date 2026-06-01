@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { refreshSession } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { User } from '../../types/auth';
 
@@ -17,18 +18,18 @@ export const useOAuthCallback = () => {
     didHandleRef.current = true;
 
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const accessToken = params.get('accessToken');
     const rawUser = params.get('user');
     const redirectTo = params.get('redirectTo');
 
-    if (!accessToken || !rawUser) {
+    if (!rawUser) {
       setError('Sign in did not return account details.');
       return;
     }
 
-    try {
+    const finishSignIn = async () => {
       const user = JSON.parse(rawUser) as User;
-      loginFn(accessToken, user);
+      const session = await refreshSession();
+      loginFn(session.accessToken, user);
       const pendingInviteToken = localStorage.getItem('pendingStaffInviteToken');
 
       if (pendingInviteToken) {
@@ -39,9 +40,11 @@ export const useOAuthCallback = () => {
       }
 
       navigate(redirectTo || '/', { replace: true });
-    } catch {
+    };
+
+    finishSignIn().catch(() => {
       setError('Could not finish sign in.');
-    }
+    });
   }, [loginFn, navigate]);
 
   return {

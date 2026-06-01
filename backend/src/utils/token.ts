@@ -3,7 +3,7 @@ import { env } from '../config/env';
 import type { AuthTokenPayload } from '../types/auth';
 import { ServiceError } from '../errors/ServiceError';
 
-const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
+const TOKEN_TTL_SECONDS = 60 * 15;
 
 const toBase64Url = (value: string | Buffer) => {
   return Buffer.from(value)

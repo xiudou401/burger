@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
+import { REFRESH_SESSION_TTL_MS } from '../services/auth-session.service';
 import { loginWithOAuth } from '../services/auth.service';
 import {
   OAuthCallbackQuerySchema,
@@ -23,6 +24,16 @@ const getOAuthErrorTarget = (
 ): 'login' | 'signup' | 'admin/login' => {
   if (mode === 'admin') return 'admin/login';
   return mode;
+};
+
+const setRefreshCookie = (res: Response, refreshToken: string) => {
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/api/auth',
+    maxAge: REFRESH_SESSION_TTL_MS,
+  });
 };
 
 export const oauthStartHandler = (
@@ -105,8 +116,9 @@ const redirectWithAuth = (
   res: Response,
   result: Awaited<ReturnType<typeof loginWithOAuth>>,
 ) => {
+  setRefreshCookie(res, result.refreshToken);
+
   const params = new URLSearchParams({
-    accessToken: result.accessToken,
     user: JSON.stringify(result.user),
     ...(result.user.role === 'admin' || result.user.role === 'staff'
       ? { redirectTo: '/admin/orders' }

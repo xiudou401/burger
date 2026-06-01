@@ -8,7 +8,7 @@ import {
 import { UserModel } from '../models/user.model';
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { sendStaffInviteEmail } from './email.service';
-import { signAuthToken } from '../utils/token';
+import { createAuthSession } from './auth-session.service';
 import type { AuthenticatedUser } from '../types/auth';
 import { env } from '../config/env';
 
@@ -160,6 +160,7 @@ export const acceptStaffInvite = async ({
   userId: string;
 }): Promise<{
   accessToken: string;
+  refreshToken: string;
   user: AuthenticatedUser;
   invite: PublicStaffInvite;
 }> => {
@@ -198,14 +199,10 @@ export const acceptStaffInvite = async ({
   await invite.save();
 
   const publicUser = toPublicUser(user);
+  const session = await createAuthSession(publicUser);
 
   return {
-    accessToken: signAuthToken({
-      sub: publicUser.id,
-      email: publicUser.email,
-      phone: publicUser.phone,
-    }),
-    user: publicUser,
+    ...session,
     invite: toPublicInvite(invite),
   };
 };

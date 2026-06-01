@@ -29,6 +29,18 @@ export const login = (email: string, password: string) => {
   });
 };
 
+export const refreshSession = () => {
+  return request<AuthResponse>('/auth/refresh', {
+    method: 'POST',
+  });
+};
+
+export const logout = () => {
+  return request<void>('/auth/logout', {
+    method: 'POST',
+  });
+};
+
 export const verifyEmail = (token: string) => {
   return request<MessageResponse>('/auth/verify-email', {
     method: 'POST',

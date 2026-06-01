@@ -1,6 +1,21 @@
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
+let inMemoryAccessToken: string | null = null;
+let refreshPromise: Promise<AuthRefreshResponse> | null = null;
+
+interface AuthRefreshResponse {
+  accessToken: string;
+  user: unknown;
+}
+
+export const setAccessToken = (token: string | null) => {
+  inMemoryAccessToken = token;
+};
+
+export const clearAccessToken = () => {
+  inMemoryAccessToken = null;
+};
 
 interface ErrorResponse {
   message: string;
@@ -28,6 +43,7 @@ export const request = async <T>(
   path: string,
   options: RequestOptions = {},
   retry = RETRY_COUNT,
+  didRefresh = false,
 ): Promise<T> => {
   const timeoutController = new AbortController();
   const externalSignal = options.signal;
@@ -52,21 +68,28 @@ export const request = async <T>(
       }
     }
 
-    const accessToken = localStorage.getItem('accessToken');
-
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
+      credentials: 'include',
       signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...(inMemoryAccessToken
+          ? { Authorization: `Bearer ${inMemoryAccessToken}` }
+          : {}),
         ...options.headers,
       },
     });
 
     if (!res.ok) {
-      if (res.status === 401) {
-        console.warn('Unauthorized');
+      if (res.status === 401 && !didRefresh && path !== '/auth/refresh') {
+        try {
+          const refreshed = await refreshAccessToken();
+          setAccessToken(refreshed.accessToken);
+          return request<T>(path, options, retry, true);
+        } catch {
+          clearAccessToken();
+        }
       }
 
       let body: ErrorResponse;
@@ -101,7 +124,7 @@ export const request = async <T>(
     if (err instanceof ApiError) {
       if (err.statusCode >= 500 && retry > 0) {
         console.warn('Retry (server error):', path);
-        return request<T>(path, options, retry - 1);
+        return request<T>(path, options, retry - 1, didRefresh);
       }
 
       throw err;
@@ -109,7 +132,7 @@ export const request = async <T>(
 
     if (retry > 0) {
       console.warn('Retry (network error):', path);
-      return request<T>(path, options, retry - 1);
+      return request<T>(path, options, retry - 1, didRefresh);
     }
 
     const message = err instanceof Error ? err.message : 'Network error';
@@ -121,4 +144,19 @@ export const request = async <T>(
       externalSignal.removeEventListener('abort', onExternalAbort);
     }
   }
+};
+
+export const refreshAccessToken = async () => {
+  if (!refreshPromise) {
+    refreshPromise = request<AuthRefreshResponse>(
+      '/auth/refresh',
+      { method: 'POST' },
+      0,
+      true,
+    ).finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
 };

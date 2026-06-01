@@ -9,6 +9,7 @@ import path from 'path';
 import cors from 'cors';
 
 import { AppError } from './errors/AppError';
+import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
 
@@ -16,6 +17,13 @@ const app = express();
 
 // logger first
 app.use(logger);
+
+app.use(
+  cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 
