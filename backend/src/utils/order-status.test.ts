@@ -1,5 +1,3 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
 import { ServiceError } from '../errors/ServiceError';
 import {
   assertOrderTransition,
@@ -7,25 +5,24 @@ import {
 } from './order-status';
 
 test('parses known order statuses', () => {
-  assert.equal(parseOrderStatus('pending_payment'), 'pending_payment');
-  assert.equal(parseOrderStatus('completed'), 'completed');
+  expect(parseOrderStatus('pending_payment')).toBe('pending_payment');
+  expect(parseOrderStatus('completed')).toBe('completed');
 });
 
 test('rejects unknown order statuses', () => {
-  assert.throws(() => parseOrderStatus('refunded'), ServiceError);
+  expect(() => parseOrderStatus('refunded')).toThrow(ServiceError);
 });
 
 test('allows expected order status transitions', () => {
-  assert.doesNotThrow(() => assertOrderTransition('pending_payment', 'paid'));
-  assert.doesNotThrow(() => assertOrderTransition('paid', 'preparing'));
-  assert.doesNotThrow(() => assertOrderTransition('preparing', 'ready'));
-  assert.doesNotThrow(() => assertOrderTransition('ready', 'completed'));
+  expect(() => assertOrderTransition('pending_payment', 'paid')).not.toThrow();
+  expect(() => assertOrderTransition('paid', 'preparing')).not.toThrow();
+  expect(() => assertOrderTransition('preparing', 'ready')).not.toThrow();
+  expect(() => assertOrderTransition('ready', 'completed')).not.toThrow();
 });
 
 test('blocks invalid order status transitions', () => {
-  assert.throws(
-    () => assertOrderTransition('pending_payment', 'completed'),
+  expect(() => assertOrderTransition('pending_payment', 'completed')).toThrow(
     ServiceError,
   );
-  assert.throws(() => assertOrderTransition('completed', 'paid'), ServiceError);
+  expect(() => assertOrderTransition('completed', 'paid')).toThrow(ServiceError);
 });

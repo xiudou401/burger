@@ -1,5 +1,3 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
 import { ServiceError } from '../errors/ServiceError';
 
 process.env.MONGO_URI = process.env.MONGO_URI ?? 'mongodb://localhost:27017/test';
@@ -16,12 +14,12 @@ test('signs and verifies access tokens', () => {
 
   const payload = verifyAuthToken(token);
 
-  assert.equal(payload.sub, 'user-123');
-  assert.equal(payload.email, 'pat@example.com');
-  assert.equal(payload.phone, '+61412345678');
-  assert.equal(typeof payload.iat, 'number');
-  assert.equal(typeof payload.exp, 'number');
-  assert.ok(payload.exp > payload.iat);
+  expect(payload.sub).toBe('user-123');
+  expect(payload.email).toBe('pat@example.com');
+  expect(payload.phone).toBe('+61412345678');
+  expect(typeof payload.iat).toBe('number');
+  expect(typeof payload.exp).toBe('number');
+  expect(payload.exp).toBeGreaterThan(payload.iat);
 });
 
 test('rejects tampered access tokens', () => {
@@ -31,12 +29,11 @@ test('rejects tampered access tokens', () => {
     JSON.stringify({ sub: 'attacker', exp: Math.floor(Date.now() / 1000) + 60 }),
   ).toString('base64url');
 
-  assert.throws(
-    () => verifyAuthToken(`${parts[0]}.${tamperedPayload}.${parts[2]}`),
-    ServiceError,
-  );
+  expect(() =>
+    verifyAuthToken(`${parts[0]}.${tamperedPayload}.${parts[2]}`),
+  ).toThrow(ServiceError);
 });
 
 test('rejects malformed access tokens', () => {
-  assert.throws(() => verifyAuthToken('not-a-jwt'), ServiceError);
+  expect(() => verifyAuthToken('not-a-jwt')).toThrow(ServiceError);
 });
