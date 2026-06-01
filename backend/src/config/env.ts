@@ -1,35 +1,52 @@
 import dotenv from 'dotenv';
+import { z, ZodError } from 'zod';
 
 // 只加载一次.env，所有环境变量从这里导出
 dotenv.config();
 
-interface Env {
-  PORT: string;
-  MONGO_URI: string;
-  JWT_SECRET: string;
-  FRONTEND_URL: string;
-  API_URL: string;
-  GOOGLE_CLIENT_ID?: string;
-  GOOGLE_CLIENT_SECRET?: string;
-  APPLE_CLIENT_ID?: string;
-  RESEND_API_KEY?: string;
-  EMAIL_FROM?: string;
-}
+const optionalNonEmptyString = z
+  .string()
+  .trim()
+  .min(1)
+  .optional()
+  .or(z.literal('').transform(() => undefined));
 
-export const env: Env = {
-  PORT: process.env.PORT ?? '3000',
-  MONGO_URI: process.env.MONGO_URI!,
-  JWT_SECRET: process.env.JWT_SECRET ?? 'dev-secret-change-me',
-  FRONTEND_URL: process.env.FRONTEND_URL ?? 'http://localhost:3000',
-  API_URL: process.env.API_URL ?? `http://localhost:${process.env.PORT ?? '3000'}`,
-  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
-  APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID,
-  RESEND_API_KEY: process.env.RESEND_API_KEY,
-  EMAIL_FROM: process.env.EMAIL_FROM,
+const EnvSchema = z
+  .object({
+    PORT: z.string().trim().min(1).default('3000'),
+    MONGO_URI: z.string().trim().min(1, 'MONGO_URI is required'),
+    JWT_SECRET: z.string().trim().min(1).default('dev-secret-change-me'),
+    FRONTEND_URL: z.string().trim().url().default('http://localhost:3000'),
+    API_URL: z.string().trim().url().optional(),
+    GOOGLE_CLIENT_ID: optionalNonEmptyString,
+    GOOGLE_CLIENT_SECRET: optionalNonEmptyString,
+    APPLE_CLIENT_ID: optionalNonEmptyString,
+    RESEND_API_KEY: optionalNonEmptyString,
+    EMAIL_FROM: optionalNonEmptyString,
+  })
+  .passthrough()
+  .transform((parsed) => ({
+    ...parsed,
+    API_URL: parsed.API_URL ?? `http://localhost:${parsed.PORT}`,
+  }));
+
+const parseEnv = () => {
+  try {
+    return EnvSchema.parse(process.env);
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const issues = error.issues
+        .map((issue) => {
+          const path = issue.path.join('.') || 'env';
+          return `${path}: ${issue.message}`;
+        })
+        .join('; ');
+
+      throw new Error(`Invalid environment configuration: ${issues}`);
+    }
+
+    throw error;
+  }
 };
 
-// 核心配置校验
-if (!env.MONGO_URI) {
-  throw new Error('❌ MONGO_URI is not defined in .env file!');
-}
+export const env = parseEnv();
