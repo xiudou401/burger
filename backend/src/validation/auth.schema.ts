@@ -4,7 +4,11 @@ import {
   validatePasswordPolicy,
 } from '../utils/password-policy';
 
-const EmailSchema = z.string().trim().toLowerCase().email('Invalid email');
+export const EmailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.email({ message: 'Invalid email' }));
 
 const PasswordSchema = z
   .string()
