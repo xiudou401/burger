@@ -9,6 +9,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { sendOrderConfirmationEmail } from './email.service';
 import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
+import { assertOrderTransition, parseOrderStatus } from '../utils/order-status';
 
 export interface PublicOrderItem {
   mealId: string;
@@ -120,32 +121,6 @@ const sendOrderConfirmationIfPossible = async (
   }
 };
 
-const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ['paid', 'cancelled'],
-  paid: ['preparing', 'cancelled'],
-  preparing: ['ready', 'cancelled'],
-  ready: ['completed'],
-  completed: [],
-  cancelled: [],
-};
-
-const parseOrderStatus = (status: string): OrderStatus => {
-  if (
-    ![
-      'pending_payment',
-      'paid',
-      'preparing',
-      'ready',
-      'completed',
-      'cancelled',
-    ].includes(status)
-  ) {
-    throw new ServiceError('Invalid order status', 400);
-  }
-
-  return status as OrderStatus;
-};
-
 export const createOrder = async (
   userId: string,
   items: CartStoredItem[],
@@ -245,12 +220,7 @@ export const updateOrderStatus = async (
     throw new ServiceError('Order not found', 404);
   }
 
-  if (!allowedTransitions[order.status].includes(parsedNextStatus)) {
-    throw new ServiceError(
-      `Cannot move order from ${order.status} to ${parsedNextStatus}`,
-      400,
-    );
-  }
+  assertOrderTransition(order.status, parsedNextStatus);
 
   order.status = parsedNextStatus;
 
