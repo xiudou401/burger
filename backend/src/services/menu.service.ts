@@ -1,7 +1,7 @@
-import { MenuModel } from '../models/menu.model';
+import { menuRepository } from '../repositories/menu.repository';
 
 export const getMenuVersion = async (): Promise<number> => {
-  const menuDoc = await MenuModel.findById('main').select('version').lean();
+  const menuDoc = await menuRepository.findMainVersion();
 
   return menuDoc?.version ?? 0;
 };

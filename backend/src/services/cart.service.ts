@@ -1,6 +1,6 @@
-import { MealModel } from '../models/meal.model';
 import { getMenuVersion } from './menu.service';
 import { ServiceError } from '../errors/ServiceError';
+import { mealRepository } from '../repositories/meal.repository';
 
 export interface CartStoredItem {
   id: string;
@@ -42,9 +42,7 @@ export const validateCart = async (
 
   const ids = items.map((item) => item.id);
 
-  const meals = await MealModel.find({
-    _id: { $in: ids },
-  }).lean();
+  const meals = await mealRepository.findByIds(ids);
 
   const mealMap = new Map(meals.map((meal) => [meal._id.toString(), meal]));
 

@@ -1,16 +1,16 @@
 import { Types } from 'mongoose';
 import { ServiceError } from '../errors/ServiceError';
 import {
-  StaffInviteModel,
   StaffInviteRole,
   StaffInviteStatus,
 } from '../models/staff-invite.model';
-import { UserModel } from '../models/user.model';
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { sendStaffInviteEmail } from './email.service';
 import { createAuthSession } from './auth-session.service';
 import type { AuthenticatedUser } from '../types/auth';
 import { env } from '../config/env';
+import { staffInviteRepository } from '../repositories/staff-invite.repository';
+import { userRepository } from '../repositories/user.repository';
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
@@ -95,12 +95,9 @@ export const createStaffInvite = async ({
   const parsedRole = parseInviteRole(role);
   const token = createSecureToken();
 
-  await StaffInviteModel.updateMany(
-    { email: normalizedEmail, status: 'pending' },
-    { $set: { status: 'revoked' } },
-  );
+  await staffInviteRepository.revokePendingByEmail(normalizedEmail);
 
-  const invite = await StaffInviteModel.create({
+  const invite = await staffInviteRepository.create({
     email: normalizedEmail,
     role: parsedRole,
     tokenHash: hashToken(token),
@@ -122,11 +119,7 @@ export const createStaffInvite = async ({
 };
 
 export const listStaffInvites = async (): Promise<PublicStaffInvite[]> => {
-  const invites = await StaffInviteModel.find()
-    .sort({ createdAt: -1 })
-    .limit(50)
-    .lean()
-    .exec();
+  const invites = await staffInviteRepository.listRecent(50);
 
   return invites.map(toPublicInvite);
 };
@@ -138,7 +131,7 @@ export const revokeStaffInvite = async (
     throw new ServiceError('Invite not found', 404);
   }
 
-  const invite = await StaffInviteModel.findById(inviteId).exec();
+  const invite = await staffInviteRepository.findById(inviteId);
 
   if (!invite) {
     throw new ServiceError('Invite not found', 404);
@@ -146,7 +139,7 @@ export const revokeStaffInvite = async (
 
   if (invite.status === 'pending') {
     invite.status = 'revoked';
-    await invite.save();
+    await staffInviteRepository.save(invite);
   }
 
   return toPublicInvite(invite);
@@ -168,19 +161,15 @@ export const acceptStaffInvite = async ({
     throw new ServiceError('Invite token is required', 400);
   }
 
-  const invite = await StaffInviteModel.findOne({
-    tokenHash: hashToken(token),
-    status: 'pending',
-    expiresAt: { $gt: new Date() },
-  })
-    .select('+tokenHash')
-    .exec();
+  const invite = await staffInviteRepository.findPendingByTokenHash(
+    hashToken(token),
+  );
 
   if (!invite) {
     throw new ServiceError('Invite link is invalid or expired', 400);
   }
 
-  const user = await UserModel.findById(userId).exec();
+  const user = await userRepository.findById(userId);
 
   if (!user?.email) {
     throw new ServiceError('Sign in with the invited email first', 400);
@@ -192,11 +181,11 @@ export const acceptStaffInvite = async ({
 
   user.role = invite.role;
   user.emailVerified = true;
-  await user.save();
+  await userRepository.save(user);
 
   invite.status = 'accepted';
   invite.acceptedAt = new Date();
-  await invite.save();
+  await staffInviteRepository.save(invite);
 
   const publicUser = toPublicUser(user);
   const session = await createAuthSession(publicUser);

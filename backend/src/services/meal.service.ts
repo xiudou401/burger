@@ -1,9 +1,9 @@
-import { MealModel } from '../models/meal.model';
 import { AppError } from '../errors/AppError';
 import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
 import { getMenuVersion } from './menu.service'; // ✅ 新增
+import { mealRepository } from '../repositories/meal.repository';
 
 interface MealQuery {
   keyword?: string;
@@ -61,12 +61,13 @@ export const findAllMeals = async (query: MealQuery = {}) => {
 
     // ✅ 修正：解构出 menuVersion
     const [items, total, menuVersion] = await Promise.all([
-      MealModel.find(mongoQuery)
-        .sort(sortOption)
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      MealModel.countDocuments(mongoQuery),
+      mealRepository.findPage({
+        query: mongoQuery,
+        sort: sortOption,
+        skip,
+        limit,
+      }),
+      mealRepository.count(mongoQuery),
       getMenuVersion(),
     ]);
     console.log(items.length);
@@ -128,7 +129,7 @@ const toPublicMeal = (meal: {
 });
 
 export const createMeal = async (payload: Partial<MealPayload>) => {
-  const meal = await MealModel.create(normalizeMealPayload(payload));
+  const meal = await mealRepository.create(normalizeMealPayload(payload));
 
   return toPublicMeal(meal);
 };
@@ -137,11 +138,10 @@ export const updateMeal = async (
   mealId: string,
   payload: Partial<MealPayload>,
 ) => {
-  const meal = await MealModel.findByIdAndUpdate(
+  const meal = await mealRepository.updateById(
     mealId,
     normalizeMealPayload(payload),
-    { new: true, runValidators: true },
-  ).exec();
+  );
 
   if (!meal) {
     throw new ServiceError('Meal not found', 404);
@@ -151,7 +151,7 @@ export const updateMeal = async (
 };
 
 export const deleteMeal = async (mealId: string) => {
-  const meal = await MealModel.findByIdAndDelete(mealId).exec();
+  const meal = await mealRepository.deleteById(mealId);
 
   if (!meal) {
     throw new ServiceError('Meal not found', 404);

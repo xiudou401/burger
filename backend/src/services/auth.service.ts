@@ -1,4 +1,3 @@
-import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import { hashPassword, verifyPassword } from '../utils/password';
 import type { AuthenticatedUser } from '../types/auth';
@@ -23,6 +22,7 @@ import {
   PASSWORD_POLICY_MESSAGE,
   validatePasswordPolicy,
 } from '../utils/password-policy';
+import { userRepository } from '../repositories/user.repository';
 
 interface AuthResult {
   accessToken: string;
@@ -115,13 +115,13 @@ export const signup = async (
   assertEmail(normalizedEmail);
   assertNewPassword(password);
 
-  const existingUser = await UserModel.exists({ email: normalizedEmail });
+  const existingUser = await userRepository.existsByEmail(normalizedEmail);
 
   if (existingUser) {
     throw new ServiceError('Email already registered', 409);
   }
 
-  const user = await UserModel.create({
+  const user = await userRepository.create({
     name: normalizedName,
     email: normalizedEmail,
     passwordHash: hashPassword(password),
@@ -146,9 +146,7 @@ export const login = async (
   assertEmail(normalizedEmail);
   assertPasswordPresent(password);
 
-  const user = await UserModel.findOne({ email: normalizedEmail })
-    .select('+passwordHash')
-    .exec();
+  const user = await userRepository.findByEmailWithPassword(normalizedEmail);
 
   if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
     throw new ServiceError('Invalid email or password', 401);
@@ -165,10 +163,11 @@ export const createEmailVerificationToken = async (
 ) => {
   const token = createSecureToken();
 
-  await UserModel.findByIdAndUpdate(userId, {
-    emailVerificationTokenHash: hashToken(token),
-    emailVerificationExpiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-  });
+  await userRepository.setEmailVerificationToken(
+    userId,
+    hashToken(token),
+    new Date(Date.now() + 1000 * 60 * 60 * 24),
+  );
 
   await sendVerificationEmail({ email, token });
 
@@ -178,7 +177,7 @@ export const createEmailVerificationToken = async (
 export const resendVerificationEmail = async (
   userId: string,
 ): Promise<MessageResult> => {
-  const user = await UserModel.findById(userId).exec();
+  const user = await userRepository.findById(userId);
 
   if (!user) {
     throw new ServiceError('User not found', 404);
@@ -208,12 +207,9 @@ export const verifyEmail = async (token: string): Promise<MessageResult> => {
     throw new ServiceError('Verification token is required', 400);
   }
 
-  const user = await UserModel.findOne({
-    emailVerificationTokenHash: hashToken(token),
-    emailVerificationExpiresAt: { $gt: new Date() },
-  })
-    .select('+emailVerificationTokenHash +emailVerificationExpiresAt')
-    .exec();
+  const user = await userRepository.findByValidEmailVerificationToken(
+    hashToken(token),
+  );
 
   if (!user) {
     throw new ServiceError('Verification link is invalid or expired', 400);
@@ -222,7 +218,7 @@ export const verifyEmail = async (token: string): Promise<MessageResult> => {
   user.emailVerified = true;
   user.emailVerificationTokenHash = undefined;
   user.emailVerificationExpiresAt = undefined;
-  await user.save();
+  await userRepository.save(user);
 
   return { message: 'Email verified' };
 };
@@ -236,7 +232,7 @@ export const requestPasswordReset = async (
     throw new ServiceError('Invalid email', 400);
   }
 
-  const user = await UserModel.findOne({ email: normalizedEmail }).exec();
+  const user = await userRepository.findByEmail(normalizedEmail);
 
   if (!user) {
     return { message: 'If the email exists, a reset link has been sent' };
@@ -245,7 +241,7 @@ export const requestPasswordReset = async (
   const resetToken = createSecureToken();
   user.passwordResetTokenHash = hashToken(resetToken);
   user.passwordResetExpiresAt = new Date(Date.now() + 1000 * 60 * 30);
-  await user.save();
+  await userRepository.save(user);
 
   if (!user.email) {
     return { message: 'If the email exists, a reset link has been sent' };
@@ -269,12 +265,9 @@ export const resetPassword = async (
 
   assertNewPassword(password);
 
-  const user = await UserModel.findOne({
-    passwordResetTokenHash: hashToken(token),
-    passwordResetExpiresAt: { $gt: new Date() },
-  })
-    .select('+passwordHash +passwordResetTokenHash +passwordResetExpiresAt')
-    .exec();
+  const user = await userRepository.findByValidPasswordResetToken(
+    hashToken(token),
+  );
 
   if (!user) {
     throw new ServiceError('Reset link is invalid or expired', 400);
@@ -283,7 +276,7 @@ export const resetPassword = async (
   user.passwordHash = hashPassword(password);
   user.passwordResetTokenHash = undefined;
   user.passwordResetExpiresAt = undefined;
-  await user.save();
+  await userRepository.save(user);
   await revokeUserSessions(String(user._id));
 
   return { message: 'Password reset successfully' };
@@ -296,7 +289,7 @@ export const sendSmsCode = async (
   const normalizedPhone = normalizePhone(phone ?? '');
   assertPhone(normalizedPhone);
 
-  const existingUser = await UserModel.findOne({ phone: normalizedPhone }).exec();
+  const existingUser = await userRepository.findByPhone(normalizedPhone);
 
   if (userId && existingUser && String(existingUser._id) !== userId) {
     throw new ServiceError('Phone is already linked to another account', 409);
@@ -305,7 +298,7 @@ export const sendSmsCode = async (
   let user = existingUser;
 
   if (userId && !user) {
-    user = await UserModel.findById(userId).exec();
+    user = await userRepository.findById(userId);
 
     if (!user) {
       throw new ServiceError('User not found', 404);
@@ -316,7 +309,7 @@ export const sendSmsCode = async (
   }
 
   if (!user) {
-    user = await UserModel.create({
+    user = await userRepository.create({
       name: `Burger fan ${normalizedPhone.slice(-4)}`,
       phone: normalizedPhone,
       phoneVerified: false,
@@ -326,7 +319,7 @@ export const sendSmsCode = async (
   const code = createSmsCode();
   user.smsVerificationCodeHash = hashToken(code);
   user.smsVerificationExpiresAt = new Date(Date.now() + SMS_CODE_TTL_MS);
-  await user.save();
+  await userRepository.save(user);
 
   await sendSmsVerificationCode({
     phone: normalizedPhone,
@@ -350,13 +343,10 @@ export const verifySmsCode = async (
     throw new ServiceError('SMS code must be 6 digits', 400);
   }
 
-  const user = await UserModel.findOne({
-    phone: normalizedPhone,
-    smsVerificationCodeHash: hashToken(code),
-    smsVerificationExpiresAt: { $gt: new Date() },
-  })
-    .select('+smsVerificationCodeHash +smsVerificationExpiresAt')
-    .exec();
+  const user = await userRepository.findByValidSmsCode(
+    normalizedPhone,
+    hashToken(code),
+  );
 
   if (!user) {
     throw new ServiceError('SMS code is invalid or expired', 400);
@@ -365,7 +355,7 @@ export const verifySmsCode = async (
   user.phoneVerified = true;
   user.smsVerificationCodeHash = undefined;
   user.smsVerificationExpiresAt = undefined;
-  await user.save();
+  await userRepository.save(user);
 
   const publicUser = toPublicUser(user);
 
@@ -390,11 +380,11 @@ export const loginWithOAuth = async ({
     throw new ServiceError('OAuth provider did not return a valid email', 400);
   }
 
-  let user = await UserModel.findOne({ email: normalizedEmail }).exec();
+  let user = await userRepository.findByEmail(normalizedEmail);
   let isNewUser = false;
 
   if (!user) {
-    user = await UserModel.create({
+    user = await userRepository.create({
       name: normalizedName,
       email: normalizedEmail,
       passwordHash: hashPassword(createSecureToken()),
@@ -408,7 +398,7 @@ export const loginWithOAuth = async ({
 
     user.name = user.name || normalizedName;
     user.emailVerified = user.emailVerified || emailVerified;
-    await user.save();
+    await userRepository.save(user);
   }
 
   const publicUser = toPublicUser(user);

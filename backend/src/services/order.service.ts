@@ -4,11 +4,11 @@ import {
   validateCart,
   ValidatedCartMeal,
 } from './cart.service';
-import { OrderModel } from '../models/order.model';
 import type { OrderStatus, PaymentStatus } from '../models/order.model';
-import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import { sendOrderConfirmationEmail } from './email.service';
+import { orderRepository } from '../repositories/order.repository';
+import { userRepository } from '../repositories/user.repository';
 
 export interface PublicOrderItem {
   mealId: string;
@@ -100,7 +100,7 @@ const sendOrderConfirmationIfPossible = async (
   userId: string,
   order: PublicOrder,
 ) => {
-  const user = await UserModel.findById(userId).lean().exec();
+  const user = await userRepository.findLeanById(userId);
 
   if (!user?.email) {
     return;
@@ -161,7 +161,7 @@ export const createOrder = async (
     throw new ServiceError('Cart is empty', 400);
   }
 
-  const order = await OrderModel.create({
+  const order = await orderRepository.create({
     userId: new Types.ObjectId(userId),
     items: validatedCart.items.map(toOrderItem),
     total: validatedCart.total,
@@ -186,22 +186,14 @@ export const listOrdersForUser = async (
   }
 
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 20);
-  const orders = await OrderModel.find({ userId })
-    .sort({ createdAt: -1 })
-    .limit(safeLimit)
-    .lean()
-    .exec();
+  const orders = await orderRepository.listForUser(userId, safeLimit);
 
   return orders.map(toPublicOrder);
 };
 
 export const listAllOrders = async (limit = 25): Promise<PublicOrder[]> => {
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
-  const orders = await OrderModel.find()
-    .sort({ createdAt: -1 })
-    .limit(safeLimit)
-    .lean()
-    .exec();
+  const orders = await orderRepository.listAll(safeLimit);
 
   return orders.map(toPublicOrder);
 };
@@ -214,12 +206,7 @@ export const getOrderForUser = async (
     throw new ServiceError('Order not found', 404);
   }
 
-  const order = await OrderModel.findOne({
-    _id: orderId,
-    userId,
-  })
-    .lean()
-    .exec();
+  const order = await orderRepository.findForUser(userId, orderId);
 
   if (!order) {
     throw new ServiceError('Order not found', 404);
@@ -233,7 +220,7 @@ export const getOrderById = async (orderId: string): Promise<PublicOrder> => {
     throw new ServiceError('Order not found', 404);
   }
 
-  const order = await OrderModel.findById(orderId).lean().exec();
+  const order = await orderRepository.findByIdLean(orderId);
 
   if (!order) {
     throw new ServiceError('Order not found', 404);
@@ -252,7 +239,7 @@ export const updateOrderStatus = async (
 
   const parsedNextStatus = parseOrderStatus(nextStatus);
 
-  const order = await OrderModel.findById(orderId).exec();
+  const order = await orderRepository.findById(orderId);
 
   if (!order) {
     throw new ServiceError('Order not found', 404);
@@ -278,7 +265,7 @@ export const updateOrderStatus = async (
     order.payment.paidAt = order.payment.paidAt ?? new Date();
   }
 
-  await order.save();
+  await orderRepository.save(order);
 
   const publicOrder = toPublicOrder(order);
 

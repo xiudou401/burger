@@ -1,10 +1,10 @@
 import { Types } from 'mongoose';
-import { AuthSessionModel } from '../models/auth-session.model';
-import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import type { AuthenticatedUser } from '../types/auth';
 import { signAuthToken } from '../utils/token';
 import { createSecureToken, hashToken } from '../utils/secure-token';
+import { authSessionRepository } from '../repositories/auth-session.repository';
+import { userRepository } from '../repositories/user.repository';
 
 export const REFRESH_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
@@ -39,7 +39,7 @@ export const createAuthSession = async (
 ): Promise<SessionAuthResult> => {
   const refreshToken = createSecureToken();
 
-  await AuthSessionModel.create({
+  await authSessionRepository.create({
     userId: new Types.ObjectId(user.id),
     refreshTokenHash: hashToken(refreshToken),
     expiresAt: new Date(Date.now() + REFRESH_SESSION_TTL_MS),
@@ -63,27 +63,25 @@ export const rotateAuthSession = async (
     throw new ServiceError('Refresh token required', 401);
   }
 
-  const session = await AuthSessionModel.findOne({
-    refreshTokenHash: hashToken(refreshToken),
-  })
-    .select('+refreshTokenHash')
-    .exec();
+  const session = await authSessionRepository.findByRefreshTokenHash(
+    hashToken(refreshToken),
+  );
 
   if (!session || session.revokedAt || session.expiresAt <= new Date()) {
     throw new ServiceError('Session expired', 401);
   }
 
-  const user = await UserModel.findById(session.userId).exec();
+  const user = await userRepository.findById(String(session.userId));
 
   if (!user) {
     session.revokedAt = new Date();
-    await session.save();
+    await authSessionRepository.save(session);
     throw new ServiceError('User no longer exists', 401);
   }
 
   session.rotatedAt = new Date();
   session.revokedAt = new Date();
-  await session.save();
+  await authSessionRepository.save(session);
 
   return createAuthSession(toPublicUser(user));
 };
@@ -93,21 +91,9 @@ export const revokeAuthSession = async (refreshToken: string) => {
     return;
   }
 
-  await AuthSessionModel.findOneAndUpdate(
-    {
-      refreshTokenHash: hashToken(refreshToken),
-      revokedAt: { $exists: false },
-    },
-    { revokedAt: new Date() },
-  ).exec();
+  await authSessionRepository.revokeByRefreshTokenHash(hashToken(refreshToken));
 };
 
 export const revokeUserSessions = async (userId: string) => {
-  await AuthSessionModel.updateMany(
-    {
-      userId: new Types.ObjectId(userId),
-      revokedAt: { $exists: false },
-    },
-    { revokedAt: new Date() },
-  ).exec();
+  await authSessionRepository.revokeActiveByUserId(new Types.ObjectId(userId));
 };
