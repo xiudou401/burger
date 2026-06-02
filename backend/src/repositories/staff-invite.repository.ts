@@ -3,6 +3,9 @@ import {
   StaffInviteModel,
   type StaffInviteRole,
 } from '../models/staff-invite.model';
+import { ServiceError } from '../errors/ServiceError';
+
+const isObjectId = (id: string) => Types.ObjectId.isValid(id);
 
 export const staffInviteRepository = {
   revokePendingByEmail(email: string) {
@@ -16,11 +19,18 @@ export const staffInviteRepository = {
     email: string;
     role: StaffInviteRole;
     tokenHash: string;
-    invitedBy: Types.ObjectId;
+    invitedBy: string;
     status: 'pending';
     expiresAt: Date;
   }) {
-    return StaffInviteModel.create(data);
+    if (!isObjectId(data.invitedBy)) {
+      throw new ServiceError('Invalid inviter', 400);
+    }
+
+    return StaffInviteModel.create({
+      ...data,
+      invitedBy: new Types.ObjectId(data.invitedBy),
+    });
   },
 
   listRecent(limit: number) {
@@ -32,6 +42,10 @@ export const staffInviteRepository = {
   },
 
   findById(inviteId: string) {
+    if (!isObjectId(inviteId)) {
+      return Promise.resolve(null);
+    }
+
     return StaffInviteModel.findById(inviteId).exec();
   },
 

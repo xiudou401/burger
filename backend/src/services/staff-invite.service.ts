@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { ServiceError } from '../errors/ServiceError';
 import {
   StaffInviteRole,
@@ -88,10 +87,6 @@ export const createStaffInvite = async ({
     throw new ServiceError('Invalid email', 400);
   }
 
-  if (!Types.ObjectId.isValid(invitedBy)) {
-    throw new ServiceError('Invalid inviter', 400);
-  }
-
   const parsedRole = parseInviteRole(role);
   const token = createSecureToken();
 
@@ -101,7 +96,7 @@ export const createStaffInvite = async ({
     email: normalizedEmail,
     role: parsedRole,
     tokenHash: hashToken(token),
-    invitedBy: new Types.ObjectId(invitedBy),
+    invitedBy,
     status: 'pending',
     expiresAt: new Date(Date.now() + INVITE_TTL_MS),
   });
@@ -127,10 +122,6 @@ export const listStaffInvites = async (): Promise<PublicStaffInvite[]> => {
 export const revokeStaffInvite = async (
   inviteId: string,
 ): Promise<PublicStaffInvite> => {
-  if (!Types.ObjectId.isValid(inviteId)) {
-    throw new ServiceError('Invite not found', 404);
-  }
-
   const invite = await staffInviteRepository.findById(inviteId);
 
   if (!invite) {
