@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { ServiceError } from '../errors/ServiceError';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
@@ -33,7 +32,7 @@ jest.mock('../utils/secure-token', () => ({
 
 describe('auth session service', () => {
   const user = {
-    id: new Types.ObjectId().toString(),
+    id: '507f1f77bcf86cd799439011',
     email: 'pat@example.com',
     name: 'Pat',
     role: 'customer' as const,
@@ -50,7 +49,7 @@ describe('auth session service', () => {
 
     expect(authSessionRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        userId: expect.any(Types.ObjectId),
+        userId: user.id,
         refreshTokenHash: 'hash:refresh-token',
         expiresAt: expect.any(Date),
       }),
@@ -115,8 +114,6 @@ describe('auth session service', () => {
     expect(authSessionRepository.revokeByRefreshTokenHash).toHaveBeenCalledWith(
       'hash:refresh-token',
     );
-    expect(authSessionRepository.revokeActiveByUserId).toHaveBeenCalledWith(
-      expect.any(Types.ObjectId),
-    );
+    expect(authSessionRepository.revokeActiveByUserId).toHaveBeenCalledWith(user.id);
   });
 });

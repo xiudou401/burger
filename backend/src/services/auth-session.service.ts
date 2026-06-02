@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { ServiceError } from '../errors/ServiceError';
 import type { AuthenticatedUser } from '../types/auth';
 import { signAuthToken } from '../utils/token';
@@ -40,7 +39,7 @@ export const createAuthSession = async (
   const refreshToken = createSecureToken();
 
   await authSessionRepository.create({
-    userId: new Types.ObjectId(user.id),
+    userId: user.id,
     refreshTokenHash: hashToken(refreshToken),
     expiresAt: new Date(Date.now() + REFRESH_SESSION_TTL_MS),
   });
@@ -95,5 +94,5 @@ export const revokeAuthSession = async (refreshToken: string) => {
 };
 
 export const revokeUserSessions = async (userId: string) => {
-  await authSessionRepository.revokeActiveByUserId(new Types.ObjectId(userId));
+  await authSessionRepository.revokeActiveByUserId(userId);
 };

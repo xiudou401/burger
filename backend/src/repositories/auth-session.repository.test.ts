@@ -50,7 +50,7 @@ describe('authSessionRepository', () => {
   });
 
   test('revokes all active sessions for a user', async () => {
-    const userId = new Types.ObjectId();
+    const userId = new Types.ObjectId().toString();
     const exec = jest.fn().mockResolvedValue(null);
 
     jest.mocked(AuthSessionModel.updateMany).mockReturnValue({ exec } as never);
@@ -59,7 +59,7 @@ describe('authSessionRepository', () => {
 
     expect(AuthSessionModel.updateMany).toHaveBeenCalledWith(
       {
-        userId,
+        userId: expect.any(Types.ObjectId),
         revokedAt: { $exists: false },
       },
       { revokedAt: expect.any(Date) },

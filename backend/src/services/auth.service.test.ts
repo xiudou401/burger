@@ -1,5 +1,4 @@
 import { ServiceError } from '../errors/ServiceError';
-import { Types } from 'mongoose';
 import { userRepository } from '../repositories/user.repository';
 import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendVerificationEmail } from './email.service';
@@ -88,7 +87,7 @@ describe('auth service', () => {
   test('rejects duplicate signup emails', async () => {
     jest
       .mocked(userRepository.existsByEmail)
-      .mockResolvedValue({ _id: new Types.ObjectId() });
+      .mockResolvedValue({ _id: '507f1f77bcf86cd799439011' } as never);
 
     await expect(
       signup('Pat', 'pat@example.com', 'Burger#2026'),

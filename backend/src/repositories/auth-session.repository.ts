@@ -3,11 +3,14 @@ import { AuthSessionModel } from '../models/auth-session.model';
 
 export const authSessionRepository = {
   create(data: {
-    userId: Types.ObjectId;
+    userId: string;
     refreshTokenHash: string;
     expiresAt: Date;
   }) {
-    return AuthSessionModel.create(data);
+    return AuthSessionModel.create({
+      ...data,
+      userId: new Types.ObjectId(data.userId),
+    });
   },
 
   findByRefreshTokenHash(refreshTokenHash: string) {
@@ -26,10 +29,10 @@ export const authSessionRepository = {
     ).exec();
   },
 
-  revokeActiveByUserId(userId: Types.ObjectId) {
+  revokeActiveByUserId(userId: string) {
     return AuthSessionModel.updateMany(
       {
-        userId,
+        userId: new Types.ObjectId(userId),
         revokedAt: { $exists: false },
       },
       { revokedAt: new Date() },
