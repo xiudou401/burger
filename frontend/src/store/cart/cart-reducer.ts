@@ -11,6 +11,14 @@ export const initialCartState: CartState = {
   totalQuantity: 0,
 };
 
+const calculateTotalQuantity = (items: CartStoredItem[]) =>
+  items.reduce((sum, item) => sum + item.quantity, 0);
+
+const createCartState = (items: CartStoredItem[]): CartState => ({
+  items,
+  totalQuantity: calculateTotalQuantity(items),
+});
+
 export const loadCartState = (): CartState => {
   const stored = localStorage.getItem('CartItemsState');
   if (!stored) return initialCartState;
@@ -29,8 +37,7 @@ export const loadCartState = (): CartState => {
       )
       .map((x: any) => ({ id: x.id, quantity: Math.floor(x.quantity) }));
 
-    const totalQuantity = items.reduce((s, i) => s + i.quantity, 0);
-    return { items, totalQuantity };
+    return createCartState(items);
   } catch {
     return initialCartState;
   }
@@ -58,7 +65,5 @@ export const CartReducer = (
       return state;
   }
 
-  const totalQuantity = updatedItems.reduce((sum, i) => sum + i.quantity, 0);
-
-  return { items: updatedItems, totalQuantity };
+  return createCartState(updatedItems);
 };
