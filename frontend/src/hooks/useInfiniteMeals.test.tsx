@@ -1,5 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useInfiniteMeals } from './useInfiniteMeals';
 import type { Meal, PaginatedMeals } from '../types/meal';
 
@@ -65,16 +64,6 @@ const triggerIntersection = () => {
   );
 };
 
-const renderWithAct = async (ui: ReactElement) => {
-  let result!: ReturnType<typeof render>;
-
-  await act(async () => {
-    result = render(ui);
-  });
-
-  return result;
-};
-
 const TestHarness = ({
   fetchMeals,
   onRender,
@@ -129,7 +118,7 @@ describe('useInfiniteMeals', () => {
       .mockReturnValueOnce(initialLoad.promise)
       .mockReturnValueOnce(searchLoad.promise);
 
-    await renderWithAct(<TestHarness fetchMeals={fetchMeals} onRender={() => {}} />);
+    render(<TestHarness fetchMeals={fetchMeals} onRender={() => {}} />);
 
     await waitFor(() => expect(fetchMeals).toHaveBeenCalledTimes(1));
     await act(async () => {
@@ -137,10 +126,11 @@ describe('useInfiniteMeals', () => {
     });
     fetchMeals.mockClear();
 
+    fireEvent.click(screen.getByText('Search a'));
+    fireEvent.click(screen.getByText('Search ab'));
+    fireEvent.click(screen.getByText('Search abc'));
+
     act(() => {
-      screen.getByText('Search a').click();
-      screen.getByText('Search ab').click();
-      screen.getByText('Search abc').click();
       jest.advanceTimersByTime(299);
     });
 
@@ -170,16 +160,15 @@ describe('useInfiniteMeals', () => {
       .mockReturnValueOnce(initialLoad.promise)
       .mockReturnValueOnce(retryLoad.promise);
 
-    await renderWithAct(<TestHarness fetchMeals={fetchMeals} onRender={() => {}} />);
+    render(<TestHarness fetchMeals={fetchMeals} onRender={() => {}} />);
     await act(async () => {
       initialLoad.reject(new Error('Network down'));
     });
 
     await screen.findByText('加载失败，点击重试');
 
-    act(() => {
-      screen.getByText('Retry').click();
-    });
+    fireEvent.click(screen.getByText('Retry'));
+
     await act(async () => {
       retryLoad.resolve(pageData([meal('1')], 1));
     });
@@ -198,7 +187,7 @@ describe('useInfiniteMeals', () => {
       .mockReturnValueOnce(firstPage.promise)
       .mockReturnValueOnce(secondPage.promise);
 
-    await renderWithAct(
+    render(
       <TestHarness
         fetchMeals={fetchMeals}
         onRender={(nextResult) => {
