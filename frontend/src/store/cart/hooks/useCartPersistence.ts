@@ -7,5 +7,5 @@ export const useCartPersistence = (items: CartStoredItem[]) => {
 
   useEffect(() => {
     localStorage.setItem('CartItemsState', JSON.stringify(items));
-  }, [itemsSignature]);
+  }, [items, itemsSignature]);
 };

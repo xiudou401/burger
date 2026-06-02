@@ -1,4 +1,4 @@
-import { addItem } from './cart-logic';
+import { addItem, deleteItem, removeItem } from './cart-logic';
 
 describe('addItem', () => {
   it('should add new item if it does not exist', () => {
@@ -38,5 +38,81 @@ describe('addItem', () => {
     const result = addItem(original, '1');
 
     expect(result[0]).not.toBe(original[0]);
+  });
+});
+
+describe('removeItem', () => {
+  it('should decrease quantity if item exists', () => {
+    const result = removeItem([{ id: '1', quantity: 3 }], '1');
+
+    expect(result).toEqual([{ id: '1', quantity: 2 }]);
+  });
+
+  it('should remove item when quantity reaches zero', () => {
+    const result = removeItem([{ id: '1', quantity: 1 }], '1');
+
+    expect(result).toEqual([]);
+  });
+
+  it('should keep other items unchanged', () => {
+    const result = removeItem(
+      [
+        { id: '1', quantity: 2 },
+        { id: '2', quantity: 4 },
+      ],
+      '1',
+    );
+
+    expect(result).toEqual([
+      { id: '1', quantity: 1 },
+      { id: '2', quantity: 4 },
+    ]);
+  });
+
+  it('should return equivalent items if item does not exist', () => {
+    const items = [{ id: '1', quantity: 2 }];
+
+    const result = removeItem(items, '2');
+
+    expect(result).toEqual(items);
+  });
+
+  it('should not mutate original array or item object', () => {
+    const original = [{ id: '1', quantity: 2 }];
+    const result = removeItem(original, '1');
+
+    expect(original).toEqual([{ id: '1', quantity: 2 }]);
+    expect(result).not.toBe(original);
+    expect(result[0]).not.toBe(original[0]);
+  });
+});
+
+describe('deleteItem', () => {
+  it('should delete matching item', () => {
+    const result = deleteItem(
+      [
+        { id: '1', quantity: 2 },
+        { id: '2', quantity: 4 },
+      ],
+      '1',
+    );
+
+    expect(result).toEqual([{ id: '2', quantity: 4 }]);
+  });
+
+  it('should return equivalent items if item does not exist', () => {
+    const items = [{ id: '1', quantity: 2 }];
+
+    const result = deleteItem(items, '2');
+
+    expect(result).toEqual(items);
+  });
+
+  it('should not mutate original array', () => {
+    const original = [{ id: '1', quantity: 2 }];
+    const result = deleteItem(original, '1');
+
+    expect(original).toEqual([{ id: '1', quantity: 2 }]);
+    expect(result).not.toBe(original);
   });
 });

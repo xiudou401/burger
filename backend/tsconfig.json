@@ -5,6 +5,7 @@
     "rootDir": "./", // 改为项目根目录（覆盖原来的 src）
     "outDir": "dist", // 编译产物仍输出到 dist
     "strict": true,
+    "types": ["jest", "node"],
     "esModuleInterop": true,
     "skipLibCheck": true // 可选：跳过库文件检查，减少无关报错
   },
