@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import { ServiceError } from '../errors/ServiceError';
 import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
@@ -29,9 +28,9 @@ jest.mock('../repositories/user.repository', () => ({
 }));
 
 describe('order service', () => {
-  const userId = new Types.ObjectId().toString();
-  const orderId = new Types.ObjectId().toString();
-  const mealId = new Types.ObjectId().toString();
+  const userId = '507f1f77bcf86cd799439011';
+  const orderId = '507f1f77bcf86cd799439012';
+  const mealId = '507f1f77bcf86cd799439013';
   const now = new Date('2026-01-01T00:00:00.000Z');
 
   beforeEach(() => {

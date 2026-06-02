@@ -1,3 +1,4 @@
+import { Types } from 'mongoose';
 import { OrderModel } from '../models/order.model';
 import { orderRepository } from './order.repository';
 
@@ -20,6 +21,10 @@ const chain = (value: unknown) => {
 };
 
 describe('orderRepository', () => {
+  const userId = '507f1f77bcf86cd799439011';
+  const orderId = '507f1f77bcf86cd799439012';
+  const mealId = '507f1f77bcf86cd799439013';
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -28,9 +33,9 @@ describe('orderRepository', () => {
     const query = chain([]);
     jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
 
-    await expect(orderRepository.listForUser('user-1', 5)).resolves.toEqual([]);
+    await expect(orderRepository.listForUser(userId, 5)).resolves.toEqual([]);
 
-    expect(OrderModel.find).toHaveBeenCalledWith({ userId: 'user-1' });
+    expect(OrderModel.find).toHaveBeenCalledWith({ userId });
     expect(query.sort).toHaveBeenCalledWith({ createdAt: -1 });
     expect(query.limit).toHaveBeenCalledWith(5);
     expect(query.lean).toHaveBeenCalled();
@@ -43,11 +48,11 @@ describe('orderRepository', () => {
 
     jest.mocked(OrderModel.findOne).mockReturnValue({ lean } as never);
 
-    await orderRepository.findForUser('user-1', 'order-1');
+    await orderRepository.findForUser(userId, orderId);
 
     expect(OrderModel.findOne).toHaveBeenCalledWith({
-      _id: 'order-1',
-      userId: 'user-1',
+      _id: orderId,
+      userId,
     });
     expect(lean).toHaveBeenCalled();
   });
@@ -58,10 +63,40 @@ describe('orderRepository', () => {
 
     jest.mocked(OrderModel.create).mockResolvedValue(order as never);
 
-    await expect(orderRepository.create({} as never)).resolves.toBe(order);
+    await expect(
+      orderRepository.create({
+        userId,
+        items: [
+          {
+            mealId,
+            name: 'Classic Burger',
+            price: 12,
+            quantity: 2,
+            subtotal: 24,
+          },
+        ],
+        total: 24,
+        menuVersion: 7,
+        status: 'pending_payment',
+        payment: {
+          status: 'unpaid',
+          amount: 24,
+          currency: 'cny',
+        },
+      }),
+    ).resolves.toBe(order);
     await orderRepository.save(doc);
 
-    expect(OrderModel.create).toHaveBeenCalledWith({});
+    expect(OrderModel.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: expect.any(Types.ObjectId),
+        items: [
+          expect.objectContaining({
+            mealId: expect.any(Types.ObjectId),
+          }),
+        ],
+      }),
+    );
     expect(doc.save).toHaveBeenCalled();
   });
 });

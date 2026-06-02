@@ -1,19 +1,42 @@
-import type { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { OrderModel, type Order, type OrderStatus } from '../models/order.model';
+import { ServiceError } from '../errors/ServiceError';
+
+type RepositoryOrderItem = Omit<Order['items'][number], 'mealId'> & {
+  mealId: string;
+};
+
+const toObjectId = (id: string) => new Types.ObjectId(id);
+const isObjectId = (id: string) => Types.ObjectId.isValid(id);
 
 export const orderRepository = {
   create(data: {
-    userId: Types.ObjectId;
-    items: Order['items'];
+    userId: string;
+    items: RepositoryOrderItem[];
     total: number;
     menuVersion: number;
     status: OrderStatus;
     payment: Order['payment'];
   }) {
-    return OrderModel.create(data);
+    if (!isObjectId(data.userId)) {
+      throw new ServiceError('Invalid user', 400);
+    }
+
+    return OrderModel.create({
+      ...data,
+      userId: toObjectId(data.userId),
+      items: data.items.map((item) => ({
+        ...item,
+        mealId: toObjectId(item.mealId),
+      })),
+    });
   },
 
   listForUser(userId: string, limit: number) {
+    if (!isObjectId(userId)) {
+      throw new ServiceError('Invalid user', 400);
+    }
+
     return OrderModel.find({ userId })
       .sort({ createdAt: -1 })
       .limit(limit)
@@ -30,6 +53,10 @@ export const orderRepository = {
   },
 
   findForUser(userId: string, orderId: string) {
+    if (!isObjectId(userId) || !isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
     return OrderModel.findOne({
       _id: orderId,
       userId,
@@ -39,10 +66,18 @@ export const orderRepository = {
   },
 
   findByIdLean(orderId: string) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
     return OrderModel.findById(orderId).lean().exec();
   },
 
   findById(orderId: string) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
     return OrderModel.findById(orderId).exec();
   },
 

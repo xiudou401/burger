@@ -1,4 +1,3 @@
-import { Types } from 'mongoose';
 import {
   CartStoredItem,
   validateCart,
@@ -39,7 +38,7 @@ export interface PublicOrder {
 }
 
 const toOrderItem = (meal: ValidatedCartMeal) => ({
-  mealId: new Types.ObjectId(meal.id),
+  mealId: meal.id,
   name: meal.name,
   image: meal.image,
   price: meal.price,
@@ -126,10 +125,6 @@ export const createOrder = async (
   items: CartStoredItem[],
   menuVersion: number,
 ): Promise<PublicOrder> => {
-  if (!Types.ObjectId.isValid(userId)) {
-    throw new ServiceError('Invalid user', 400);
-  }
-
   const validatedCart = await validateCart(items, menuVersion);
 
   if (validatedCart.items.length === 0) {
@@ -137,7 +132,7 @@ export const createOrder = async (
   }
 
   const order = await orderRepository.create({
-    userId: new Types.ObjectId(userId),
+    userId,
     items: validatedCart.items.map(toOrderItem),
     total: validatedCart.total,
     menuVersion: validatedCart.menuVersion,
@@ -156,10 +151,6 @@ export const listOrdersForUser = async (
   userId: string,
   limit = 5,
 ): Promise<PublicOrder[]> => {
-  if (!Types.ObjectId.isValid(userId)) {
-    throw new ServiceError('Invalid user', 400);
-  }
-
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 20);
   const orders = await orderRepository.listForUser(userId, safeLimit);
 
@@ -177,10 +168,6 @@ export const getOrderForUser = async (
   userId: string,
   orderId: string,
 ): Promise<PublicOrder> => {
-  if (!Types.ObjectId.isValid(userId) || !Types.ObjectId.isValid(orderId)) {
-    throw new ServiceError('Order not found', 404);
-  }
-
   const order = await orderRepository.findForUser(userId, orderId);
 
   if (!order) {
@@ -191,10 +178,6 @@ export const getOrderForUser = async (
 };
 
 export const getOrderById = async (orderId: string): Promise<PublicOrder> => {
-  if (!Types.ObjectId.isValid(orderId)) {
-    throw new ServiceError('Order not found', 404);
-  }
-
   const order = await orderRepository.findByIdLean(orderId);
 
   if (!order) {
@@ -208,10 +191,6 @@ export const updateOrderStatus = async (
   orderId: string,
   nextStatus: string,
 ): Promise<PublicOrder> => {
-  if (!Types.ObjectId.isValid(orderId)) {
-    throw new ServiceError('Order not found', 404);
-  }
-
   const parsedNextStatus = parseOrderStatus(nextStatus);
 
   const order = await orderRepository.findById(orderId);
