@@ -18,10 +18,13 @@ const useMenuRefreshPrompt = () => {
   useEffect(() => {
     let timer: number | undefined;
     let cancelled = false;
+    let controller: AbortController | null = null;
 
     const tick = async () => {
+      controller = new AbortController();
+
       try {
-        const nextVersion = await fetchMenuVersion();
+        const nextVersion = await fetchMenuVersion(controller.signal);
 
         if (cancelled) return;
 
@@ -33,6 +36,8 @@ const useMenuRefreshPrompt = () => {
       } catch {
         // Ignore polling failures; the next tick will retry.
       } finally {
+        controller = null;
+
         if (!cancelled) {
           timer = window.setTimeout(tick, MENU_VERSION_POLL_MS);
         }
@@ -43,6 +48,7 @@ const useMenuRefreshPrompt = () => {
 
     return () => {
       cancelled = true;
+      controller?.abort();
       if (timer !== undefined) {
         window.clearTimeout(timer);
       }
