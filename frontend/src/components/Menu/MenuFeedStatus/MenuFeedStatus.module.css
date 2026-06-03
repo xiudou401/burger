@@ -1,6 +1,7 @@
 .LoadingStatus,
 .EndStatus,
-.ErrorStatus {
+.ErrorStatus,
+.RefreshStatus {
   left: 50%;
   z-index: 2;
   display: inline-flex;
@@ -43,12 +44,32 @@
   cursor: pointer;
 }
 
+.RefreshStatus {
+  position: fixed;
+  bottom: 104rem;
+  gap: 8rem;
+  padding: 10rem 18rem;
+  border: 0;
+  background: #292929;
+  color: #ffc72c;
+  cursor: pointer;
+}
+
 .ErrorStatus:hover {
   background: #9f0014;
 }
 
+.RefreshStatus:hover {
+  background: #1d1d1d;
+}
+
 .ErrorStatus:focus-visible {
   outline: 3rem solid rgba(255, 199, 44, 0.8);
+  outline-offset: 3rem;
+}
+
+.RefreshStatus:focus-visible {
+  outline: 3rem solid rgba(189, 0, 23, 0.35);
   outline-offset: 3rem;
 }
 

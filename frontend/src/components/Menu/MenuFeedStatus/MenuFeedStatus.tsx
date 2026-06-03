@@ -5,6 +5,8 @@ interface MenuFeedStatusProps {
   hasMeals: boolean;
   isLoading: boolean;
   error: string | null;
+  hasMenuUpdate: boolean;
+  onRefreshMenu: () => void;
   onRetry: () => void;
 }
 
@@ -13,6 +15,8 @@ const MenuFeedStatus = ({
   hasMeals,
   isLoading,
   error,
+  hasMenuUpdate,
+  onRefreshMenu,
   onRetry,
 }: MenuFeedStatusProps) => {
   if (isLoading) {
@@ -33,6 +37,19 @@ const MenuFeedStatus = ({
         aria-live="polite"
       >
         {error}
+      </button>
+    );
+  }
+
+  if (hasMenuUpdate) {
+    return (
+      <button
+        className={classes.RefreshStatus}
+        type="button"
+        onClick={onRefreshMenu}
+        aria-live="polite"
+      >
+        菜单已更新，点击刷新
       </button>
     );
   }
