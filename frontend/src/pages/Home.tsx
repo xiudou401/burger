@@ -7,6 +7,7 @@ import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
 import { fetchMeals } from '../api/meals';
 import { useInfiniteMeals } from '../hooks/useInfiniteMeals';
 import { useMenuRefreshPrompt } from './hooks/useMenuRefreshPrompt';
+import { useCartSelector } from '../store/cart/hooks/useCartSelector';
 
 const Home = () => {
   const {
@@ -21,11 +22,13 @@ const Home = () => {
     retry,
   } = useInfiniteMeals({ fetchMeals, limit: 4 });
 
-  const { hasMenuUpdate, acknowledgeMenuUpdate } = useMenuRefreshPrompt();
+  const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
+  const { hasMenuUpdate, acknowledgeMenuUpdate } =
+    useMenuRefreshPrompt(menuVersion);
 
-  const refreshMenu = async () => {
+  const refreshMenu = () => {
     reload();
-    await acknowledgeMenuUpdate();
+    acknowledgeMenuUpdate();
   };
 
   return (
