@@ -26,9 +26,12 @@ const Home = () => {
   const { hasMenuUpdate, acknowledgeMenuUpdate } =
     useMenuRefreshPrompt(menuVersion);
 
-  const refreshMenu = () => {
-    reload();
-    acknowledgeMenuUpdate();
+  const refreshMenu = async () => {
+    const refreshed = await reload();
+
+    if (refreshed) {
+      acknowledgeMenuUpdate();
+    }
   };
 
   return (

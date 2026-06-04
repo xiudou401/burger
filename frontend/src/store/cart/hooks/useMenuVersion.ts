@@ -4,25 +4,39 @@ import { fetchMenuVersion } from '../../../api/menu-version';
 const MENU_POLL_MS = 30_000;
 
 export const useMenuVersion = () => {
-  const [menuVersion, setMenuVersion] = useState(0);
+  const [menuVersion, setMenuVersion] = useState<number | null>(null);
 
   useEffect(() => {
     let timer: number | undefined;
+    let cancelled = false;
+    let controller: AbortController | null = null;
 
     const tick = async () => {
+      controller = new AbortController();
+
       try {
-        const version = await fetchMenuVersion();
-        setMenuVersion((prev) => (prev === version ? prev : version));
+        const version = await fetchMenuVersion(controller.signal);
+
+        if (!cancelled) {
+          setMenuVersion((prev) => (prev === version ? prev : version));
+        }
       } catch {
         // Ignore polling failures; the next tick will retry.
       } finally {
-        timer = window.setTimeout(tick, MENU_POLL_MS);
+        controller = null;
+
+        if (!cancelled) {
+          timer = window.setTimeout(tick, MENU_POLL_MS);
+        }
       }
     };
 
     tick();
 
     return () => {
+      cancelled = true;
+      controller?.abort();
+
       if (timer !== undefined) {
         window.clearTimeout(timer);
       }

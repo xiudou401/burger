@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useMenuRefreshPrompt = (menuVersion: number) => {
+export const useMenuRefreshPrompt = (menuVersion: number | null) => {
   const [hasMenuUpdate, setHasMenuUpdate] = useState(false);
   const baselineVersionRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (menuVersion === 0) return;
+    if (menuVersion === null) return;
 
     if (baselineVersionRef.current === null) {
       baselineVersionRef.current = menuVersion;
+      return;
     } else if (menuVersion !== baselineVersionRef.current) {
       setHasMenuUpdate(true);
     }
@@ -16,7 +17,7 @@ export const useMenuRefreshPrompt = (menuVersion: number) => {
 
   const acknowledgeMenuUpdate = () => {
     setHasMenuUpdate(false);
-    baselineVersionRef.current = menuVersion === 0 ? null : menuVersion;
+    baselineVersionRef.current = menuVersion;
   };
 
   return {

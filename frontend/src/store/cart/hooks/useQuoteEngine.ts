@@ -25,8 +25,8 @@ type InFlightEntry = {
 interface UseQuoteEngineParams {
   items: CartStoredItem[];
   totalQuantity: number;
-  menuVersion: number;
-  setMenuVersion: Dispatch<SetStateAction<number>>;
+  menuVersion: number | null;
+  setMenuVersion: Dispatch<SetStateAction<number | null>>;
 }
 
 export const useQuoteEngine = ({
@@ -49,12 +49,16 @@ export const useQuoteEngine = ({
   }, [quote]);
 
   const quoteMismatch = !!quote && itemsSig !== quoteSig;
-  const quoteStale = !!quote && quote.menuVersion !== menuVersion;
+  const quoteStale =
+    menuVersion !== null && !!quote && quote.menuVersion !== menuVersion;
 
   const shouldValidate =
-    items.length > 0 && (!quote || quoteStale || quoteMismatch);
+    menuVersion !== null &&
+    items.length > 0 &&
+    (!quote || quoteStale || quoteMismatch);
 
-  const shouldDebounceValidate = items.length > 0 && (!quote || quoteMismatch);
+  const shouldDebounceValidate =
+    menuVersion !== null && items.length > 0 && (!quote || quoteMismatch);
 
   const latestRef = useRef({
     items,
@@ -88,6 +92,10 @@ export const useQuoteEngine = ({
     } = latestRef.current;
 
     if (!latestShouldValidate) {
+      return Promise.resolve();
+    }
+
+    if (latestMenuVersion === null) {
       return Promise.resolve();
     }
 

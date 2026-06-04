@@ -178,6 +178,42 @@ describe('useInfiniteMeals', () => {
     consoleErrorSpy.mockRestore();
   });
 
+  it('returns whether reload completed successfully', async () => {
+    const consoleErrorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    let result!: HookResult;
+    const initialLoad = deferred<PaginatedMeals>();
+    const reloadLoad = deferred<PaginatedMeals>();
+    const fetchMeals = jest
+      .fn<ReturnType<FetchMealsFn>, Parameters<FetchMealsFn>>()
+      .mockReturnValueOnce(initialLoad.promise)
+      .mockReturnValueOnce(reloadLoad.promise);
+
+    render(
+      <TestHarness
+        fetchMeals={fetchMeals}
+        onRender={(nextResult) => {
+          result = nextResult;
+        }}
+      />,
+    );
+
+    await act(async () => {
+      initialLoad.resolve(pageData([meal('1')], 1));
+    });
+
+    const reloadPromise = result.reload();
+
+    await act(async () => {
+      reloadLoad.reject(new Error('Network down'));
+    });
+
+    await expect(reloadPromise).resolves.toBe(false);
+    await screen.findByText('加载失败，点击重试');
+    consoleErrorSpy.mockRestore();
+  });
+
   it('deduplicates meals when appending the next page', async () => {
     let result!: HookResult;
     const firstPage = deferred<PaginatedMeals>();

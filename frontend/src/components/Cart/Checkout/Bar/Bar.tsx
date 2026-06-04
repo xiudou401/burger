@@ -32,6 +32,11 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
 
     try {
       await ensureQuote();
+
+      if (menuVersion === null) {
+        throw new Error('Menu is still loading');
+      }
+
       await createOrder(items, menuVersion);
       cartDispatch({ type: CART_ACTIONS.CLEAR_CART });
       clearQuote();
@@ -61,7 +66,7 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
         )}
         <button
           className={classes.Button}
-          disabled={items.length === 0 || isPaying}
+          disabled={items.length === 0 || isPaying || menuVersion === null}
           onClick={payHandler}
         >
           {isPaying ? 'Paying' : 'Pay'}

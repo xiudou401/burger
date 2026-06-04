@@ -38,7 +38,7 @@ export type CartAction =
 export interface CartContextValue extends CartState {
   cartDispatch: Dispatch<CartAction>;
 
-  menuVersion: number;
+  menuVersion: number | null;
   quote: Quote | null;
   quoteStale: boolean;
   quoteMismatch: boolean;

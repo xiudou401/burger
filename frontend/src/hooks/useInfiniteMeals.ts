@@ -15,8 +15,13 @@ interface UseInfiniteMealsOptions {
 
 type InFlightEntry = {
   key: string;
-  promise: Promise<void>;
+  promise: Promise<boolean>;
   controller: AbortController;
+};
+
+type SettledLoadEntry = {
+  key: string;
+  result: boolean;
 };
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -48,6 +53,7 @@ export const useInfiniteMeals = ({
   const inFlightRef = useRef<InFlightEntry | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
   const loadedPageRef = useRef(0);
+  const settledLoadRef = useRef<SettledLoadEntry | null>(null);
 
   const latestRef = useRef({
     keyword,
@@ -82,6 +88,10 @@ export const useInfiniteMeals = ({
         return currentInFlight.promise;
       }
 
+      if (settledLoadRef.current?.key === key) {
+        return Promise.resolve(settledLoadRef.current.result);
+      }
+
       if (currentInFlight) {
         currentInFlight.controller.abort();
         inFlightRef.current = null;
@@ -95,7 +105,7 @@ export const useInfiniteMeals = ({
       const snapshotKeyword = searchKeyword;
       const snapshotReloadKey = currentReloadKey;
 
-      let promise!: Promise<void>;
+      let promise!: Promise<boolean>;
 
       promise = (async () => {
         try {
@@ -106,9 +116,9 @@ export const useInfiniteMeals = ({
             signal: controller.signal,
           });
 
-          if (requestId !== requestIdRef.current) return;
-          if (snapshotKeyword !== latestRef.current.keyword) return;
-          if (snapshotReloadKey !== latestRef.current.reloadKey) return;
+          if (requestId !== requestIdRef.current) return false;
+          if (snapshotKeyword !== latestRef.current.keyword) return false;
+          if (snapshotReloadKey !== latestRef.current.reloadKey) return false;
 
           setMeals((prev) => {
             if (pageToLoad === 1) {
@@ -125,12 +135,16 @@ export const useInfiniteMeals = ({
 
           loadedPageRef.current = Math.max(loadedPageRef.current, pageToLoad);
           setHasMore(data.page < data.totalPages);
+          settledLoadRef.current = { key, result: true };
+          return true;
         } catch (error) {
-          if (controller.signal.aborted) return;
-          if (requestId !== requestIdRef.current) return;
+          if (controller.signal.aborted) return false;
+          if (requestId !== requestIdRef.current) return false;
 
           console.error('加载失败', error);
           setError('加载失败，点击重试');
+          settledLoadRef.current = { key, result: false };
+          return false;
         } finally {
           if (inFlightRef.current?.promise === promise) {
             inFlightRef.current = null;
@@ -198,6 +212,7 @@ export const useInfiniteMeals = ({
     clearDebounceTimer();
     inFlightRef.current?.controller.abort();
     inFlightRef.current = null;
+    settledLoadRef.current = null;
     requestIdRef.current += 1;
     pageAdvanceLockedRef.current = false;
     loadedPageRef.current = 0;
@@ -225,12 +240,18 @@ export const useInfiniteMeals = ({
   );
 
   const reload = useCallback(() => {
+    const { keyword: currentKeyword, reloadKey: currentReloadKey } =
+      latestRef.current;
+    const nextReloadKey = currentReloadKey + 1;
+
     resetAndInvalidate();
-    setReloadKey((prev) => prev + 1);
-  }, [resetAndInvalidate]);
+    setReloadKey(nextReloadKey);
+    return loadMeals(1, currentKeyword, nextReloadKey);
+  }, [loadMeals, resetAndInvalidate]);
 
   const retry = useCallback(() => {
     setError(null);
+    settledLoadRef.current = null;
     loadMeals(page, keyword, reloadKey);
   }, [keyword, loadMeals, page, reloadKey]);
 
