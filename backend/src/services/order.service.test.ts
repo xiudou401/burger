@@ -3,7 +3,27 @@ import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
 import { sendOrderConfirmationEmail } from './email.service';
 import { validateCart } from './cart.service';
-import { createOrder, updateOrderStatus } from './order.service';
+import { env } from '../config/env';
+import {
+  createCheckoutOrder,
+  createOrder,
+  markStripeCheckoutFailed,
+  markStripeCheckoutPaid,
+  markStripeOrderFailed,
+  updateOrderStatus,
+} from './order.service';
+
+const mockCreateSession = jest.fn();
+
+jest.mock('stripe', () =>
+  jest.fn().mockImplementation(() => ({
+    checkout: {
+      sessions: {
+        create: mockCreateSession,
+      },
+    },
+  })),
+);
 
 jest.mock('./cart.service', () => ({
   validateCart: jest.fn(),
@@ -17,6 +37,7 @@ jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
     create: jest.fn(),
     findById: jest.fn(),
+    findByStripeSessionId: jest.fn(),
     save: jest.fn(),
   },
 }));
@@ -35,6 +56,9 @@ describe('order service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    env.STRIPE_SECRET_KEY = 'sk_test_123';
+    env.STRIPE_SUCCESS_URL = undefined;
+    env.STRIPE_CANCEL_URL = undefined;
   });
 
   test('creates orders from backend-validated cart totals', async () => {
@@ -112,6 +136,95 @@ describe('order service', () => {
     expect(orderRepository.create).not.toHaveBeenCalled();
   });
 
+  test('creates Stripe checkout sessions for validated orders', async () => {
+    jest.mocked(validateCart).mockResolvedValue({
+      items: [
+        {
+          id: mealId,
+          name: 'Classic Burger',
+          image: '/img/burger.png',
+          price: 12,
+          quantity: 2,
+          subtotal: 24,
+        },
+      ],
+      total: 24,
+      menuVersion: 7,
+    });
+
+    const order = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          mealId,
+          name: 'Classic Burger',
+          image: '/img/burger.png',
+          price: 12,
+          quantity: 2,
+          subtotal: 24,
+        },
+      ],
+      total: 24,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: undefined as string | undefined,
+        status: 'requires_payment',
+        amount: 24,
+        currency: 'aud',
+        paidAt: undefined as Date | undefined,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest.mocked(orderRepository.create).mockResolvedValue(order as never);
+    mockCreateSession.mockResolvedValue({
+      id: 'cs_test_123',
+      url: 'https://checkout.stripe.com/c/pay/cs_test_123',
+    });
+
+    const checkout = await createCheckoutOrder(
+      userId,
+      [{ id: mealId, quantity: 2 }],
+      7,
+    );
+
+    expect(orderRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'pending_payment',
+        payment: {
+          provider: 'stripe',
+          status: 'requires_payment',
+          amount: 24,
+          currency: 'aud',
+        },
+      }),
+    );
+    expect(mockCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'payment',
+        client_reference_id: orderId,
+        line_items: [
+          expect.objectContaining({
+            quantity: 2,
+            price_data: expect.objectContaining({
+              currency: 'aud',
+              unit_amount: 1200,
+            }),
+          }),
+        ],
+      }),
+    );
+    expect(order.payment.providerPaymentId).toBe('cs_test_123');
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(checkout.checkoutUrl).toBe(
+      'https://checkout.stripe.com/c/pay/cs_test_123',
+    );
+  });
+
   test('marks paid orders, persists the change, and sends confirmation email', async () => {
     const order = {
       _id: orderId,
@@ -157,6 +270,112 @@ describe('order service', () => {
       }),
     );
     expect(result.status).toBe('paid');
+  });
+
+  test('marks Stripe checkout sessions as paid and sends confirmation email', async () => {
+    const order = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          mealId,
+          name: 'Classic Burger',
+          price: 12,
+          quantity: 2,
+          subtotal: 24,
+        },
+      ],
+      total: 24,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'requires_payment',
+        amount: 24,
+        currency: 'aud',
+        paidAt: undefined as Date | undefined,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValue(order as never);
+    jest.mocked(userRepository.findLeanById).mockResolvedValue({
+      email: 'pat@example.com',
+    } as never);
+
+    const result = await markStripeCheckoutPaid('cs_test_123');
+
+    expect(order.status).toBe('paid');
+    expect(order.payment.status).toBe('paid');
+    expect(order.payment.paidAt).toBeInstanceOf(Date);
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
+      expect.objectContaining({ orderId, total: 24 }),
+    );
+    expect(result.status).toBe('paid');
+  });
+
+  test('marks Stripe checkout sessions as cancelled', async () => {
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      total: 24,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'requires_payment',
+        amount: 24,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValue(order as never);
+
+    const result = await markStripeCheckoutFailed('cs_test_123', 'cancelled');
+
+    expect(order.status).toBe('cancelled');
+    expect(order.payment.status).toBe('cancelled');
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(result.payment?.status).toBe('cancelled');
+  });
+
+  test('marks Stripe payment intents as failed by order id', async () => {
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      total: 24,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'requires_payment',
+        amount: 24,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
+
+    const result = await markStripeOrderFailed(orderId);
+
+    expect(order.payment.status).toBe('failed');
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(result.payment?.status).toBe('failed');
   });
 
   test('rejects invalid order status transitions', async () => {

@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import classes from './Bar.module.css';
-import { createOrder } from '../../../../api/orders';
+import { createCheckoutOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
-import { CART_ACTIONS } from '../../../../types/cart';
 import { useToast } from '../../../UI/Toast/ToastContext';
 import { formatCurrency } from '../../../../utils/currency';
 
@@ -13,12 +11,9 @@ interface BarProps {
 }
 
 const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
-  const navigate = useNavigate();
   const items = useCartSelector((ctx) => ctx.items);
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
-  const clearQuote = useCartSelector((ctx) => ctx.clearQuote);
-  const cartDispatch = useCartSelector((ctx) => ctx.cartDispatch);
   const { showToast } = useToast();
   const [isPaying, setIsPaying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -38,13 +33,10 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
         throw new Error('Menu is still loading');
       }
 
-      await createOrder(items, menuVersion);
-      cartDispatch({ type: CART_ACTIONS.CLEAR_CART });
-      clearQuote();
-      setMessage('Order placed');
-      showToast({ message: 'Order placed', tone: 'success' });
+      const { checkoutUrl } = await createCheckoutOrder(items, menuVersion);
+      setMessage('Redirecting to secure payment');
       onOrderComplete();
-      navigate('/profile');
+      window.location.assign(checkoutUrl);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : 'Could not place order';
@@ -70,7 +62,7 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
           disabled={items.length === 0 || isPaying || menuVersion === null}
           onClick={payHandler}
         >
-          {isPaying ? 'Paying' : 'Pay'}
+          {isPaying ? 'Redirecting' : 'Pay with Stripe'}
         </button>
       </div>
     </div>

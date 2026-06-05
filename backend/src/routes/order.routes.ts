@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  createCheckoutOrderHandler,
   createOrderHandler,
   getAdminOrderHandler,
   getMyOrderHandler,
@@ -22,6 +23,11 @@ const router = express.Router();
 
 router.use(authenticate);
 
+router.post(
+  '/checkout',
+  validateBody(CreateOrderSchema, 'Checkout order payload'),
+  createCheckoutOrderHandler,
+);
 router.post(
   '/',
   validateBody(CreateOrderSchema, 'Create order payload'),

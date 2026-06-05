@@ -12,6 +12,19 @@ export const createOrder = (items: CartStoredItem[], menuVersion: number) => {
   });
 };
 
+export const createCheckoutOrder = (
+  items: CartStoredItem[],
+  menuVersion: number,
+) => {
+  return request<{ order: Order; checkoutUrl: string }>('/orders/checkout', {
+    method: 'POST',
+    body: JSON.stringify({
+      items,
+      menuVersion,
+    }),
+  });
+};
+
 export const fetchMyOrders = (limit = 5) => {
   return request<{ orders: Order[] }>(`/orders/me?limit=${limit}`);
 };

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import {
+  createCheckoutOrder,
   createOrder,
   getOrderById,
   getOrderForUser,
@@ -30,6 +31,30 @@ export const createOrderHandler = async (
     const order = await createOrder(req.user.id, items, menuVersion);
 
     return res.status(201).json({ order });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createCheckoutOrderHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user) {
+    return next(new ServiceError('Unauthorized', 401));
+  }
+
+  try {
+    const { items, menuVersion } = req.body as CreateOrderPayload;
+
+    const checkout = await createCheckoutOrder(
+      req.user.id,
+      items,
+      menuVersion,
+    );
+
+    return res.status(201).json(checkout);
   } catch (error) {
     next(error);
   }

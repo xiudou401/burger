@@ -81,6 +81,13 @@ export const orderRepository = {
     return OrderModel.findById(orderId).exec();
   },
 
+  findByStripeSessionId(sessionId: string) {
+    return OrderModel.findOne({
+      'payment.provider': 'stripe',
+      'payment.providerPaymentId': sessionId,
+    }).exec();
+  },
+
   save<T extends { save: () => Promise<unknown> }>(order: T) {
     return order.save();
   },

@@ -23,6 +23,10 @@ const EnvSchema = z
     APPLE_CLIENT_ID: optionalNonEmptyString,
     RESEND_API_KEY: optionalNonEmptyString,
     EMAIL_FROM: optionalNonEmptyString,
+    STRIPE_SECRET_KEY: optionalNonEmptyString,
+    STRIPE_WEBHOOK_SECRET: optionalNonEmptyString,
+    STRIPE_SUCCESS_URL: optionalNonEmptyString,
+    STRIPE_CANCEL_URL: optionalNonEmptyString,
   })
   .passthrough()
   .transform((parsed) => ({

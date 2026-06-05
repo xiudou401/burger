@@ -5,6 +5,7 @@ import menuVersionRoutes from './routes/menu-version.routes';
 import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import staffInviteRoutes from './routes/staff-invite.routes';
+import stripeRoutes from './routes/stripe.routes';
 import path from 'path';
 import cors from 'cors';
 
@@ -24,6 +25,8 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeRoutes);
 
 app.use(express.json());
 

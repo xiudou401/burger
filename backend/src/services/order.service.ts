@@ -9,6 +9,8 @@ import { sendOrderConfirmationEmail } from './email.service';
 import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
 import { assertOrderTransition, parseOrderStatus } from '../utils/order-status';
+import { env } from '../config/env';
+import Stripe from 'stripe';
 
 export interface PublicOrderItem {
   mealId: string;
@@ -36,6 +38,25 @@ export interface PublicOrder {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface CheckoutOrder {
+  order: PublicOrder;
+  checkoutUrl: string;
+}
+
+let stripeClient: ReturnType<typeof getStripeClientInstance> | null = null;
+
+const getStripeClientInstance = () => new Stripe(env.STRIPE_SECRET_KEY ?? '');
+
+const getStripeClient = () => {
+  if (!env.STRIPE_SECRET_KEY) {
+    throw new ServiceError('Stripe is not configured', 503);
+  }
+
+  stripeClient = stripeClient ?? getStripeClientInstance();
+
+  return stripeClient;
+};
 
 const toOrderItem = (meal: ValidatedCartMeal) => ({
   mealId: meal.id,
@@ -147,6 +168,81 @@ export const createOrder = async (
   return toPublicOrder(order);
 };
 
+export const createCheckoutOrder = async (
+  userId: string,
+  items: CartStoredItem[],
+  menuVersion: number,
+): Promise<CheckoutOrder> => {
+  const validatedCart = await validateCart(items, menuVersion);
+
+  if (validatedCart.items.length === 0) {
+    throw new ServiceError('Cart is empty', 400);
+  }
+
+  const stripe = getStripeClient();
+
+  const order = await orderRepository.create({
+    userId,
+    items: validatedCart.items.map(toOrderItem),
+    total: validatedCart.total,
+    menuVersion: validatedCart.menuVersion,
+    status: 'pending_payment',
+    payment: {
+      provider: 'stripe',
+      status: 'requires_payment',
+      amount: validatedCart.total,
+      currency: 'aud',
+    },
+  });
+
+  const orderId = String(order._id);
+  const successUrl =
+    env.STRIPE_SUCCESS_URL ??
+    `${env.FRONTEND_URL}/profile?payment=success&orderId=${orderId}`;
+  const cancelUrl =
+    env.STRIPE_CANCEL_URL ??
+    `${env.FRONTEND_URL}/profile?payment=cancelled&orderId=${orderId}`;
+
+  const session = await stripe.checkout.sessions.create({
+    mode: 'payment',
+    client_reference_id: orderId,
+    line_items: validatedCart.items.map((item) => ({
+      price_data: {
+        currency: 'aud',
+        product_data: {
+          name: item.name,
+        },
+        unit_amount: Math.round(item.price * 100),
+      },
+      quantity: item.quantity,
+    })),
+    metadata: {
+      orderId,
+      userId,
+    },
+    payment_intent_data: {
+      metadata: {
+        orderId,
+        userId,
+      },
+    },
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+  });
+
+  if (!session.url) {
+    throw new ServiceError('Stripe checkout session has no redirect URL', 502);
+  }
+
+  order.payment.providerPaymentId = session.id;
+  await orderRepository.save(order);
+
+  return {
+    order: toPublicOrder(order),
+    checkoutUrl: session.url,
+  };
+};
+
 export const listOrdersForUser = async (
   userId: string,
   limit = 5,
@@ -223,4 +319,62 @@ export const updateOrderStatus = async (
   }
 
   return publicOrder;
+};
+
+export const markStripeCheckoutPaid = async (
+  sessionId: string,
+): Promise<PublicOrder> => {
+  const order = await orderRepository.findByStripeSessionId(sessionId);
+
+  if (!order) {
+    throw new ServiceError('Stripe order not found', 404);
+  }
+
+  order.status = 'paid';
+  order.payment.status = 'paid';
+  order.payment.paidAt = order.payment.paidAt ?? new Date();
+
+  await orderRepository.save(order);
+
+  const publicOrder = toPublicOrder(order);
+  await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
+
+  return publicOrder;
+};
+
+export const markStripeCheckoutFailed = async (
+  sessionId: string,
+  paymentStatus: Extract<PaymentStatus, 'failed' | 'cancelled'>,
+): Promise<PublicOrder> => {
+  const order = await orderRepository.findByStripeSessionId(sessionId);
+
+  if (!order) {
+    throw new ServiceError('Stripe order not found', 404);
+  }
+
+  order.payment.status = paymentStatus;
+
+  if (paymentStatus === 'cancelled') {
+    order.status = 'cancelled';
+  }
+
+  await orderRepository.save(order);
+
+  return toPublicOrder(order);
+};
+
+export const markStripeOrderFailed = async (
+  orderId: string,
+): Promise<PublicOrder> => {
+  const order = await orderRepository.findById(orderId);
+
+  if (!order) {
+    throw new ServiceError('Stripe order not found', 404);
+  }
+
+  order.payment.status = 'failed';
+
+  await orderRepository.save(order);
+
+  return toPublicOrder(order);
 };
