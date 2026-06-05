@@ -30,9 +30,12 @@ app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeRoutes);
 
 app.use(express.json());
 
-app.use('/img', express.static(path.join(__dirname, '../public/img')));
+app.use('/img', express.static(path.join(process.cwd(), 'public/img')));
 
 // routes
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/cart', cartRoutes);
