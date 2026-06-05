@@ -69,7 +69,6 @@ export const findAllMeals = async (query: MealQuery = {}) => {
       mealRepository.count(mongoQuery),
       getMenuVersion(),
     ]);
-    console.log(items.length);
 
     return {
       menuVersion,
