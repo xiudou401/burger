@@ -3,5 +3,5 @@ if (!process.env.MONGO_URI?.trim()) {
 }
 
 if (!process.env.JWT_SECRET?.trim()) {
-  process.env.JWT_SECRET = 'test-secret';
+  process.env.JWT_SECRET = 'test-secret-for-jest-at-least-32-chars';
 }

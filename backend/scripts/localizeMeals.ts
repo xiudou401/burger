@@ -11,49 +11,44 @@ const meals = [
     name: 'Harbour Classic Burger',
     description:
       'Grass-fed beef, pickles, onion, tomato relish, and soft milk bun.',
-    price: 12,
+    priceCents: 1200,
   },
   {
     image: '/img/meals/2.png',
     name: 'Double Cheese Stack',
     description:
       'Two beef patties, double cheddar, burger sauce, and house pickles.',
-    price: 20,
+    priceCents: 2000,
   },
   {
     image: '/img/meals/3.png',
     name: 'Sydney Club Burger',
-    description:
-      'Double beef, lettuce, onion, cheese, and a tangy club sauce.',
-    price: 24,
+    description: 'Double beef, lettuce, onion, cheese, and a tangy club sauce.',
+    priceCents: 2400,
   },
   {
     image: '/img/meals/4.png',
     name: 'Spicy Chicken Burger',
-    description:
-      'Crispy chicken thigh, chilli mayo, lettuce, and toasted bun.',
-    price: 21,
+    description: 'Crispy chicken thigh, chilli mayo, lettuce, and toasted bun.',
+    priceCents: 2100,
   },
   {
     image: '/img/meals/5.png',
     name: 'Grilled Chicken Burger',
-    description:
-      'Grilled chicken, lettuce, smoky BBQ glaze, and creamy mayo.',
-    price: 22,
+    description: 'Grilled chicken, lettuce, smoky BBQ glaze, and creamy mayo.',
+    priceCents: 2200,
   },
   {
     image: '/img/meals/6.png',
     name: 'Crispy Chicken Classic',
-    description:
-      'Golden chicken fillet, crisp lettuce, and light mayo.',
-    price: 14,
+    description: 'Golden chicken fillet, crisp lettuce, and light mayo.',
+    priceCents: 1400,
   },
   {
     image: '/img/meals/7.png',
     name: 'Cheeseburger',
-    description:
-      'Beef patty, cheddar, tomato relish, mustard, and pickles.',
-    price: 12,
+    description: 'Beef patty, cheddar, tomato relish, mustard, and pickles.',
+    priceCents: 1200,
   },
 ];
 
@@ -72,7 +67,7 @@ const localizeMeals = async () => {
           $set: {
             name: meal.name,
             description: meal.description,
-            price: meal.price,
+            priceCents: meal.priceCents,
           },
         },
       ),

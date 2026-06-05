@@ -1,5 +1,9 @@
 import { Types } from 'mongoose';
-import { OrderModel, type Order, type OrderStatus } from '../models/order.model';
+import {
+  OrderModel,
+  type Order,
+  type OrderStatus,
+} from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
 
 type RepositoryOrderItem = Omit<Order['items'][number], 'mealId'> & {
@@ -13,7 +17,7 @@ export const orderRepository = {
   create(data: {
     userId: string;
     items: RepositoryOrderItem[];
-    total: number;
+    totalCents: number;
     menuVersion: number;
     status: OrderStatus;
     payment: Order['payment'];
@@ -45,11 +49,7 @@ export const orderRepository = {
   },
 
   listAll(limit: number) {
-    return OrderModel.find()
-      .sort({ createdAt: -1 })
-      .limit(limit)
-      .lean()
-      .exec();
+    return OrderModel.find().sort({ createdAt: -1 }).limit(limit).lean().exec();
   },
 
   findForUser(userId: string, orderId: string) {

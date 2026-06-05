@@ -2,13 +2,19 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "CommonJS",
-    "rootDir": "./", // 改为项目根目录（覆盖原来的 src）
-    "outDir": "dist", // 编译产物仍输出到 dist
+    "rootDir": "./",
+    "outDir": "dist",
     "strict": true,
     "types": ["jest", "node"],
     "esModuleInterop": true,
-    "skipLibCheck": true // 可选：跳过库文件检查，减少无关报错
+    "skipLibCheck": true
   },
   "include": ["src/**/*", "scripts/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/setupTests.ts"
+  ]
 }

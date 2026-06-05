@@ -125,7 +125,9 @@ const redirectWithAuth = (
       : {}),
   });
 
-  return res.redirect(`${env.FRONTEND_URL}/oauth/callback#${params.toString()}`);
+  return res.redirect(
+    `${env.FRONTEND_URL}/oauth/callback#${params.toString()}`,
+  );
 };
 
 export const oauthCallbackHandler = async (
@@ -209,7 +211,8 @@ export const oauthCallbackHandler = async (
         email: userInfo.email,
         name: userInfo.name ?? userInfo.email,
         emailVerified:
-          userInfo.email_verified === true || userInfo.email_verified === 'true',
+          userInfo.email_verified === true ||
+          userInfo.email_verified === 'true',
         mode: mode === 'signup' ? 'signup' : 'login',
       });
 

@@ -221,14 +221,14 @@ export const useQuoteEngine = ({
     });
   }, [quoteStale, ensureQuote, clearDebounceTimer]);
 
-  const estimatedTotalPrice = useMemo(() => {
+  const estimatedTotalCents = useMemo(() => {
     if (!quote) return 0;
 
     const qtyMap = new Map(items.map((item) => [item.id, item.quantity]));
 
     return quote.meals.reduce((sum, meal) => {
       const quantity = qtyMap.get(meal.id) ?? 0;
-      return sum + meal.price * quantity;
+      return sum + meal.priceCents * quantity;
     }, 0);
   }, [quote, items]);
 
@@ -236,7 +236,7 @@ export const useQuoteEngine = ({
     quote,
     quoteStale,
     quoteMismatch,
-    estimatedTotalPrice,
+    estimatedTotalCents,
     ensureQuote,
     clearQuote,
   };

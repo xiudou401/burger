@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  fetchAdminOrders,
-  updateOrderStatus,
-} from '../../api/orders';
+import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
 import type { Order, OrderStatus } from '../../types/order';
 
 const nextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {

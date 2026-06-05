@@ -150,7 +150,9 @@ const AccountDetailsCard = ({
           </div>
           {smsMessage && (
             <p className={classes.StatusMessage}>
-              {devSmsCode ? `${smsMessage}. Dev code: ${devSmsCode}` : smsMessage}
+              {devSmsCode
+                ? `${smsMessage}. Dev code: ${devSmsCode}`
+                : smsMessage}
             </p>
           )}
           {smsError && <p className={classes.ErrorMessage}>{smsError}</p>}

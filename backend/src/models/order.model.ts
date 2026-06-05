@@ -20,22 +20,22 @@ export interface OrderItem {
   mealId: Types.ObjectId;
   name: string;
   image?: string;
-  price: number;
+  priceCents: number;
   quantity: number;
-  subtotal: number;
+  subtotalCents: number;
 }
 
 export interface Order {
   userId: Types.ObjectId;
   items: OrderItem[];
-  total: number;
+  totalCents: number;
   menuVersion: number;
   status: OrderStatus;
   payment: {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amount: number;
+    amountCents: number;
     currency: string;
     paidAt?: Date;
   };
@@ -56,20 +56,28 @@ const orderItemSchema = new Schema<OrderItem>(
       trim: true,
     },
     image: String,
-    price: {
+    priceCents: {
       type: Number,
       required: true,
       min: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Order item priceCents must be an integer',
+      },
     },
     quantity: {
       type: Number,
       required: true,
       min: 1,
     },
-    subtotal: {
+    subtotalCents: {
       type: Number,
       required: true,
       min: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Order item subtotalCents must be an integer',
+      },
     },
   },
   { _id: false },
@@ -91,10 +99,14 @@ const orderSchema = new Schema<Order>(
         message: 'Order must include at least one item',
       },
     },
-    total: {
+    totalCents: {
       type: Number,
       required: true,
       min: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Order totalCents must be an integer',
+      },
     },
     menuVersion: {
       type: Number,
@@ -136,10 +148,14 @@ const orderSchema = new Schema<Order>(
         required: true,
         default: 'unpaid',
       },
-      amount: {
+      amountCents: {
         type: Number,
         required: true,
         min: 0,
+        validate: {
+          validator: Number.isSafeInteger,
+          message: 'Payment amountCents must be an integer',
+        },
       },
       currency: {
         type: String,

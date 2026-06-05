@@ -17,7 +17,8 @@ export const useAdminLoginPage = () => {
   const loginFn = useAuth((ctx) => ctx.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { error, isSubmitting, runSubmit } = useAuthSubmit('Admin login failed');
+  const { error, isSubmitting, runSubmit } =
+    useAuthSubmit('Admin login failed');
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

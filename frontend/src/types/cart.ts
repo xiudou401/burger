@@ -8,7 +8,7 @@ export interface CartStoredItem {
 
 export interface CartMeal extends Meal {
   quantity: number;
-  subtotal: number;
+  subtotalCents: number;
 }
 
 export interface CartState {
@@ -42,7 +42,7 @@ export interface CartContextValue extends CartState {
   quote: Quote | null;
   quoteStale: boolean;
   quoteMismatch: boolean;
-  estimatedTotalPrice: number;
+  estimatedTotalCents: number;
 
   ensureQuote: () => Promise<void>;
   clearQuote: () => void;

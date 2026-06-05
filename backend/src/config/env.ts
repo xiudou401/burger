@@ -15,7 +15,10 @@ const EnvSchema = z
   .object({
     PORT: z.string().trim().min(1).default('3000'),
     MONGO_URI: z.string().trim().min(1, 'MONGO_URI is required'),
-    JWT_SECRET: z.string().trim().min(1).default('dev-secret-change-me'),
+    JWT_SECRET: z
+      .string()
+      .trim()
+      .min(32, 'JWT_SECRET must be at least 32 characters'),
     FRONTEND_URL: z.string().trim().url().default('http://localhost:3000'),
     API_URL: z.string().trim().url().optional(),
     GOOGLE_CLIENT_ID: optionalNonEmptyString,

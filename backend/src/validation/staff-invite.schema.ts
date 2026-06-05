@@ -20,10 +20,6 @@ export const StaffInviteParamsSchema = z
   })
   .strict();
 
-export type CreateStaffInvitePayload = z.infer<
-  typeof CreateStaffInviteSchema
->;
-export type AcceptStaffInvitePayload = z.infer<
-  typeof AcceptStaffInviteSchema
->;
+export type CreateStaffInvitePayload = z.infer<typeof CreateStaffInviteSchema>;
+export type AcceptStaffInvitePayload = z.infer<typeof AcceptStaffInviteSchema>;
 export type StaffInviteParamsPayload = z.infer<typeof StaffInviteParamsSchema>;

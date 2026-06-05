@@ -61,7 +61,9 @@ describe('auth service', () => {
 
     const result = await signup(' Pat ', 'PAT@example.com', 'Burger#2026');
 
-    expect(userRepository.existsByEmail).toHaveBeenCalledWith('pat@example.com');
+    expect(userRepository.existsByEmail).toHaveBeenCalledWith(
+      'pat@example.com',
+    );
     expect(userRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'Pat',

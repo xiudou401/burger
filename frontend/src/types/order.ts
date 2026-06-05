@@ -2,22 +2,22 @@ export interface OrderItem {
   mealId: string;
   name: string;
   image?: string;
-  price: number;
+  priceCents: number;
   quantity: number;
-  subtotal: number;
+  subtotalCents: number;
 }
 
 export interface Order {
   id: string;
   items: OrderItem[];
-  total: number;
+  totalCents: number;
   menuVersion: number;
   status: OrderStatus;
   payment?: {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amount: number;
+    amountCents: number;
     currency: string;
     paidAt?: string;
   };

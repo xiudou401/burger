@@ -24,7 +24,9 @@ export const stripeWebhookHandler = async (
   const signature = req.headers['stripe-signature'];
 
   if (!env.STRIPE_WEBHOOK_SECRET) {
-    return next(new ServiceError('Stripe webhook secret is not configured', 503));
+    return next(
+      new ServiceError('Stripe webhook secret is not configured', 503),
+    );
   }
 
   if (typeof signature !== 'string') {

@@ -8,11 +8,11 @@ import { useToast } from '../../../UI/Toast/ToastContext';
 import { formatCurrency } from '../../../../utils/currency';
 
 interface BarProps {
-  totalPrice: number;
+  totalCents: number;
   onOrderComplete: () => void;
 }
 
-const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
+const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const items = useCartSelector((ctx) => ctx.items);
@@ -72,7 +72,7 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
 
   return (
     <div className={classes.Bar}>
-      <div className={classes.TotalPrice}>{formatCurrency(totalPrice)}</div>
+      <div className={classes.TotalPrice}>{formatCurrency(totalCents)}</div>
       <div className={classes.Actions}>
         {(error || message) && (
           <p className={error ? classes.Error : classes.Message}>
@@ -82,7 +82,10 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
         <button
           className={classes.Button}
           disabled={
-            items.length === 0 || isPaying || menuVersion === null || isAuthLoading
+            items.length === 0 ||
+            isPaying ||
+            menuVersion === null ||
+            isAuthLoading
           }
           onClick={payHandler}
         >

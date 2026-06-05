@@ -15,9 +15,9 @@ export const useSignupPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [devVerificationToken, setDevVerificationToken] = useState<string | null>(
-    null,
-  );
+  const [devVerificationToken, setDevVerificationToken] = useState<
+    string | null
+  >(null);
   const { error, setError, isSubmitting, runSubmit } =
     useAuthSubmit('Signup failed');
 

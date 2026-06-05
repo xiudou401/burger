@@ -21,8 +21,8 @@ describe('mealRepository', () => {
     const limit = jest.fn().mockReturnValue({ lean });
     const skip = jest.fn().mockReturnValue({ limit });
     const sort = jest.fn().mockReturnValue({ skip });
-    const query = { price: { $gte: 10 } };
-    const sortOption = { price: 1 as const };
+    const query = { priceCents: { $gte: 10 } };
+    const sortOption = { priceCents: 1 as const };
 
     jest.mocked(MealModel.find).mockReturnValue({ sort } as never);
 
@@ -62,7 +62,7 @@ describe('mealRepository', () => {
     await mealRepository.updateById('meal-1', {
       name: 'Burger',
       description: 'Nice',
-      price: 12,
+      priceCents: 1200,
       image: '/img/burger.png',
     });
 
@@ -71,7 +71,7 @@ describe('mealRepository', () => {
       {
         name: 'Burger',
         description: 'Nice',
-        price: 12,
+        priceCents: 1200,
         image: '/img/burger.png',
       },
       { new: true, runValidators: true },

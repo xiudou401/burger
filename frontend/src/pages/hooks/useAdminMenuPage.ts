@@ -11,7 +11,7 @@ import type { Meal } from '../../types/meal';
 const emptyForm: MealPayload = {
   name: '',
   description: '',
-  price: 0,
+  priceCents: 0,
   image: '',
 };
 
@@ -47,7 +47,7 @@ export const useAdminMenuPage = () => {
   const updateForm = (field: keyof MealPayload, value: string) => {
     setForm((current) => ({
       ...current,
-      [field]: field === 'price' ? Number(value) : value,
+      [field]: field === 'priceCents' ? Math.round(Number(value) * 100) : value,
     }));
   };
 
@@ -61,7 +61,7 @@ export const useAdminMenuPage = () => {
     setForm({
       name: meal.name,
       description: meal.description ?? '',
-      price: meal.price,
+      priceCents: meal.priceCents,
       image: meal.image ?? '',
     });
   };

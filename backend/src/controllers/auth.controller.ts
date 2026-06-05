@@ -56,7 +56,7 @@ const sendAuthResult = (
   result: Awaited<ReturnType<typeof authService.login>>,
 ) => {
   setRefreshCookie(res, result.refreshToken);
-  const { refreshToken, ...body } = result;
+  const { refreshToken: _refreshToken, ...body } = result;
 
   return res.status(status).json(body);
 };

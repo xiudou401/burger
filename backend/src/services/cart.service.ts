@@ -11,14 +11,14 @@ export interface ValidatedCartMeal {
   id: string;
   name: string;
   image?: string;
-  price: number;
+  priceCents: number;
   quantity: number;
-  subtotal: number;
+  subtotalCents: number;
 }
 
 export interface ValidateCartResult {
   items: ValidatedCartMeal[];
-  total: number;
+  totalCents: number;
   menuVersion: number;
 }
 
@@ -35,7 +35,7 @@ export const validateCart = async (
   if (items.length === 0) {
     return {
       items: [],
-      total: 0,
+      totalCents: 0,
       menuVersion: currentVersion,
     };
   }
@@ -46,7 +46,7 @@ export const validateCart = async (
 
   const mealMap = new Map(meals.map((meal) => [meal._id.toString(), meal]));
 
-  let total = 0;
+  let totalCents = 0;
 
   const result: ValidatedCartMeal[] = items.map((item) => {
     const meal = mealMap.get(item.id);
@@ -55,22 +55,22 @@ export const validateCart = async (
       throw new ServiceError('Meal removed', 400);
     }
 
-    const subtotal = meal.price * item.quantity;
-    total += subtotal;
+    const subtotalCents = meal.priceCents * item.quantity;
+    totalCents += subtotalCents;
 
     return {
       id: meal._id.toString(),
       name: meal.name,
       image: meal.image,
-      price: meal.price,
+      priceCents: meal.priceCents,
       quantity: item.quantity,
-      subtotal,
+      subtotalCents,
     };
   });
 
   return {
     items: result,
-    total,
+    totalCents,
     menuVersion: currentVersion,
   };
 };

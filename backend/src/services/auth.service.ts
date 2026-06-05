@@ -2,10 +2,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { hashPassword, verifyPassword } from '../utils/password';
 import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
-import {
-  createAuthSession,
-  revokeUserSessions,
-} from './auth-session.service';
+import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
@@ -70,7 +67,10 @@ const assertEmail = (email: string) => {
 
 const assertPhone = (phone: string) => {
   if (!phone || !/^\+[1-9]\d{7,14}$/.test(phone)) {
-    throw new ServiceError('Phone must use E.164 format, for example +61412345678', 400);
+    throw new ServiceError(
+      'Phone must use E.164 format, for example +61412345678',
+      400,
+    );
   }
 };
 
@@ -393,7 +393,10 @@ export const loginWithOAuth = async ({
     isNewUser = true;
   } else {
     if (mode === 'signup') {
-      throw new ServiceError('Email already registered. Please log in instead.', 409);
+      throw new ServiceError(
+        'Email already registered. Please log in instead.',
+        409,
+      );
     }
 
     user.name = user.name || normalizedName;

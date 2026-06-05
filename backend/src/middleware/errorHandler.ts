@@ -5,9 +5,9 @@ import { ValidationError } from '../errors/ValidationError';
 
 export const errorHandler = (
   err: unknown,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction,
+  _next: NextFunction,
 ) => {
   if (err instanceof BaseError) {
     if (!err.isOperational) {

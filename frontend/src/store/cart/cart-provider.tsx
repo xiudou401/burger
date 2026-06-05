@@ -24,7 +24,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     quote,
     quoteStale,
     quoteMismatch,
-    estimatedTotalPrice,
+    estimatedTotalCents,
     ensureQuote,
     clearQuote,
   } = useQuoteEngine({
@@ -42,7 +42,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       quote,
       quoteStale,
       quoteMismatch,
-      estimatedTotalPrice,
+      estimatedTotalCents,
       ensureQuote,
       clearQuote,
     }),
@@ -53,13 +53,11 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       quote,
       quoteStale,
       quoteMismatch,
-      estimatedTotalPrice,
+      estimatedTotalCents,
       ensureQuote,
       clearQuote,
     ],
   );
 
-  return (
-    <CartContext.Provider value={value}>{children}</CartContext.Provider>
-  );
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 };

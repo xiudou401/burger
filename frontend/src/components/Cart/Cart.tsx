@@ -29,7 +29,7 @@ const Cart = () => {
 
   const quoteMismatch = useCartSelector(getQuoteMismatch);
 
-  const estimatedTotalPrice = useCartSelector(getEstimatedTotalPrice);
+  const estimatedTotalCents = useCartSelector(getEstimatedTotalPrice);
 
   const ensureQuote = useCartSelector(getEnsureQuote);
 
@@ -64,7 +64,10 @@ const Cart = () => {
 
       setShowCheckout(true);
     } catch {
-      showToast({ message: 'Cart validation failed. Please try again.', tone: 'error' });
+      showToast({
+        message: 'Cart validation failed. Please try again.',
+        tone: 'error',
+      });
     }
   };
 
@@ -104,7 +107,7 @@ const Cart = () => {
         <p className={classes.Price}>Ready to checkout</p>
       ) : (
         <p className={classes.Price}>
-          {formatCurrency(estimatedTotalPrice)}
+          {formatCurrency(estimatedTotalCents)}
           {(quoteStale || quoteMismatch) && (
             <span
               style={{

@@ -11,9 +11,7 @@ interface CheckoutItemProps {
 }
 
 const CheckoutItem = ({ meal }: CheckoutItemProps) => {
-  const quantity = useCartSelector((ctx) =>
-    getCartItemQuantity(ctx, meal.id),
-  );
+  const quantity = useCartSelector((ctx) => getCartItemQuantity(ctx, meal.id));
 
   if (quantity === 0) return null;
 
@@ -30,7 +28,7 @@ const CheckoutItem = ({ meal }: CheckoutItemProps) => {
           <QuantityCounter id={meal.id} />
 
           <div className={classes.Price}>
-            {formatCurrency(meal.price * quantity)}
+            {formatCurrency(meal.priceCents * quantity)}
           </div>
         </div>
       </div>

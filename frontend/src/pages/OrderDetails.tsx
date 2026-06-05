@@ -48,7 +48,7 @@ const OrderDetails = () => {
               <div className={classes.CardHeader}>
                 <h2 className={classes.CardTitle}>Items</h2>
                 <strong className={classes.Total}>
-                  {formatCurrency(order.total)}
+                  {formatCurrency(order.totalCents)}
                 </strong>
               </div>
 
@@ -65,11 +65,11 @@ const OrderDetails = () => {
                     <div className={classes.ItemInfo}>
                       <h3 className={classes.ItemName}>{item.name}</h3>
                       <p className={classes.ItemMeta}>
-                        {formatCurrency(item.price)} x {item.quantity}
+                        {formatCurrency(item.priceCents)} x {item.quantity}
                       </p>
                     </div>
                     <strong className={classes.Subtotal}>
-                      {formatCurrency(item.subtotal)}
+                      {formatCurrency(item.subtotalCents)}
                     </strong>
                   </article>
                 ))}

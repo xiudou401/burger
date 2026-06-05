@@ -13,7 +13,7 @@ const Profile = () => {
     firstName,
     accountStatus,
     totalQuantity,
-    estimatedTotalPrice,
+    estimatedTotalCents,
     hasCartItems,
     orders,
     isLoadingOrders,
@@ -77,7 +77,7 @@ const Profile = () => {
         <>
           <CurrentCartCard
             totalQuantity={totalQuantity}
-            estimatedTotalPrice={estimatedTotalPrice}
+            estimatedTotalCents={estimatedTotalCents}
             hasCartItems={hasCartItems}
           />
           <QuickActionsCard onLogout={logout} />

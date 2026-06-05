@@ -69,12 +69,12 @@ describe('order service', () => {
           id: mealId,
           name: 'Classic Burger',
           image: '/img/burger.png',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
     });
     jest.mocked(orderRepository.create).mockResolvedValue({
@@ -85,17 +85,17 @@ describe('order service', () => {
           mealId,
           name: 'Classic Burger',
           image: '/img/burger.png',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         status: 'unpaid',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -103,33 +103,32 @@ describe('order service', () => {
       updatedAt: now,
     } as never);
 
-    const order = await createOrder(
-      userId,
+    const order = await createOrder(userId, [{ id: mealId, quantity: 999 }], 7);
+
+    expect(validateCart).toHaveBeenCalledWith(
       [{ id: mealId, quantity: 999 }],
       7,
     );
-
-    expect(validateCart).toHaveBeenCalledWith([{ id: mealId, quantity: 999 }], 7);
     expect(orderRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        total: 24,
+        totalCents: 2400,
         menuVersion: 7,
         status: 'pending_payment',
         payment: {
           status: 'unpaid',
-          amount: 24,
+          amountCents: 2400,
           currency: 'aud',
         },
       }),
     );
-    expect(order.total).toBe(24);
+    expect(order.totalCents).toBe(2400);
     expect(order.items[0].quantity).toBe(2);
   });
 
   test('rejects empty validated carts', async () => {
     jest.mocked(validateCart).mockResolvedValue({
       items: [],
-      total: 0,
+      totalCents: 0,
       menuVersion: 7,
     });
 
@@ -144,12 +143,12 @@ describe('order service', () => {
           id: mealId,
           name: 'Classic Burger',
           image: '/img/burger.png',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
     });
 
@@ -161,19 +160,19 @@ describe('order service', () => {
           mealId,
           name: 'Classic Burger',
           image: '/img/burger.png',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -199,7 +198,7 @@ describe('order service', () => {
         payment: {
           provider: 'stripe',
           status: 'requires_payment',
-          amount: 24,
+          amountCents: 2400,
           currency: 'aud',
         },
       }),
@@ -235,12 +234,12 @@ describe('order service', () => {
           id: mealId,
           name: 'Classic Burger',
           image: '/img/burger.png',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
     });
 
@@ -248,14 +247,14 @@ describe('order service', () => {
       _id: orderId,
       userId,
       items: [],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -281,12 +280,12 @@ describe('order service', () => {
           id: mealId,
           name: 'Classic Burger',
           image: '/img/burger.png',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
     });
 
@@ -294,14 +293,14 @@ describe('order service', () => {
       _id: orderId,
       userId,
       items: [],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -332,17 +331,17 @@ describe('order service', () => {
         {
           mealId,
           name: 'Classic Burger',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         status: 'unpaid',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -365,7 +364,7 @@ describe('order service', () => {
       expect.objectContaining({
         email: 'pat@example.com',
         orderId,
-        total: 24,
+        totalCents: 2400,
       }),
     );
     expect(result.status).toBe('paid');
@@ -379,19 +378,19 @@ describe('order service', () => {
         {
           mealId,
           name: 'Classic Burger',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -413,7 +412,7 @@ describe('order service', () => {
     expect(order.payment.paidAt).toBeInstanceOf(Date);
     expect(orderRepository.save).toHaveBeenCalledWith(order);
     expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ orderId, total: 24 }),
+      expect.objectContaining({ orderId, totalCents: 2400 }),
     );
     expect(result.status).toBe('paid');
   });
@@ -427,19 +426,19 @@ describe('order service', () => {
         {
           mealId,
           name: 'Classic Burger',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
         },
       ],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'paid',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'paid',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
         paidAt,
       },
@@ -464,14 +463,14 @@ describe('order service', () => {
       _id: orderId,
       userId,
       items: [],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -495,14 +494,14 @@ describe('order service', () => {
       _id: orderId,
       userId,
       items: [],
-      total: 24,
+      totalCents: 2400,
       menuVersion: 7,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amount: 24,
+        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,

@@ -93,7 +93,7 @@ export const acceptStaffInviteHandler = async (
       userId: req.user.id,
     });
     setRefreshCookie(res, result.refreshToken);
-    const { refreshToken, ...body } = result;
+    const { refreshToken: _refreshToken, ...body } = result;
 
     return res.status(200).json(body);
   } catch (error) {

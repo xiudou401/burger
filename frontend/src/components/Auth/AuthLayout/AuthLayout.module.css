@@ -4,10 +4,7 @@
   grid-template-columns: minmax(0, 1fr) 480rem;
   background: #bd0017;
   color: #292929;
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .BrandPanel {
@@ -18,7 +15,11 @@
   flex-direction: column;
   justify-content: space-between;
   background:
-    radial-gradient(circle at 24% 20%, rgba(255, 199, 44, 0.32), transparent 24%),
+    radial-gradient(
+      circle at 24% 20%,
+      rgba(255, 199, 44, 0.32),
+      transparent 24%
+    ),
     linear-gradient(135deg, #d71920 0%, #bd0017 48%, #8f0011 100%);
   color: #fff;
 }
@@ -132,10 +133,7 @@
   background:
     linear-gradient(135deg, rgba(189, 0, 23, 0.92), rgba(143, 0, 17, 0.96)),
     #bd0017;
-  font-family:
-    Arial,
-    Helvetica,
-    sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .SimpleCard {

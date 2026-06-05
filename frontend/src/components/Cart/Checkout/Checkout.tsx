@@ -17,7 +17,7 @@ interface CheckoutProps {
 }
 
 const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
-  const estimatedTotalPrice = useCartSelector((ctx) => ctx.estimatedTotalPrice);
+  const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
 
   const items = useCartSelector((ctx) => ctx.items);
 
@@ -53,12 +53,12 @@ const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
 
         <footer className={classes.Footer}>
           <p className={classes.TotalPrice}>
-            Total {formatCurrency(estimatedTotalPrice)}
+            Total {formatCurrency(estimatedTotalCents)}
           </p>
         </footer>
       </div>
 
-      <Bar totalPrice={estimatedTotalPrice} onOrderComplete={offCheckout} />
+      <Bar totalCents={estimatedTotalCents} onOrderComplete={offCheckout} />
     </div>,
     CheckoutRoot,
   );

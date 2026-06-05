@@ -30,7 +30,11 @@ import {
 
 const router = express.Router();
 
-router.post('/signup', validateBody(SignupSchema, 'Signup payload'), signupHandler);
+router.post(
+  '/signup',
+  validateBody(SignupSchema, 'Signup payload'),
+  signupHandler,
+);
 router.post('/login', validateBody(LoginSchema, 'Login payload'), loginHandler);
 router.post('/refresh', refreshHandler);
 router.post('/logout', logoutHandler);

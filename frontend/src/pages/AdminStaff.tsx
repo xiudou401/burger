@@ -32,7 +32,11 @@ const AdminStaff = () => {
     <AdminLayout
       title="Staff"
       action={
-        <button className={classes.SecondaryButton} type="button" onClick={refresh}>
+        <button
+          className={classes.SecondaryButton}
+          type="button"
+          onClick={refresh}
+        >
           Refresh
         </button>
       }
@@ -56,7 +60,9 @@ const AdminStaff = () => {
             <select
               className={classes.Input}
               value={role}
-              onChange={(event) => setRole(event.target.value as 'staff' | 'admin')}
+              onChange={(event) =>
+                setRole(event.target.value as 'staff' | 'admin')
+              }
             >
               <option value="staff">Staff</option>
               <option value="admin">Admin</option>

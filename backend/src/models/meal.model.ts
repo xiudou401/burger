@@ -4,7 +4,7 @@ import { model, Schema } from 'mongoose';
 export interface Meal {
   name: string;
   description?: string;
-  price: number;
+  priceCents: number;
   image?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -14,7 +14,15 @@ const mealSchema = new Schema<Meal>(
   {
     name: { type: String, required: true },
     description: String,
-    price: { type: Number, required: true },
+    priceCents: {
+      type: Number,
+      required: true,
+      min: 0,
+      validate: {
+        validator: Number.isSafeInteger,
+        message: 'Meal priceCents must be an integer',
+      },
+    },
     image: String,
   },
   { timestamps: true },

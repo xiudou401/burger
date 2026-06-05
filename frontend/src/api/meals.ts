@@ -23,7 +23,7 @@ export const fetchMeals = (params: FetchMealsParams) => {
 export interface MealPayload {
   name: string;
   description: string;
-  price: number;
+  priceCents: number;
   image: string;
 }
 

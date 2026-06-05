@@ -16,7 +16,11 @@ const QuickActionsCard = ({ onLogout }: QuickActionsCardProps) => {
         <Link className={classes.PrimaryAction} to="/">
           Menu
         </Link>
-        <button className={classes.DangerAction} type="button" onClick={onLogout}>
+        <button
+          className={classes.DangerAction}
+          type="button"
+          onClick={onLogout}
+        >
           Log out
         </button>
       </div>

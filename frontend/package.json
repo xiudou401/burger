@@ -25,7 +25,11 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
+    "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.json\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.json\"",
     "test": "react-scripts test",
+    "typecheck": "tsc --noEmit",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -49,6 +53,8 @@
   "devDependencies": {
     "@types/css-modules": "^1.0.5",
     "@types/jest": "^30.0.0",
+    "eslint": "^8.57.1",
+    "prettier": "^3.8.3",
     "typescript": "^4.9.5"
   }
 }

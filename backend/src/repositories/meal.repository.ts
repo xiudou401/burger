@@ -28,13 +28,13 @@ export const mealRepository = {
     }).lean();
   },
 
-  create(data: Pick<Meal, 'name' | 'description' | 'price' | 'image'>) {
+  create(data: Pick<Meal, 'name' | 'description' | 'priceCents' | 'image'>) {
     return MealModel.create(data);
   },
 
   updateById(
     mealId: string,
-    data: Pick<Meal, 'name' | 'description' | 'price' | 'image'>,
+    data: Pick<Meal, 'name' | 'description' | 'priceCents' | 'image'>,
   ) {
     return MealModel.findByIdAndUpdate(mealId, data, {
       new: true,

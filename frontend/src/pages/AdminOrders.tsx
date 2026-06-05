@@ -35,7 +35,11 @@ const AdminOrders = () => {
     <AdminLayout
       title="Orders"
       action={
-        <button className={classes.RefreshButton} type="button" onClick={refresh}>
+        <button
+          className={classes.RefreshButton}
+          type="button"
+          onClick={refresh}
+        >
           Refresh
         </button>
       }
@@ -52,10 +56,15 @@ const AdminOrders = () => {
           <article className={classes.OrderCard} key={order.id}>
             <div className={classes.OrderTop}>
               <div>
-                <Link className={classes.OrderId} to={`/admin/orders/${order.id}`}>
+                <Link
+                  className={classes.OrderId}
+                  to={`/admin/orders/${order.id}`}
+                >
                   #{order.id.slice(-6).toUpperCase()}
                 </Link>
-                <p className={classes.OrderDate}>{formatDate(order.createdAt)}</p>
+                <p className={classes.OrderDate}>
+                  {formatDate(order.createdAt)}
+                </p>
               </div>
               <span className={classes.Status}>{order.status}</span>
             </div>
@@ -64,7 +73,7 @@ const AdminOrders = () => {
 
             <div className={classes.OrderBottom}>
               <strong className={classes.Total}>
-                {formatCurrency(order.total)}
+                {formatCurrency(order.totalCents)}
               </strong>
               <div className={classes.Actions}>
                 {nextStatuses[order.status].map((status) => (

@@ -24,7 +24,11 @@ const AdminMenu = () => {
     <AdminLayout
       title="Menu"
       action={
-        <button className={classes.SecondaryButton} type="button" onClick={refresh}>
+        <button
+          className={classes.SecondaryButton}
+          type="button"
+          onClick={refresh}
+        >
           Refresh
         </button>
       }
@@ -52,9 +56,9 @@ const AdminMenu = () => {
               min="0"
               step="0.01"
               type="number"
-              value={form.price}
+              value={form.priceCents / 100}
               required
-              onChange={(event) => updateForm('price', event.target.value)}
+              onChange={(event) => updateForm('priceCents', event.target.value)}
             />
           </label>
 
@@ -81,7 +85,11 @@ const AdminMenu = () => {
 
           <div className={classes.FormActions}>
             <button className={classes.PrimaryButton} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : isEditing ? 'Save changes' : 'Add meal'}
+              {isSubmitting
+                ? 'Saving...'
+                : isEditing
+                  ? 'Save changes'
+                  : 'Add meal'}
             </button>
             {isEditing && (
               <button
@@ -121,7 +129,7 @@ const AdminMenu = () => {
               </div>
 
               <strong className={classes.Price}>
-                {formatCurrency(meal.price)}
+                {formatCurrency(meal.priceCents)}
               </strong>
 
               <div className={classes.RowActions}>

@@ -13,7 +13,7 @@ const Backdrop = ({ children, className }: BackdropProps) => {
 
   return ReactDOM.createPortal(
     <div className={`${classes.Backdrop} ${className}`}>{children}</div>,
-    backdropRoot
+    backdropRoot,
   );
 };
 

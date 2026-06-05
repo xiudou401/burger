@@ -21,8 +21,8 @@ const ProfileHero = ({
           <p className={classes.Eyebrow}>Burger Club</p>
           <h1 className={classes.Title}>Hi, {firstName}</h1>
           <p className={classes.Subtitle}>
-            Track your account, keep checkout ready, and jump back into your next
-            Sydney pickup or delivery order.
+            Track your account, keep checkout ready, and jump back into your
+            next Sydney pickup or delivery order.
           </p>
         </div>
       </div>

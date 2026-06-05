@@ -14,10 +14,14 @@ const toBase64Url = (value: string | Buffer) => {
 };
 
 const signValue = (value: string) => {
-  return toBase64Url(createHmac('sha256', env.JWT_SECRET).update(value).digest());
+  return toBase64Url(
+    createHmac('sha256', env.JWT_SECRET).update(value).digest(),
+  );
 };
 
-export const signAuthToken = (payload: Omit<AuthTokenPayload, 'iat' | 'exp'>) => {
+export const signAuthToken = (
+  payload: Omit<AuthTokenPayload, 'iat' | 'exp'>,
+) => {
   const now = Math.floor(Date.now() / 1000);
   const header = toBase64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
   const body = toBase64Url(

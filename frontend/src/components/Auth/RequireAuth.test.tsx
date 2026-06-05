@@ -28,9 +28,7 @@ const baseAuth: AuthContextValue = {
 
 const renderGuard = (auth: Partial<AuthContextValue>) => {
   const authValue = { ...baseAuth, ...auth };
-  jest
-    .mocked(useAuth)
-    .mockImplementation((selector) => selector(authValue));
+  jest.mocked(useAuth).mockImplementation((selector) => selector(authValue));
 
   return render(<RequireAuth />);
 };

@@ -30,7 +30,9 @@ export const useOAuthCallback = () => {
       const user = JSON.parse(rawUser) as User;
       const session = await refreshSession();
       loginFn(session.accessToken, user);
-      const pendingInviteToken = localStorage.getItem('pendingStaffInviteToken');
+      const pendingInviteToken = localStorage.getItem(
+        'pendingStaffInviteToken',
+      );
 
       if (pendingInviteToken) {
         localStorage.removeItem('pendingStaffInviteToken');

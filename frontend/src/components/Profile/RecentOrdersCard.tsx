@@ -70,7 +70,7 @@ const RecentOrdersCard = ({
                 <p className={classes.OrderSummary}>{summarizeItems(order)}</p>
               </div>
               <strong className={classes.OrderTotal}>
-                {formatCurrency(order.total)}
+                {formatCurrency(order.totalCents)}
               </strong>
             </Link>
           ))}

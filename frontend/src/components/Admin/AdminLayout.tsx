@@ -30,7 +30,9 @@ const AdminLayout = ({
         <nav className={classes.Nav} aria-label="Admin">
           <NavLink
             className={({ isActive }) =>
-              isActive ? `${classes.NavLink} ${classes.NavLinkActive}` : classes.NavLink
+              isActive
+                ? `${classes.NavLink} ${classes.NavLinkActive}`
+                : classes.NavLink
             }
             to="/admin/orders"
           >

@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { useInfiniteMeals } from './useInfiniteMeals';
 import type { Meal, PaginatedMeals } from '../types/meal';
 
@@ -9,7 +15,7 @@ const meal = (id: string): Meal => ({
   id,
   name: `Meal ${id}`,
   description: `Description ${id}`,
-  price: Number(id) || 1,
+  priceCents: Number(id) || 1,
   image: `${id}.jpg`,
 });
 
@@ -89,7 +95,9 @@ const TestHarness = ({
         Retry
       </button>
       <div ref={result.sentinelRef} />
-      <div data-testid="meals">{result.meals.map((item) => item.id).join(',')}</div>
+      <div data-testid="meals">
+        {result.meals.map((item) => item.id).join(',')}
+      </div>
       <div data-testid="error">{result.error}</div>
     </div>
   );
@@ -173,7 +181,9 @@ describe('useInfiniteMeals', () => {
       retryLoad.resolve(pageData([meal('1')], 1));
     });
 
-    await waitFor(() => expect(screen.getByTestId('meals').textContent).toBe('1'));
+    await waitFor(() =>
+      expect(screen.getByTestId('meals').textContent).toBe('1'),
+    );
     expect(fetchMeals).toHaveBeenCalledTimes(2);
     consoleErrorSpy.mockRestore();
   });
@@ -235,7 +245,9 @@ describe('useInfiniteMeals', () => {
       firstPage.resolve(pageData([meal('1'), meal('2')], 1, 2));
     });
 
-    await waitFor(() => expect(result.meals.map((item) => item.id)).toEqual(['1', '2']));
+    await waitFor(() =>
+      expect(result.meals.map((item) => item.id)).toEqual(['1', '2']),
+    );
 
     act(() => {
       triggerIntersection();

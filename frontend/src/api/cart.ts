@@ -9,7 +9,7 @@ export const validateCart = (
   return request<{
     menuVersion: number;
     items: CartMeal[];
-    total: number;
+    totalCents: number;
   }>('/cart/validate', {
     method: 'POST',
     body: JSON.stringify({

@@ -12,7 +12,10 @@ const OAuthCallback = () => {
 
   return (
     <AuthCenteredPage>
-      <AuthHeader title="Signing you in" subtitle="Finishing your secure sign in." />
+      <AuthHeader
+        title="Signing you in"
+        subtitle="Finishing your secure sign in."
+      />
 
       {error ? (
         <>

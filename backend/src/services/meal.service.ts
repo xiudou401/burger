@@ -7,8 +7,8 @@ import { mealRepository } from '../repositories/meal.repository';
 
 interface MealQuery {
   keyword?: string;
-  minPrice?: number;
-  maxPrice?: number;
+  minPriceCents?: number;
+  maxPriceCents?: number;
   page?: number;
   limit?: number;
   sort?: SortOption;
@@ -17,7 +17,7 @@ interface MealQuery {
 interface MealPayload {
   name: string;
   description?: string;
-  price: number;
+  priceCents: number;
   image?: string;
 }
 
@@ -28,15 +28,22 @@ export type SortOption =
   | 'created_desc';
 
 const SORT_MAP: Record<SortOption, Record<string, SortOrder>> = {
-  price_asc: { price: 1 },
-  price_desc: { price: -1 },
+  price_asc: { priceCents: 1 },
+  price_desc: { priceCents: -1 },
   created_asc: { createdAt: 1 },
   created_desc: { createdAt: -1 },
 };
 
 export const findAllMeals = async (query: MealQuery = {}) => {
   try {
-    const { keyword, minPrice, maxPrice, page = 1, limit = 8, sort } = query;
+    const {
+      keyword,
+      minPriceCents,
+      maxPriceCents,
+      page = 1,
+      limit = 8,
+      sort,
+    } = query;
 
     const sortOption: Record<string, SortOrder> = sort
       ? SORT_MAP[sort]
@@ -51,10 +58,14 @@ export const findAllMeals = async (query: MealQuery = {}) => {
       ];
     }
 
-    if (minPrice !== undefined || maxPrice !== undefined) {
-      mongoQuery.price = {};
-      if (minPrice !== undefined) mongoQuery.price.$gte = minPrice;
-      if (maxPrice !== undefined) mongoQuery.price.$lte = maxPrice;
+    if (minPriceCents !== undefined || maxPriceCents !== undefined) {
+      mongoQuery.priceCents = {};
+      if (minPriceCents !== undefined) {
+        mongoQuery.priceCents.$gte = minPriceCents;
+      }
+      if (maxPriceCents !== undefined) {
+        mongoQuery.priceCents.$lte = maxPriceCents;
+      }
     }
 
     const skip = (page - 1) * limit;
@@ -76,7 +87,7 @@ export const findAllMeals = async (query: MealQuery = {}) => {
         id: meal._id.toString(),
         name: meal.name,
         description: meal.description,
-        price: meal.price,
+        priceCents: meal.priceCents,
         image: meal.image,
       })),
       page,
@@ -86,7 +97,10 @@ export const findAllMeals = async (query: MealQuery = {}) => {
     };
   } catch (error) {
     console.error('Meal pagination failed:', error);
-    throw new AppError('Could not load menu items. Please try again later.', 500);
+    throw new AppError(
+      'Could not load menu items. Please try again later.',
+      500,
+    );
   }
 };
 
@@ -94,20 +108,23 @@ const normalizeMealPayload = (payload: Partial<MealPayload>): MealPayload => {
   const name = payload.name?.trim() ?? '';
   const description = payload.description?.trim();
   const image = payload.image?.trim();
-  const price = Number(payload.price);
+  const priceCents = Number(payload.priceCents);
 
   if (!name) {
     throw new ServiceError('Meal name is required', 400);
   }
 
-  if (!Number.isFinite(price) || price < 0) {
-    throw new ServiceError('Meal price must be a positive number', 400);
+  if (!Number.isSafeInteger(priceCents) || priceCents < 0) {
+    throw new ServiceError(
+      'Meal priceCents must be a non-negative integer',
+      400,
+    );
   }
 
   return {
     name,
     description,
-    price,
+    priceCents,
     image,
   };
 };
@@ -116,13 +133,13 @@ const toPublicMeal = (meal: {
   _id: unknown;
   name: string;
   description?: string;
-  price: number;
+  priceCents: number;
   image?: string;
 }) => ({
   id: String(meal._id),
   name: meal.name,
   description: meal.description,
-  price: meal.price,
+  priceCents: meal.priceCents,
   image: meal.image,
 });
 

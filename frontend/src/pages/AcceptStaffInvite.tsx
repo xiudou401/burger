@@ -12,14 +12,8 @@ import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useAcceptStaffInvitePage } from './hooks/useAcceptStaffInvitePage';
 
 const AcceptStaffInvite = () => {
-  const {
-    token,
-    isAuthenticated,
-    isAccepting,
-    message,
-    error,
-    accept,
-  } = useAcceptStaffInvitePage();
+  const { token, isAuthenticated, isAccepting, message, error, accept } =
+    useAcceptStaffInvitePage();
   const { oauthLogin } = useOAuthLogin('login');
 
   const signInWithGoogle = () => {

@@ -4,13 +4,13 @@ import { formatCurrency } from '../../utils/currency';
 
 interface CurrentCartCardProps {
   totalQuantity: number;
-  estimatedTotalPrice: number;
+  estimatedTotalCents: number;
   hasCartItems: boolean;
 }
 
 const CurrentCartCard = ({
   totalQuantity,
-  estimatedTotalPrice,
+  estimatedTotalCents,
   hasCartItems,
 }: CurrentCartCardProps) => {
   return (
@@ -26,7 +26,7 @@ const CurrentCartCard = ({
         </div>
         <div className={classes.Metric}>
           <span className={classes.MetricValue}>
-            {formatCurrency(estimatedTotalPrice)}
+            {formatCurrency(estimatedTotalCents)}
           </span>
           <span className={classes.MetricLabel}>Estimated total</span>
         </div>

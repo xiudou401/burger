@@ -22,7 +22,9 @@ const MealItem = ({ meal, noDesc }: MealItemProps) => {
         {!noDesc && <p className={classes.Description}>{meal.description}</p>}
 
         <div className={classes.PriceWrapper}>
-          <span className={classes.Price}>{formatCurrency(meal.price)}</span>
+          <span className={classes.Price}>
+            {formatCurrency(meal.priceCents)}
+          </span>
 
           <QuantityCounter id={meal.id} />
         </div>

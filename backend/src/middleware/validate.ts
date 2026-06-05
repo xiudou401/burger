@@ -14,7 +14,7 @@ const validate =
     setValue: (req: Request, value: unknown) => void,
     defaultName: string,
   ) =>
-  (schema: ZodTypeAny, schemaName = defaultName) =>
+  (schema: ZodTypeAny, _schemaName = defaultName) =>
   (req: Request, _res: Response, next: NextFunction) => {
     const result = schema.safeParse(getValue(req));
 
@@ -26,17 +26,26 @@ const validate =
     return next();
   };
 
-export const validateBody =
-  validate((req) => req.body, (req, value) => {
+export const validateBody = validate(
+  (req) => req.body,
+  (req, value) => {
     req.body = value;
-  }, 'Request body');
+  },
+  'Request body',
+);
 
-export const validateQuery =
-  validate((req) => req.query, (req, value) => {
+export const validateQuery = validate(
+  (req) => req.query,
+  (req, value) => {
     req.query = value as Request['query'];
-  }, 'Request query');
+  },
+  'Request query',
+);
 
-export const validateParams =
-  validate((req) => req.params, (req, value) => {
+export const validateParams = validate(
+  (req) => req.params,
+  (req, value) => {
     req.params = value as Request['params'];
-  }, 'Request params');
+  },
+  'Request params',
+);

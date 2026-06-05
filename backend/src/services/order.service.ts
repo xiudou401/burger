@@ -16,22 +16,22 @@ export interface PublicOrderItem {
   mealId: string;
   name: string;
   image?: string;
-  price: number;
+  priceCents: number;
   quantity: number;
-  subtotal: number;
+  subtotalCents: number;
 }
 
 export interface PublicOrder {
   id: string;
   items: PublicOrderItem[];
-  total: number;
+  totalCents: number;
   menuVersion: number;
   status: OrderStatus;
   payment?: {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amount: number;
+    amountCents: number;
     currency: string;
     paidAt?: Date;
   };
@@ -62,9 +62,9 @@ const toOrderItem = (meal: ValidatedCartMeal) => ({
   mealId: meal.id,
   name: meal.name,
   image: meal.image,
-  price: meal.price,
+  priceCents: meal.priceCents,
   quantity: meal.quantity,
-  subtotal: meal.subtotal,
+  subtotalCents: meal.subtotalCents,
 });
 
 const toPublicOrder = (order: {
@@ -73,18 +73,18 @@ const toPublicOrder = (order: {
     mealId: unknown;
     name: string;
     image?: string;
-    price: number;
+    priceCents: number;
     quantity: number;
-    subtotal: number;
+    subtotalCents: number;
   }>;
-  total: number;
+  totalCents: number;
   menuVersion: number;
   status: OrderStatus;
   payment?: {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amount: number;
+    amountCents: number;
     currency: string;
     paidAt?: Date;
   };
@@ -96,11 +96,11 @@ const toPublicOrder = (order: {
     mealId: String(item.mealId),
     name: item.name,
     image: item.image,
-    price: item.price,
+    priceCents: item.priceCents,
     quantity: item.quantity,
-    subtotal: item.subtotal,
+    subtotalCents: item.subtotalCents,
   })),
-  total: order.total,
+  totalCents: order.totalCents,
   menuVersion: order.menuVersion,
   status: order.status,
   payment: order.payment
@@ -108,7 +108,7 @@ const toPublicOrder = (order: {
         provider: order.payment.provider,
         providerPaymentId: order.payment.providerPaymentId,
         status: order.payment.status,
-        amount: order.payment.amount,
+        amountCents: order.payment.amountCents,
         currency: order.payment.currency,
         paidAt: order.payment.paidAt,
       }
@@ -134,7 +134,7 @@ const sendOrderConfirmationIfPossible = async (
       createdAt: order.createdAt,
       status: order.status,
       items: order.items,
-      total: order.total,
+      totalCents: order.totalCents,
     });
   } catch (error) {
     console.error('Order confirmation email failed', error);
@@ -187,12 +187,12 @@ export const createOrder = async (
   const order = await orderRepository.create({
     userId,
     items: validatedCart.items.map(toOrderItem),
-    total: validatedCart.total,
+    totalCents: validatedCart.totalCents,
     menuVersion: validatedCart.menuVersion,
     status: 'pending_payment',
     payment: {
       status: 'unpaid',
-      amount: validatedCart.total,
+      amountCents: validatedCart.totalCents,
       currency: 'aud',
     },
   });
@@ -216,13 +216,13 @@ export const createCheckoutOrder = async (
   const order = await orderRepository.create({
     userId,
     items: validatedCart.items.map(toOrderItem),
-    total: validatedCart.total,
+    totalCents: validatedCart.totalCents,
     menuVersion: validatedCart.menuVersion,
     status: 'pending_payment',
     payment: {
       provider: 'stripe',
       status: 'requires_payment',
-      amount: validatedCart.total,
+      amountCents: validatedCart.totalCents,
       currency: 'aud',
     },
   });
@@ -249,7 +249,7 @@ export const createCheckoutOrder = async (
           product_data: {
             name: item.name,
           },
-          unit_amount: Math.round(item.price * 100),
+          unit_amount: item.priceCents,
         },
         quantity: item.quantity,
       })),
@@ -269,7 +269,10 @@ export const createCheckoutOrder = async (
 
     if (!session.url) {
       await markCheckoutOrderFailed(order);
-      throw new ServiceError('Stripe checkout session has no redirect URL', 502);
+      throw new ServiceError(
+        'Stripe checkout session has no redirect URL',
+        502,
+      );
     }
 
     order.payment.providerPaymentId = session.id;
@@ -347,11 +350,11 @@ export const updateOrderStatus = async (
   if (parsedNextStatus === 'paid') {
     order.payment = order.payment ?? {
       status: 'unpaid',
-      amount: order.total,
+      amountCents: order.totalCents,
       currency: 'aud',
     };
     order.payment.status = 'paid';
-    order.payment.amount = order.total;
+    order.payment.amountCents = order.totalCents;
     order.payment.paidAt = order.payment.paidAt ?? new Date();
   }
 

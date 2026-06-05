@@ -48,11 +48,7 @@ export const createCheckoutOrderHandler = async (
   try {
     const { items, menuVersion } = req.body as CreateOrderPayload;
 
-    const checkout = await createCheckoutOrder(
-      req.user.id,
-      items,
-      menuVersion,
-    );
+    const checkout = await createCheckoutOrder(req.user.id, items, menuVersion);
 
     return res.status(201).json(checkout);
   } catch (error) {

@@ -23,13 +23,15 @@ export const useProfilePage = () => {
   const accessToken = useAuth((ctx) => ctx.accessToken);
   const logout = useAuth((ctx) => ctx.logout);
   const totalQuantity = useCartSelector(getTotalQuantity);
-  const estimatedTotalPrice = useCartSelector(getEstimatedTotalPrice);
+  const estimatedTotalCents = useCartSelector(getEstimatedTotalPrice);
   const { clearCart } = useCartActions();
   const { showToast } = useToast();
   const [verificationMessage, setVerificationMessage] = useState<string | null>(
     null,
   );
-  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [verificationError, setVerificationError] = useState<string | null>(
+    null,
+  );
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [smsCode, setSmsCode] = useState('');
@@ -141,7 +143,9 @@ export const useProfilePage = () => {
       setDevSmsCode(res.devSmsCode ?? null);
       setSmsCode(res.devSmsCode ?? '');
     } catch (err) {
-      setSmsError(err instanceof Error ? err.message : 'Could not send SMS code');
+      setSmsError(
+        err instanceof Error ? err.message : 'Could not send SMS code',
+      );
     } finally {
       setIsSendingSms(false);
     }
@@ -162,7 +166,9 @@ export const useProfilePage = () => {
       setSmsMessage('Phone verified');
       setDevSmsCode(null);
     } catch (err) {
-      setSmsError(err instanceof Error ? err.message : 'Could not verify phone');
+      setSmsError(
+        err instanceof Error ? err.message : 'Could not verify phone',
+      );
     } finally {
       setIsVerifyingSms(false);
     }
@@ -174,7 +180,7 @@ export const useProfilePage = () => {
     firstName,
     accountStatus,
     totalQuantity,
-    estimatedTotalPrice,
+    estimatedTotalCents,
     hasCartItems,
     orders,
     isLoadingOrders,

@@ -4,10 +4,7 @@ import {
   fetchStaffInvites,
   revokeStaffInvite,
 } from '../../api/staff-invites';
-import type {
-  StaffInvite,
-  StaffInviteRole,
-} from '../../types/staff-invite';
+import type { StaffInvite, StaffInviteRole } from '../../types/staff-invite';
 
 export const useAdminStaffPage = () => {
   const [invites, setInvites] = useState<StaffInvite[]>([]);

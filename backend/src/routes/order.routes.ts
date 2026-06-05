@@ -10,7 +10,11 @@ import {
 } from '../controllers/order.controller';
 import { authenticate } from '../middleware/authenticate';
 import { requireAdmin } from '../middleware/requireAdmin';
-import { validateBody, validateParams, validateQuery } from '../middleware/validate';
+import {
+  validateBody,
+  validateParams,
+  validateQuery,
+} from '../middleware/validate';
 import {
   CreateOrderSchema,
   ListAdminOrdersQuerySchema,

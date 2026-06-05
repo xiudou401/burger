@@ -37,7 +37,9 @@ const AccountBar = () => {
         <span className={classes.Mark}>B</span>
         <span className={classes.BrandCopy}>
           <span className={classes.BrandText}>Burger Club</span>
-          <span className={classes.BrandSubtext}>Sydney pickup and delivery</span>
+          <span className={classes.BrandSubtext}>
+            Sydney pickup and delivery
+          </span>
         </span>
       </Link>
 

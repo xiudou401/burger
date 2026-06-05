@@ -1,8 +1,5 @@
 import { ServiceError } from '../errors/ServiceError';
-import {
-  assertOrderTransition,
-  parseOrderStatus,
-} from './order-status';
+import { assertOrderTransition, parseOrderStatus } from './order-status';
 
 test('parses known order statuses', () => {
   expect(parseOrderStatus('pending_payment')).toBe('pending_payment');
@@ -24,5 +21,7 @@ test('blocks invalid order status transitions', () => {
   expect(() => assertOrderTransition('pending_payment', 'completed')).toThrow(
     ServiceError,
   );
-  expect(() => assertOrderTransition('completed', 'paid')).toThrow(ServiceError);
+  expect(() => assertOrderTransition('completed', 'paid')).toThrow(
+    ServiceError,
+  );
 });

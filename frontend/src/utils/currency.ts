@@ -1,3 +1,3 @@
-export const formatCurrency = (value: number) => {
-  return `A$${value.toFixed(2)}`;
+export const formatCurrency = (cents: number) => {
+  return `A$${(cents / 100).toFixed(2)}`;
 };

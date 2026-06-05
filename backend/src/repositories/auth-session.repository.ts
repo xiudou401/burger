@@ -2,11 +2,7 @@ import { Types } from 'mongoose';
 import { AuthSessionModel } from '../models/auth-session.model';
 
 export const authSessionRepository = {
-  create(data: {
-    userId: string;
-    refreshTokenHash: string;
-    expiresAt: Date;
-  }) {
+  create(data: { userId: string; refreshTokenHash: string; expiresAt: Date }) {
     return AuthSessionModel.create({
       ...data,
       userId: new Types.ObjectId(data.userId),

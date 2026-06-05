@@ -41,7 +41,10 @@ const App = () => {
 
         <Route element={<RequireAdmin />}>
           <Route path="/admin/orders" element={<AdminOrders />} />
-          <Route path="/admin/orders/:orderId" element={<AdminOrderDetails />} />
+          <Route
+            path="/admin/orders/:orderId"
+            element={<AdminOrderDetails />}
+          />
           <Route path="/admin/menu" element={<AdminMenu />} />
           <Route path="/admin/staff" element={<AdminStaff />} />
         </Route>

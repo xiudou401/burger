@@ -8,9 +8,9 @@ interface AuthEmailParams {
 
 interface OrderConfirmationItem {
   name: string;
-  price: number;
+  priceCents: number;
   quantity: number;
-  subtotal: number;
+  subtotalCents: number;
 }
 
 interface OrderConfirmationParams {
@@ -19,7 +19,7 @@ interface OrderConfirmationParams {
   createdAt: Date;
   status: string;
   items: OrderConfirmationItem[];
-  total: number;
+  totalCents: number;
 }
 
 interface StaffInviteEmailParams {
@@ -37,8 +37,8 @@ const escapeHtml = (value: string) => {
     .replace(/'/g, '&#39;');
 };
 
-const formatCurrency = (value: number) => {
-  return `A$${value.toFixed(2)}`;
+const formatCurrency = (cents: number) => {
+  return `A$${(cents / 100).toFixed(2)}`;
 };
 
 const sendEmail = async ({
@@ -146,7 +146,7 @@ export const sendOrderConfirmationEmail = async ({
   createdAt,
   status,
   items,
-  total,
+  totalCents,
 }: OrderConfirmationParams) => {
   const orderUrl = `${env.FRONTEND_URL}/orders/${orderId}`;
   const orderNumber = orderId.slice(-6).toUpperCase();
@@ -159,10 +159,10 @@ export const sendOrderConfirmationEmail = async ({
           )}</td>
           <td style="padding:10px 0;border-bottom:1px solid #ead8b5;text-align:center">${item.quantity}</td>
           <td style="padding:10px 0;border-bottom:1px solid #ead8b5;text-align:right">${formatCurrency(
-            item.price,
+            item.priceCents,
           )}</td>
           <td style="padding:10px 0;border-bottom:1px solid #ead8b5;text-align:right;font-weight:700">${formatCurrency(
-            item.subtotal,
+            item.subtotalCents,
           )}</td>
         </tr>
       `,
@@ -190,7 +190,7 @@ export const sendOrderConfirmationEmail = async ({
           </thead>
           <tbody>${itemRows}</tbody>
         </table>
-        <p style="font-size:18px"><strong>Total: ${formatCurrency(total)}</strong></p>
+        <p style="font-size:18px"><strong>Total: ${formatCurrency(totalCents)}</strong></p>
         <p><a href="${orderUrl}" style="display:inline-block;background:#ffc72c;color:#292929;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">View order</a></p>
         <p>If the button does not work, open this link:</p>
         <p>${orderUrl}</p>

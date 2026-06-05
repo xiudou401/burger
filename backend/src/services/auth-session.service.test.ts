@@ -114,6 +114,8 @@ describe('auth session service', () => {
     expect(authSessionRepository.revokeByRefreshTokenHash).toHaveBeenCalledWith(
       'hash:refresh-token',
     );
-    expect(authSessionRepository.revokeActiveByUserId).toHaveBeenCalledWith(user.id);
+    expect(authSessionRepository.revokeActiveByUserId).toHaveBeenCalledWith(
+      user.id,
+    );
   });
 });

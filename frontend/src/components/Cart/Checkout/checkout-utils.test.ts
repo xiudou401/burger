@@ -1,38 +1,38 @@
 import { calculateTotals } from './checkout-utils';
 
 describe('calculateTotals', () => {
-  test('calculates total quantity and price from cart meals', () => {
+  test('calculates quantity and total cents from cart meals', () => {
     expect(
       calculateTotals([
         {
           id: 'meal-1',
           name: 'Classic Burger',
           description: 'Beef burger',
-          price: 12,
+          priceCents: 1200,
           quantity: 2,
-          subtotal: 24,
+          subtotalCents: 2400,
           image: '/img/burger.png',
         },
         {
           id: 'meal-2',
           name: 'Fries',
           description: 'Crispy fries',
-          price: 5,
+          priceCents: 500,
           quantity: 3,
-          subtotal: 15,
+          subtotalCents: 1500,
           image: '/img/fries.png',
         },
       ]),
     ).toEqual({
       totalQuantity: 5,
-      totalPrice: 39,
+      totalCents: 3900,
     });
   });
 
   test('returns zero totals for an empty cart', () => {
     expect(calculateTotals([])).toEqual({
       totalQuantity: 0,
-      totalPrice: 0,
+      totalCents: 0,
     });
   });
 });

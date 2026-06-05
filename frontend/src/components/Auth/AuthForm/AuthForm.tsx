@@ -20,8 +20,7 @@ interface AuthFieldProps {
   inputProps: InputHTMLAttributes<HTMLInputElement>;
 }
 
-interface AuthSubmitButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface AuthSubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
@@ -128,11 +127,7 @@ export const AuthSocialButtons = ({
           <span className={classes.GoogleIcon}>G</span>
           {googleLabel}
         </button>
-        <button
-          className={classes.AppleButton}
-          type="button"
-          onClick={onApple}
-        >
+        <button className={classes.AppleButton} type="button" onClick={onApple}>
           <span className={classes.AppleIcon}>Apple</span>
           {appleLabel}
         </button>
@@ -150,7 +145,9 @@ export const AuthTextLink = ({
   align = 'start',
 }: AuthTextLinkProps) => {
   const className =
-    align === 'end' ? `${classes.TextLink} ${classes.TextLinkEnd}` : classes.TextLink;
+    align === 'end'
+      ? `${classes.TextLink} ${classes.TextLinkEnd}`
+      : classes.TextLink;
 
   return <span className={className}>{children}</span>;
 };
