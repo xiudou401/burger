@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   resendVerificationEmail,
   sendSmsCode,
@@ -10,16 +11,21 @@ import {
   getEstimatedTotalPrice,
   getTotalQuantity,
 } from '../../store/cart/context-accessors';
+import { useCartActions } from '../../store/cart/hooks/useCartActions';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import { useToast } from '../../components/UI/Toast/ToastContext';
 import type { Order } from '../../types/order';
 
 export const useProfilePage = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuth((ctx) => ctx.user);
   const login = useAuth((ctx) => ctx.login);
   const accessToken = useAuth((ctx) => ctx.accessToken);
   const logout = useAuth((ctx) => ctx.logout);
   const totalQuantity = useCartSelector(getTotalQuantity);
   const estimatedTotalPrice = useCartSelector(getEstimatedTotalPrice);
+  const { clearCart } = useCartActions();
+  const { showToast } = useToast();
   const [verificationMessage, setVerificationMessage] = useState<string | null>(
     null,
   );
@@ -46,6 +52,32 @@ export const useProfilePage = () => {
       ? 'Phone verified'
       : 'Phone pending';
   const hasCartItems = totalQuantity > 0;
+
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+
+    if (payment === 'success') {
+      clearCart();
+      showToast({
+        message: 'Payment successful. Your order is being confirmed.',
+        tone: 'success',
+      });
+    }
+
+    if (payment === 'cancelled') {
+      showToast({
+        message: 'Payment was cancelled.',
+        tone: 'info',
+      });
+    }
+
+    if (payment === 'success' || payment === 'cancelled') {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('payment');
+      nextParams.delete('orderId');
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [clearCart, searchParams, setSearchParams, showToast]);
 
   useEffect(() => {
     let cancelled = false;
