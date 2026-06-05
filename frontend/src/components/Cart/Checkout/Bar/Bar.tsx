@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import classes from './Bar.module.css';
 import { createCheckoutOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
+import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
 import { formatCurrency } from '../../../../utils/currency';
 
@@ -11,16 +13,36 @@ interface BarProps {
 }
 
 const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const items = useCartSelector((ctx) => ctx.items);
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
+  const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
+  const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
   const { showToast } = useToast();
   const [isPaying, setIsPaying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const payHandler = async () => {
-    if (items.length === 0 || isPaying) return;
+    if (items.length === 0 || isPaying || isAuthLoading) return;
+
+    if (!isAuthenticated) {
+      showToast({
+        message: 'Please log in before paying with Stripe.',
+        tone: 'error',
+      });
+      navigate('/login', {
+        state: {
+          from: {
+            pathname: location.pathname,
+            search: location.search,
+          },
+        },
+      });
+      return;
+    }
 
     setMessage(null);
     setError(null);
@@ -59,7 +81,9 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
         )}
         <button
           className={classes.Button}
-          disabled={items.length === 0 || isPaying || menuVersion === null}
+          disabled={
+            items.length === 0 || isPaying || menuVersion === null || isAuthLoading
+          }
           onClick={payHandler}
         >
           {isPaying ? 'Redirecting' : 'Pay with Stripe'}
