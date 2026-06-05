@@ -38,7 +38,7 @@ const escapeHtml = (value: string) => {
 };
 
 const formatCurrency = (value: number) => {
-  return `￥${value.toFixed(2)}`;
+  return `A$${value.toFixed(2)}`;
 };
 
 const sendEmail = async ({
@@ -133,7 +133,7 @@ export const sendWelcomeEmail = async ({
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#292929">
         <h1>Welcome${name ? `, ${name}` : ''}!</h1>
-        <p>Your Burger Club account is ready. You can now keep your cart, profile, and future orders together.</p>
+        <p>Your Burger Club account is ready for Sydney pickup and delivery orders.</p>
         <p><a href="${menuUrl}" style="display:inline-block;background:#ffc72c;color:#292929;padding:12px 18px;border-radius:8px;text-decoration:none;font-weight:700">Start ordering</a></p>
       </div>
     `,
@@ -175,7 +175,7 @@ export const sendOrderConfirmationEmail = async ({
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#292929">
         <h1>Order confirmed</h1>
-        <p>Thanks for your order. We have saved the details below for your records.</p>
+        <p>Thanks for your order. We have saved the Sydney pickup or delivery details below for your records.</p>
         <p><strong>Order:</strong> #${orderNumber}</p>
         <p><strong>Placed:</strong> ${createdAt.toLocaleString()}</p>
         <p><strong>Status:</strong> ${escapeHtml(status)}</p>

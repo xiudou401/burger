@@ -30,7 +30,7 @@ const FilterMeals = ({ onSearch }: Props) => {
             setValue(next);
             onSearch(next);
           }}
-          placeholder="搜索菜品"
+          placeholder="Search the Sydney menu"
         />
 
         {value && (
@@ -38,7 +38,7 @@ const FilterMeals = ({ onSearch }: Props) => {
             type="button"
             onClick={clearHandler}
             className={classes.ClearButton}
-            aria-label="清空搜索"
+            aria-label="Clear search"
           >
             <FontAwesomeIcon icon={faXmark} />
           </button>

@@ -4,6 +4,7 @@ import classes from './CheckoutItem.module.css';
 import QuantityCounter from '../../../UI/Counter/QuantityCounter';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { getCartItemQuantity } from '../../../../store/cart/context-accessors';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface CheckoutItemProps {
   meal: CartMeal;
@@ -29,7 +30,7 @@ const CheckoutItem = ({ meal }: CheckoutItemProps) => {
           <QuantityCounter id={meal.id} />
 
           <div className={classes.Price}>
-            {(meal.price * quantity).toFixed(2)}
+            {formatCurrency(meal.price * quantity)}
           </div>
         </div>
       </div>

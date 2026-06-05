@@ -8,6 +8,7 @@ import Checkout from './Checkout/Checkout';
 
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 import { useToast } from '../UI/Toast/ToastContext';
+import { formatCurrency } from '../../utils/currency';
 
 import {
   getTotalQuantity,
@@ -63,7 +64,7 @@ const Cart = () => {
 
       setShowCheckout(true);
     } catch {
-      showToast({ message: '购物车校验失败，请稍后重试', tone: 'error' });
+      showToast({ message: 'Cart validation failed. Please try again.', tone: 'error' });
     }
   };
 
@@ -103,7 +104,7 @@ const Cart = () => {
         <p className={classes.Price}>Ready to checkout</p>
       ) : (
         <p className={classes.Price}>
-          ¥ {estimatedTotalPrice.toFixed(2)}
+          {formatCurrency(estimatedTotalPrice)}
           {(quoteStale || quoteMismatch) && (
             <span
               style={{
@@ -112,7 +113,7 @@ const Cart = () => {
                 color: '#999',
               }}
             >
-              （估算）
+              Estimate
             </span>
           )}
         </p>

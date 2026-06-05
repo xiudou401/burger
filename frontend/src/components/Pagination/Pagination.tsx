@@ -11,7 +11,7 @@ const Pagination = ({ page, totalPages, onChange }: Props) => {
   return (
     <div className={classes.Pagination}>
       <button disabled={page === 1} onClick={() => onChange(page - 1)}>
-        上一页
+        Previous
       </button>
 
       <span>
@@ -19,7 +19,7 @@ const Pagination = ({ page, totalPages, onChange }: Props) => {
       </span>
 
       <button disabled={page === totalPages} onClick={() => onChange(page + 1)}>
-        下一页
+        Next
       </button>
     </div>
   );

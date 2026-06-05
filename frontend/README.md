@@ -1,6 +1,15 @@
-# Getting Started with Create React App
+# Burger Club - Full-stack restaurant ordering platform
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Burger Club is a Sydney local restaurant ordering system for pickup and
+delivery. It demonstrates a full-stack customer ordering flow, staff kitchen
+console, live menu management, authenticated profiles, cart validation, and AUD
+checkout totals.
+
+The frontend is built with React and TypeScript. The backend API handles menu
+versioning, cart validation, order creation, staff access, and email workflows.
+
+This frontend was originally bootstrapped with
+[Create React App](https://github.com/facebook/create-react-app).
 
 ## Architecture conventions
 

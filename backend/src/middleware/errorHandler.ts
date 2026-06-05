@@ -10,7 +10,6 @@ export const errorHandler = (
   next: NextFunction,
 ) => {
   if (err instanceof BaseError) {
-    // 🔥 统一处理
     if (!err.isOperational) {
       console.error('Critical error:', err);
     }
@@ -33,7 +32,6 @@ export const errorHandler = (
     return res.status(err.statusCode).json(body);
   }
 
-  // ❗未知错误
   console.error('Unknown error:', err);
 
   return res.status(500).json({

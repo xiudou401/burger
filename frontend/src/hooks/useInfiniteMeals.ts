@@ -141,8 +141,8 @@ export const useInfiniteMeals = ({
           if (controller.signal.aborted) return false;
           if (requestId !== requestIdRef.current) return false;
 
-          console.error('加载失败', error);
-          setError('加载失败，点击重试');
+          console.error('Menu load failed', error);
+          setError('Could not load the menu. Tap to retry.');
           settledLoadRef.current = { key, result: false };
           return false;
         } finally {

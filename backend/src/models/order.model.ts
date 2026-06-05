@@ -146,7 +146,7 @@ const orderSchema = new Schema<Order>(
         required: true,
         trim: true,
         lowercase: true,
-        default: 'cny',
+        default: 'aud',
       },
       paidAt: Date,
     },

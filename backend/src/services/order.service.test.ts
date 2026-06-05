@@ -71,7 +71,7 @@ describe('order service', () => {
       payment: {
         status: 'unpaid',
         amount: 24,
-        currency: 'cny',
+        currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
       createdAt: now,
@@ -93,7 +93,7 @@ describe('order service', () => {
         payment: {
           status: 'unpaid',
           amount: 24,
-          currency: 'cny',
+          currency: 'aud',
         },
       }),
     );
@@ -131,7 +131,7 @@ describe('order service', () => {
       payment: {
         status: 'unpaid',
         amount: 24,
-        currency: 'cny',
+        currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
       createdAt: now,

@@ -23,7 +23,7 @@ const AdminLayout = ({
     <main className={classes.Page}>
       <aside className={classes.Sidebar}>
         <Link className={classes.Brand} to="/admin/orders">
-          <span className={classes.Mark}>M</span>
+          <span className={classes.Mark}>B</span>
           <span>Kitchen Console</span>
         </Link>
 

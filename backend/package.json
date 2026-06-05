@@ -8,6 +8,7 @@
     "test": "jest --runInBand",
     "start": "node dist/src/server.js",
     "seed:meals": "ts-node scripts/seedMeals.ts",
+    "localize:meals": "ts-node scripts/localizeMeals.ts",
     "make:admin": "ts-node scripts/makeAdmin.ts"
   },
   "author": "",

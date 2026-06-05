@@ -52,11 +52,6 @@
   color: #aaa;
 }
 
-/* .Price::before {
-  content: '￥';
-  font-size: 24rem;
-} */
-
 .BuyButton {
   border: none;
   background-color: #fcbf49;

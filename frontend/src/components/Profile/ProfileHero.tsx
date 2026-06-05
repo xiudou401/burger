@@ -22,7 +22,7 @@ const ProfileHero = ({
           <h1 className={classes.Title}>Hi, {firstName}</h1>
           <p className={classes.Subtitle}>
             Track your account, keep checkout ready, and jump back into your next
-            order.
+            Sydney pickup or delivery order.
           </p>
         </div>
       </div>

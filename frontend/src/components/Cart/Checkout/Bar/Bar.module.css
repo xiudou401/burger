@@ -22,11 +22,6 @@
   font-size: 36rem;
 }
 
-.TotalPrice::before {
-  content: '￥';
-  font-size: 24rem;
-}
-
 .Actions {
   display: flex;
   align-items: center;

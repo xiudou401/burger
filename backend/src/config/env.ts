@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import { z, ZodError } from 'zod';
 
-// 只加载一次.env，所有环境变量从这里导出
+// Load .env once and export all environment variables from this module.
 dotenv.config();
 
 const optionalNonEmptyString = z

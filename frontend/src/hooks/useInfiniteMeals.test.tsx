@@ -165,7 +165,7 @@ describe('useInfiniteMeals', () => {
       initialLoad.reject(new Error('Network down'));
     });
 
-    await screen.findByText('加载失败，点击重试');
+    await screen.findByText('Could not load the menu. Tap to retry.');
 
     fireEvent.click(screen.getByText('Retry'));
 
@@ -210,7 +210,7 @@ describe('useInfiniteMeals', () => {
     });
 
     await expect(reloadPromise).resolves.toBe(false);
-    await screen.findByText('加载失败，点击重试');
+    await screen.findByText('Could not load the menu. Tap to retry.');
     consoleErrorSpy.mockRestore();
   });
 

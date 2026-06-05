@@ -140,7 +140,7 @@ export const createOrder = async (
     payment: {
       status: 'unpaid',
       amount: validatedCart.total,
-      currency: 'cny',
+      currency: 'aud',
     },
   });
 
@@ -207,7 +207,7 @@ export const updateOrderStatus = async (
     order.payment = order.payment ?? {
       status: 'unpaid',
       amount: order.total,
-      currency: 'cny',
+      currency: 'aud',
     };
     order.payment.status = 'paid';
     order.payment.amount = order.total;

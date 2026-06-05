@@ -2,7 +2,7 @@ import { AppError } from '../errors/AppError';
 import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
-import { getMenuVersion } from './menu.service'; // ✅ 新增
+import { getMenuVersion } from './menu.service';
 import { mealRepository } from '../repositories/meal.repository';
 
 interface MealQuery {
@@ -59,7 +59,6 @@ export const findAllMeals = async (query: MealQuery = {}) => {
 
     const skip = (page - 1) * limit;
 
-    // ✅ 修正：解构出 menuVersion
     const [items, total, menuVersion] = await Promise.all([
       mealRepository.findPage({
         query: mongoQuery,
@@ -87,8 +86,8 @@ export const findAllMeals = async (query: MealQuery = {}) => {
       totalPages: Math.ceil(total / limit),
     };
   } catch (error) {
-    console.error('分页查询菜品失败：', error);
-    throw new AppError('获取菜品数据失败，请稍后重试', 500);
+    console.error('Meal pagination failed:', error);
+    throw new AppError('Could not load menu items. Please try again later.', 500);
   }
 };
 

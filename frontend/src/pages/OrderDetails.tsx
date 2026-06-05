@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 import classes from './OrderDetails.module.css';
 import AccountBar from '../components/Auth/AccountBar';
 import { useOrderDetailsPage } from './hooks/useOrderDetailsPage';
+import { formatCurrency } from '../utils/currency';
 
 const formatDate = (value: string) => {
   return new Intl.DateTimeFormat(undefined, {
@@ -46,7 +47,9 @@ const OrderDetails = () => {
             <section className={classes.Card}>
               <div className={classes.CardHeader}>
                 <h2 className={classes.CardTitle}>Items</h2>
-                <strong className={classes.Total}>￥{order.total.toFixed(2)}</strong>
+                <strong className={classes.Total}>
+                  {formatCurrency(order.total)}
+                </strong>
               </div>
 
               <div className={classes.ItemList}>
@@ -62,11 +65,11 @@ const OrderDetails = () => {
                     <div className={classes.ItemInfo}>
                       <h3 className={classes.ItemName}>{item.name}</h3>
                       <p className={classes.ItemMeta}>
-                        ￥{item.price.toFixed(2)} x {item.quantity}
+                        {formatCurrency(item.price)} x {item.quantity}
                       </p>
                     </div>
                     <strong className={classes.Subtotal}>
-                      ￥{item.subtotal.toFixed(2)}
+                      {formatCurrency(item.subtotal)}
                     </strong>
                   </article>
                 ))}

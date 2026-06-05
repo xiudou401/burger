@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Burger Club",
+  "name": "Burger Club - Sydney restaurant ordering",
   "icons": [
     {
       "src": "favicon.ico",

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import classes from './RecentOrdersCard.module.css';
 import type { Order } from '../../types/order';
+import { formatCurrency } from '../../utils/currency';
 
 interface RecentOrdersCardProps {
   orders: Order[];
@@ -69,7 +70,7 @@ const RecentOrdersCard = ({
                 <p className={classes.OrderSummary}>{summarizeItems(order)}</p>
               </div>
               <strong className={classes.OrderTotal}>
-                ￥{order.total.toFixed(2)}
+                {formatCurrency(order.total)}
               </strong>
             </Link>
           ))}

@@ -7,6 +7,7 @@ import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
 import type { CartMeal } from '../../../types/cart';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
+import { formatCurrency } from '../../../utils/currency';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 
@@ -51,7 +52,9 @@ const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
         </div>
 
         <footer className={classes.Footer}>
-          <p className={classes.TotalPrice}>{estimatedTotalPrice.toFixed(2)}</p>
+          <p className={classes.TotalPrice}>
+            Total {formatCurrency(estimatedTotalPrice)}
+          </p>
         </footer>
       </div>
 

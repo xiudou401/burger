@@ -81,7 +81,7 @@ describe('orderRepository', () => {
         payment: {
           status: 'unpaid',
           amount: 24,
-          currency: 'cny',
+          currency: 'aud',
         },
       }),
     ).resolves.toBe(order);

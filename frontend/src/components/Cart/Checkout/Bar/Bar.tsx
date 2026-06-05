@@ -5,6 +5,7 @@ import { createOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { CART_ACTIONS } from '../../../../types/cart';
 import { useToast } from '../../../UI/Toast/ToastContext';
+import { formatCurrency } from '../../../../utils/currency';
 
 interface BarProps {
   totalPrice: number;
@@ -57,7 +58,7 @@ const Bar = ({ totalPrice, onOrderComplete }: BarProps) => {
 
   return (
     <div className={classes.Bar}>
-      <div className={classes.TotalPrice}>{totalPrice.toFixed(2)}</div>
+      <div className={classes.TotalPrice}>{formatCurrency(totalPrice)}</div>
       <div className={classes.Actions}>
         {(error || message) && (
           <p className={error ? classes.Error : classes.Message}>

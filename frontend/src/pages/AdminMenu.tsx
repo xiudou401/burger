@@ -1,6 +1,7 @@
 import AdminLayout from '../components/Admin/AdminLayout';
 import classes from './AdminMenu.module.css';
 import { useAdminMenuPage } from './hooks/useAdminMenuPage';
+import { formatCurrency } from '../utils/currency';
 
 const AdminMenu = () => {
   const {
@@ -119,7 +120,9 @@ const AdminMenu = () => {
                 </div>
               </div>
 
-              <strong className={classes.Price}>￥{meal.price.toFixed(2)}</strong>
+              <strong className={classes.Price}>
+                {formatCurrency(meal.price)}
+              </strong>
 
               <div className={classes.RowActions}>
                 <button

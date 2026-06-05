@@ -50,16 +50,16 @@ const CartDetails = ({ open }: CartDetailsProps) => {
         onClick={(e: MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >
         <header className={classes.Header}>
-          <h2 className={classes.Title}>餐品详情</h2>
+          <h2 className={classes.Title}>Cart details</h2>
           <div className={classes.Clear} onClick={handleClearCart}>
             <FontAwesomeIcon icon={faTrash} />
-            <span>清空购物车</span>
+            <span>Clear cart</span>
           </div>
         </header>
 
         <div className={classes.MealList}>
           {!quote && itemsLength > 0 && (
-            <p style={{ padding: 12 }}>加载中...</p>
+            <p style={{ padding: 12 }}>Loading...</p>
           )}
 
           {meals.map((meal) => (
@@ -67,7 +67,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
           ))}
 
           {quote && meals.length === 0 && (
-            <p style={{ padding: 12, color: '#999' }}>购物车为空</p>
+            <p style={{ padding: 12, color: '#999' }}>Your cart is empty.</p>
           )}
         </div>
       </div>

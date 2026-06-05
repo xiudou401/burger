@@ -2,6 +2,7 @@ import React from 'react';
 import classes from './MealItem.module.css';
 import QuantityCounter from '../../UI/Counter/QuantityCounter';
 import { Meal } from '../../../types/meal';
+import { formatCurrency } from '../../../utils/currency';
 
 interface MealItemProps {
   meal: Meal;
@@ -21,7 +22,7 @@ const MealItem = ({ meal, noDesc }: MealItemProps) => {
         {!noDesc && <p className={classes.Description}>{meal.description}</p>}
 
         <div className={classes.PriceWrapper}>
-          <span className={classes.Price}>{meal.price.toFixed(2)}</span>
+          <span className={classes.Price}>{formatCurrency(meal.price)}</span>
 
           <QuantityCounter id={meal.id} />
         </div>

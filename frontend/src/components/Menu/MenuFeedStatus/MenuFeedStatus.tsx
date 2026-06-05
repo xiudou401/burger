@@ -23,7 +23,7 @@ const MenuFeedStatus = ({
     return (
       <div className={classes.LoadingStatus} role="status" aria-live="polite">
         <span className={classes.Spinner} aria-hidden="true" />
-        正在准备菜单
+        Preparing the Sydney menu
       </div>
     );
   }
@@ -49,7 +49,7 @@ const MenuFeedStatus = ({
         onClick={onRefreshMenu}
         aria-live="polite"
       >
-        菜单已更新，点击刷新
+        Menu updated. Refresh for the latest items.
       </button>
     );
   }
@@ -57,7 +57,7 @@ const MenuFeedStatus = ({
   if (!hasMore && hasMeals) {
     return (
       <div className={classes.EndStatus} role="status">
-        今日菜单已经全部上桌
+        You have reached the end of today's menu.
       </div>
     );
   }

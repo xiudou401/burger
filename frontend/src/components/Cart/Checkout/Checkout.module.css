@@ -61,9 +61,6 @@
   right: -30rem;
 }
 
-.TotalPrice::before {
-  content: '合计￥';
-  font-weight: normal;
-  font-size: 18rem;
-  margin-right: 10rem;
+.TotalPrice {
+  font-weight: bold;
 }

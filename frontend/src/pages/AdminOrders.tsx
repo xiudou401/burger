@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
+import { formatCurrency } from '../utils/currency';
 
 const formatDate = (value: string) => {
   return new Intl.DateTimeFormat(undefined, {
@@ -62,7 +63,9 @@ const AdminOrders = () => {
             <p className={classes.Summary}>{summarizeItems(order.items)}</p>
 
             <div className={classes.OrderBottom}>
-              <strong className={classes.Total}>￥{order.total.toFixed(2)}</strong>
+              <strong className={classes.Total}>
+                {formatCurrency(order.total)}
+              </strong>
               <div className={classes.Actions}>
                 {nextStatuses[order.status].map((status) => (
                   <button

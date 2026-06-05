@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import classes from './CurrentCartCard.module.css';
+import { formatCurrency } from '../../utils/currency';
 
 interface CurrentCartCardProps {
   totalQuantity: number;
@@ -25,7 +26,7 @@ const CurrentCartCard = ({
         </div>
         <div className={classes.Metric}>
           <span className={classes.MetricValue}>
-            ¥ {estimatedTotalPrice.toFixed(2)}
+            {formatCurrency(estimatedTotalPrice)}
           </span>
           <span className={classes.MetricLabel}>Estimated total</span>
         </div>
