@@ -7,15 +7,15 @@ Checkout, and track recent orders while staff manage orders and menu changes.
 
 ## Tech Stack
 
-| Area | Stack |
-| --- | --- |
-| Frontend | React 19, TypeScript, React Router, CSS Modules, Create React App |
-| Backend | Node.js, Express, TypeScript, Mongoose, Zod |
-| Database | MongoDB |
-| Payments | Stripe Checkout, Stripe webhook signature verification |
-| Auth | JWT access tokens, refresh-cookie sessions, email/password, OAuth-ready config |
-| Testing | Jest, React Testing Library, ts-jest |
-| Tooling | Stripe CLI, npm scripts |
+| Area     | Stack                                                                          |
+| -------- | ------------------------------------------------------------------------------ |
+| Frontend | React 19, TypeScript, React Router, CSS Modules, Create React App              |
+| Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                    |
+| Database | MongoDB                                                                        |
+| Payments | Stripe Checkout, Stripe webhook signature verification                         |
+| Auth     | JWT access tokens, refresh-cookie sessions, email/password, OAuth-ready config |
+| Testing  | Jest, React Testing Library, ts-jest                                           |
+| Tooling  | Stripe CLI, npm scripts                                                        |
 
 ## Core Features
 
@@ -33,8 +33,8 @@ Checkout, and track recent orders while staff manage orders and menu changes.
 
 ## Screenshots
 
-| Menu | Login | Profile |
-| --- | --- | --- |
+| Menu                                      | Login                                       | Profile                                         |
+| ----------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
 | ![Menu screen](docs/screenshots/menu.svg) | ![Login screen](docs/screenshots/login.svg) | ![Profile screen](docs/screenshots/profile.svg) |
 
 ## Local Setup
@@ -137,7 +137,7 @@ npm run build
 cd ../frontend
 npm run lint
 npm run typecheck
-npm test -- --watchAll=false
+CI=true npm test -- --watchAll=false
 npm run build
 ```
 
@@ -170,10 +170,10 @@ the validated integer `priceCents` value directly as its minor-unit amount.
 
 Run `npm run seed:demo-users` in `backend` first.
 
-| Role | Email | Password |
-| --- | --- | --- |
+| Role     | Email                      | Password      |
+| -------- | -------------------------- | ------------- |
 | Customer | `customer@burgerclub.test` | `Burger#2026` |
-| Admin | `admin@burgerclub.test` | `Burger#2026` |
+| Admin    | `admin@burgerclub.test`    | `Burger#2026` |
 
 ## Stripe Test Card
 
