@@ -33,6 +33,7 @@ export const useOAuthCallback = () => {
       const pendingInviteToken = localStorage.getItem('pendingStaffInviteToken');
 
       if (pendingInviteToken) {
+        localStorage.removeItem('pendingStaffInviteToken');
         navigate(`/admin/invitations/accept?token=${pendingInviteToken}`, {
           replace: true,
         });

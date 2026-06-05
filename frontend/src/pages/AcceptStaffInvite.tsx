@@ -51,7 +51,7 @@ const AcceptStaffInvite = () => {
           />
         )}
 
-        {isAuthenticated && (
+        {isAuthenticated && token && (
           <AuthSubmitButton
             disabled={isAccepting}
             type="button"
@@ -59,6 +59,12 @@ const AcceptStaffInvite = () => {
           >
             {isAccepting ? 'Accepting...' : 'Accept invitation'}
           </AuthSubmitButton>
+        )}
+
+        {isAuthenticated && !token && (
+          <AuthStatus tone="error">
+            This invitation link is missing a token.
+          </AuthStatus>
         )}
 
         {message && <AuthStatus tone="success">{message}</AuthStatus>}

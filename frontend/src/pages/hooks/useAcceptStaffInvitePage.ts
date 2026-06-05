@@ -20,9 +20,8 @@ export const useAcceptStaffInvitePage = () => {
   }, [token]);
 
   const accept = async () => {
-    const inviteToken = token || localStorage.getItem('pendingStaffInviteToken') || '';
-
-    if (!inviteToken) {
+    if (!token) {
+      localStorage.removeItem('pendingStaffInviteToken');
       setError('Invite token is missing');
       return;
     }
@@ -32,12 +31,13 @@ export const useAcceptStaffInvitePage = () => {
     setMessage(null);
 
     try {
-      const res = await acceptStaffInvite(inviteToken);
+      const res = await acceptStaffInvite(token);
       login(res.accessToken, res.user);
       localStorage.removeItem('pendingStaffInviteToken');
       setMessage('Invite accepted');
       navigate('/admin/orders', { replace: true });
     } catch (err) {
+      localStorage.removeItem('pendingStaffInviteToken');
       setError(err instanceof Error ? err.message : 'Could not accept invite');
     } finally {
       setIsAccepting(false);
