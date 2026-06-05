@@ -141,6 +141,38 @@ const sendOrderConfirmationIfPossible = async (
   }
 };
 
+const markCheckoutOrderFailed = async <
+  T extends {
+    save: () => Promise<unknown>;
+    payment: {
+      status: PaymentStatus;
+    };
+  },
+>(
+  order: T,
+) => {
+  order.payment.status = 'failed';
+  await orderRepository.save(order);
+};
+
+const buildStripeReturnUrl = (
+  configuredUrl: string | undefined,
+  payment: 'success' | 'cancelled',
+  orderId: string,
+) => {
+  const rawUrl =
+    configuredUrl ?? `${env.FRONTEND_URL}/profile?payment=${payment}`;
+  const url = new URL(rawUrl);
+
+  if (!url.searchParams.has('payment')) {
+    url.searchParams.set('payment', payment);
+  }
+
+  url.searchParams.set('orderId', orderId);
+
+  return url.toString();
+};
+
 export const createOrder = async (
   userId: string,
   items: CartStoredItem[],
@@ -196,51 +228,64 @@ export const createCheckoutOrder = async (
   });
 
   const orderId = String(order._id);
-  const successUrl =
-    env.STRIPE_SUCCESS_URL ??
-    `${env.FRONTEND_URL}/profile?payment=success&orderId=${orderId}`;
-  const cancelUrl =
-    env.STRIPE_CANCEL_URL ??
-    `${env.FRONTEND_URL}/profile?payment=cancelled&orderId=${orderId}`;
+  const successUrl = buildStripeReturnUrl(
+    env.STRIPE_SUCCESS_URL,
+    'success',
+    orderId,
+  );
+  const cancelUrl = buildStripeReturnUrl(
+    env.STRIPE_CANCEL_URL,
+    'cancelled',
+    orderId,
+  );
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'payment',
-    client_reference_id: orderId,
-    line_items: validatedCart.items.map((item) => ({
-      price_data: {
-        currency: 'aud',
-        product_data: {
-          name: item.name,
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      client_reference_id: orderId,
+      line_items: validatedCart.items.map((item) => ({
+        price_data: {
+          currency: 'aud',
+          product_data: {
+            name: item.name,
+          },
+          unit_amount: Math.round(item.price * 100),
         },
-        unit_amount: Math.round(item.price * 100),
-      },
-      quantity: item.quantity,
-    })),
-    metadata: {
-      orderId,
-      userId,
-    },
-    payment_intent_data: {
+        quantity: item.quantity,
+      })),
       metadata: {
         orderId,
         userId,
       },
-    },
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-  });
+      payment_intent_data: {
+        metadata: {
+          orderId,
+          userId,
+        },
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
 
-  if (!session.url) {
-    throw new ServiceError('Stripe checkout session has no redirect URL', 502);
+    if (!session.url) {
+      await markCheckoutOrderFailed(order);
+      throw new ServiceError('Stripe checkout session has no redirect URL', 502);
+    }
+
+    order.payment.providerPaymentId = session.id;
+    await orderRepository.save(order);
+
+    return {
+      order: toPublicOrder(order),
+      checkoutUrl: session.url,
+    };
+  } catch (error) {
+    if (order.payment.status !== 'failed') {
+      await markCheckoutOrderFailed(order);
+    }
+
+    throw error;
   }
-
-  order.payment.providerPaymentId = session.id;
-  await orderRepository.save(order);
-
-  return {
-    order: toPublicOrder(order),
-    checkoutUrl: session.url,
-  };
 };
 
 export const listOrdersForUser = async (
@@ -328,6 +373,13 @@ export const markStripeCheckoutPaid = async (
 
   if (!order) {
     throw new ServiceError('Stripe order not found', 404);
+  }
+
+  const wasAlreadyPaid =
+    order.status === 'paid' && order.payment.status === 'paid';
+
+  if (wasAlreadyPaid) {
+    return toPublicOrder(order);
   }
 
   order.status = 'paid';

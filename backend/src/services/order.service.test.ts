@@ -57,6 +57,7 @@ describe('order service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     env.STRIPE_SECRET_KEY = 'sk_test_123';
+    env.FRONTEND_URL = 'http://localhost:3000';
     env.STRIPE_SUCCESS_URL = undefined;
     env.STRIPE_CANCEL_URL = undefined;
   });
@@ -216,6 +217,8 @@ describe('order service', () => {
             }),
           }),
         ],
+        success_url: `http://localhost:3000/profile?payment=success&orderId=${orderId}`,
+        cancel_url: `http://localhost:3000/profile?payment=cancelled&orderId=${orderId}`,
       }),
     );
     expect(order.payment.providerPaymentId).toBe('cs_test_123');
@@ -223,6 +226,102 @@ describe('order service', () => {
     expect(checkout.checkoutUrl).toBe(
       'https://checkout.stripe.com/c/pay/cs_test_123',
     );
+  });
+
+  test('marks checkout orders as failed when Stripe session creation fails', async () => {
+    jest.mocked(validateCart).mockResolvedValue({
+      items: [
+        {
+          id: mealId,
+          name: 'Classic Burger',
+          image: '/img/burger.png',
+          price: 12,
+          quantity: 2,
+          subtotal: 24,
+        },
+      ],
+      total: 24,
+      menuVersion: 7,
+    });
+
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      total: 24,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: undefined as string | undefined,
+        status: 'requires_payment',
+        amount: 24,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+      save: jest.fn(),
+    };
+
+    jest.mocked(orderRepository.create).mockResolvedValue(order as never);
+    mockCreateSession.mockRejectedValue(new Error('Stripe unavailable'));
+
+    await expect(
+      createCheckoutOrder(userId, [{ id: mealId, quantity: 2 }], 7),
+    ).rejects.toThrow('Stripe unavailable');
+
+    expect(order.payment.status).toBe('failed');
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
+  });
+
+  test('marks checkout orders as failed when Stripe returns no checkout URL', async () => {
+    jest.mocked(validateCart).mockResolvedValue({
+      items: [
+        {
+          id: mealId,
+          name: 'Classic Burger',
+          image: '/img/burger.png',
+          price: 12,
+          quantity: 2,
+          subtotal: 24,
+        },
+      ],
+      total: 24,
+      menuVersion: 7,
+    });
+
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      total: 24,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: undefined as string | undefined,
+        status: 'requires_payment',
+        amount: 24,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+      save: jest.fn(),
+    };
+
+    jest.mocked(orderRepository.create).mockResolvedValue(order as never);
+    mockCreateSession.mockResolvedValue({
+      id: 'cs_test_123',
+      url: null,
+    });
+
+    await expect(
+      createCheckoutOrder(userId, [{ id: mealId, quantity: 2 }], 7),
+    ).rejects.toThrow('Stripe checkout session has no redirect URL');
+
+    expect(order.payment.status).toBe('failed');
+    expect(orderRepository.save).toHaveBeenCalledTimes(1);
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
   });
 
   test('marks paid orders, persists the change, and sends confirmation email', async () => {
@@ -317,6 +416,47 @@ describe('order service', () => {
       expect.objectContaining({ orderId, total: 24 }),
     );
     expect(result.status).toBe('paid');
+  });
+
+  test('does not resend confirmation email for repeated paid Stripe webhooks', async () => {
+    const paidAt = new Date('2026-01-01T00:01:00.000Z');
+    const order = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          mealId,
+          name: 'Classic Burger',
+          price: 12,
+          quantity: 2,
+          subtotal: 24,
+        },
+      ],
+      total: 24,
+      menuVersion: 7,
+      status: 'paid',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'paid',
+        amount: 24,
+        currency: 'aud',
+        paidAt,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValue(order as never);
+
+    const result = await markStripeCheckoutPaid('cs_test_123');
+
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
+    expect(result.status).toBe('paid');
+    expect(result.payment?.paidAt).toBe(paidAt);
   });
 
   test('marks Stripe checkout sessions as cancelled', async () => {
