@@ -16,6 +16,15 @@ Stripe payments require these backend environment variables:
 - `STRIPE_SUCCESS_URL` (optional, defaults to the profile page)
 - `STRIPE_CANCEL_URL` (optional, defaults to the profile page)
 
+For local webhook testing, keep Stripe CLI running in a separate terminal:
+
+```bash
+stripe listen --forward-to localhost:5001/api/stripe/webhook
+```
+
+Use the `whsec_...` value printed by that command as `STRIPE_WEBHOOK_SECRET`,
+then restart the backend.
+
 This frontend was originally bootstrapped with
 [Create React App](https://github.com/facebook/create-react-app).
 
