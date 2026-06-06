@@ -20,6 +20,10 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all"
+  },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
