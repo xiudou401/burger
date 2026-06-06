@@ -5,6 +5,12 @@ pickup and delivery. It models a realistic local burger shop workflow: customers
 browse an AUD menu, validate cart totals against the backend, pay with Stripe
 Checkout, and track recent orders while staff manage orders and menu changes.
 
+- **Live Demo:** [https://burger-vert.vercel.app](https://burger-vert.vercel.app)
+- **Backend API:** [https://burger-rmc0.onrender.com](https://burger-rmc0.onrender.com)
+
+> **Note:** The backend is hosted on Render's free tier, so the first request
+> may take a few seconds while the service wakes up.
+
 ## Tech Stack
 
 | Area     | Stack                                                                          |
