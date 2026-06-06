@@ -26,6 +26,9 @@ const getOAuthErrorTarget = (
   return mode;
 };
 
+const getOAuthCallbackUrl = (provider: 'google' | 'apple') =>
+  `${env.FRONTEND_URL}/api/auth/oauth/${provider}/callback`;
+
 const setRefreshCookie = (res: Response, refreshToken: string) => {
   const isProduction = process.env.NODE_ENV === 'production';
 
@@ -64,7 +67,7 @@ export const oauthStartHandler = (
 
     const params = new URLSearchParams({
       client_id: env.GOOGLE_CLIENT_ID,
-      redirect_uri: `${env.API_URL}/api/auth/oauth/google/callback`,
+      redirect_uri: getOAuthCallbackUrl('google'),
       response_type: 'code',
       scope: 'openid email profile',
       prompt: 'select_account',
@@ -87,7 +90,7 @@ export const oauthStartHandler = (
 
     const params = new URLSearchParams({
       client_id: env.APPLE_CLIENT_ID,
-      redirect_uri: `${env.API_URL}/api/auth/oauth/apple/callback`,
+      redirect_uri: getOAuthCallbackUrl('apple'),
       response_type: 'code',
       scope: 'name email',
       response_mode: 'form_post',
@@ -178,7 +181,7 @@ export const oauthCallbackHandler = async (
         code,
         client_id: env.GOOGLE_CLIENT_ID,
         client_secret: env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: `${env.API_URL}/api/auth/oauth/google/callback`,
+        redirect_uri: getOAuthCallbackUrl('google'),
         grant_type: 'authorization_code',
       }),
     });
