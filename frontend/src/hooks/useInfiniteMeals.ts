@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Meal, PaginatedMeals } from '../types/meal';
+import {
+  buildInfiniteMealsLoadKey,
+  mergeUniqueMeals,
+} from './infinite-meals-utils';
+import { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';
 
 type FetchMealsFn = (params: {
   keyword?: string;
@@ -26,13 +31,6 @@ type SettledLoadEntry = {
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-const buildLoadKey = (
-  keyword: string,
-  page: number,
-  limit: number,
-  reloadKey: number,
-) => `${keyword}::${page}::${limit}::${reloadKey}`;
-
 export const useInfiniteMeals = ({
   fetchMeals,
   limit = 4,
@@ -45,10 +43,6 @@ export const useInfiniteMeals = ({
   const [hasMore, setHasMore] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const listRef = useRef<HTMLDivElement | null>(null);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
-
-  const pageAdvanceLockedRef = useRef(false);
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<InFlightEntry | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
@@ -76,7 +70,7 @@ export const useInfiniteMeals = ({
 
   const loadMeals = useCallback(
     (pageToLoad: number, searchKeyword: string, currentReloadKey: number) => {
-      const key = buildLoadKey(
+      const key = buildInfiniteMealsLoadKey(
         searchKeyword,
         pageToLoad,
         limit,
@@ -125,12 +119,7 @@ export const useInfiniteMeals = ({
               return data.items;
             }
 
-            const existingIds = new Set(prev.map((m) => m.id));
-            const newItems = data.items.filter(
-              (item) => !existingIds.has(item.id),
-            );
-
-            return [...prev, ...newItems];
+            return mergeUniqueMeals(prev, data.items);
           });
 
           loadedPageRef.current = Math.max(loadedPageRef.current, pageToLoad);
@@ -151,7 +140,6 @@ export const useInfiniteMeals = ({
           }
 
           if (requestId === requestIdRef.current) {
-            pageAdvanceLockedRef.current = false;
             setIsLoading(false);
           }
         }
@@ -180,33 +168,17 @@ export const useInfiniteMeals = ({
     };
   }, [clearDebounceTimer]);
 
-  useEffect(() => {
-    if (error) return;
-    if (!hasMore) return;
-    if (!listRef.current || !sentinelRef.current) return;
+  const loadNextPage = useCallback(() => {
+    setPage((prev) => prev + 1);
+  }, []);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry.isIntersecting) return;
-        if (inFlightRef.current) return;
-        if (loadedPageRef.current < page) return;
-        if (pageAdvanceLockedRef.current) return;
-
-        pageAdvanceLockedRef.current = true;
-        setPage((prev) => prev + 1);
-      },
-      {
-        root: listRef.current,
-        threshold: 0.1,
-        rootMargin: '0px',
-      },
-    );
-
-    observer.observe(sentinelRef.current);
-
-    return () => observer.disconnect();
-  }, [error, hasMore, page]);
+  const { listRef, sentinelRef } = useInfiniteScrollTrigger({
+    canLoadMore: !error && hasMore,
+    isLoading,
+    loadedPage: loadedPageRef.current,
+    page,
+    onLoadMore: loadNextPage,
+  });
 
   const resetAndInvalidate = useCallback(() => {
     clearDebounceTimer();
@@ -214,7 +186,6 @@ export const useInfiniteMeals = ({
     inFlightRef.current = null;
     settledLoadRef.current = null;
     requestIdRef.current += 1;
-    pageAdvanceLockedRef.current = false;
     loadedPageRef.current = 0;
     setIsLoading(false);
     setError(null);
