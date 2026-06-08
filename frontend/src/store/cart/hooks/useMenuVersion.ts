@@ -9,10 +9,13 @@ export const useMenuVersion = () => {
   useEffect(() => {
     let timer: number | undefined;
     let cancelled = false;
-    let controller: AbortController | null = null;
+    let activeController: AbortController | null = null;
 
     const tick = async () => {
-      controller = new AbortController();
+      if (cancelled) return;
+
+      const controller = new AbortController();
+      activeController = controller;
 
       try {
         const version = await fetchMenuVersion(controller.signal);
@@ -23,7 +26,9 @@ export const useMenuVersion = () => {
       } catch {
         // Ignore polling failures; the next tick will retry.
       } finally {
-        controller = null;
+        if (activeController === controller) {
+          activeController = null;
+        }
 
         if (!cancelled) {
           timer = window.setTimeout(tick, MENU_POLL_MS);
@@ -35,7 +40,7 @@ export const useMenuVersion = () => {
 
     return () => {
       cancelled = true;
-      controller?.abort();
+      activeController?.abort();
 
       if (timer !== undefined) {
         window.clearTimeout(timer);
