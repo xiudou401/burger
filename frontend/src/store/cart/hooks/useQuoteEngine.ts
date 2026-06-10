@@ -13,6 +13,10 @@ type InFlightEntry = {
   controller: AbortController;
 };
 
+type QuoteState = Quote & {
+  itemsSig: string;
+};
+
 interface UseQuoteEngineParams {
   items: CartStoredItem[];
   totalQuantity: number;
@@ -26,7 +30,7 @@ export const useQuoteEngine = ({
   menuVersion,
   refreshMenuVersion,
 }: UseQuoteEngineParams) => {
-  const [quote, setQuote] = useState<Quote | null>(null);
+  const [quote, setQuote] = useState<QuoteState | null>(null);
 
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef<number | null>(null);
@@ -34,12 +38,7 @@ export const useQuoteEngine = ({
 
   const itemsSig = useMemo(() => cartSignature(items), [items]);
 
-  const quoteSig = useMemo(() => {
-    if (!quote) return '';
-    return cartSignature(quote.meals);
-  }, [quote]);
-
-  const quoteMismatch = !!quote && itemsSig !== quoteSig;
+  const quoteMismatch = !!quote && itemsSig !== quote.itemsSig;
   const quoteStale =
     menuVersion !== null && !!quote && quote.menuVersion !== menuVersion;
 
@@ -125,6 +124,7 @@ export const useQuoteEngine = ({
         setQuote({
           menuVersion: res.menuVersion,
           meals: res.items,
+          itemsSig: snapshotSig,
           ts: Date.now(),
         });
       } catch (err: unknown) {
@@ -175,6 +175,15 @@ export const useQuoteEngine = ({
   const clearQuote = useCallback(() => {
     setQuote(null);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      requestIdRef.current += 1;
+      clearDebounceTimer();
+      inFlightRef.current?.controller.abort();
+      inFlightRef.current = null;
+    };
+  }, [clearDebounceTimer]);
 
   useEffect(() => {
     if (totalQuantity !== 0) return;
