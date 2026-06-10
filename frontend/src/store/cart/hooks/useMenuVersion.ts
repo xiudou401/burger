@@ -6,9 +6,13 @@ const MENU_POLL_MS = 30_000;
 export const useMenuVersion = () => {
   const [menuVersion, setMenuVersion] = useState<number | null>(null);
 
-  const refreshMenuVersion = useCallback(async () => {
-    const version = await fetchMenuVersion();
-    setMenuVersion((prev) => (prev === version ? prev : version));
+  const refreshMenuVersion = useCallback(async (signal?: AbortSignal) => {
+    const version = await fetchMenuVersion(signal);
+
+    if (!signal?.aborted) {
+      setMenuVersion((prev) => (prev === version ? prev : version));
+    }
+
     return version;
   }, []);
 
@@ -23,11 +27,7 @@ export const useMenuVersion = () => {
       controller = new AbortController();
 
       try {
-        const version = await fetchMenuVersion(controller.signal);
-
-        if (!cancelled) {
-          setMenuVersion((prev) => (prev === version ? prev : version));
-        }
+        await refreshMenuVersion(controller.signal);
       } catch {
         // Ignore polling failures; the next tick will retry.
       } finally {
@@ -49,7 +49,7 @@ export const useMenuVersion = () => {
         window.clearTimeout(timer);
       }
     };
-  }, []);
+  }, [refreshMenuVersion]);
 
   return {
     menuVersion,

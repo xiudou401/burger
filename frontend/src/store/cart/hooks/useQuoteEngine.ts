@@ -17,7 +17,7 @@ interface UseQuoteEngineParams {
   items: CartStoredItem[];
   totalQuantity: number;
   menuVersion: number | null;
-  refreshMenuVersion: () => Promise<number>;
+  refreshMenuVersion: (signal?: AbortSignal) => Promise<number>;
 }
 
 export const useQuoteEngine = ({
@@ -142,7 +142,7 @@ export const useQuoteEngine = ({
         }
 
         if (err.statusCode === 409) {
-          await refreshMenuVersion();
+          await refreshMenuVersion(controller.signal);
 
           if (controller.signal.aborted) return;
           if (requestId !== requestIdRef.current) return;
