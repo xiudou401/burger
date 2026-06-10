@@ -43,19 +43,19 @@ export const useQuoteEngine = ({
   const quoteStale =
     menuVersion !== null && !!quote && quote.menuVersion !== menuVersion;
 
-  const shouldValidate =
+  const needsQuoteValidation =
     menuVersion !== null &&
     items.length > 0 &&
     (!quote || quoteStale || quoteMismatch);
 
-  const shouldDebounceValidate =
+  const shouldDebounceCartValidation =
     menuVersion !== null && items.length > 0 && (!quote || quoteMismatch);
 
   const latestRef = useRef({
     items,
     itemsSig,
     menuVersion,
-    shouldValidate,
+    needsQuoteValidation,
   });
 
   useEffect(() => {
@@ -63,9 +63,9 @@ export const useQuoteEngine = ({
       items,
       itemsSig,
       menuVersion,
-      shouldValidate,
+      needsQuoteValidation,
     };
-  }, [items, itemsSig, menuVersion, shouldValidate]);
+  }, [items, itemsSig, menuVersion, needsQuoteValidation]);
 
   const clearDebounceTimer = useCallback(() => {
     if (debounceTimerRef.current !== null) {
@@ -79,10 +79,10 @@ export const useQuoteEngine = ({
       items: latestItems,
       itemsSig: latestItemsSig,
       menuVersion: latestMenuVersion,
-      shouldValidate: latestShouldValidate,
+      needsQuoteValidation: latestNeedsQuoteValidation,
     } = latestRef.current;
 
-    if (!latestShouldValidate) {
+    if (!latestNeedsQuoteValidation) {
       return Promise.resolve();
     }
 
@@ -187,7 +187,7 @@ export const useQuoteEngine = ({
   }, [totalQuantity, clearDebounceTimer]);
 
   useEffect(() => {
-    if (!shouldDebounceValidate) return;
+    if (!shouldDebounceCartValidation) return;
 
     clearDebounceTimer();
 
@@ -199,7 +199,7 @@ export const useQuoteEngine = ({
     }, VALIDATE_DEBOUNCE_MS);
 
     return clearDebounceTimer;
-  }, [itemsSig, shouldDebounceValidate, ensureQuote, clearDebounceTimer]);
+  }, [itemsSig, shouldDebounceCartValidation, ensureQuote, clearDebounceTimer]);
 
   useEffect(() => {
     if (!quoteStale) return;
