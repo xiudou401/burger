@@ -1,14 +1,5 @@
-import {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { validateCart } from '../../../api/cart';
-import { fetchMenuVersion } from '../../../api/menu-version';
 import { ApiError } from '../../../api/request';
 import type { CartStoredItem, Quote } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
@@ -26,14 +17,14 @@ interface UseQuoteEngineParams {
   items: CartStoredItem[];
   totalQuantity: number;
   menuVersion: number | null;
-  setMenuVersion: Dispatch<SetStateAction<number | null>>;
+  refreshMenuVersion: () => Promise<number>;
 }
 
 export const useQuoteEngine = ({
   items,
   totalQuantity,
   menuVersion,
-  setMenuVersion,
+  refreshMenuVersion,
 }: UseQuoteEngineParams) => {
   const [quote, setQuote] = useState<Quote | null>(null);
 
@@ -151,12 +142,11 @@ export const useQuoteEngine = ({
         }
 
         if (err.statusCode === 409) {
-          const newVersion = await fetchMenuVersion();
+          await refreshMenuVersion();
 
           if (controller.signal.aborted) return;
           if (requestId !== requestIdRef.current) return;
 
-          setMenuVersion(newVersion);
           setQuote(null);
           return;
         }
@@ -180,7 +170,7 @@ export const useQuoteEngine = ({
     };
 
     return promise;
-  }, [setMenuVersion]);
+  }, [refreshMenuVersion]);
 
   const clearQuote = useCallback(() => {
     setQuote(null);

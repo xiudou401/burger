@@ -18,7 +18,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
 
   useCartPersistence(state.items);
 
-  const { menuVersion, setMenuVersion } = useMenuVersion();
+  const { menuVersion, refreshMenuVersion } = useMenuVersion();
 
   const {
     quote,
@@ -31,7 +31,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     items: state.items,
     totalQuantity: state.totalQuantity,
     menuVersion,
-    setMenuVersion,
+    refreshMenuVersion,
   });
 
   const value = useMemo(

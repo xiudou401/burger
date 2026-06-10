@@ -1,10 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fetchMenuVersion } from '../../../api/menu-version';
 
 const MENU_POLL_MS = 30_000;
 
 export const useMenuVersion = () => {
   const [menuVersion, setMenuVersion] = useState<number | null>(null);
+
+  const refreshMenuVersion = useCallback(async () => {
+    const version = await fetchMenuVersion();
+    setMenuVersion((prev) => (prev === version ? prev : version));
+    return version;
+  }, []);
 
   useEffect(() => {
     let timer: number | undefined;
@@ -47,6 +53,6 @@ export const useMenuVersion = () => {
 
   return {
     menuVersion,
-    setMenuVersion,
+    refreshMenuVersion,
   };
 };
