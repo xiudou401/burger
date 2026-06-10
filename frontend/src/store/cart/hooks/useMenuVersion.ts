@@ -12,6 +12,8 @@ export const useMenuVersion = () => {
     let controller: AbortController | null = null;
 
     const tick = async () => {
+      if (cancelled) return;
+
       controller = new AbortController();
 
       try {
