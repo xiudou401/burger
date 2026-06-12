@@ -81,6 +81,14 @@ export const useQuoteEngine = ({
     }
   }, [requestQuote]);
 
+  const validateQuoteSilently = useCallback(async () => {
+    try {
+      await requestQuote();
+    } catch {
+      // Background validation failures remain silent.
+    }
+  }, [requestQuote]);
+
   useEffect(() => clearDebounceTimer, [clearDebounceTimer]);
 
   useEffect(() => {
@@ -97,24 +105,25 @@ export const useQuoteEngine = ({
     clearDebounceTimer();
 
     debounceTimerRef.current = window.setTimeout(() => {
-      ensureQuote().catch(() => {
-        // Automatic validation errors are surfaced when the user checks out.
-      });
+      validateQuoteSilently();
       debounceTimerRef.current = null;
     }, VALIDATE_DEBOUNCE_MS);
 
     return clearDebounceTimer;
-  }, [itemsSig, shouldDebounceCartValidation, ensureQuote, clearDebounceTimer]);
+  }, [
+    itemsSig,
+    shouldDebounceCartValidation,
+    validateQuoteSilently,
+    clearDebounceTimer,
+  ]);
 
   useEffect(() => {
     if (!quoteStale) return;
 
     clearDebounceTimer();
 
-    ensureQuote().catch(() => {
-      // Automatic validation errors are surfaced when the user checks out.
-    });
-  }, [quoteStale, ensureQuote, clearDebounceTimer]);
+    validateQuoteSilently();
+  }, [quoteStale, validateQuoteSilently, clearDebounceTimer]);
 
   const estimatedTotalCents = useMemo(
     () => calculateEstimatedTotalCents(quote, items),

@@ -118,7 +118,19 @@ export const useQuoteValidationRequest = ({
         }
 
         if (err.statusCode === 409) {
-          await refreshMenuVersion(controller.signal);
+          try {
+            await refreshMenuVersion(controller.signal);
+          } catch (refreshError) {
+            if (
+              controller.signal.aborted ||
+              (refreshError instanceof ApiError &&
+                refreshError.statusCode === 499)
+            ) {
+              return;
+            }
+
+            throw refreshError;
+          }
 
           if (controller.signal.aborted) return;
           if (requestId !== requestIdRef.current) return;
