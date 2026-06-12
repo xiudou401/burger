@@ -127,10 +127,6 @@ export const useQuoteValidationRequest = ({
           return;
         }
 
-        if (err.statusCode >= 500) {
-          console.error('Server error');
-        }
-
         throw err;
       } finally {
         if (inFlightRef.current?.promise === promise) {

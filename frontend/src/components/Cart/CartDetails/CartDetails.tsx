@@ -17,6 +17,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
 
   const itemsLength = useCartSelector((ctx) => ctx.items.length);
   const quote = useCartSelector((ctx) => ctx.quote);
+  const quoteError = useCartSelector((ctx) => ctx.quoteError);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -24,7 +25,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
   useEffect(() => {
     if (!open) return;
     if (itemsLength === 0) return;
-    ensureQuote();
+    ensureQuote().catch(() => {});
   }, [open, itemsLength, ensureQuote]);
 
   const meals = useMemo(() => {
@@ -38,6 +39,9 @@ const CartDetails = ({ open }: CartDetailsProps) => {
 
   const onOk = () => clearCart();
   const onCancel = () => setShowConfirm(false);
+  const retryQuote = () => {
+    ensureQuote().catch(() => {});
+  };
 
   return (
     <Backdrop>
@@ -58,8 +62,17 @@ const CartDetails = ({ open }: CartDetailsProps) => {
         </header>
 
         <div className={classes.MealList}>
-          {!quote && itemsLength > 0 && (
-            <p style={{ padding: 12 }}>Loading...</p>
+          {!quote && !quoteError && itemsLength > 0 && (
+            <p className={classes.Status}>Loading...</p>
+          )}
+
+          {quoteError && (
+            <div className={classes.ErrorStatus} role="alert">
+              <p>{quoteError}</p>
+              <button type="button" onClick={retryQuote}>
+                Retry
+              </button>
+            </div>
           )}
 
           {meals.map((meal) => (

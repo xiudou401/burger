@@ -35,3 +35,37 @@
 .MealList {
   overflow: auto;
 }
+
+.Status,
+.ErrorStatus {
+  padding: 24rem 30rem;
+  font-size: 22rem;
+}
+
+.ErrorStatus {
+  color: #8f0011;
+}
+
+.ErrorStatus p {
+  margin: 0 0 16rem;
+}
+
+.ErrorStatus button {
+  padding: 10rem 18rem;
+  border: 0;
+  border-radius: 6rem;
+  background: #bd0017;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ErrorStatus button:hover {
+  background: #9f0014;
+}
+
+.ErrorStatus button:focus-visible {
+  outline: 3rem solid rgba(255, 199, 44, 0.8);
+  outline-offset: 3rem;
+}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CartStoredItem } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
+import { getQuoteErrorMessage } from '../utils/quote-error';
 import { calculateEstimatedTotalCents } from '../utils/quote-utils';
 import {
   QuoteState,
@@ -23,6 +24,7 @@ export const useQuoteEngine = ({
   refreshMenuVersion,
 }: UseQuoteEngineParams) => {
   const [quote, setQuote] = useState<QuoteState | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
 
   const debounceTimerRef = useRef<number | null>(null);
 
@@ -49,21 +51,35 @@ export const useQuoteEngine = ({
 
   const clearQuote = useCallback(() => {
     setQuote(null);
+    setQuoteError(null);
   }, []);
 
   const handleQuoteValidated = useCallback((validatedQuote: QuoteState) => {
     setQuote(validatedQuote);
+    setQuoteError(null);
   }, []);
 
-  const { ensureQuote, cancelQuoteRequest } = useQuoteValidationRequest({
-    items,
-    itemsSig,
-    menuVersion,
-    needsQuoteValidation,
-    refreshMenuVersion,
-    onQuoteValidated: handleQuoteValidated,
-    onMenuVersionConflict: clearQuote,
-  });
+  const { ensureQuote: requestQuote, cancelQuoteRequest } =
+    useQuoteValidationRequest({
+      items,
+      itemsSig,
+      menuVersion,
+      needsQuoteValidation,
+      refreshMenuVersion,
+      onQuoteValidated: handleQuoteValidated,
+      onMenuVersionConflict: clearQuote,
+    });
+
+  const ensureQuote = useCallback(async () => {
+    setQuoteError(null);
+
+    try {
+      await requestQuote();
+    } catch (error) {
+      setQuoteError(getQuoteErrorMessage(error));
+      throw error;
+    }
+  }, [requestQuote]);
 
   useEffect(() => clearDebounceTimer, [clearDebounceTimer]);
 
@@ -107,6 +123,7 @@ export const useQuoteEngine = ({
 
   return {
     quote,
+    quoteError,
     quoteStale,
     quoteMismatch,
     estimatedTotalCents,

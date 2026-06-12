@@ -40,6 +40,7 @@ export interface CartContextValue extends CartState {
 
   menuVersion: number | null;
   quote: Quote | null;
+  quoteError: string | null;
   quoteStale: boolean;
   quoteMismatch: boolean;
   estimatedTotalCents: number;
