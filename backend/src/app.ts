@@ -13,11 +13,15 @@ import { AppError } from './errors/AppError';
 import { env } from './config/env';
 import { errorHandler } from './middleware/errorHandler';
 import { logger } from './middleware/logger';
+import { apiRateLimiter, securityHeaders } from './middleware/security';
 
 const app = express();
 
+app.set('trust proxy', 1);
+
 // logger first
 app.use(logger);
+app.use(securityHeaders);
 
 app.use(
   cors({
@@ -28,7 +32,8 @@ app.use(
 
 app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeRoutes);
 
-app.use(express.json());
+app.use('/api', apiRateLimiter);
+app.use(express.json({ limit: '100kb' }));
 
 app.use('/img', express.static(path.join(process.cwd(), 'public/img')));
 

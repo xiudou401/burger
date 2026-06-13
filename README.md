@@ -32,6 +32,8 @@ Checkout, and track recent orders while staff manage orders and menu changes.
 - Payment lifecycle updates for success, failed, cancelled, and repeated webhook events.
 - Order history and profile page payment-return handling.
 - Customer authentication with refresh-token recovery.
+- Production security headers, API rate limiting, and stricter authentication
+  throttling.
 - Staff/admin order console and menu management.
 - Staff invitation flow with token validation.
 - Email workflows for verification, reset password, and order confirmation.
@@ -163,6 +165,12 @@ handle HTTP input and status codes, services own business rules, repositories
 wrap MongoDB access, and Zod schemas validate request bodies. Stripe webhooks are
 mounted before JSON parsing with `express.raw()` so signature verification uses
 the original request body.
+
+The backend applies Helmet security headers, limits JSON request bodies to
+100 KB, and rate-limits the general API. Login and verification attempts use a
+stricter limiter, while higher-cost actions such as signup, password recovery,
+and SMS delivery use the strictest limiter. Stripe webhooks remain outside the
+general limiter so valid provider retries are not blocked.
 
 Payment truth comes from Stripe webhooks, not the frontend success redirect. The
 frontend only improves the return experience by showing payment state and
