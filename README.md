@@ -1,9 +1,9 @@
 # Burger Club
 
-Burger Club is a Sydney-focused full-stack restaurant ordering platform for
-pickup and delivery. It models a realistic local burger shop workflow: customers
-browse an AUD menu, validate cart totals against the backend, pay with Stripe
-Checkout, and track recent orders while staff manage orders and menu changes.
+Burger Club is a Sydney-focused full-stack restaurant ordering platform. It
+models a realistic local burger shop workflow: customers browse an AUD menu,
+validate cart totals against the backend, pay with Stripe Checkout, and track
+recent orders while staff manage orders and menu changes.
 
 - **Live Demo:** [https://burger-vert.vercel.app](https://burger-vert.vercel.app)
 - **Backend API:** [https://burger-rmc0.onrender.com](https://burger-rmc0.onrender.com)
@@ -13,15 +13,15 @@ Checkout, and track recent orders while staff manage orders and menu changes.
 
 ## Tech Stack
 
-| Area     | Stack                                                                          |
-| -------- | ------------------------------------------------------------------------------ |
-| Frontend | React 19, TypeScript, React Router, CSS Modules, Create React App              |
-| Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                    |
-| Database | MongoDB                                                                        |
-| Payments | Stripe Checkout, Stripe webhook signature verification                         |
-| Auth     | JWT access tokens, refresh-cookie sessions, email/password, OAuth-ready config |
-| Testing  | Jest, React Testing Library, ts-jest                                           |
-| Tooling  | Stripe CLI, npm scripts                                                        |
+| Area     | Stack                                                                             |
+| -------- | --------------------------------------------------------------------------------- |
+| Frontend | React 19, TypeScript, React Router, CSS Modules, Create React App                 |
+| Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                       |
+| Database | MongoDB                                                                           |
+| Payments | Stripe Checkout, Stripe webhook signature verification                            |
+| Auth     | Email/password, Google OAuth, JWT access tokens, HttpOnly refresh-cookie sessions |
+| Testing  | Jest, React Testing Library, ts-jest                                              |
+| Tooling  | Stripe CLI, npm scripts                                                           |
 
 ## Core Features
 
@@ -31,13 +31,21 @@ Checkout, and track recent orders while staff manage orders and menu changes.
 - Stripe Checkout flow with signed webhook handling.
 - Payment lifecycle updates for success, failed, cancelled, and repeated webhook events.
 - Order history and profile page payment-return handling.
-- Customer authentication with refresh-token recovery.
+- Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
 - Staff/admin order console and menu management.
 - Staff invitation flow with token validation.
 - Email workflows for verification, reset password, and order confirmation.
 - Seed scripts for local menu and demo users.
+
+## Live Demo Notes
+
+- Stripe runs in test mode and does not create real charges.
+- Google sign-in is available in the deployed app.
+- SMS codes are printed locally in development; no production SMS provider is
+  configured.
+- Apple sign-in is shown as a future provider but is not implemented yet.
 
 ## Screenshots
 
@@ -61,11 +69,10 @@ npm install
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
 ```
 
-Update `backend/.env` with your MongoDB URI and Stripe test keys.
-`JWT_SECRET` is required and must contain at least 32 characters.
+Update `backend/.env` with your MongoDB URI and a `JWT_SECRET` containing at
+least 32 characters. Add Stripe test keys when testing the payment flow.
 
 For local Stripe webhooks, run this in a separate terminal:
 
@@ -109,29 +116,20 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000).
 
-## Environment Example
+## Environment Configuration
 
-Backend:
+Use [`backend/.env.example`](backend/.env.example) as the source of truth for
+backend configuration. Local development requires `MONGO_URI` and a
+`JWT_SECRET` with at least 32 characters. Backend URL settings have local
+defaults and can be overridden when needed.
 
-```env
-PORT=5001
-MONGO_URI=mongodb://127.0.0.1:27017/burger-club
-# Required: at least 32 characters
-JWT_SECRET=replace-with-a-long-random-secret
-FRONTEND_URL=http://localhost:3000
-API_URL=http://localhost:5001
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
-STRIPE_SUCCESS_URL=http://localhost:3000/profile?payment=success
-STRIPE_CANCEL_URL=http://localhost:3000/profile?payment=cancelled
-```
+Stripe Checkout requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
+Google sign-in requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Email
+delivery through Resend is optional.
 
-Frontend:
-
-```env
-REACT_APP_API_URL=http://localhost:5001
-REACT_APP_ADMIN_EMAILS=admin@example.com
-```
+The frontend currently uses relative `/api` requests. Create React App proxies
+those requests to the local backend during development, while Vercel rewrites
+them to the deployed Render API in production.
 
 ## Test Commands
 
@@ -139,12 +137,14 @@ REACT_APP_ADMIN_EMAILS=admin@example.com
 cd backend
 npm run lint
 npm run typecheck
+npm run format:check
 npm test
 npm run build
 
 cd ../frontend
 npm run lint
 npm run typecheck
+npm run format:check
 CI=true npm test -- --watchAll=false
 npm run build
 ```
@@ -182,7 +182,8 @@ the validated integer `priceCents` value directly as its minor-unit amount.
 
 ## Demo Accounts
 
-Run `npm run seed:demo-users` in `backend` first.
+The deployed live demo can use the accounts below. For local development, run
+`npm run seed:demo-users` in `backend` first.
 
 | Role     | Email                      | Password      |
 | -------- | -------------------------- | ------------- |
