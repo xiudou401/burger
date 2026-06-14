@@ -1,5 +1,5 @@
-import { Dispatch } from 'react';
-import { Meal } from './meal';
+import type { Dispatch } from 'react';
+import type { Meal } from './meal';
 
 export interface CartStoredItem {
   id: string;

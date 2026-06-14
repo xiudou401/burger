@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchMenuVersion } from '../../../api/menu-version';
 
 const MENU_POLL_MS = 30_000;
 
 export const useMenuVersion = () => {
   const [menuVersion, setMenuVersion] = useState<number | null>(null);
+  const requestIdRef = useRef(0);
 
   const refreshMenuVersion = useCallback(async (signal?: AbortSignal) => {
+    const requestId = ++requestIdRef.current;
     const version = await fetchMenuVersion(signal);
 
-    if (!signal?.aborted) {
+    if (!signal?.aborted && requestId === requestIdRef.current) {
       setMenuVersion((prev) => (prev === version ? prev : version));
     }
 
@@ -24,14 +26,17 @@ export const useMenuVersion = () => {
     const tick = async () => {
       if (cancelled) return;
 
-      controller = new AbortController();
+      const currentController = new AbortController();
+      controller = currentController;
 
       try {
-        await refreshMenuVersion(controller.signal);
+        await refreshMenuVersion(currentController.signal);
       } catch {
         // Ignore polling failures; the next tick will retry.
       } finally {
-        controller = null;
+        if (controller === currentController) {
+          controller = null;
+        }
 
         if (!cancelled) {
           timer = window.setTimeout(tick, MENU_POLL_MS);

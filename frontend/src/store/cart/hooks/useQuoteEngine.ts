@@ -4,8 +4,8 @@ import { cartSignature } from '../utils/cart-signature';
 import { getQuoteErrorMessage } from '../utils/quote-error';
 import { calculateEstimatedTotalCents } from '../utils/quote-utils';
 import {
-  QuoteState,
   useQuoteValidationRequest,
+  type QuoteState,
 } from './useQuoteValidationRequest';
 
 const VALIDATE_DEBOUNCE_MS = 300;
@@ -90,6 +90,10 @@ export const useQuoteEngine = ({
   }, [requestQuote]);
 
   useEffect(() => clearDebounceTimer, [clearDebounceTimer]);
+
+  useEffect(() => {
+    setQuoteError(null);
+  }, [itemsSig]);
 
   useEffect(() => {
     if (totalQuantity !== 0) return;
