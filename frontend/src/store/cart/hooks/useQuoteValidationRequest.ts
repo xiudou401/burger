@@ -139,19 +139,7 @@ export const useQuoteValidationRequest = ({
         }
 
         if (err.statusCode === 409) {
-          try {
-            await refreshMenuVersion(controller.signal);
-          } catch (refreshError) {
-            if (
-              controller.signal.aborted ||
-              (refreshError instanceof ApiError &&
-                refreshError.statusCode === 499)
-            ) {
-              throw refreshError;
-            }
-
-            throw refreshError;
-          }
+          await refreshMenuVersion(controller.signal);
 
           if (controller.signal.aborted) {
             throw new ApiError(499, { message: 'Quote request was cancelled' });
