@@ -97,62 +97,55 @@ export const useQuoteValidationRequest = ({
     const snapshotSig = latestItemsSig;
     const snapshotVersion = latestMenuVersion;
 
+    const assertRequestActive = () => {
+      if (controller.signal.aborted || requestId !== requestIdRef.current) {
+        throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
+          message: 'Quote request was cancelled or replaced',
+        });
+      }
+    };
+
+    const validateSnapshot = async () => {
+      try {
+        return await validateCart(
+          snapshotItems,
+          snapshotVersion,
+          controller.signal,
+        );
+      } catch (err: unknown) {
+        if (
+          controller.signal.aborted ||
+          (err instanceof ApiError &&
+            err.statusCode === HTTP_STATUS.REQUEST_CANCELLED)
+        ) {
+          throw err;
+        }
+
+        assertRequestActive();
+
+        if (
+          !(err instanceof ApiError) ||
+          err.statusCode !== HTTP_STATUS.CONFLICT
+        ) {
+          throw err;
+        }
+
+        await refreshMenuVersion(controller.signal);
+        assertRequestActive();
+
+        onMenuVersionConflict();
+        throw new ApiError(HTTP_STATUS.CONFLICT, {
+          message: 'The menu changed. Please validate your cart again.',
+        });
+      }
+    };
+
     let promise!: Promise<void>;
 
     promise = (async () => {
       try {
-        let res: Awaited<ReturnType<typeof validateCart>>;
-
-        try {
-          res = await validateCart(
-            snapshotItems,
-            snapshotVersion,
-            controller.signal,
-          );
-        } catch (err: unknown) {
-          if (
-            controller.signal.aborted ||
-            (err instanceof ApiError &&
-              err.statusCode === HTTP_STATUS.REQUEST_CANCELLED)
-          ) {
-            throw err;
-          }
-
-          if (requestId !== requestIdRef.current) {
-            throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
-              message: 'Quote request was replaced',
-            });
-          }
-
-          if (
-            err instanceof ApiError &&
-            err.statusCode === HTTP_STATUS.CONFLICT
-          ) {
-            await refreshMenuVersion(controller.signal);
-
-            if (
-              controller.signal.aborted ||
-              requestId !== requestIdRef.current
-            ) {
-              throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
-                message: 'Quote request was cancelled or replaced',
-              });
-            }
-
-            onMenuVersionConflict();
-            throw new ApiError(HTTP_STATUS.CONFLICT, {
-              message: 'The menu changed. Please validate your cart again.',
-            });
-          }
-
-          throw err;
-        }
-
-        if (requestId !== requestIdRef.current) {
-          throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
-            message: 'Quote request was replaced',
-          });
-        }
+        const res = await validateSnapshot();
+        assertRequestActive();
 
         if (snapshotSig !== latestRef.current.itemsSig) {
           throw new ApiError(HTTP_STATUS.CONFLICT, {
