@@ -1,3 +1,5 @@
+import { API_STATUS } from './api-status';
+
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
@@ -82,7 +84,11 @@ export const request = async <T>(
     });
 
     if (!res.ok) {
-      if (res.status === 401 && !didRefresh && path !== '/auth/refresh') {
+      if (
+        res.status === API_STATUS.UNAUTHORIZED &&
+        !didRefresh &&
+        path !== '/auth/refresh'
+      ) {
         try {
           const refreshed = await refreshAccessToken();
           setAccessToken(refreshed.accessToken);
@@ -103,7 +109,7 @@ export const request = async <T>(
       throw new ApiError(res.status, body);
     }
 
-    if (res.status === 204) {
+    if (res.status === API_STATUS.NO_CONTENT) {
       return {} as T;
     }
 
@@ -115,14 +121,18 @@ export const request = async <T>(
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       if (didTimeout) {
-        throw new ApiError(408, { message: 'Request timeout' });
+        throw new ApiError(API_STATUS.REQUEST_TIMEOUT, {
+          message: 'Request timeout',
+        });
       }
 
-      throw new ApiError(499, { message: 'Request cancelled' });
+      throw new ApiError(API_STATUS.REQUEST_CANCELLED, {
+        message: 'Request cancelled',
+      });
     }
 
     if (err instanceof ApiError) {
-      if (err.statusCode >= 500 && retry > 0) {
+      if (err.statusCode >= API_STATUS.SERVER_ERROR_MIN && retry > 0) {
         console.warn('Retry (server error):', path);
         return request<T>(path, options, retry - 1, didRefresh);
       }
@@ -136,7 +146,7 @@ export const request = async <T>(
     }
 
     const message = err instanceof Error ? err.message : 'Network error';
-    throw new ApiError(0, { message });
+    throw new ApiError(API_STATUS.NETWORK_ERROR, { message });
   } finally {
     window.clearTimeout(timeoutId);
 

@@ -4,6 +4,10 @@ import { cartSignature } from '../utils/cart-signature';
 import { getQuoteErrorMessage } from '../utils/quote-error';
 import { calculateEstimatedTotalCents } from '../utils/quote-utils';
 import {
+  isExpectedBackgroundError,
+  reportError,
+} from '../../../utils/error-monitoring';
+import {
   useQuoteValidationRequest,
   type QuoteState,
 } from './useQuoteValidationRequest';
@@ -84,8 +88,13 @@ export const useQuoteEngine = ({
   const validateQuoteSilently = useCallback(async () => {
     try {
       await requestQuote();
-    } catch {
-      // Background validation failures remain silent.
+    } catch (error) {
+      if (!isExpectedBackgroundError(error)) {
+        reportError(error, {
+          source: 'quote-engine',
+          operation: 'background-validation',
+        });
+      }
     }
   }, [requestQuote]);
 

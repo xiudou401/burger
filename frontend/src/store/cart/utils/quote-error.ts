@@ -1,11 +1,12 @@
+import { API_STATUS } from '../../../api/api-status';
 import { ApiError } from '../../../api/request';
 
 export const getQuoteErrorMessage = (error: unknown) => {
   if (
     error instanceof ApiError &&
-    (error.statusCode === 0 ||
-      error.statusCode === 408 ||
-      error.statusCode >= 500)
+    (error.statusCode === API_STATUS.NETWORK_ERROR ||
+      error.statusCode === API_STATUS.REQUEST_TIMEOUT ||
+      error.statusCode >= API_STATUS.SERVER_ERROR_MIN)
   ) {
     return 'The server is temporarily unavailable. Please try again.';
   }

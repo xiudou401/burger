@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { API_STATUS } from '../../../api/api-status';
 import { validateCart } from '../../../api/cart';
 import { ApiError } from '../../../api/request';
 import { useQuoteValidationRequest } from './useQuoteValidationRequest';
@@ -69,7 +70,9 @@ test('refreshes after a version conflict but rejects the current validation', as
 
   jest
     .mocked(validateCart)
-    .mockRejectedValue(new ApiError(409, { message: 'Menu updated' }));
+    .mockRejectedValue(
+      new ApiError(API_STATUS.CONFLICT, { message: 'Menu updated' }),
+    );
 
   render(
     <Harness
