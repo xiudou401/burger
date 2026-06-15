@@ -59,7 +59,11 @@ describe('auth service', () => {
     jest.mocked(userRepository.existsByEmail).mockResolvedValue(null);
     jest.mocked(userRepository.create).mockResolvedValue(userDoc as never);
 
-    const result = await signup(' Pat ', 'PAT@example.com', 'Burger#2026');
+    const result = await signup({
+      name: 'Pat',
+      email: 'pat@example.com',
+      password: 'Burger#2026',
+    });
 
     expect(userRepository.existsByEmail).toHaveBeenCalledWith(
       'pat@example.com',
@@ -92,7 +96,11 @@ describe('auth service', () => {
       .mockResolvedValue({ _id: '507f1f77bcf86cd799439011' } as never);
 
     await expect(
-      signup('Pat', 'pat@example.com', 'Burger#2026'),
+      signup({
+        name: 'Pat',
+        email: 'pat@example.com',
+        password: 'Burger#2026',
+      }),
     ).rejects.toThrow(ServiceError);
     expect(userRepository.create).not.toHaveBeenCalled();
   });
@@ -104,7 +112,10 @@ describe('auth service', () => {
       passwordHash,
     } as never);
 
-    const result = await login('PAT@example.com', 'Burger#2026');
+    const result = await login({
+      email: 'pat@example.com',
+      password: 'Burger#2026',
+    });
 
     expect(userRepository.findByEmailWithPassword).toHaveBeenCalledWith(
       'pat@example.com',
@@ -119,9 +130,9 @@ describe('auth service', () => {
       passwordHash: hashPassword('Burger#2026'),
     } as never);
 
-    await expect(login('pat@example.com', 'wrong-password')).rejects.toThrow(
-      ServiceError,
-    );
+    await expect(
+      login({ email: 'pat@example.com', password: 'wrong-password' }),
+    ).rejects.toThrow(ServiceError);
     expect(createAuthSession).not.toHaveBeenCalled();
   });
 
@@ -136,7 +147,10 @@ describe('auth service', () => {
       .mocked(userRepository.findByValidPasswordResetToken)
       .mockResolvedValue(resetUser as never);
 
-    const result = await resetPassword('reset-token', 'Burger#2027');
+    const result = await resetPassword({
+      token: 'reset-token',
+      password: 'Burger#2027',
+    });
 
     expect(userRepository.save).toHaveBeenCalledWith(resetUser);
     expect(revokeUserSessions).toHaveBeenCalledWith(userId);

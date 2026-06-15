@@ -8,7 +8,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { sendOrderConfirmationEmail } from './email.service';
 import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
-import { assertOrderTransition, parseOrderStatus } from '../utils/order-status';
+import { assertOrderTransition } from '../utils/order-status';
 import { env } from '../config/env';
 import Stripe from 'stripe';
 
@@ -333,21 +333,19 @@ export const getOrderById = async (orderId: string): Promise<PublicOrder> => {
 
 export const updateOrderStatus = async (
   orderId: string,
-  nextStatus: string,
+  nextStatus: OrderStatus,
 ): Promise<PublicOrder> => {
-  const parsedNextStatus = parseOrderStatus(nextStatus);
-
   const order = await orderRepository.findById(orderId);
 
   if (!order) {
     throw new ServiceError('Order not found', 404);
   }
 
-  assertOrderTransition(order.status, parsedNextStatus);
+  assertOrderTransition(order.status, nextStatus);
 
-  order.status = parsedNextStatus;
+  order.status = nextStatus;
 
-  if (parsedNextStatus === 'paid') {
+  if (nextStatus === 'paid') {
     order.payment = order.payment ?? {
       status: 'unpaid',
       amountCents: order.totalCents,
@@ -362,7 +360,7 @@ export const updateOrderStatus = async (
 
   const publicOrder = toPublicOrder(order);
 
-  if (parsedNextStatus === 'paid') {
+  if (nextStatus === 'paid') {
     await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
   }
 

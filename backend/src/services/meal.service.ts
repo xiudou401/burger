@@ -4,6 +4,7 @@ import { ServiceError } from '../errors/ServiceError';
 import type { SortOrder } from 'mongoose';
 import { getMenuVersion } from './menu.service';
 import { mealRepository } from '../repositories/meal.repository';
+import type { MealPayload } from '../validation/meal.schema';
 
 interface MealQuery {
   keyword?: string;
@@ -12,13 +13,6 @@ interface MealQuery {
   page?: number;
   limit?: number;
   sort?: SortOption;
-}
-
-interface MealPayload {
-  name: string;
-  description?: string;
-  priceCents: number;
-  image?: string;
 }
 
 export type SortOption =
@@ -104,31 +98,6 @@ export const findAllMeals = async (query: MealQuery = {}) => {
   }
 };
 
-const normalizeMealPayload = (payload: Partial<MealPayload>): MealPayload => {
-  const name = payload.name?.trim() ?? '';
-  const description = payload.description?.trim();
-  const image = payload.image?.trim();
-  const priceCents = Number(payload.priceCents);
-
-  if (!name) {
-    throw new ServiceError('Meal name is required', 400);
-  }
-
-  if (!Number.isSafeInteger(priceCents) || priceCents < 0) {
-    throw new ServiceError(
-      'Meal priceCents must be a non-negative integer',
-      400,
-    );
-  }
-
-  return {
-    name,
-    description,
-    priceCents,
-    image,
-  };
-};
-
 const toPublicMeal = (meal: {
   _id: unknown;
   name: string;
@@ -143,20 +112,14 @@ const toPublicMeal = (meal: {
   image: meal.image,
 });
 
-export const createMeal = async (payload: Partial<MealPayload>) => {
-  const meal = await mealRepository.create(normalizeMealPayload(payload));
+export const createMeal = async (payload: MealPayload) => {
+  const meal = await mealRepository.create(payload);
 
   return toPublicMeal(meal);
 };
 
-export const updateMeal = async (
-  mealId: string,
-  payload: Partial<MealPayload>,
-) => {
-  const meal = await mealRepository.updateById(
-    mealId,
-    normalizeMealPayload(payload),
-  );
+export const updateMeal = async (mealId: string, payload: MealPayload) => {
+  const meal = await mealRepository.updateById(mealId, payload);
 
   if (!meal) {
     throw new ServiceError('Meal not found', 404);

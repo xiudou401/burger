@@ -10,6 +10,10 @@ import type { AuthenticatedUser } from '../types/auth';
 import { env } from '../config/env';
 import { staffInviteRepository } from '../repositories/staff-invite.repository';
 import { userRepository } from '../repositories/user.repository';
+import type {
+  AcceptStaffInvitePayload,
+  CreateStaffInvitePayload,
+} from '../validation/staff-invite.schema';
 
 const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
@@ -35,14 +39,6 @@ interface StaffInviteDoc {
 }
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
-
-const parseInviteRole = (role: string): StaffInviteRole => {
-  if (role !== 'staff' && role !== 'admin') {
-    throw new ServiceError('Invalid staff role', 400);
-  }
-
-  return role;
-};
 
 const toPublicInvite = (invite: StaffInviteDoc): PublicStaffInvite => ({
   id: String(invite._id),
@@ -76,25 +72,16 @@ export const createStaffInvite = async ({
   email,
   role,
   invitedBy,
-}: {
-  email: string;
-  role: string;
+}: CreateStaffInvitePayload & {
   invitedBy: string;
 }): Promise<PublicStaffInvite & { token?: string }> => {
-  const normalizedEmail = normalizeEmail(email ?? '');
-
-  if (!normalizedEmail || !normalizedEmail.includes('@')) {
-    throw new ServiceError('Invalid email', 400);
-  }
-
-  const parsedRole = parseInviteRole(role);
   const token = createSecureToken();
 
-  await staffInviteRepository.revokePendingByEmail(normalizedEmail);
+  await staffInviteRepository.revokePendingByEmail(email);
 
   const invite = await staffInviteRepository.create({
-    email: normalizedEmail,
-    role: parsedRole,
+    email,
+    role,
     tokenHash: hashToken(token),
     invitedBy,
     status: 'pending',
@@ -102,8 +89,8 @@ export const createStaffInvite = async ({
   });
 
   await sendStaffInviteEmail({
-    email: normalizedEmail,
-    role: parsedRole,
+    email,
+    role,
     token,
   });
 
@@ -139,8 +126,7 @@ export const revokeStaffInvite = async (
 export const acceptStaffInvite = async ({
   token,
   userId,
-}: {
-  token: string;
+}: AcceptStaffInvitePayload & {
   userId: string;
 }): Promise<{
   accessToken: string;
@@ -148,10 +134,6 @@ export const acceptStaffInvite = async ({
   user: AuthenticatedUser;
   invite: PublicStaffInvite;
 }> => {
-  if (!token) {
-    throw new ServiceError('Invite token is required', 400);
-  }
-
   const invite = await staffInviteRepository.findPendingByTokenHash(
     hashToken(token),
   );

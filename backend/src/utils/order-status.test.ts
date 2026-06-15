@@ -1,14 +1,5 @@
 import { ServiceError } from '../errors/ServiceError';
-import { assertOrderTransition, parseOrderStatus } from './order-status';
-
-test('parses known order statuses', () => {
-  expect(parseOrderStatus('pending_payment')).toBe('pending_payment');
-  expect(parseOrderStatus('completed')).toBe('completed');
-});
-
-test('rejects unknown order statuses', () => {
-  expect(() => parseOrderStatus('refunded')).toThrow(ServiceError);
-});
+import { assertOrderTransition } from './order-status';
 
 test('allows expected order status transitions', () => {
   expect(() => assertOrderTransition('pending_payment', 'paid')).not.toThrow();

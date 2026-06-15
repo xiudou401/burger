@@ -68,8 +68,7 @@ export const signupHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { name, email, password } = req.body as SignupPayload;
-    const result = await authService.signup(name, email, password);
+    const result = await authService.signup(req.body as SignupPayload);
 
     sendAuthResult(res, 201, result);
   } catch (error) {
@@ -83,8 +82,7 @@ export const loginHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { email, password } = req.body as LoginPayload;
-    const result = await authService.login(email, password);
+    const result = await authService.login(req.body as LoginPayload);
 
     sendAuthResult(res, 200, result);
   } catch (error) {
@@ -138,8 +136,9 @@ export const verifyEmailHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { token } = req.body as VerifyEmailPayload;
-    const result = await authService.verifyEmail(token);
+    const result = await authService.verifyEmail(
+      req.body as VerifyEmailPayload,
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -171,8 +170,9 @@ export const forgotPasswordHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { email } = req.body as ForgotPasswordPayload;
-    const result = await authService.requestPasswordReset(email);
+    const result = await authService.requestPasswordReset(
+      req.body as ForgotPasswordPayload,
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -186,8 +186,9 @@ export const resetPasswordHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { token, password } = req.body as ResetPasswordPayload;
-    const result = await authService.resetPassword(token, password);
+    const result = await authService.resetPassword(
+      req.body as ResetPasswordPayload,
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -201,8 +202,10 @@ export const sendSmsCodeHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { phone } = req.body as SendSmsCodePayload;
-    const result = await authService.sendSmsCode(phone, req.user?.id);
+    const result = await authService.sendSmsCode(
+      req.body as SendSmsCodePayload,
+      req.user?.id,
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -216,8 +219,9 @@ export const verifySmsCodeHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { phone, code } = req.body as VerifySmsCodePayload;
-    const result = await authService.verifySmsCode(phone, code);
+    const result = await authService.verifySmsCode(
+      req.body as VerifySmsCodePayload,
+    );
 
     sendAuthResult(res, 200, result);
   } catch (error) {

@@ -21,9 +21,14 @@ const PhoneSchema = z
   .string()
   .trim()
   .min(1, 'Phone is required')
-  .refine(
-    (value) => /^\+[1-9]\d{7,14}$/.test(value.replace(/[()\s-]/g, '')),
-    'Phone must use E.164 format, for example +61412345678',
+  .transform((value) => value.replace(/[()\s-]/g, ''))
+  .pipe(
+    z
+      .string()
+      .regex(
+        /^\+[1-9]\d{7,14}$/,
+        'Phone must use E.164 format, for example +61412345678',
+      ),
   );
 
 export const SignupSchema = z
