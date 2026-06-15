@@ -1,4 +1,4 @@
-import { API_STATUS } from './api-status';
+import { HTTP_STATUS } from './http-status';
 
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
@@ -85,7 +85,7 @@ export const request = async <T>(
 
     if (!res.ok) {
       if (
-        res.status === API_STATUS.UNAUTHORIZED &&
+        res.status === HTTP_STATUS.UNAUTHORIZED &&
         !didRefresh &&
         path !== '/auth/refresh'
       ) {
@@ -109,7 +109,7 @@ export const request = async <T>(
       throw new ApiError(res.status, body);
     }
 
-    if (res.status === API_STATUS.NO_CONTENT) {
+    if (res.status === HTTP_STATUS.NO_CONTENT) {
       return {} as T;
     }
 
@@ -121,18 +121,18 @@ export const request = async <T>(
   } catch (err: unknown) {
     if (err instanceof DOMException && err.name === 'AbortError') {
       if (didTimeout) {
-        throw new ApiError(API_STATUS.REQUEST_TIMEOUT, {
+        throw new ApiError(HTTP_STATUS.REQUEST_TIMEOUT, {
           message: 'Request timeout',
         });
       }
 
-      throw new ApiError(API_STATUS.REQUEST_CANCELLED, {
+      throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
         message: 'Request cancelled',
       });
     }
 
     if (err instanceof ApiError) {
-      if (err.statusCode >= API_STATUS.SERVER_ERROR_MIN && retry > 0) {
+      if (err.statusCode >= HTTP_STATUS.SERVER_ERROR_MIN && retry > 0) {
         console.warn('Retry (server error):', path);
         return request<T>(path, options, retry - 1, didRefresh);
       }
@@ -146,7 +146,7 @@ export const request = async <T>(
     }
 
     const message = err instanceof Error ? err.message : 'Network error';
-    throw new ApiError(API_STATUS.NETWORK_ERROR, { message });
+    throw new ApiError(HTTP_STATUS.NETWORK_ERROR, { message });
   } finally {
     window.clearTimeout(timeoutId);
 

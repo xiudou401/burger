@@ -1,4 +1,4 @@
-export const API_STATUS = {
+export const HTTP_STATUS = {
   NETWORK_ERROR: 0,
   NO_CONTENT: 204,
   UNAUTHORIZED: 401,

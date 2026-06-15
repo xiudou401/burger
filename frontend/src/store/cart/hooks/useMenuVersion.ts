@@ -1,18 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { fetchMenuVersion } from '../../../api/menu-version';
 
 const MENU_POLL_MS = 30_000;
 
 export const useMenuVersion = () => {
   const [menuVersion, setMenuVersion] = useState<number | null>(null);
-  const requestIdRef = useRef(0);
 
   const refreshMenuVersion = useCallback(async (signal?: AbortSignal) => {
-    const requestId = ++requestIdRef.current;
     const version = await fetchMenuVersion(signal);
 
-    if (!signal?.aborted && requestId === requestIdRef.current) {
-      setMenuVersion((prev) => (prev === version ? prev : version));
+    if (!signal?.aborted) {
+      // Backend menu versions are timestamp-based and only move forward.
+      setMenuVersion((prev) =>
+        prev === null || version > prev ? version : prev,
+      );
     }
 
     return version;

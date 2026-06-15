@@ -1,9 +1,13 @@
-import { API_STATUS } from '../api/api-status';
+import { HTTP_STATUS } from '../api/http-status';
 import { ApiError } from '../api/request';
-import { isExpectedBackgroundError, reportError } from './error-monitoring';
+import {
+  isExpectedBackgroundError,
+  isRequestCancelled,
+  reportError,
+} from './error-monitoring';
 
 describe('error monitoring', () => {
-  it.each([API_STATUS.CONFLICT, API_STATUS.REQUEST_CANCELLED])(
+  it.each([HTTP_STATUS.CONFLICT, HTTP_STATUS.REQUEST_CANCELLED])(
     'treats status %s as expected background control flow',
     (statusCode) => {
       expect(
@@ -18,7 +22,7 @@ describe('error monitoring', () => {
       .mockImplementation(() => {});
 
     reportError(
-      new ApiError(API_STATUS.SERVER_ERROR_MIN, {
+      new ApiError(HTTP_STATUS.SERVER_ERROR_MIN, {
         message: 'Server failed',
         type: 'ServiceError',
       }),
@@ -30,10 +34,23 @@ describe('error monitoring', () => {
       operation: 'background-validation',
       name: 'ApiError',
       message: 'Server failed',
-      statusCode: API_STATUS.SERVER_ERROR_MIN,
+      statusCode: HTTP_STATUS.SERVER_ERROR_MIN,
       type: 'ServiceError',
     });
 
     consoleError.mockRestore();
+  });
+
+  it('identifies request cancellation without hiding other conflicts', () => {
+    expect(
+      isRequestCancelled(
+        new ApiError(HTTP_STATUS.REQUEST_CANCELLED, { message: 'Cancelled' }),
+      ),
+    ).toBe(true);
+    expect(
+      isRequestCancelled(
+        new ApiError(HTTP_STATUS.CONFLICT, { message: 'Conflict' }),
+      ),
+    ).toBe(false);
   });
 });

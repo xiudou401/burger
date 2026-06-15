@@ -1,4 +1,4 @@
-import { API_STATUS } from '../api/api-status';
+import { HTTP_STATUS } from '../api/http-status';
 import { ApiError } from '../api/request';
 
 interface ErrorContext {
@@ -8,8 +8,12 @@ interface ErrorContext {
 
 export const isExpectedBackgroundError = (error: unknown) =>
   error instanceof ApiError &&
-  (error.statusCode === API_STATUS.CONFLICT ||
-    error.statusCode === API_STATUS.REQUEST_CANCELLED);
+  (error.statusCode === HTTP_STATUS.CONFLICT ||
+    error.statusCode === HTTP_STATUS.REQUEST_CANCELLED);
+
+export const isRequestCancelled = (error: unknown) =>
+  error instanceof ApiError &&
+  error.statusCode === HTTP_STATUS.REQUEST_CANCELLED;
 
 export const reportError = (error: unknown, context: ErrorContext) => {
   const details =

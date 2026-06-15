@@ -1,5 +1,11 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { API_STATUS } from '../../../api/api-status';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { HTTP_STATUS } from '../../../api/http-status';
 import { validateCart } from '../../../api/cart';
 import { ApiError } from '../../../api/request';
 import { useQuoteValidationRequest } from './useQuoteValidationRequest';
@@ -10,18 +16,20 @@ jest.mock('../../../api/cart', () => ({
 
 interface HarnessProps {
   menuVersion: number | null;
+  itemsSig?: string;
   refreshMenuVersion?: (signal?: AbortSignal) => Promise<number>;
   onMenuVersionConflict?: () => void;
 }
 
 const Harness = ({
   menuVersion,
+  itemsSig = 'meal-1:1',
   refreshMenuVersion = async () => 2,
   onMenuVersionConflict = () => {},
 }: HarnessProps) => {
   const { ensureQuote } = useQuoteValidationRequest({
     items: [{ id: 'meal-1', quantity: 1 }],
-    itemsSig: 'meal-1:1',
+    itemsSig,
     menuVersion,
     needsQuoteValidation: true,
     refreshMenuVersion,
@@ -71,7 +79,7 @@ test('refreshes after a version conflict but rejects the current validation', as
   jest
     .mocked(validateCart)
     .mockRejectedValue(
-      new ApiError(API_STATUS.CONFLICT, { message: 'Menu updated' }),
+      new ApiError(HTTP_STATUS.CONFLICT, { message: 'Menu updated' }),
     );
 
   render(
@@ -91,4 +99,54 @@ test('refreshes after a version conflict but rejects the current validation', as
   });
   expect(refreshMenuVersion).toHaveBeenCalled();
   expect(onMenuVersionConflict).toHaveBeenCalled();
+});
+
+test('does not treat a local cart change as a menu version conflict', async () => {
+  let resolveValidation!: (value: {
+    menuVersion: number;
+    items: [];
+    totalCents: number;
+  }) => void;
+  const validation = new Promise<{
+    menuVersion: number;
+    items: [];
+    totalCents: number;
+  }>((resolve) => {
+    resolveValidation = resolve;
+  });
+  const refreshMenuVersion = jest.fn().mockResolvedValue(2);
+  const onMenuVersionConflict = jest.fn();
+
+  jest.mocked(validateCart).mockReturnValue(validation);
+
+  const { rerender } = render(
+    <Harness
+      menuVersion={1}
+      refreshMenuVersion={refreshMenuVersion}
+      onMenuVersionConflict={onMenuVersionConflict}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Validate' }));
+  rerender(
+    <Harness
+      menuVersion={1}
+      itemsSig="meal-1:2"
+      refreshMenuVersion={refreshMenuVersion}
+      onMenuVersionConflict={onMenuVersionConflict}
+    />,
+  );
+
+  await act(async () => {
+    resolveValidation({ menuVersion: 1, items: [], totalCents: 0 });
+    await validation;
+  });
+
+  await waitFor(() => {
+    expect(document.body.dataset.quoteResult).toBe(
+      'Your cart changed. Please validate it again.',
+    );
+  });
+  expect(refreshMenuVersion).not.toHaveBeenCalled();
+  expect(onMenuVersionConflict).not.toHaveBeenCalled();
 });

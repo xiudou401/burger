@@ -1,12 +1,12 @@
-import { API_STATUS } from '../../../api/api-status';
+import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 import { getQuoteErrorMessage } from './quote-error';
 
 describe('getQuoteErrorMessage', () => {
   it.each([
-    API_STATUS.NETWORK_ERROR,
-    API_STATUS.REQUEST_TIMEOUT,
-    API_STATUS.SERVER_ERROR_MIN,
+    HTTP_STATUS.NETWORK_ERROR,
+    HTTP_STATUS.REQUEST_TIMEOUT,
+    HTTP_STATUS.SERVER_ERROR_MIN,
     503,
   ])('uses a temporary outage message for status %s', (statusCode) => {
     expect(

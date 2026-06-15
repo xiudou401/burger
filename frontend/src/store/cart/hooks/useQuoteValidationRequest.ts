@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { validateCart } from '../../../api/cart';
-import { API_STATUS } from '../../../api/api-status';
+import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 import type { CartStoredItem, Quote } from '../../../types/cart';
 import { buildQuoteKey } from '../utils/quote-key';
@@ -72,7 +72,7 @@ export const useQuoteValidationRequest = ({
 
     if (latestMenuVersion === null) {
       return Promise.reject(
-        new ApiError(API_STATUS.CONFLICT, {
+        new ApiError(HTTP_STATUS.CONFLICT, {
           message: 'The menu is still loading. Please try again.',
         }),
       );
@@ -101,20 +101,61 @@ export const useQuoteValidationRequest = ({
 
     promise = (async () => {
       try {
-        const res = await validateCart(
-          snapshotItems,
-          snapshotVersion,
-          controller.signal,
-        );
+        let res: Awaited<ReturnType<typeof validateCart>>;
+
+        try {
+          res = await validateCart(
+            snapshotItems,
+            snapshotVersion,
+            controller.signal,
+          );
+        } catch (err: unknown) {
+          if (
+            controller.signal.aborted ||
+            (err instanceof ApiError &&
+              err.statusCode === HTTP_STATUS.REQUEST_CANCELLED)
+          ) {
+            throw err;
+          }
+
+          if (requestId !== requestIdRef.current) {
+            throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
+              message: 'Quote request was replaced',
+            });
+          }
+
+          if (
+            err instanceof ApiError &&
+            err.statusCode === HTTP_STATUS.CONFLICT
+          ) {
+            await refreshMenuVersion(controller.signal);
+
+            if (
+              controller.signal.aborted ||
+              requestId !== requestIdRef.current
+            ) {
+              throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
+                message: 'Quote request was cancelled or replaced',
+              });
+            }
+
+            onMenuVersionConflict();
+            throw new ApiError(HTTP_STATUS.CONFLICT, {
+              message: 'The menu changed. Please validate your cart again.',
+            });
+          }
+
+          throw err;
+        }
 
         if (requestId !== requestIdRef.current) {
-          throw new ApiError(API_STATUS.REQUEST_CANCELLED, {
+          throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
             message: 'Quote request was replaced',
           });
         }
 
         if (snapshotSig !== latestRef.current.itemsSig) {
-          throw new ApiError(API_STATUS.CONFLICT, {
+          throw new ApiError(HTTP_STATUS.CONFLICT, {
             message: 'Your cart changed. Please validate it again.',
           });
         }
@@ -125,47 +166,6 @@ export const useQuoteValidationRequest = ({
           itemsSig: snapshotSig,
           ts: Date.now(),
         });
-      } catch (err: unknown) {
-        if (
-          controller.signal.aborted ||
-          (err instanceof ApiError &&
-            err.statusCode === API_STATUS.REQUEST_CANCELLED)
-        ) {
-          throw err;
-        }
-
-        if (requestId !== requestIdRef.current) {
-          throw new ApiError(API_STATUS.REQUEST_CANCELLED, {
-            message: 'Quote request was replaced',
-          });
-        }
-
-        if (!(err instanceof ApiError)) {
-          throw err;
-        }
-
-        if (err.statusCode === API_STATUS.CONFLICT) {
-          await refreshMenuVersion(controller.signal);
-
-          if (controller.signal.aborted) {
-            throw new ApiError(API_STATUS.REQUEST_CANCELLED, {
-              message: 'Quote request was cancelled',
-            });
-          }
-
-          if (requestId !== requestIdRef.current) {
-            throw new ApiError(API_STATUS.REQUEST_CANCELLED, {
-              message: 'Quote request was replaced',
-            });
-          }
-
-          onMenuVersionConflict();
-          throw new ApiError(API_STATUS.CONFLICT, {
-            message: 'The menu changed. Please validate your cart again.',
-          });
-        }
-
-        throw err;
       } finally {
         if (inFlightRef.current?.promise === promise) {
           inFlightRef.current = null;
@@ -182,7 +182,9 @@ export const useQuoteValidationRequest = ({
     return promise;
   }, [onMenuVersionConflict, onQuoteValidated, refreshMenuVersion]);
 
-  useEffect(() => cancelQuoteRequest, [cancelQuoteRequest]);
+  useEffect(() => {
+    return cancelQuoteRequest;
+  }, [cancelQuoteRequest]);
 
   return {
     ensureQuote,
