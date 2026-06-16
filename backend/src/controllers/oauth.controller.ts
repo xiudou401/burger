@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
-import { REFRESH_SESSION_TTL_MS } from '../services/auth-session.service';
 import { loginWithOAuth } from '../services/auth.service';
+import { setRefreshCookie } from '../utils/refresh-cookie';
 import {
   OAuthCallbackQuerySchema,
   OAuthProviderParamsSchema,
@@ -28,18 +28,6 @@ const getOAuthErrorTarget = (
 
 const getOAuthCallbackUrl = (provider: 'google' | 'apple') =>
   `${env.FRONTEND_URL}/api/auth/oauth/${provider}/callback`;
-
-const setRefreshCookie = (res: Response, refreshToken: string) => {
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  res.cookie('refreshToken', refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
-    path: '/api/auth',
-    maxAge: REFRESH_SESSION_TTL_MS,
-  });
-};
 
 export const oauthStartHandler = (
   req: Request,

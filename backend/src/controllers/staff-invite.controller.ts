@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
-import { REFRESH_SESSION_TTL_MS } from '../services/auth-session.service';
+import { sendAuthResult } from '../utils/auth-response';
 import {
   acceptStaffInvite,
   createStaffInvite,
@@ -12,19 +12,6 @@ import type {
   CreateStaffInvitePayload,
   StaffInviteParamsPayload,
 } from '../validation/staff-invite.schema';
-
-const REFRESH_COOKIE_NAME = 'refreshToken';
-const isProduction = process.env.NODE_ENV === 'production';
-
-const setRefreshCookie = (res: Response, refreshToken: string) => {
-  res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax',
-    path: '/api/auth',
-    maxAge: REFRESH_SESSION_TTL_MS,
-  });
-};
 
 export const createStaffInviteHandler = async (
   req: Request,
@@ -93,10 +80,7 @@ export const acceptStaffInviteHandler = async (
       token,
       userId: req.user.id,
     });
-    setRefreshCookie(res, result.refreshToken);
-    const { refreshToken: _refreshToken, ...body } = result;
-
-    return res.status(200).json(body);
+    return sendAuthResult(res, 200, result);
   } catch (error) {
     next(error);
   }

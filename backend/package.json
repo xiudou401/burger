@@ -25,6 +25,7 @@
     "trailingComma": "all"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^4.22.1",
@@ -37,6 +38,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",

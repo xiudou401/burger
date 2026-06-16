@@ -8,6 +8,7 @@ import staffInviteRoutes from './routes/staff-invite.routes';
 import stripeRoutes from './routes/stripe.routes';
 import path from 'path';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 
 import { AppError } from './errors/AppError';
 import { env } from './config/env';
@@ -34,6 +35,7 @@ app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeRoutes);
 
 app.use('/api', apiRateLimiter);
 app.use(express.json({ limit: '100kb' }));
+app.use(cookieParser());
 
 app.use('/img', express.static(path.join(process.cwd(), 'public/img')));
 
