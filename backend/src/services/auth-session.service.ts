@@ -2,6 +2,7 @@ import { ServiceError } from '../errors/ServiceError';
 import type { AuthenticatedUser } from '../types/auth';
 import { signAuthToken } from '../utils/token';
 import { createSecureToken, hashToken } from '../utils/secure-token';
+import { toPublicUser } from '../utils/public-user';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
 
@@ -12,26 +13,6 @@ export interface SessionAuthResult {
   refreshToken: string;
   user: AuthenticatedUser;
 }
-
-const toPublicUser = (user: {
-  _id: unknown;
-  email?: string;
-  name: string;
-  role?: 'customer' | 'admin' | 'staff';
-  emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
-}): AuthenticatedUser => {
-  return {
-    id: String(user._id),
-    email: user.email,
-    name: user.name,
-    role: user.role ?? 'customer',
-    emailVerified: user.emailVerified,
-    phone: user.phone,
-    phoneVerified: user.phoneVerified,
-  };
-};
 
 export const createAuthSession = async (
   user: AuthenticatedUser,

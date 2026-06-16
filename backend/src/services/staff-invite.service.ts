@@ -7,6 +7,7 @@ import { createSecureToken, hashToken } from '../utils/secure-token';
 import { sendStaffInviteEmail } from './email.service';
 import { createAuthSession } from './auth-session.service';
 import type { AuthenticatedUser } from '../types/auth';
+import { toPublicUser } from '../utils/public-user';
 import { env } from '../config/env';
 import { staffInviteRepository } from '../repositories/staff-invite.repository';
 import { userRepository } from '../repositories/user.repository';
@@ -48,24 +49,6 @@ const toPublicInvite = (invite: StaffInviteDoc): PublicStaffInvite => ({
   expiresAt: invite.expiresAt,
   acceptedAt: invite.acceptedAt,
   createdAt: invite.createdAt,
-});
-
-const toPublicUser = (user: {
-  _id: unknown;
-  email?: string;
-  name: string;
-  role?: 'customer' | 'admin' | 'staff';
-  emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
-}): AuthenticatedUser => ({
-  id: String(user._id),
-  email: user.email,
-  name: user.name,
-  role: user.role ?? 'customer',
-  emailVerified: user.emailVerified,
-  phone: user.phone,
-  phoneVerified: user.phoneVerified,
 });
 
 export const createStaffInvite = async ({

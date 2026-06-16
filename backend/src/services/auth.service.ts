@@ -2,6 +2,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { hashPassword, verifyPassword } from '../utils/password';
 import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
+import { toPublicUser } from '../utils/public-user';
 import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import {
   sendPasswordResetEmail,
@@ -39,26 +40,6 @@ interface MessageResult {
   emailVerificationToken?: string;
   devSmsCode?: string;
 }
-
-const toPublicUser = (user: {
-  _id: unknown;
-  email?: string;
-  name: string;
-  role?: 'customer' | 'admin' | 'staff';
-  emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
-}): AuthenticatedUser => {
-  return {
-    id: String(user._id),
-    email: user.email,
-    name: user.name,
-    role: user.role ?? 'customer',
-    emailVerified: user.emailVerified,
-    phone: user.phone,
-    phoneVerified: user.phoneVerified,
-  };
-};
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
