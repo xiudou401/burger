@@ -13,9 +13,9 @@ import {
   createSmsCode,
   isDevSmsMode,
   sendSmsVerificationCode,
-  SMS_CODE_TTL_MS,
 } from './sms.service';
 import { env } from '../config/env';
+import { TTL_MS } from '../config/ttl';
 import type {
   ForgotPasswordPayload,
   LoginPayload,
@@ -107,7 +107,7 @@ export const createEmailVerificationToken = async (
   await userRepository.setEmailVerificationToken(
     userId,
     hashToken(token),
-    new Date(Date.now() + 1000 * 60 * 60 * 24),
+    new Date(Date.now() + TTL_MS.EMAIL_VERIFICATION),
   );
 
   await sendVerificationEmail({ email, token });
@@ -173,7 +173,7 @@ export const requestPasswordReset = async ({
 
   const resetToken = createSecureToken();
   user.passwordResetTokenHash = hashToken(resetToken);
-  user.passwordResetExpiresAt = new Date(Date.now() + 1000 * 60 * 30);
+  user.passwordResetExpiresAt = new Date(Date.now() + TTL_MS.PASSWORD_RESET);
   await userRepository.save(user);
 
   if (!user.email) {
@@ -242,7 +242,7 @@ export const sendSmsCode = async (
 
   const code = createSmsCode();
   user.smsVerificationCodeHash = hashToken(code);
-  user.smsVerificationExpiresAt = new Date(Date.now() + SMS_CODE_TTL_MS);
+  user.smsVerificationExpiresAt = new Date(Date.now() + TTL_MS.SMS_CODE);
   await userRepository.save(user);
 
   await sendSmsVerificationCode({

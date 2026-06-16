@@ -2,8 +2,7 @@ import { createHmac } from 'crypto';
 import { env } from '../config/env';
 import type { AuthTokenPayload } from '../types/auth';
 import { ServiceError } from '../errors/ServiceError';
-
-const TOKEN_TTL_SECONDS = 60 * 15;
+import { TTL_SECONDS } from '../config/ttl';
 
 const toBase64Url = (value: string | Buffer) => {
   return Buffer.from(value)
@@ -28,7 +27,7 @@ export const signAuthToken = (
     JSON.stringify({
       ...payload,
       iat: now,
-      exp: now + TOKEN_TTL_SECONDS,
+      exp: now + TTL_SECONDS.ACCESS_TOKEN,
     }),
   );
   const unsignedToken = `${header}.${body}`;

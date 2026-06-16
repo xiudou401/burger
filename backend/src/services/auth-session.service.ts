@@ -5,8 +5,7 @@ import { createSecureToken, hashToken } from '../utils/secure-token';
 import { toPublicUser } from '../utils/public-user';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
-
-export const REFRESH_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+import { TTL_MS } from '../config/ttl';
 
 export interface SessionAuthResult {
   accessToken: string;
@@ -22,7 +21,7 @@ export const createAuthSession = async (
   await authSessionRepository.create({
     userId: user.id,
     refreshTokenHash: hashToken(refreshToken),
-    expiresAt: new Date(Date.now() + REFRESH_SESSION_TTL_MS),
+    expiresAt: new Date(Date.now() + TTL_MS.REFRESH_SESSION),
   });
 
   return {

@@ -15,8 +15,7 @@ import type {
   AcceptStaffInvitePayload,
   CreateStaffInvitePayload,
 } from '../validation/staff-invite.schema';
-
-const INVITE_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+import { TTL_MS } from '../config/ttl';
 const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
 
 export interface PublicStaffInvite {
@@ -68,7 +67,7 @@ export const createStaffInvite = async ({
     tokenHash: hashToken(token),
     invitedBy,
     status: 'pending',
-    expiresAt: new Date(Date.now() + INVITE_TTL_MS),
+    expiresAt: new Date(Date.now() + TTL_MS.STAFF_INVITE),
   });
 
   await sendStaffInviteEmail({

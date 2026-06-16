@@ -1,7 +1,5 @@
 import { randomInt } from 'crypto';
 
-export const SMS_CODE_TTL_MS = 1000 * 60 * 5;
-
 export const createSmsCode = () => {
   return String(randomInt(100000, 1000000));
 };
