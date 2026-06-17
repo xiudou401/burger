@@ -12,4 +12,5 @@ export interface AuthResponse {
   accessToken: string;
   user: User;
   emailVerificationToken?: string;
+  emailVerificationEmailFailed?: boolean;
 }

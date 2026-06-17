@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { verifyEmail } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 
-export const useVerifyEmailToken = (token: string) => {
+export const useVerifyEmailToken = (
+  token: string,
+  emailDelivery?: string | null,
+) => {
   const user = useAuth((ctx) => ctx.user);
   const accessToken = useAuth((ctx) => ctx.accessToken);
   const loginFn = useAuth((ctx) => ctx.login);
@@ -18,7 +21,11 @@ export const useVerifyEmailToken = (token: string) => {
     didVerifyRef.current = true;
 
     if (!token) {
-      setMessage('Check your email for the verification link.');
+      setMessage(
+        emailDelivery === 'failed'
+          ? 'Your account was created, but the verification email could not be sent. Please request a new verification email from your account.'
+          : 'Check your email for the verification link.',
+      );
       setIsError(false);
       return;
     }
@@ -39,7 +46,7 @@ export const useVerifyEmailToken = (token: string) => {
         setMessage(err instanceof Error ? err.message : 'Verification failed');
         setIsError(true);
       });
-  }, [accessToken, loginFn, token, user]);
+  }, [accessToken, emailDelivery, loginFn, token, user]);
 
   return {
     message,

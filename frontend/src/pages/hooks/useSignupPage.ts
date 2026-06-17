@@ -41,6 +41,11 @@ export const useSignupPage = () => {
 
       loginFn(res.accessToken, res.user);
 
+      if (res.emailVerificationEmailFailed) {
+        navigate('/verify-email?emailDelivery=failed');
+        return;
+      }
+
       if (res.emailVerificationToken) {
         navigate(`/verify-email?token=${res.emailVerificationToken}`);
         return;

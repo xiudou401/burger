@@ -88,6 +88,40 @@ describe('auth service', () => {
     );
     expect(createAuthSession).toHaveBeenCalledWith(publicUser);
     expect(result.accessToken).toBe('access-token');
+    expect(result.emailVerificationEmailFailed).toBeUndefined();
+  });
+
+  test('keeps signup successful when verification email delivery fails', async () => {
+    const consoleError = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    jest.mocked(userRepository.existsByEmail).mockResolvedValue(null);
+    jest.mocked(userRepository.create).mockResolvedValue(userDoc as never);
+    jest
+      .mocked(sendVerificationEmail)
+      .mockRejectedValue(new Error('Email provider unavailable'));
+
+    const result = await signup({
+      name: 'Pat',
+      email: 'pat@example.com',
+      password: 'Burger#2026',
+    });
+
+    expect(userRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: 'pat@example.com',
+      }),
+    );
+    expect(userRepository.setEmailVerificationToken).toHaveBeenCalledWith(
+      userId,
+      expect.any(String),
+      expect.any(Date),
+    );
+    expect(createAuthSession).toHaveBeenCalledWith(publicUser);
+    expect(result.accessToken).toBe('access-token');
+    expect(result.emailVerificationEmailFailed).toBe(true);
+
+    consoleError.mockRestore();
   });
 
   test('rejects duplicate signup emails', async () => {

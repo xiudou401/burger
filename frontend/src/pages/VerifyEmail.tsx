@@ -10,7 +10,8 @@ import { useVerifyEmailToken } from './hooks/useVerifyEmailToken';
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
-  const { message, isError } = useVerifyEmailToken(token);
+  const emailDelivery = searchParams.get('emailDelivery');
+  const { message, isError } = useVerifyEmailToken(token, emailDelivery);
 
   return (
     <AuthCenteredPage>

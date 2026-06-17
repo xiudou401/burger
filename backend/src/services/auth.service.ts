@@ -32,6 +32,7 @@ interface AuthResult {
   refreshToken: string;
   user: AuthenticatedUser;
   emailVerificationToken?: string;
+  emailVerificationEmailFailed?: boolean;
 }
 
 interface MessageResult {
@@ -56,6 +57,16 @@ const createAuthResult = async (
   };
 };
 
+const sendVerificationEmailSafely = async (email: string, token: string) => {
+  try {
+    await sendVerificationEmail({ email, token });
+    return true;
+  } catch (error) {
+    console.error('Verification email send failed:', error);
+    return false;
+  }
+};
+
 export const signup = async ({
   name,
   email,
@@ -74,12 +85,16 @@ export const signup = async ({
   });
   const emailVerificationToken = await createEmailVerificationToken(
     String(user._id),
+  );
+  const emailSent = await sendVerificationEmailSafely(
     email,
+    emailVerificationToken,
   );
   const publicUser = toPublicUser(user);
 
   return createAuthResult(publicUser, {
     ...(isDevEmailMode() ? { emailVerificationToken } : {}),
+    ...(!emailSent ? { emailVerificationEmailFailed: true } : {}),
   });
 };
 
@@ -98,10 +113,7 @@ export const login = async ({
   return createAuthResult(publicUser);
 };
 
-export const createEmailVerificationToken = async (
-  userId: string,
-  email: string,
-) => {
+export const createEmailVerificationToken = async (userId: string) => {
   const token = createSecureToken();
 
   await userRepository.setEmailVerificationToken(
@@ -109,8 +121,6 @@ export const createEmailVerificationToken = async (
     hashToken(token),
     new Date(Date.now() + TTL_MS.EMAIL_VERIFICATION),
   );
-
-  await sendVerificationEmail({ email, token });
 
   return token;
 };
@@ -134,8 +144,11 @@ export const resendVerificationEmail = async (
 
   const emailVerificationToken = await createEmailVerificationToken(
     String(user._id),
-    user.email,
   );
+  await sendVerificationEmail({
+    email: user.email,
+    token: emailVerificationToken,
+  });
 
   return {
     message: 'Verification email sent',
