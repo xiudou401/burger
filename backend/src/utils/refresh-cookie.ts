@@ -17,7 +17,7 @@ const getRefreshCookieOptions = (): CookieOptions => {
 export const setRefreshCookie = (res: Response, refreshToken: string) => {
   res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
     ...getRefreshCookieOptions(),
-    maxAge: TTL_MS.REFRESH_SESSION,
+    maxAge: TTL_MS.REFRESH_COOKIE_MAX_AGE,
   });
 };
 

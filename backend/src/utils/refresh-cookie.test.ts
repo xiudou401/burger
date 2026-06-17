@@ -37,7 +37,7 @@ describe('refresh cookie helpers', () => {
       secure: true,
       sameSite: 'none',
       path: '/api/auth',
-      maxAge: TTL_MS.REFRESH_SESSION,
+      maxAge: TTL_MS.REFRESH_COOKIE_MAX_AGE,
     });
   });
 
