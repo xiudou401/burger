@@ -15,6 +15,32 @@ const isPayloadTooLargeError = (
   return candidate.status === 413 && candidate.type === 'entity.too.large';
 };
 
+const isMongoDuplicateKeyError = (
+  error: unknown,
+): error is { code: number; keyPattern?: Record<string, unknown> } => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { code?: unknown; keyPattern?: unknown };
+
+  return candidate.code === 11000;
+};
+
+const getDuplicateKeyMessage = (error: {
+  keyPattern?: Record<string, unknown>;
+}) => {
+  if (error.keyPattern?.email) {
+    return 'Email already registered';
+  }
+
+  if (error.keyPattern?.phone) {
+    return 'Phone is already linked to another account';
+  }
+
+  return 'Duplicate value already exists';
+};
+
 export const errorHandler = (
   err: unknown,
   _req: Request,
@@ -26,6 +52,14 @@ export const errorHandler = (
       message: 'Request body is too large',
       statusCode: 413,
       type: 'PayloadTooLargeError',
+    });
+  }
+
+  if (isMongoDuplicateKeyError(err)) {
+    return res.status(409).json({
+      message: getDuplicateKeyMessage(err),
+      statusCode: 409,
+      type: 'DuplicateKeyError',
     });
   }
 

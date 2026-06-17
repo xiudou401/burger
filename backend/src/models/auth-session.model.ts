@@ -27,7 +27,6 @@ const authSessionSchema = new Schema<AuthSession>(
     expiresAt: {
       type: Date,
       required: true,
-      index: true,
     },
     revokedAt: {
       type: Date,
@@ -39,6 +38,7 @@ const authSessionSchema = new Schema<AuthSession>(
   { timestamps: true },
 );
 
+authSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 authSessionSchema.index({ userId: 1, revokedAt: 1, expiresAt: 1 });
 
 export const AuthSessionModel = model<AuthSession>(

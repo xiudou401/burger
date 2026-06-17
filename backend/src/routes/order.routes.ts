@@ -10,6 +10,7 @@ import {
 } from '../controllers/order.controller';
 import { authenticate } from '../middleware/authenticate';
 import { requireAdmin } from '../middleware/requireAdmin';
+import { requireVerifiedContact } from '../middleware/requireVerifiedContact';
 import {
   validateBody,
   validateParams,
@@ -29,11 +30,13 @@ router.use(authenticate);
 
 router.post(
   '/checkout',
+  requireVerifiedContact,
   validateBody(CreateOrderSchema, 'Checkout order payload'),
   createCheckoutOrderHandler,
 );
 router.post(
   '/',
+  requireVerifiedContact,
   validateBody(CreateOrderSchema, 'Create order payload'),
   createOrderHandler,
 );

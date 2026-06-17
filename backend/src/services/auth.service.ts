@@ -81,7 +81,7 @@ export const signup = async ({
   const user = await userRepository.create({
     name,
     email,
-    passwordHash: hashPassword(password),
+    passwordHash: await hashPassword(password),
   });
   const emailVerificationToken = await createEmailVerificationToken(
     String(user._id),
@@ -104,7 +104,10 @@ export const login = async ({
 }: LoginPayload): Promise<AuthResult> => {
   const user = await userRepository.findByEmailWithPassword(email);
 
-  if (!user?.passwordHash || !verifyPassword(password, user.passwordHash)) {
+  if (
+    !user?.passwordHash ||
+    !(await verifyPassword(password, user.passwordHash))
+  ) {
     throw new ServiceError('Invalid email or password', 401);
   }
 
@@ -213,7 +216,7 @@ export const resetPassword = async ({
     throw new ServiceError('Reset link is invalid or expired', 400);
   }
 
-  user.passwordHash = hashPassword(password);
+  user.passwordHash = await hashPassword(password);
   user.passwordResetTokenHash = undefined;
   user.passwordResetExpiresAt = undefined;
   await userRepository.save(user);
@@ -314,7 +317,7 @@ export const loginWithOAuth = async ({
     user = await userRepository.create({
       name: normalizedName,
       email: normalizedEmail,
-      passwordHash: hashPassword(createSecureToken()),
+      passwordHash: await hashPassword(createSecureToken()),
       emailVerified,
     });
     isNewUser = true;

@@ -140,7 +140,7 @@ describe('auth service', () => {
   });
 
   test('logs in users with valid credentials', async () => {
-    const passwordHash = hashPassword('Burger#2026');
+    const passwordHash = await hashPassword('Burger#2026');
     jest.mocked(userRepository.findByEmailWithPassword).mockResolvedValue({
       ...userDoc,
       passwordHash,
@@ -161,7 +161,7 @@ describe('auth service', () => {
   test('rejects login with invalid credentials', async () => {
     jest.mocked(userRepository.findByEmailWithPassword).mockResolvedValue({
       ...userDoc,
-      passwordHash: hashPassword('Burger#2026'),
+      passwordHash: await hashPassword('Burger#2026'),
     } as never);
 
     await expect(
