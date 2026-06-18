@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import { env } from '../config/env';
 import type { AuthTokenPayload } from '../types/auth';
 import { ServiceError } from '../errors/ServiceError';
@@ -15,6 +15,46 @@ const toBase64Url = (value: string | Buffer) => {
 const signValue = (value: string) => {
   return toBase64Url(
     createHmac('sha256', env.JWT_SECRET).update(value).digest(),
+  );
+};
+
+const safeCompare = (actual: string, expected: string) => {
+  const actualBuffer = Buffer.from(actual);
+  const expectedBuffer = Buffer.from(expected);
+
+  return (
+    actualBuffer.length === expectedBuffer.length &&
+    timingSafeEqual(actualBuffer, expectedBuffer)
+  );
+};
+
+const isTokenHeader = (
+  header: unknown,
+): header is { alg: 'HS256'; typ: 'JWT' } => {
+  if (!header || typeof header !== 'object') {
+    return false;
+  }
+
+  const candidate = header as { alg?: unknown; typ?: unknown };
+
+  return candidate.alg === 'HS256' && candidate.typ === 'JWT';
+};
+
+const isTokenPayload = (payload: unknown): payload is AuthTokenPayload => {
+  if (!payload || typeof payload !== 'object') {
+    return false;
+  }
+
+  const candidate = payload as {
+    sub?: unknown;
+    exp?: unknown;
+    iat?: unknown;
+  };
+
+  return (
+    typeof candidate.sub === 'string' &&
+    typeof candidate.exp === 'number' &&
+    typeof candidate.iat === 'number'
   );
 };
 
@@ -44,23 +84,27 @@ export const verifyAuthToken = (token: string): AuthTokenPayload => {
 
   const expectedSignature = signValue(`${header}.${body}`);
 
-  if (signature !== expectedSignature) {
+  if (!safeCompare(signature, expectedSignature)) {
     throw new ServiceError('Invalid token', 401);
   }
 
+  let parsedHeader: unknown;
   let payload: AuthTokenPayload;
 
   try {
-    payload = JSON.parse(Buffer.from(body, 'base64').toString('utf8'));
+    parsedHeader = JSON.parse(
+      Buffer.from(header, 'base64url').toString('utf8'),
+    );
+    payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
   } catch {
     throw new ServiceError('Invalid token', 401);
   }
 
-  if (!payload.sub || !payload.exp) {
+  if (!isTokenHeader(parsedHeader) || !isTokenPayload(payload)) {
     throw new ServiceError('Invalid token', 401);
   }
 
-  if (payload.exp < Math.floor(Date.now() / 1000)) {
+  if (payload.exp <= Math.floor(Date.now() / 1000)) {
     throw new ServiceError('Token expired', 401);
   }
 
