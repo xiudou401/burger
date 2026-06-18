@@ -3,6 +3,16 @@ import { HTTP_STATUS } from './http-status';
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
+const NO_AUTO_REFRESH_PATHS = new Set([
+  '/auth/login',
+  '/auth/signup',
+  '/auth/refresh',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+  '/auth/sms/send',
+  '/auth/sms/verify',
+]);
 let inMemoryAccessToken: string | null = null;
 let refreshPromise: Promise<AuthRefreshResponse> | null = null;
 
@@ -76,6 +86,7 @@ export const request = async <T>(
       signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
+        'X-CSRF-Protection': '1',
         ...(inMemoryAccessToken
           ? { Authorization: `Bearer ${inMemoryAccessToken}` }
           : {}),
@@ -87,7 +98,7 @@ export const request = async <T>(
       if (
         res.status === HTTP_STATUS.UNAUTHORIZED &&
         !didRefresh &&
-        path !== '/auth/refresh'
+        !NO_AUTO_REFRESH_PATHS.has(path)
       ) {
         try {
           const refreshed = await refreshAccessToken();

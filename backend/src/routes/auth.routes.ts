@@ -21,6 +21,8 @@ import { validateBody } from '../middleware/validate';
 import {
   authActionRateLimiter,
   authAttemptRateLimiter,
+  resendVerificationRateLimiter,
+  verifyTrustedOrigin,
 } from '../middleware/security';
 import {
   ForgotPasswordSchema,
@@ -36,45 +38,53 @@ const router = express.Router();
 
 router.post(
   '/signup',
+  verifyTrustedOrigin,
   authActionRateLimiter,
   validateBody(SignupSchema, 'Signup payload'),
   signupHandler,
 );
 router.post(
   '/login',
+  verifyTrustedOrigin,
   authAttemptRateLimiter,
   validateBody(LoginSchema, 'Login payload'),
   loginHandler,
 );
-router.post('/refresh', refreshHandler);
-router.post('/logout', logoutHandler);
+router.post('/refresh', verifyTrustedOrigin, refreshHandler);
+router.post('/logout', verifyTrustedOrigin, logoutHandler);
 router.get('/me', authenticate, meHandler);
 router.post(
   '/verify-email',
+  verifyTrustedOrigin,
   authAttemptRateLimiter,
   validateBody(VerifyEmailSchema, 'Verify email payload'),
   verifyEmailHandler,
 );
 router.post(
   '/resend-verification',
+  verifyTrustedOrigin,
   authActionRateLimiter,
   authenticate,
+  resendVerificationRateLimiter,
   resendVerificationHandler,
 );
 router.post(
   '/forgot-password',
+  verifyTrustedOrigin,
   authActionRateLimiter,
   validateBody(ForgotPasswordSchema, 'Forgot password payload'),
   forgotPasswordHandler,
 );
 router.post(
   '/reset-password',
+  verifyTrustedOrigin,
   authAttemptRateLimiter,
   validateBody(ResetPasswordSchema, 'Reset password payload'),
   resetPasswordHandler,
 );
 router.post(
   '/sms/send',
+  verifyTrustedOrigin,
   authActionRateLimiter,
   optionalAuthenticate,
   validateBody(SendSmsCodeSchema, 'Send SMS code payload'),
@@ -82,6 +92,7 @@ router.post(
 );
 router.post(
   '/sms/verify',
+  verifyTrustedOrigin,
   authAttemptRateLimiter,
   validateBody(VerifySmsCodeSchema, 'Verify SMS code payload'),
   verifySmsCodeHandler,
