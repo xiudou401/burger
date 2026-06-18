@@ -32,17 +32,16 @@ export const useVerifyEmailToken = (
 
     verifyEmail(token)
       .then((res) => {
+        window.history.replaceState({}, '', '/verify-email');
         setMessage(res.message);
         setIsError(false);
 
-        if (user && accessToken) {
-          loginFn(accessToken, {
-            ...user,
-            emailVerified: true,
-          });
+        if (user && accessToken && res.user && user.id === res.user.id) {
+          loginFn(accessToken, res.user);
         }
       })
       .catch((err) => {
+        window.history.replaceState({}, '', '/verify-email');
         setMessage(err instanceof Error ? err.message : 'Verification failed');
         setIsError(true);
       });

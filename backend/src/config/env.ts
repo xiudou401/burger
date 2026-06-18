@@ -13,6 +13,9 @@ const optionalNonEmptyString = z
 
 const EnvSchema = z
   .object({
+    NODE_ENV: z
+      .enum(['development', 'test', 'production'])
+      .default('development'),
     PORT: z.string().trim().min(1).default('3000'),
     MONGO_URI: z.string().trim().min(1, 'MONGO_URI is required'),
     JWT_SECRET: z
@@ -32,6 +35,18 @@ const EnvSchema = z
     STRIPE_CANCEL_URL: optionalNonEmptyString,
   })
   .passthrough()
+  .superRefine((parsed, ctx) => {
+    if (
+      parsed.NODE_ENV === 'production' &&
+      (!parsed.RESEND_API_KEY || !parsed.EMAIL_FROM)
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['RESEND_API_KEY'],
+        message: 'Production email configuration is missing',
+      });
+    }
+  })
   .transform((parsed) => ({
     ...parsed,
     API_URL: parsed.API_URL ?? `http://localhost:${parsed.PORT}`,

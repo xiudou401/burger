@@ -16,7 +16,9 @@ import type {
   CreateStaffInvitePayload,
 } from '../validation/staff-invite.schema';
 import { TTL_MS } from '../config/ttl';
-const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
+
+const isDevEmailMode = () =>
+  env.NODE_ENV !== 'production' && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
 
 export interface PublicStaffInvite {
   id: string;

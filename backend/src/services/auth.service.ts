@@ -1,5 +1,9 @@
 import { ServiceError } from '../errors/ServiceError';
-import { hashPassword, verifyPassword } from '../utils/password';
+import {
+  hashPassword,
+  passwordHashNeedsUpgrade,
+  verifyPassword,
+} from '../utils/password';
 import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { toPublicUser } from '../utils/public-user';
@@ -37,13 +41,15 @@ interface AuthResult {
 
 interface MessageResult {
   message: string;
+  user?: AuthenticatedUser;
   resetToken?: string;
   emailVerificationToken?: string;
   devSmsCode?: string;
 }
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
-const isDevEmailMode = () => !env.RESEND_API_KEY || !env.EMAIL_FROM;
+const isDevEmailMode = () =>
+  env.NODE_ENV !== 'production' && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
 
 const createAuthResult = async (
   user: AuthenticatedUser,
@@ -111,6 +117,11 @@ export const login = async ({
     throw new ServiceError('Invalid email or password', 401);
   }
 
+  if (passwordHashNeedsUpgrade(user.passwordHash)) {
+    user.passwordHash = await hashPassword(password);
+    await userRepository.save(user);
+  }
+
   const publicUser = toPublicUser(user);
 
   return createAuthResult(publicUser);
@@ -175,7 +186,10 @@ export const verifyEmail = async ({
   user.emailVerificationExpiresAt = undefined;
   await userRepository.save(user);
 
-  return { message: 'Email verified' };
+  return {
+    message: 'Email verified',
+    user: toPublicUser(user),
+  };
 };
 
 export const requestPasswordReset = async ({

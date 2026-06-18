@@ -13,6 +13,7 @@
     "start": "node dist/src/server.js",
     "seed:meals": "ts-node scripts/seedMeals.ts",
     "seed:demo-users": "ts-node scripts/seedDemoUsers.ts",
+    "benchmark:password": "ts-node scripts/benchmarkPassword.ts",
     "migrate:money-cents": "ts-node scripts/migrateMoneyToCents.ts",
     "localize:meals": "ts-node scripts/localizeMeals.ts",
     "make:admin": "ts-node scripts/makeAdmin.ts"

@@ -1,15 +1,18 @@
 import { ServiceError } from '../errors/ServiceError';
+import { beforeEach, describe, expect, jest, test } from '@jest/globals';
+import { pbkdf2Sync } from 'crypto';
 import { userRepository } from '../repositories/user.repository';
 import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendVerificationEmail } from './email.service';
 import { hashPassword } from '../utils/password';
-import { login, resetPassword, signup } from './auth.service';
+import { login, resetPassword, signup, verifyEmail } from './auth.service';
 
 jest.mock('../repositories/user.repository', () => ({
   userRepository: {
     existsByEmail: jest.fn(),
     create: jest.fn(),
     findByEmailWithPassword: jest.fn(),
+    findByValidEmailVerificationToken: jest.fn(),
     findByValidPasswordResetToken: jest.fn(),
     save: jest.fn(),
     setEmailVerificationToken: jest.fn(),
@@ -26,6 +29,16 @@ jest.mock('./email.service', () => ({
   sendWelcomeEmail: jest.fn(),
   sendPasswordResetEmail: jest.fn(),
 }));
+
+const makeLegacyHash = (password: string) => {
+  const iterations = 120_000;
+  const salt = 'legacy-salt';
+  const hash = pbkdf2Sync(password, salt, iterations, 64, 'sha512').toString(
+    'hex',
+  );
+
+  return `${iterations}:${salt}:${hash}`;
+};
 
 describe('auth service', () => {
   const userId = 'user-123';
@@ -158,6 +171,27 @@ describe('auth service', () => {
     expect(result.refreshToken).toBe('refresh-token');
   });
 
+  test('upgrades legacy password hashes after successful login', async () => {
+    const loginUser = {
+      ...userDoc,
+      passwordHash: makeLegacyHash('Burger#2026'),
+    };
+    jest
+      .mocked(userRepository.findByEmailWithPassword)
+      .mockResolvedValue(loginUser as never);
+
+    await login({
+      email: 'pat@example.com',
+      password: 'Burger#2026',
+    });
+
+    expect(userRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: userId }),
+    );
+    expect(loginUser.passwordHash).not.toContain('120000:');
+    expect(loginUser.passwordHash).toContain('210000:');
+  });
+
   test('rejects login with invalid credentials', async () => {
     jest.mocked(userRepository.findByEmailWithPassword).mockResolvedValue({
       ...userDoc,
@@ -168,6 +202,34 @@ describe('auth service', () => {
       login({ email: 'pat@example.com', password: 'wrong-password' }),
     ).rejects.toThrow(ServiceError);
     expect(createAuthSession).not.toHaveBeenCalled();
+  });
+
+  test('verifies email and returns the updated public user', async () => {
+    const verificationUser = {
+      ...userDoc,
+      emailVerified: false,
+      emailVerificationTokenHash: 'hash',
+      emailVerificationExpiresAt: new Date(Date.now() + 60_000),
+    };
+    jest
+      .mocked(userRepository.findByValidEmailVerificationToken)
+      .mockResolvedValue(verificationUser as never);
+
+    const result = await verifyEmail({ token: 'verification-token' });
+
+    expect(userRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: userId }),
+    );
+    expect(verificationUser.emailVerified).toBe(true);
+    expect(verificationUser.emailVerificationTokenHash).toBeUndefined();
+    expect(verificationUser.emailVerificationExpiresAt).toBeUndefined();
+    expect(result).toEqual({
+      message: 'Email verified',
+      user: {
+        ...publicUser,
+        emailVerified: true,
+      },
+    });
   });
 
   test('resets password and revokes existing sessions', async () => {
@@ -186,7 +248,9 @@ describe('auth service', () => {
       password: 'Burger#2027',
     });
 
-    expect(userRepository.save).toHaveBeenCalledWith(resetUser);
+    expect(userRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ _id: userId }),
+    );
     expect(revokeUserSessions).toHaveBeenCalledWith(userId);
     expect(resetUser.passwordHash).not.toBe('old-hash');
     expect(resetUser.passwordResetTokenHash).toBeUndefined();

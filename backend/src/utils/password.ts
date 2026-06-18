@@ -1,8 +1,15 @@
 import { pbkdf2, randomBytes, timingSafeEqual } from 'crypto';
 
-const ITERATIONS = 120000;
+const ITERATIONS = 210_000;
 const KEY_LENGTH = 64;
 const DIGEST = 'sha512';
+
+const getStoredIterations = (storedHash: string) => {
+  const [iterations] = storedHash.split(':');
+  const parsedIterations = Number(iterations);
+
+  return Number.isFinite(parsedIterations) ? parsedIterations : null;
+};
 
 const derivePasswordKey = (
   password: string,
@@ -29,15 +36,22 @@ export const hashPassword = async (password: string) => {
 
 export const verifyPassword = async (password: string, storedHash: string) => {
   const [iterations, salt, hash] = storedHash.split(':');
+  const parsedIterations = getStoredIterations(storedHash);
 
-  if (!iterations || !salt || !hash) {
+  if (!parsedIterations || !iterations || !salt || !hash) {
     return false;
   }
 
-  const candidate = await derivePasswordKey(password, salt, Number(iterations));
+  const candidate = await derivePasswordKey(password, salt, parsedIterations);
   const expected = Buffer.from(hash, 'hex');
 
   return (
     candidate.length === expected.length && timingSafeEqual(candidate, expected)
   );
+};
+
+export const passwordHashNeedsUpgrade = (storedHash: string) => {
+  const iterations = getStoredIterations(storedHash);
+
+  return iterations === null || iterations < ITERATIONS;
 };

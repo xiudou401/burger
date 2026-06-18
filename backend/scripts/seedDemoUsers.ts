@@ -32,7 +32,7 @@ const demoUsers = [
         $set: {
           name: user.name,
           email: user.email,
-          passwordHash: hashPassword(user.password),
+          passwordHash: await hashPassword(user.password),
           role: user.role,
           emailVerified: true,
           phoneVerified: false,

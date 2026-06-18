@@ -1,8 +1,9 @@
 import { request } from './request';
-import type { AuthResponse } from '../types/auth';
+import type { AuthResponse, User } from '../types/auth';
 
 interface MessageResponse {
   message: string;
+  user?: User;
   resetToken?: string;
   emailVerificationToken?: string;
   devSmsCode?: string;
