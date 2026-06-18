@@ -31,6 +31,34 @@ describe('authSessionRepository', () => {
     expect(exec).toHaveBeenCalled();
   });
 
+  test('atomically consumes an active refresh session', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    const select = jest.fn().mockReturnValue({ exec });
+    const now = new Date('2026-06-18T00:00:00.000Z');
+
+    jest
+      .mocked(AuthSessionModel.findOneAndUpdate)
+      .mockReturnValue({ select } as never);
+
+    await authSessionRepository.consumeActiveByRefreshTokenHash('hash', now);
+
+    expect(AuthSessionModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        refreshTokenHash: 'hash',
+        revokedAt: { $exists: false },
+        rotatedAt: { $exists: false },
+        expiresAt: { $gt: now },
+      },
+      {
+        revokedAt: now,
+        rotatedAt: now,
+      },
+      { new: true },
+    );
+    expect(select).toHaveBeenCalledWith('+refreshTokenHash');
+    expect(exec).toHaveBeenCalled();
+  });
+
   test('revokes active sessions by refresh token hash', async () => {
     const exec = jest.fn().mockResolvedValue(null);
 

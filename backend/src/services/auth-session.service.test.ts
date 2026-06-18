@@ -12,6 +12,7 @@ import {
 jest.mock('../repositories/auth-session.repository', () => ({
   authSessionRepository: {
     create: jest.fn(),
+    consumeActiveByRefreshTokenHash: jest.fn(),
     findByRefreshTokenHash: jest.fn(),
     revokeByRefreshTokenHash: jest.fn(),
     revokeActiveByUserId: jest.fn(),
@@ -63,8 +64,8 @@ describe('auth session service', () => {
     const session = {
       userId: user.id,
       expiresAt: new Date(Date.now() + 60_000),
-      revokedAt: undefined as Date | undefined,
-      rotatedAt: undefined as Date | undefined,
+      revokedAt: new Date(),
+      rotatedAt: new Date(),
     };
     const userDoc = {
       _id: user.id,
@@ -76,18 +77,18 @@ describe('auth session service', () => {
     };
 
     jest
-      .mocked(authSessionRepository.findByRefreshTokenHash)
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
       .mockResolvedValue(session as never);
     jest.mocked(userRepository.findById).mockResolvedValue(userDoc as never);
 
     const result = await rotateAuthSession('old-refresh-token');
 
-    expect(authSessionRepository.findByRefreshTokenHash).toHaveBeenCalledWith(
-      'hash:old-refresh-token',
-    );
+    expect(
+      authSessionRepository.consumeActiveByRefreshTokenHash,
+    ).toHaveBeenCalledWith('hash:old-refresh-token');
     expect(session.revokedAt).toBeInstanceOf(Date);
     expect(session.rotatedAt).toBeInstanceOf(Date);
-    expect(authSessionRepository.save).toHaveBeenCalledWith(session);
+    expect(authSessionRepository.save).not.toHaveBeenCalledWith(session);
     expect(authSessionRepository.create).toHaveBeenCalled();
     expect(result.user.id).toBe(user.id);
   });
@@ -96,14 +97,27 @@ describe('auth session service', () => {
     await expect(rotateAuthSession('')).rejects.toThrow(ServiceError);
 
     jest
-      .mocked(authSessionRepository.findByRefreshTokenHash)
-      .mockResolvedValue({
-        expiresAt: new Date(Date.now() - 1),
-      } as never);
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(null);
 
     await expect(rotateAuthSession('expired-token')).rejects.toThrow(
       ServiceError,
     );
+  });
+
+  test('rejects replayed refresh tokens after they are consumed', async () => {
+    jest
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(null);
+
+    await expect(rotateAuthSession('old-refresh-token')).rejects.toThrow(
+      ServiceError,
+    );
+
+    expect(
+      authSessionRepository.consumeActiveByRefreshTokenHash,
+    ).toHaveBeenCalledWith('hash:old-refresh-token');
+    expect(authSessionRepository.create).not.toHaveBeenCalled();
   });
 
   test('revokes sessions by refresh token and user id', async () => {

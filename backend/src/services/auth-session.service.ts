@@ -42,11 +42,11 @@ export const rotateAuthSession = async (
     throw new ServiceError('Refresh token required', 401);
   }
 
-  const session = await authSessionRepository.findByRefreshTokenHash(
+  const session = await authSessionRepository.consumeActiveByRefreshTokenHash(
     hashToken(refreshToken),
   );
 
-  if (!session || session.revokedAt || session.expiresAt <= new Date()) {
+  if (!session) {
     throw new ServiceError('Session expired', 401);
   }
 
@@ -57,10 +57,6 @@ export const rotateAuthSession = async (
     await authSessionRepository.save(session);
     throw new ServiceError('User no longer exists', 401);
   }
-
-  session.rotatedAt = new Date();
-  session.revokedAt = new Date();
-  await authSessionRepository.save(session);
 
   return createAuthSession(toPublicUser(user));
 };

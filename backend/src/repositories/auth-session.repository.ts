@@ -15,6 +15,24 @@ export const authSessionRepository = {
       .exec();
   },
 
+  consumeActiveByRefreshTokenHash(refreshTokenHash: string, now = new Date()) {
+    return AuthSessionModel.findOneAndUpdate(
+      {
+        refreshTokenHash,
+        revokedAt: { $exists: false },
+        rotatedAt: { $exists: false },
+        expiresAt: { $gt: now },
+      },
+      {
+        revokedAt: now,
+        rotatedAt: now,
+      },
+      { new: true },
+    )
+      .select('+refreshTokenHash')
+      .exec();
+  },
+
   revokeByRefreshTokenHash(refreshTokenHash: string) {
     return AuthSessionModel.findOneAndUpdate(
       {
