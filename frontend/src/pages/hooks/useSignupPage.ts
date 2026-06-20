@@ -23,7 +23,6 @@ export const useSignupPage = () => {
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setDevVerificationToken(null);
 
     if (password !== confirmPassword) {
