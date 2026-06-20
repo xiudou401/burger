@@ -6,19 +6,12 @@ export const PASSWORD_MIN_LENGTH = 8;
 export const PASSWORD_INPUT_PATTERN =
   '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9])\\S{8,}$';
 
+const PASSWORD_POLICY_REGEX = new RegExp(PASSWORD_INPUT_PATTERN);
+
 export const validatePasswordPolicy = (password: string) => {
   if (password.length < PASSWORD_MIN_LENGTH) {
     return false;
   }
 
-  if (/\s/.test(password)) {
-    return false;
-  }
-
-  return (
-    /[a-z]/.test(password) &&
-    /[A-Z]/.test(password) &&
-    /\d/.test(password) &&
-    /[^A-Za-z0-9]/.test(password)
-  );
+  return PASSWORD_POLICY_REGEX.test(password);
 };
