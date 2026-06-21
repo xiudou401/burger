@@ -11,6 +11,23 @@ recent orders while staff manage orders and menu changes.
 > **Note:** The backend is hosted on Render's free tier, so the first request
 > may take a few seconds while the service wakes up.
 
+## Portfolio Highlights
+
+- Built a production-style MERN ordering system for a Sydney restaurant concept
+  with AUD cents-based pricing, customer checkout, staff workflows, and deployed
+  live demo.
+- Implemented Stripe Checkout with webhook signature verification and
+  idempotent order payment updates so payment state is controlled by trusted
+  backend events.
+- Designed an authentication flow with JWT access tokens, HttpOnly refresh
+  cookies, refresh-token rotation, CSRF origin/header checks, password hashing,
+  email verification, Google OAuth, and rate-limited auth routes.
+- Added backend cart quote validation and menu-version checks to prevent stale
+  client prices from being used during checkout.
+- Deployed the live app with Vercel, Render, MongoDB Atlas, Resend, and Stripe,
+  with an optional AWS deployment path documented for S3, CloudFront, ECR, ECS
+  Fargate, and an Application Load Balancer.
+
 ## Tech Stack
 
 | Area     | Stack                                                                             |
