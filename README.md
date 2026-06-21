@@ -131,6 +131,13 @@ The frontend currently uses relative `/api` requests. Create React App proxies
 those requests to the local backend during development, while Vercel rewrites
 them to the deployed Render API in production.
 
+## Optional AWS Deployment
+
+The current live demo uses Vercel and Render. An optional AWS path is documented
+in [`docs/aws-deployment.md`](docs/aws-deployment.md) for deploying the frontend
+to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
+Load Balancer.
+
 ## Test Commands
 
 ```bash
