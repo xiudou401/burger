@@ -56,6 +56,24 @@ recent orders while staff manage orders and menu changes.
 - Email workflows for verification, reset password, and order confirmation.
 - Seed scripts for local menu and demo users.
 
+## Frontend Highlights
+
+- In-memory access token storage, with refresh tokens kept out of JavaScript in
+  HttpOnly cookies.
+- API wrapper compatible with refresh-cookie sessions, CSRF headers, request
+  timeouts, retry handling, and automatic refresh-and-retry on eligible `401`
+  responses.
+- Single-flight refresh logic so concurrent expired requests share one refresh
+  request instead of racing the rotated refresh token.
+- Debounced cart quote validation that keeps checkout totals aligned with
+  backend-calculated AUD cents.
+- Menu-version conflict handling to detect stale cart prices and refresh quotes
+  before checkout.
+- Local cart persistence so customers can leave and return without losing their
+  basket.
+- Role-aware customer/admin routing and auth state managed through a dedicated
+  auth provider.
+
 ## Live Demo Notes
 
 - Stripe runs in test mode and does not create real charges.
