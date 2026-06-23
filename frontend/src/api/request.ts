@@ -3,6 +3,7 @@ import { HTTP_STATUS } from './http-status';
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
+const RETRY_DELAY_MS = 300;
 const NO_AUTO_REFRESH_PATHS = new Set([
   '/auth/login',
   '/auth/signup',
@@ -50,6 +51,43 @@ export class ApiError extends Error {
 interface RequestOptions extends RequestInit {
   signal?: AbortSignal;
 }
+
+const getRequestMethod = (options: RequestOptions) => {
+  return (options.method ?? 'GET').toUpperCase();
+};
+
+const isRetryableRequest = (options: RequestOptions) => {
+  return ['GET', 'HEAD'].includes(getRequestMethod(options));
+};
+
+const waitForRetry = (signal?: AbortSignal) => {
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(
+        new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
+          message: 'Request cancelled',
+        }),
+      );
+      return;
+    }
+
+    const onAbort = () => {
+      window.clearTimeout(timeoutId);
+      reject(
+        new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
+          message: 'Request cancelled',
+        }),
+      );
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, RETRY_DELAY_MS);
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
+};
 
 export const request = async <T>(
   path: string,
@@ -143,16 +181,22 @@ export const request = async <T>(
     }
 
     if (err instanceof ApiError) {
-      if (err.statusCode >= HTTP_STATUS.SERVER_ERROR_MIN && retry > 0) {
+      if (
+        err.statusCode >= HTTP_STATUS.SERVER_ERROR_MIN &&
+        retry > 0 &&
+        isRetryableRequest(options)
+      ) {
         console.warn('Retry (server error):', path);
+        await waitForRetry(externalSignal);
         return request<T>(path, options, retry - 1, didRefresh);
       }
 
       throw err;
     }
 
-    if (retry > 0) {
+    if (retry > 0 && isRetryableRequest(options)) {
       console.warn('Retry (network error):', path);
+      await waitForRetry(externalSignal);
       return request<T>(path, options, retry - 1, didRefresh);
     }
 
