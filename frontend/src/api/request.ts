@@ -1,9 +1,5 @@
 import { HTTP_STATUS } from './http-status';
-import {
-  clearAccessToken,
-  getAccessToken,
-  setAccessToken,
-} from './auth-token';
+import { clearAccessToken, getAccessToken, setAccessToken } from './auth-token';
 
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
