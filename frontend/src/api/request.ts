@@ -1,4 +1,9 @@
 import { HTTP_STATUS } from './http-status';
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from './auth-token';
 
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
@@ -14,21 +19,12 @@ const NO_AUTO_REFRESH_PATHS = new Set([
   '/auth/sms/send',
   '/auth/sms/verify',
 ]);
-let inMemoryAccessToken: string | null = null;
 let refreshPromise: Promise<AuthRefreshResponse> | null = null;
 
 interface AuthRefreshResponse {
   accessToken: string;
   user: unknown;
 }
-
-export const setAccessToken = (token: string | null) => {
-  inMemoryAccessToken = token;
-};
-
-export const clearAccessToken = () => {
-  inMemoryAccessToken = null;
-};
 
 interface ErrorResponse {
   message: string;
@@ -118,6 +114,7 @@ export const request = async <T>(
       }
     }
 
+    const accessToken = getAccessToken();
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
       credentials: 'include',
@@ -125,9 +122,7 @@ export const request = async <T>(
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Protection': '1',
-        ...(inMemoryAccessToken
-          ? { Authorization: `Bearer ${inMemoryAccessToken}` }
-          : {}),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...options.headers,
       },
     });

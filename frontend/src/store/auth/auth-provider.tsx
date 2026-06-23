@@ -3,7 +3,7 @@ import { logout as logoutRequest, refreshSession } from '../../api/auth';
 import {
   clearAccessToken,
   setAccessToken as setApiAccessToken,
-} from '../../api/request';
+} from '../../api/auth-token';
 import { AuthContext } from './auth-context';
 import type { User } from '../../types/auth';
 
@@ -42,8 +42,10 @@ export const AuthProvider = ({ children }: Props) => {
   useEffect(() => {
     let isMounted = true;
 
-    refreshSession()
-      .then((res) => {
+    const restoreSession = async () => {
+      try {
+        const res = await refreshSession();
+
         if (!isMounted) return;
 
         setAccessToken(res.accessToken);
@@ -52,17 +54,18 @@ export const AuthProvider = ({ children }: Props) => {
           ...res.user,
           role: res.user.role ?? 'customer',
         });
-      })
-      .catch(() => {
+      } catch {
         if (!isMounted) return;
 
         clearAuthState();
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) {
           setIsAuthLoading(false);
         }
-      });
+      }
+    };
+
+    restoreSession();
 
     return () => {
       isMounted = false;
