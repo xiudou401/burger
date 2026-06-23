@@ -21,6 +21,7 @@ import { validateBody } from '../middleware/validate';
 import {
   authActionRateLimiter,
   authAttemptRateLimiter,
+  refreshSessionRateLimiter,
   resendVerificationRateLimiter,
   verifyTrustedOrigin,
 } from '../middleware/security';
@@ -50,7 +51,12 @@ router.post(
   validateBody(LoginSchema, 'Login payload'),
   loginHandler,
 );
-router.post('/refresh', verifyTrustedOrigin, refreshHandler);
+router.post(
+  '/refresh',
+  verifyTrustedOrigin,
+  refreshSessionRateLimiter,
+  refreshHandler,
+);
 router.post('/logout', verifyTrustedOrigin, logoutHandler);
 router.get('/me', authenticate, meHandler);
 router.post(

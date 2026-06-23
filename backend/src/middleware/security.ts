@@ -52,6 +52,18 @@ export const authActionRateLimiter = rateLimit({
   },
 });
 
+export const refreshSessionRateLimiter = rateLimit({
+  windowMs: FIFTEEN_MINUTES_MS,
+  limit: 60,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: {
+    message: 'Too many session refresh attempts. Please try again later.',
+    statusCode: 429,
+    type: 'RateLimitError',
+  },
+});
+
 export const getResendVerificationRateLimitKey = (req: Request) => {
   const userId = req.user?.id ?? 'anonymous';
   const email = req.user?.email?.toLowerCase() ?? 'no-email';
