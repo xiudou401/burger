@@ -11,10 +11,33 @@ interface Props {
   children: ReactNode;
 }
 
+const AUTH_CHANNEL_NAME = 'burger-auth';
+
+interface AuthChannelMessage {
+  type: 'logout';
+}
+
+const createAuthChannel = () => {
+  if (
+    typeof window === 'undefined' ||
+    typeof window.BroadcastChannel === 'undefined'
+  ) {
+    return null;
+  }
+
+  return new BroadcastChannel(AUTH_CHANNEL_NAME);
+};
+
 export const AuthProvider = ({ children }: Props) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  const clearAuthState = useCallback(() => {
+    clearAccessToken();
+    setAccessToken(null);
+    setUser(null);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -33,9 +56,7 @@ export const AuthProvider = ({ children }: Props) => {
       .catch(() => {
         if (!isMounted) return;
 
-        setAccessToken(null);
-        setUser(null);
-        clearAccessToken();
+        clearAuthState();
       })
       .finally(() => {
         if (isMounted) {
@@ -46,7 +67,23 @@ export const AuthProvider = ({ children }: Props) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [clearAuthState]);
+
+  useEffect(() => {
+    const channel = createAuthChannel();
+
+    if (!channel) return;
+
+    channel.onmessage = (event: MessageEvent<AuthChannelMessage>) => {
+      if (event.data?.type === 'logout') {
+        clearAuthState();
+      }
+    };
+
+    return () => {
+      channel.close();
+    };
+  }, [clearAuthState]);
 
   const login = useCallback((token: string, user: User) => {
     setAccessToken(token);
@@ -58,16 +95,13 @@ export const AuthProvider = ({ children }: Props) => {
     try {
       await logoutRequest();
     } finally {
-      clearAccessToken();
-      setAccessToken(null);
-      setUser(null);
-    }
-  }, []);
+      clearAuthState();
 
-  useEffect(() => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-  }, []);
+      const channel = createAuthChannel();
+      channel?.postMessage({ type: 'logout' } satisfies AuthChannelMessage);
+      channel?.close();
+    }
+  }, [clearAuthState]);
 
   const value = useMemo(
     () => ({
