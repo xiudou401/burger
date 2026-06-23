@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import AuthLoadingFallback from './AuthLoadingFallback';
 
 const RequireAdmin = () => {
   const user = useAuth((ctx) => ctx.user);
@@ -8,7 +9,7 @@ const RequireAdmin = () => {
   const location = useLocation();
 
   if (isAuthLoading) {
-    return null;
+    return <AuthLoadingFallback />;
   }
 
   if (!isAuthenticated) {

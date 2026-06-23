@@ -38,10 +38,12 @@ describe('RequireAuth', () => {
     jest.clearAllMocks();
   });
 
-  test('renders nothing while auth state is loading', () => {
-    const { container } = renderGuard({ isAuthLoading: true });
+  test('shows a loading fallback while auth state is loading', () => {
+    renderGuard({ isAuthLoading: true });
 
-    expect(container).toBeEmptyDOMElement();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Restoring your session...',
+    );
   });
 
   test('redirects anonymous users to login', () => {

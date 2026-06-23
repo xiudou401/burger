@@ -48,6 +48,14 @@ describe('RequireAdmin', () => {
     jest.clearAllMocks();
   });
 
+  test('shows a loading fallback while auth state is loading', () => {
+    renderGuard({ isAuthLoading: true });
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Restoring your session...',
+    );
+  });
+
   test('redirects anonymous users to admin login', () => {
     renderGuard({ isAuthenticated: false });
 

@@ -1,0 +1,31 @@
+.Wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff8ea;
+  color: #292929;
+}
+
+.Status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.Spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #ead8b5;
+  border-top-color: #bd0017;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
