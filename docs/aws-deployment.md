@@ -178,6 +178,31 @@ resulting `whsec_...` value into `STRIPE_WEBHOOK_SECRET`.
 9. Test signup, login, refresh session, menu load, checkout, webhook payment
    update, and order history.
 
+## Continuous Deployment
+
+The GitHub Actions workflow at `.github/workflows/deploy.yml` deploys the
+release commit after the `CI` workflow succeeds on `main`. It can also be run
+manually from the Actions page.
+
+The workflow:
+
+1. Authenticates to AWS through GitHub OIDC with short-lived credentials.
+2. Builds the frontend, syncs it to S3, and invalidates CloudFront.
+3. Builds an ARM64 backend image tagged with the Git commit SHA.
+4. Pushes both the immutable SHA tag and `latest` to ECR.
+5. Registers a new ECS task definition revision and updates the ECS service.
+
+The IAM role trusts only the `production` GitHub environment in this
+repository. Its trust and deployment policies are versioned under
+`infrastructure/aws/`.
+
+The workflow preserves the ECS service desired count. If the service is
+stopped at `0` to control costs, a deployment publishes the new task definition
+without starting a Fargate task.
+
+The ECR lifecycle policy keeps the 10 most recent commit images and removes
+untagged images after seven days.
+
 ## AWS References
 
 - [Amazon S3 static website hosting](https://docs.aws.amazon.com/AmazonS3/latest/userguide/WebsiteHosting.html)
