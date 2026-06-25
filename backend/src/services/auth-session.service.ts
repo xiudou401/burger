@@ -1,3 +1,5 @@
+import { randomUUID } from 'crypto';
+import { ConcurrentRefreshError } from '../errors/ConcurrentRefreshError';
 import { ServiceError } from '../errors/ServiceError';
 import type { AuthenticatedUser } from '../types/auth';
 import { signAuthToken } from '../utils/token';
@@ -13,26 +15,76 @@ export interface SessionAuthResult {
   user: AuthenticatedUser;
 }
 
-export const createAuthSession = async (
-  user: AuthenticatedUser,
-): Promise<SessionAuthResult> => {
-  const refreshToken = createSecureToken();
+interface CreateSessionOptions {
+  familyId?: string;
+  parentSessionId?: string;
+}
 
-  await authSessionRepository.create({
+const createSession = async (
+  user: AuthenticatedUser,
+  options: CreateSessionOptions = {},
+) => {
+  const refreshToken = createSecureToken();
+  const familyId = options.familyId ?? randomUUID();
+
+  const session = await authSessionRepository.create({
     userId: user.id,
+    familyId,
+    parentSessionId: options.parentSessionId,
     refreshTokenHash: hashToken(refreshToken),
     expiresAt: new Date(Date.now() + TTL_MS.REFRESH_SESSION),
   });
 
   return {
-    accessToken: signAuthToken({
-      sub: user.id,
-      email: user.email,
-      phone: user.phone,
-    }),
-    refreshToken,
-    user,
+    result: {
+      accessToken: signAuthToken({
+        sub: user.id,
+        email: user.email,
+        phone: user.phone,
+      }),
+      refreshToken,
+      user,
+    },
+    session,
   };
+};
+
+export const createAuthSession = async (
+  user: AuthenticatedUser,
+): Promise<SessionAuthResult> => {
+  const { result } = await createSession(user);
+
+  return result;
+};
+
+const isRefreshTokenReuse = (
+  session: {
+    familyId?: string;
+    rotatedAt?: Date;
+    replacedBySessionId?: unknown;
+  },
+  now = new Date(),
+) => {
+  if (!session.familyId || !session.rotatedAt || !session.replacedBySessionId) {
+    return false;
+  }
+
+  return (
+    now.getTime() - session.rotatedAt.getTime() > TTL_MS.REFRESH_REUSE_GRACE
+  );
+};
+
+const isConcurrentRefresh = (
+  session: { rotatedAt?: Date },
+  now = new Date(),
+) => {
+  if (!session.rotatedAt) {
+    return false;
+  }
+
+  const elapsedMs = now.getTime() - session.rotatedAt.getTime();
+
+  return elapsedMs >= 0 && elapsedMs <= TTL_MS.REFRESH_REUSE_GRACE;
 };
 
 export const rotateAuthSession = async (
@@ -42,11 +94,30 @@ export const rotateAuthSession = async (
     throw new ServiceError('Refresh token required', 401);
   }
 
-  const session = await authSessionRepository.consumeActiveByRefreshTokenHash(
-    hashToken(refreshToken),
-  );
+  const refreshTokenHash = hashToken(refreshToken);
+  const session =
+    await authSessionRepository.consumeActiveByRefreshTokenHash(
+      refreshTokenHash,
+    );
 
   if (!session) {
+    const consumedSession =
+      await authSessionRepository.findByRefreshTokenHash(refreshTokenHash);
+    const familyId = consumedSession?.familyId;
+
+    if (consumedSession && isConcurrentRefresh(consumedSession)) {
+      throw new ConcurrentRefreshError();
+    }
+
+    if (consumedSession && familyId && isRefreshTokenReuse(consumedSession)) {
+      await authSessionRepository.revokeActiveByFamilyId(familyId);
+      console.warn('Refresh token reuse detected', {
+        familyId,
+        userId: String(consumedSession.userId),
+      });
+      throw new ServiceError('Session reuse detected', 401);
+    }
+
     throw new ServiceError('Session expired', 401);
   }
 
@@ -58,7 +129,20 @@ export const rotateAuthSession = async (
     throw new ServiceError('User no longer exists', 401);
   }
 
-  return createAuthSession(toPublicUser(user));
+  const familyId = session.familyId ?? randomUUID();
+  const { result, session: replacementSession } = await createSession(
+    toPublicUser(user),
+    {
+      familyId,
+      parentSessionId: String(session._id),
+    },
+  );
+
+  session.familyId = familyId;
+  session.replacedBySessionId = replacementSession._id;
+  await authSessionRepository.save(session);
+
+  return result;
 };
 
 export const revokeAuthSession = async (refreshToken: string) => {

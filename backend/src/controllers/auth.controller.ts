@@ -5,6 +5,7 @@ import {
   rotateAuthSession,
 } from '../services/auth-session.service';
 import { ServiceError } from '../errors/ServiceError';
+import { ConcurrentRefreshError } from '../errors/ConcurrentRefreshError';
 import { clearRefreshCookie, getRefreshToken } from '../utils/refresh-cookie';
 import { sendAuthResult } from '../utils/auth-response';
 import type {
@@ -55,8 +56,11 @@ export const refreshHandler = async (
 
     sendAuthResult(res, 200, result);
   } catch (error) {
-    clearRefreshCookie(res);
-    next(error);
+    if (!(error instanceof ConcurrentRefreshError)) {
+      clearRefreshCookie(res);
+    }
+
+    return next(error);
   }
 };
 
@@ -69,9 +73,10 @@ export const logoutHandler = async (
     await revokeAuthSession(getRefreshToken(req));
     clearRefreshCookie(res);
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
-    next(error);
+    clearRefreshCookie(res);
+    return next(error);
   }
 };
 

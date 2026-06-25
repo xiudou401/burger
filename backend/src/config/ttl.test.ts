@@ -11,4 +11,5 @@ test('defines authentication TTLs using the expected units', () => {
   expect(TTL_MS.REFRESH_COOKIE_MAX_AGE).toBe(
     TTL_MS.REFRESH_SESSION - TTL_MS.REFRESH_COOKIE_SKEW,
   );
+  expect(TTL_MS.REFRESH_REUSE_GRACE).toBe(5 * 1000);
 });

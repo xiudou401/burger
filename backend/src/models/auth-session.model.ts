@@ -2,6 +2,9 @@ import { model, Schema, Types } from 'mongoose';
 
 export interface AuthSession {
   userId: Types.ObjectId;
+  familyId?: string;
+  parentSessionId?: Types.ObjectId;
+  replacedBySessionId?: Types.ObjectId;
   refreshTokenHash: string;
   expiresAt: Date;
   revokedAt?: Date;
@@ -17,6 +20,18 @@ const authSessionSchema = new Schema<AuthSession>(
       ref: 'User',
       required: true,
       index: true,
+    },
+    familyId: {
+      type: String,
+      index: true,
+    },
+    parentSessionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'AuthSession',
+    },
+    replacedBySessionId: {
+      type: Schema.Types.ObjectId,
+      ref: 'AuthSession',
     },
     refreshTokenHash: {
       type: String,
@@ -40,6 +55,7 @@ const authSessionSchema = new Schema<AuthSession>(
 
 authSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 authSessionSchema.index({ userId: 1, revokedAt: 1, expiresAt: 1 });
+authSessionSchema.index({ familyId: 1, revokedAt: 1, expiresAt: 1 });
 
 export const AuthSessionModel = model<AuthSession>(
   'AuthSession',

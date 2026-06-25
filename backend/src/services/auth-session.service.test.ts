@@ -1,4 +1,5 @@
 import { ServiceError } from '../errors/ServiceError';
+import { ConcurrentRefreshError } from '../errors/ConcurrentRefreshError';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
 import { hashToken } from '../utils/secure-token';
@@ -15,6 +16,7 @@ jest.mock('../repositories/auth-session.repository', () => ({
     consumeActiveByRefreshTokenHash: jest.fn(),
     findByRefreshTokenHash: jest.fn(),
     revokeByRefreshTokenHash: jest.fn(),
+    revokeActiveByFamilyId: jest.fn(),
     revokeActiveByUserId: jest.fn(),
     save: jest.fn(),
   },
@@ -46,11 +48,16 @@ describe('auth session service', () => {
   });
 
   test('creates a refresh session with a hashed token and access token', async () => {
+    jest.mocked(authSessionRepository.create).mockResolvedValue({
+      _id: 'session-1',
+    } as never);
+
     const result = await createAuthSession(user);
 
     expect(authSessionRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: user.id,
+        familyId: expect.any(String),
         refreshTokenHash: 'hash:refresh-token',
         expiresAt: expect.any(Date),
       }),
@@ -62,10 +69,17 @@ describe('auth session service', () => {
 
   test('rotates an active refresh session and revokes the previous session', async () => {
     const session = {
+      _id: 'old-session',
       userId: user.id,
+      familyId: 'family-1',
       expiresAt: new Date(Date.now() + 60_000),
       revokedAt: new Date(),
       rotatedAt: new Date(),
+      replacedBySessionId: undefined as string | undefined,
+      save: jest.fn(),
+    };
+    const replacementSession = {
+      _id: 'new-session',
     };
     const userDoc = {
       _id: user.id,
@@ -80,6 +94,9 @@ describe('auth session service', () => {
       .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
       .mockResolvedValue(session as never);
     jest.mocked(userRepository.findById).mockResolvedValue(userDoc as never);
+    jest
+      .mocked(authSessionRepository.create)
+      .mockResolvedValue(replacementSession as never);
 
     const result = await rotateAuthSession('old-refresh-token');
 
@@ -88,8 +105,15 @@ describe('auth session service', () => {
     ).toHaveBeenCalledWith('hash:old-refresh-token');
     expect(session.revokedAt).toBeInstanceOf(Date);
     expect(session.rotatedAt).toBeInstanceOf(Date);
-    expect(authSessionRepository.save).not.toHaveBeenCalledWith(session);
-    expect(authSessionRepository.create).toHaveBeenCalled();
+    expect(authSessionRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: user.id,
+        familyId: 'family-1',
+        parentSessionId: 'old-session',
+      }),
+    );
+    expect(session.replacedBySessionId).toBe('new-session');
+    expect(authSessionRepository.save).toHaveBeenCalledWith(session);
     expect(result.user.id).toBe(user.id);
   });
 
@@ -99,25 +123,68 @@ describe('auth session service', () => {
     jest
       .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
       .mockResolvedValue(null);
+    jest
+      .mocked(authSessionRepository.findByRefreshTokenHash)
+      .mockResolvedValue(null);
 
     await expect(rotateAuthSession('expired-token')).rejects.toThrow(
       ServiceError,
     );
   });
 
-  test('rejects replayed refresh tokens after they are consumed', async () => {
+  test('does not revoke a token family for a concurrent refresh inside the grace period', async () => {
+    const rotatedAt = new Date();
+
     jest
       .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
       .mockResolvedValue(null);
+    jest
+      .mocked(authSessionRepository.findByRefreshTokenHash)
+      .mockResolvedValue({
+        userId: user.id,
+        familyId: 'family-1',
+        rotatedAt,
+      } as never);
 
     await expect(rotateAuthSession('old-refresh-token')).rejects.toThrow(
-      ServiceError,
+      ConcurrentRefreshError,
     );
 
     expect(
       authSessionRepository.consumeActiveByRefreshTokenHash,
     ).toHaveBeenCalledWith('hash:old-refresh-token');
+    expect(authSessionRepository.revokeActiveByFamilyId).not.toHaveBeenCalled();
     expect(authSessionRepository.create).not.toHaveBeenCalled();
+  });
+
+  test('revokes the token family when a rotated refresh token is reused', async () => {
+    const consoleWarn = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined);
+
+    jest
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(null);
+    jest
+      .mocked(authSessionRepository.findByRefreshTokenHash)
+      .mockResolvedValue({
+        userId: user.id,
+        familyId: 'family-1',
+        rotatedAt: new Date(Date.now() - 10_000),
+        replacedBySessionId: 'replacement-session',
+      } as never);
+
+    await expect(rotateAuthSession('replayed-token')).rejects.toMatchObject({
+      message: 'Session reuse detected',
+      statusCode: 401,
+    });
+
+    expect(authSessionRepository.revokeActiveByFamilyId).toHaveBeenCalledWith(
+      'family-1',
+    );
+    expect(authSessionRepository.create).not.toHaveBeenCalled();
+
+    consoleWarn.mockRestore();
   });
 
   test('revokes sessions by refresh token and user id', async () => {

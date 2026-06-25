@@ -93,4 +93,20 @@ describe('authSessionRepository', () => {
       { revokedAt: expect.any(Date) },
     );
   });
+
+  test('revokes all active sessions in a token family', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+
+    jest.mocked(AuthSessionModel.updateMany).mockReturnValue({ exec } as never);
+
+    await authSessionRepository.revokeActiveByFamilyId('family-1');
+
+    expect(AuthSessionModel.updateMany).toHaveBeenCalledWith(
+      {
+        familyId: 'family-1',
+        revokedAt: { $exists: false },
+      },
+      { revokedAt: expect.any(Date) },
+    );
+  });
 });
