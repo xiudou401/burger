@@ -1,10 +1,18 @@
 import { HTTP_STATUS } from './http-status';
 import { clearAccessToken, getAccessToken, setAccessToken } from './auth-token';
+import {
+  notifyAuthSessionExpired,
+  notifyAuthSessionRefreshed,
+} from './auth-events';
+import type { User } from '../types/auth';
 
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
 const RETRY_DELAY_MS = 300;
+const REFRESH_CONFLICT_RETRY_COUNT = 3;
+const REFRESH_CONFLICT_RETRY_DELAY_MS = 150;
+const CONCURRENT_REFRESH_ERROR_TYPE = 'ConcurrentRefreshError';
 const NO_AUTO_REFRESH_PATHS = new Set([
   '/auth/login',
   '/auth/signup',
@@ -19,7 +27,7 @@ let refreshPromise: Promise<AuthRefreshResponse> | null = null;
 
 interface AuthRefreshResponse {
   accessToken: string;
-  user: unknown;
+  user: User;
 }
 
 interface ErrorResponse {
@@ -84,7 +92,7 @@ const waitForRetry = (signal?: AbortSignal) => {
 export const request = async <T>(
   path: string,
   options: RequestOptions = {},
-  retry = RETRY_COUNT,
+  retriesRemaining = RETRY_COUNT,
   didRefresh = false,
 ): Promise<T> => {
   const timeoutController = new AbortController();
@@ -132,9 +140,16 @@ export const request = async <T>(
         try {
           const refreshed = await refreshAccessToken();
           setAccessToken(refreshed.accessToken);
-          return request<T>(path, options, retry, true);
-        } catch {
-          clearAccessToken();
+          notifyAuthSessionRefreshed(refreshed);
+          return request<T>(path, options, retriesRemaining, true);
+        } catch (refreshError) {
+          if (
+            refreshError instanceof ApiError &&
+            refreshError.statusCode === HTTP_STATUS.UNAUTHORIZED
+          ) {
+            clearAccessToken();
+            notifyAuthSessionExpired();
+          }
         }
       }
 
@@ -174,21 +189,21 @@ export const request = async <T>(
     if (err instanceof ApiError) {
       if (
         err.statusCode >= HTTP_STATUS.SERVER_ERROR_MIN &&
-        retry > 0 &&
+        retriesRemaining > 0 &&
         isRetryableRequest(options)
       ) {
         console.warn('Retry (server error):', path);
         await waitForRetry(externalSignal);
-        return request<T>(path, options, retry - 1, didRefresh);
+        return request<T>(path, options, retriesRemaining - 1, didRefresh);
       }
 
       throw err;
     }
 
-    if (retry > 0 && isRetryableRequest(options)) {
+    if (retriesRemaining > 0 && isRetryableRequest(options)) {
       console.warn('Retry (network error):', path);
       await waitForRetry(externalSignal);
-      return request<T>(path, options, retry - 1, didRefresh);
+      return request<T>(path, options, retriesRemaining - 1, didRefresh);
     }
 
     const message = err instanceof Error ? err.message : 'Network error';
@@ -204,11 +219,36 @@ export const request = async <T>(
 
 export const refreshAccessToken = async () => {
   if (!refreshPromise) {
-    refreshPromise = request<AuthRefreshResponse>(
-      '/auth/refresh',
-      { method: 'POST' },
-      0,
-      true,
+    const refreshWithConflictRetry = async (
+      retriesRemaining: number,
+    ): Promise<AuthRefreshResponse> => {
+      try {
+        return await request<AuthRefreshResponse>(
+          '/auth/refresh',
+          { method: 'POST' },
+          0,
+          true,
+        );
+      } catch (error) {
+        const isConcurrentRefresh =
+          error instanceof ApiError &&
+          error.statusCode === HTTP_STATUS.CONFLICT &&
+          error.body.type === CONCURRENT_REFRESH_ERROR_TYPE;
+
+        if (!isConcurrentRefresh || retriesRemaining === 0) {
+          throw error;
+        }
+
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, REFRESH_CONFLICT_RETRY_DELAY_MS);
+        });
+
+        return refreshWithConflictRetry(retriesRemaining - 1);
+      }
+    };
+
+    refreshPromise = refreshWithConflictRetry(
+      REFRESH_CONFLICT_RETRY_COUNT,
     ).finally(() => {
       refreshPromise = null;
     });

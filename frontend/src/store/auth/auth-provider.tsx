@@ -4,6 +4,12 @@ import {
   clearAccessToken,
   setAccessToken as setApiAccessToken,
 } from '../../api/auth-token';
+import { ApiError } from '../../api/request';
+import { HTTP_STATUS } from '../../api/http-status';
+import {
+  subscribeToAuthSessionExpired,
+  subscribeToAuthSessionRefreshed,
+} from '../../api/auth-events';
 import { AuthContext } from './auth-context';
 import type { User } from '../../types/auth';
 
@@ -57,7 +63,13 @@ export const AuthProvider = ({ children }: Props) => {
         setAccessToken(res.accessToken);
         setUser(normalizeUser(res.user));
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
+        if (
+          process.env.NODE_ENV === 'development' &&
+          !(
+            error instanceof ApiError &&
+            error.statusCode === HTTP_STATUS.UNAUTHORIZED
+          )
+        ) {
           console.error('Failed to restore auth session:', error);
         }
 
@@ -93,6 +105,18 @@ export const AuthProvider = ({ children }: Props) => {
       channel.close();
     };
   }, [clearAuthState]);
+
+  useEffect(() => {
+    return subscribeToAuthSessionExpired(clearAuthState);
+  }, [clearAuthState]);
+
+  useEffect(() => {
+    return subscribeToAuthSessionRefreshed(({ accessToken, user }) => {
+      setApiAccessToken(accessToken);
+      setAccessToken(accessToken);
+      setUser(normalizeUser(user));
+    });
+  }, []);
 
   const login = useCallback((token: string, user: User) => {
     setApiAccessToken(token);
