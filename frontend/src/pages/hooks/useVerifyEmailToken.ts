@@ -7,8 +7,7 @@ export const useVerifyEmailToken = (
   emailDelivery?: string | null,
 ) => {
   const user = useAuth((ctx) => ctx.user);
-  const accessToken = useAuth((ctx) => ctx.accessToken);
-  const loginFn = useAuth((ctx) => ctx.login);
+  const updateUser = useAuth((ctx) => ctx.updateUser);
   const didVerifyRef = useRef(false);
   const [message, setMessage] = useState('Checking your verification link...');
   const [isError, setIsError] = useState(false);
@@ -36,8 +35,8 @@ export const useVerifyEmailToken = (
         setMessage(res.message);
         setIsError(false);
 
-        if (user && accessToken && res.user && user.id === res.user.id) {
-          loginFn(accessToken, res.user);
+        if (user && res.user && user.id === res.user.id) {
+          updateUser(res.user);
         }
       })
       .catch((err) => {
@@ -45,7 +44,7 @@ export const useVerifyEmailToken = (
         setMessage(err instanceof Error ? err.message : 'Verification failed');
         setIsError(true);
       });
-  }, [accessToken, emailDelivery, loginFn, token, user]);
+  }, [emailDelivery, token, updateUser, user]);
 
   return {
     message,

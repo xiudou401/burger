@@ -19,8 +19,7 @@ import type { Order } from '../../types/order';
 export const useProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuth((ctx) => ctx.user);
-  const login = useAuth((ctx) => ctx.login);
-  const accessToken = useAuth((ctx) => ctx.accessToken);
+  const updateUser = useAuth((ctx) => ctx.updateUser);
   const logout = useAuth((ctx) => ctx.logout);
   const totalQuantity = useCartSelector(getTotalQuantity);
   const estimatedTotalCents = useCartSelector(getEstimatedTotalPrice);
@@ -159,9 +158,7 @@ export const useProfilePage = () => {
     try {
       const res = await verifySmsCode(phone, smsCode);
 
-      if (accessToken) {
-        login(accessToken, res.user);
-      }
+      updateUser(res.user);
 
       setSmsMessage('Phone verified');
       setDevSmsCode(null);

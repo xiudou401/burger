@@ -17,6 +17,11 @@ interface AuthChannelMessage {
   type: 'logout';
 }
 
+const normalizeUser = (user: User): User => ({
+  ...user,
+  role: user.role ?? 'customer',
+});
+
 const createAuthChannel = () => {
   if (
     typeof window === 'undefined' ||
@@ -48,13 +53,14 @@ export const AuthProvider = ({ children }: Props) => {
 
         if (!isMounted) return;
 
-        setAccessToken(res.accessToken);
         setApiAccessToken(res.accessToken);
-        setUser({
-          ...res.user,
-          role: res.user.role ?? 'customer',
-        });
-      } catch {
+        setAccessToken(res.accessToken);
+        setUser(normalizeUser(res.user));
+      } catch (error) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Failed to restore auth session:', error);
+        }
+
         if (!isMounted) return;
 
         clearAuthState();
@@ -89,14 +95,22 @@ export const AuthProvider = ({ children }: Props) => {
   }, [clearAuthState]);
 
   const login = useCallback((token: string, user: User) => {
-    setAccessToken(token);
     setApiAccessToken(token);
-    setUser(user);
+    setAccessToken(token);
+    setUser(normalizeUser(user));
+  }, []);
+
+  const updateUser = useCallback((user: User) => {
+    setUser(normalizeUser(user));
   }, []);
 
   const logout = useCallback(async () => {
     try {
       await logoutRequest();
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Logout request failed:', error);
+      }
     } finally {
       clearAuthState();
 
@@ -111,11 +125,12 @@ export const AuthProvider = ({ children }: Props) => {
       user,
       accessToken,
       login,
+      updateUser,
       logout,
-      isAuthenticated: !!accessToken,
+      isAuthenticated: !!accessToken && !!user,
       isAuthLoading,
     }),
-    [user, accessToken, login, logout, isAuthLoading],
+    [user, accessToken, login, updateUser, logout, isAuthLoading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
