@@ -4,7 +4,7 @@ import {
   notifyAuthSessionExpired,
   notifyAuthSessionRefreshed,
 } from './auth-events';
-import type { User } from '../types/auth';
+import type { AuthResponse } from '../types/auth';
 
 const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
@@ -25,10 +25,7 @@ const NO_AUTO_REFRESH_PATHS = new Set([
 ]);
 let refreshPromise: Promise<AuthRefreshResponse> | null = null;
 
-interface AuthRefreshResponse {
-  accessToken: string;
-  user: User;
-}
+type AuthRefreshResponse = AuthResponse;
 
 interface ErrorResponse {
   message: string;
@@ -217,7 +214,7 @@ export const request = async <T>(
   }
 };
 
-export const refreshAccessToken = async () => {
+export const refreshAuthSession = async () => {
   if (!refreshPromise) {
     const refreshWithConflictRetry = async (
       retriesRemaining: number,
@@ -256,3 +253,5 @@ export const refreshAccessToken = async () => {
 
   return refreshPromise;
 };
+
+export const refreshAccessToken = refreshAuthSession;

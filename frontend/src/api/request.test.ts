@@ -1,4 +1,5 @@
 import { clearAccessToken, setAccessToken } from './auth-token';
+import { refreshSession } from './auth';
 import { ApiError, request } from './request';
 
 const mockResponse = (
@@ -107,6 +108,40 @@ describe('authenticated request refresh', () => {
     expect(fetchMock).toHaveBeenCalledTimes(4);
     expect(sessionExpired).not.toHaveBeenCalled();
     window.removeEventListener('auth:session-expired', sessionExpired);
+  });
+
+  test('retries a concurrent refresh conflict during session restore', async () => {
+    const restoredSession = {
+      accessToken: 'restored-access-token',
+      user: {
+        id: 'user-1',
+        name: 'Pat',
+        email: 'pat@example.com',
+        role: 'customer',
+        emailVerified: true,
+        phoneVerified: false,
+      },
+    };
+
+    fetchMock
+      .mockResolvedValueOnce(
+        mockResponse(409, {
+          message: 'Refresh already in progress',
+          type: 'ConcurrentRefreshError',
+        }),
+      )
+      .mockResolvedValueOnce(mockResponse(200, restoredSession));
+
+    await expect(refreshSession()).resolves.toEqual(restoredSession);
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      '/api/auth/refresh',
+      expect.objectContaining({
+        method: 'POST',
+      }),
+    );
   });
 
   test('does not mark the session expired for a refresh server error', async () => {

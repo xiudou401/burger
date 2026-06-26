@@ -1,4 +1,4 @@
-import { request } from './request';
+import { refreshAuthSession, request } from './request';
 import type { AuthResponse, User } from '../types/auth';
 
 interface MessageResponse {
@@ -31,9 +31,7 @@ export const login = (email: string, password: string) => {
 };
 
 export const refreshSession = () => {
-  return request<AuthResponse>('/auth/refresh', {
-    method: 'POST',
-  });
+  return refreshAuthSession();
 };
 
 export const logout = () => {
