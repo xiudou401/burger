@@ -125,9 +125,9 @@ export const request = async <T>(
       signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Protection': '1',
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         ...options.headers,
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        'X-CSRF-Protection': '1',
       },
     });
 
