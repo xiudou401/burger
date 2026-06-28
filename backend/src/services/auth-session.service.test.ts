@@ -117,9 +117,18 @@ describe('auth session service', () => {
     expect(result.user.id).toBe(user.id);
   });
 
-  test('rejects missing or expired refresh sessions', async () => {
-    await expect(rotateAuthSession('')).rejects.toThrow(ServiceError);
+  test('rejects missing refresh tokens with 401', async () => {
+    await expect(rotateAuthSession('')).rejects.toMatchObject({
+      message: 'Refresh token required',
+      statusCode: 401,
+    });
 
+    expect(
+      authSessionRepository.consumeActiveByRefreshTokenHash,
+    ).not.toHaveBeenCalled();
+  });
+
+  test('rejects expired refresh sessions with 401', async () => {
     jest
       .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
       .mockResolvedValue(null);
@@ -127,9 +136,10 @@ describe('auth session service', () => {
       .mocked(authSessionRepository.findByRefreshTokenHash)
       .mockResolvedValue(null);
 
-    await expect(rotateAuthSession('expired-token')).rejects.toThrow(
-      ServiceError,
-    );
+    await expect(rotateAuthSession('expired-token')).rejects.toMatchObject({
+      message: 'Session expired',
+      statusCode: 401,
+    });
   });
 
   test('does not revoke a token family for a concurrent refresh inside the grace period', async () => {
@@ -185,6 +195,30 @@ describe('auth session service', () => {
     expect(authSessionRepository.create).not.toHaveBeenCalled();
 
     consoleWarn.mockRestore();
+  });
+
+  test('revokes the consumed session when the user no longer exists', async () => {
+    const session = {
+      _id: 'old-session',
+      userId: user.id,
+      familyId: 'family-1',
+      revokedAt: new Date(),
+      rotatedAt: new Date(),
+    };
+
+    jest
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(session as never);
+    jest.mocked(userRepository.findById).mockResolvedValue(null);
+
+    await expect(rotateAuthSession('old-refresh-token')).rejects.toMatchObject({
+      message: 'User no longer exists',
+      statusCode: 401,
+    });
+
+    expect(session.revokedAt).toBeInstanceOf(Date);
+    expect(authSessionRepository.save).toHaveBeenCalledWith(session);
+    expect(authSessionRepository.create).not.toHaveBeenCalled();
   });
 
   test('revokes sessions by refresh token and user id', async () => {
