@@ -3,6 +3,7 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -37,8 +38,16 @@ interface ToastProviderProps {
 export const ToastProvider = ({ children }: ToastProviderProps) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const nextIdRef = useRef(1);
+  const timerIdsRef = useRef<Record<number, number>>({});
 
   const dismissToast = useCallback((toastId: number) => {
+    const timerId = timerIdsRef.current[toastId];
+
+    if (timerId !== undefined) {
+      window.clearTimeout(timerId);
+      delete timerIdsRef.current[toastId];
+    }
+
     setToasts((prev) => prev.filter((toast) => toast.id !== toastId));
   }, []);
 
@@ -48,10 +57,20 @@ export const ToastProvider = ({ children }: ToastProviderProps) => {
       nextIdRef.current += 1;
 
       setToasts((prev) => [...prev, { id, message, tone }]);
-      window.setTimeout(() => dismissToast(id), TOAST_DURATION_MS);
+      timerIdsRef.current[id] = window.setTimeout(
+        () => dismissToast(id),
+        TOAST_DURATION_MS,
+      );
     },
     [dismissToast],
   );
+
+  useEffect(() => {
+    return () => {
+      Object.values(timerIdsRef.current).forEach(window.clearTimeout);
+      timerIdsRef.current = {};
+    };
+  }, []);
 
   const value = useMemo(() => ({ showToast }), [showToast]);
 
