@@ -7,6 +7,7 @@ import {
   markStripeCheckoutPaid,
   markStripeOrderFailed,
 } from '../services/order.service';
+import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 
 const getStripe = () => {
   if (!env.STRIPE_SECRET_KEY) {
@@ -35,6 +36,7 @@ export const stripeWebhookHandler = async (
 
   try {
     let event: {
+      id: string;
       type: string;
       data: { object: any };
     };
@@ -49,33 +51,49 @@ export const stripeWebhookHandler = async (
       throw new ServiceError('Invalid Stripe signature', 400);
     }
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as { id: string };
-      await markStripeCheckoutPaid(session.id);
+    const claim = await stripeWebhookEventRepository.claim(
+      event.id,
+      event.type,
+    );
+
+    if (!claim.shouldProcess) {
+      return res.status(200).json({ received: true, duplicate: true });
     }
 
-    if (event.type === 'checkout.session.expired') {
-      const session = event.data.object as { id: string };
-      await markStripeCheckoutFailed(session.id, 'cancelled');
-    }
-
-    if (event.type === 'checkout.session.async_payment_failed') {
-      const session = event.data.object as { id: string };
-      await markStripeCheckoutFailed(session.id, 'failed');
-    }
-
-    if (event.type === 'payment_intent.payment_failed') {
-      const paymentIntent = event.data.object as {
-        metadata?: Record<string, string>;
-      };
-      const orderId =
-        typeof paymentIntent.metadata?.orderId === 'string'
-          ? paymentIntent.metadata.orderId
-          : undefined;
-
-      if (orderId) {
-        await markStripeOrderFailed(orderId);
+    try {
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as { id: string };
+        await markStripeCheckoutPaid(session.id);
       }
+
+      if (event.type === 'checkout.session.expired') {
+        const session = event.data.object as { id: string };
+        await markStripeCheckoutFailed(session.id, 'cancelled');
+      }
+
+      if (event.type === 'checkout.session.async_payment_failed') {
+        const session = event.data.object as { id: string };
+        await markStripeCheckoutFailed(session.id, 'failed');
+      }
+
+      if (event.type === 'payment_intent.payment_failed') {
+        const paymentIntent = event.data.object as {
+          metadata?: Record<string, string>;
+        };
+        const orderId =
+          typeof paymentIntent.metadata?.orderId === 'string'
+            ? paymentIntent.metadata.orderId
+            : undefined;
+
+        if (orderId) {
+          await markStripeOrderFailed(orderId);
+        }
+      }
+
+      await stripeWebhookEventRepository.markProcessed(event.id);
+    } catch (error) {
+      await stripeWebhookEventRepository.markFailed(event.id, error);
+      throw error;
     }
 
     return res.status(200).json({ received: true });

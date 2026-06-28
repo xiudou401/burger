@@ -6,6 +6,7 @@ import {
   markStripeCheckoutPaid,
   markStripeOrderFailed,
 } from '../services/order.service';
+import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 import { stripeWebhookHandler } from './stripe.controller';
 
 const mockConstructEvent = jest.fn();
@@ -24,6 +25,14 @@ jest.mock('../services/order.service', () => ({
   markStripeOrderFailed: jest.fn(),
 }));
 
+jest.mock('../repositories/stripe-webhook-event.repository', () => ({
+  stripeWebhookEventRepository: {
+    claim: jest.fn(),
+    markProcessed: jest.fn(),
+    markFailed: jest.fn(),
+  },
+}));
+
 const mockResponse = () => {
   const res = {
     status: jest.fn().mockReturnThis(),
@@ -38,10 +47,21 @@ describe('stripe webhook controller', () => {
     jest.clearAllMocks();
     env.STRIPE_SECRET_KEY = 'sk_test_123';
     env.STRIPE_WEBHOOK_SECRET = 'whsec_123';
+    jest.mocked(stripeWebhookEventRepository.claim).mockResolvedValue({
+      shouldProcess: true,
+      isDuplicate: false,
+    });
+    jest
+      .mocked(stripeWebhookEventRepository.markProcessed)
+      .mockResolvedValue(null);
+    jest
+      .mocked(stripeWebhookEventRepository.markFailed)
+      .mockResolvedValue(null);
   });
 
   test('verifies signatures before marking checkout sessions paid', async () => {
     mockConstructEvent.mockReturnValue({
+      id: 'evt_test_123',
       type: 'checkout.session.completed',
       data: {
         object: {
@@ -66,7 +86,14 @@ describe('stripe webhook controller', () => {
       'valid-signature',
       'whsec_123',
     );
+    expect(stripeWebhookEventRepository.claim).toHaveBeenCalledWith(
+      'evt_test_123',
+      'checkout.session.completed',
+    );
     expect(markStripeCheckoutPaid).toHaveBeenCalledWith('cs_test_123');
+    expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
+      'evt_test_123',
+    );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ received: true });
     expect(next).not.toHaveBeenCalled();
@@ -95,6 +122,7 @@ describe('stripe webhook controller', () => {
 
   test('marks expired checkout sessions cancelled', async () => {
     mockConstructEvent.mockReturnValue({
+      id: 'evt_test_123',
       type: 'checkout.session.expired',
       data: {
         object: {
@@ -123,6 +151,7 @@ describe('stripe webhook controller', () => {
 
   test('marks failed payment intents failed by order id', async () => {
     mockConstructEvent.mockReturnValue({
+      id: 'evt_test_123',
       type: 'payment_intent.payment_failed',
       data: {
         object: {
@@ -148,5 +177,76 @@ describe('stripe webhook controller', () => {
       '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  test('skips duplicate webhook events after signature verification', async () => {
+    jest.mocked(stripeWebhookEventRepository.claim).mockResolvedValue({
+      shouldProcess: false,
+      isDuplicate: true,
+    });
+    mockConstructEvent.mockReturnValue({
+      id: 'evt_test_123',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_123',
+        },
+      },
+    });
+
+    const req = {
+      body: Buffer.from('{}'),
+      headers: {
+        'stripe-signature': 'valid-signature',
+      },
+    } as unknown as Request;
+    const res = mockResponse();
+    const next = jest.fn() as NextFunction;
+
+    await stripeWebhookHandler(req, res, next);
+
+    expect(stripeWebhookEventRepository.claim).toHaveBeenCalledWith(
+      'evt_test_123',
+      'checkout.session.completed',
+    );
+    expect(markStripeCheckoutPaid).not.toHaveBeenCalled();
+    expect(stripeWebhookEventRepository.markProcessed).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      received: true,
+      duplicate: true,
+    });
+  });
+
+  test('marks webhook events failed when order processing fails', async () => {
+    const error = new Error('Order update failed');
+    jest.mocked(markStripeCheckoutPaid).mockRejectedValue(error);
+    mockConstructEvent.mockReturnValue({
+      id: 'evt_test_123',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_123',
+        },
+      },
+    });
+
+    const req = {
+      body: Buffer.from('{}'),
+      headers: {
+        'stripe-signature': 'valid-signature',
+      },
+    } as unknown as Request;
+    const res = mockResponse();
+    const next = jest.fn() as NextFunction;
+
+    await stripeWebhookHandler(req, res, next);
+
+    expect(stripeWebhookEventRepository.markFailed).toHaveBeenCalledWith(
+      'evt_test_123',
+      error,
+    );
+    expect(stripeWebhookEventRepository.markProcessed).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(error);
   });
 });
