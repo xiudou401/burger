@@ -11,33 +11,21 @@ import {
   subscribeToAuthSessionRefreshed,
 } from '../../api/auth-events';
 import { AuthContext } from './auth-context';
+import {
+  broadcastAuthLogout,
+  createAuthChannel,
+  type AuthChannelMessage,
+} from './auth-channel';
 import type { User } from '../../types/auth';
 
 interface Props {
   children: ReactNode;
 }
 
-const AUTH_CHANNEL_NAME = 'burger-auth';
-
-interface AuthChannelMessage {
-  type: 'logout';
-}
-
 const normalizeUser = (user: User): User => ({
   ...user,
   role: user.role ?? 'customer',
 });
-
-const createAuthChannel = () => {
-  if (
-    typeof window === 'undefined' ||
-    typeof window.BroadcastChannel === 'undefined'
-  ) {
-    return null;
-  }
-
-  return new BroadcastChannel(AUTH_CHANNEL_NAME);
-};
 
 export const AuthProvider = ({ children }: Props) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -137,10 +125,7 @@ export const AuthProvider = ({ children }: Props) => {
       }
     } finally {
       clearAuthState();
-
-      const channel = createAuthChannel();
-      channel?.postMessage({ type: 'logout' } satisfies AuthChannelMessage);
-      channel?.close();
+      broadcastAuthLogout();
     }
   }, [clearAuthState]);
 
