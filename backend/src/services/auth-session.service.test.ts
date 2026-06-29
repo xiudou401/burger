@@ -1,4 +1,3 @@
-import { ServiceError } from '../errors/ServiceError';
 import { ConcurrentRefreshError } from '../errors/ConcurrentRefreshError';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
