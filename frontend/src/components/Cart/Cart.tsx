@@ -104,20 +104,18 @@ const Cart = () => {
       {totalQuantity === 0 ? (
         <p className={classes.NoMeal}>Cart is empty</p>
       ) : !quote ? (
-        <p className={classes.Price}>Ready to checkout</p>
+        <p className={classes.Price}>
+          {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
+          <span>Review cart</span>
+        </p>
       ) : (
         <p className={classes.Price}>
+          <span>
+            {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
+          </span>
           {formatCurrency(estimatedTotalCents)}
           {(quoteStale || quoteMismatch) && (
-            <span
-              style={{
-                marginLeft: 8,
-                fontSize: 12,
-                color: '#999',
-              }}
-            >
-              Estimate
-            </span>
+            <span className={classes.Estimate}>Estimate</span>
           )}
         </p>
       )}
@@ -128,7 +126,7 @@ const Cart = () => {
         }`}
         onClick={onCheckout}
       >
-        Buy
+        Checkout
       </button>
     </div>
   );

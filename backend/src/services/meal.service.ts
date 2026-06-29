@@ -8,6 +8,7 @@ import type { MealPayload } from '../validation/meal.schema';
 
 interface MealQuery {
   keyword?: string;
+  category?: string;
   minPriceCents?: number;
   maxPriceCents?: number;
   page?: number;
@@ -32,6 +33,7 @@ export const findAllMeals = async (query: MealQuery = {}) => {
   try {
     const {
       keyword,
+      category,
       minPriceCents,
       maxPriceCents,
       page = 1,
@@ -44,6 +46,10 @@ export const findAllMeals = async (query: MealQuery = {}) => {
       : { createdAt: -1 };
 
     const mongoQuery: Record<string, any> = {};
+
+    if (category) {
+      mongoQuery.category = category;
+    }
 
     if (keyword) {
       mongoQuery.$or = [
@@ -83,6 +89,9 @@ export const findAllMeals = async (query: MealQuery = {}) => {
         description: meal.description,
         priceCents: meal.priceCents,
         image: meal.image,
+        category: meal.category ?? 'burger',
+        isAvailable: meal.isAvailable ?? true,
+        isFeatured: meal.isFeatured ?? false,
       })),
       page,
       limit,
@@ -104,12 +113,18 @@ const toPublicMeal = (meal: {
   description?: string;
   priceCents: number;
   image?: string;
+  category?: string;
+  isAvailable?: boolean;
+  isFeatured?: boolean;
 }) => ({
   id: String(meal._id),
   name: meal.name,
   description: meal.description,
   priceCents: meal.priceCents,
   image: meal.image,
+  category: meal.category ?? 'burger',
+  isAvailable: meal.isAvailable ?? true,
+  isFeatured: meal.isFeatured ?? false,
 });
 
 export const createMeal = async (payload: MealPayload) => {

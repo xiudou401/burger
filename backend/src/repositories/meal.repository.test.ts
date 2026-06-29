@@ -64,6 +64,9 @@ describe('mealRepository', () => {
       description: 'Nice',
       priceCents: 1200,
       image: '/img/burger.png',
+      category: 'burger',
+      isAvailable: true,
+      isFeatured: false,
     });
 
     expect(MealModel.findByIdAndUpdate).toHaveBeenCalledWith(
@@ -73,6 +76,9 @@ describe('mealRepository', () => {
         description: 'Nice',
         priceCents: 1200,
         image: '/img/burger.png',
+        category: 'burger',
+        isAvailable: true,
+        isFeatured: false,
       },
       { new: true, runValidators: true },
     );

@@ -12,6 +12,8 @@ export interface ValidatedCartMeal {
   name: string;
   image?: string;
   priceCents: number;
+  category: string;
+  isAvailable: boolean;
   quantity: number;
   subtotalCents: number;
 }
@@ -55,6 +57,10 @@ export const validateCart = async (
       throw new ServiceError('Meal removed', 400);
     }
 
+    if (meal.isAvailable === false) {
+      throw new ServiceError(`${meal.name} is currently sold out`, 400);
+    }
+
     const subtotalCents = meal.priceCents * item.quantity;
     totalCents += subtotalCents;
 
@@ -63,6 +69,8 @@ export const validateCart = async (
       name: meal.name,
       image: meal.image,
       priceCents: meal.priceCents,
+      category: meal.category ?? 'burger',
+      isAvailable: meal.isAvailable ?? true,
       quantity: item.quantity,
       subtotalCents,
     };

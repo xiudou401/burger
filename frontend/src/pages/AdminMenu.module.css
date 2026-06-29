@@ -16,7 +16,7 @@
 
 .Form {
   display: grid;
-  grid-template-columns: minmax(180rem, 1fr) 130rem minmax(220rem, 1fr);
+  grid-template-columns: minmax(180rem, 1fr) 130rem 150rem 120rem 120rem;
   gap: 14rem;
   align-items: end;
 }
@@ -32,6 +32,19 @@
   color: #3c3022;
   font-size: 16rem;
   font-weight: 800;
+}
+
+.CheckboxField {
+  min-height: 48rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rem;
+}
+
+.CheckboxField input {
+  width: 18rem;
+  height: 18rem;
+  accent-color: #ffc72c;
 }
 
 .Input,
@@ -146,6 +159,35 @@
   margin: 0;
   color: #292929;
   font-size: 19rem;
+}
+
+.Badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rem;
+  margin-top: 6rem;
+}
+
+.Badge,
+.FeaturedBadge,
+.SoldOutBadge {
+  border-radius: 999rem;
+  padding: 4rem 8rem;
+  background: #fff3ce;
+  color: #654611;
+  font-size: 12rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.FeaturedBadge {
+  background: #292929;
+  color: #ffc72c;
+}
+
+.SoldOutBadge {
+  background: #ffe5e8;
+  color: #bd0017;
 }
 
 .MealDescription {

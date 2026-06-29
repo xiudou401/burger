@@ -63,6 +63,43 @@ const AdminMenu = () => {
           </label>
 
           <label className={classes.Field}>
+            Category
+            <select
+              className={classes.Input}
+              value={form.category}
+              onChange={(event) => updateForm('category', event.target.value)}
+            >
+              <option value="burger">Burger</option>
+              <option value="side">Side</option>
+              <option value="drink">Drink</option>
+              <option value="dessert">Dessert</option>
+              <option value="combo">Combo</option>
+            </select>
+          </label>
+
+          <label className={`${classes.Field} ${classes.CheckboxField}`}>
+            <input
+              type="checkbox"
+              checked={form.isAvailable}
+              onChange={(event) =>
+                updateForm('isAvailable', event.target.checked)
+              }
+            />
+            Available
+          </label>
+
+          <label className={`${classes.Field} ${classes.CheckboxField}`}>
+            <input
+              type="checkbox"
+              checked={form.isFeatured}
+              onChange={(event) =>
+                updateForm('isFeatured', event.target.checked)
+              }
+            />
+            Featured
+          </label>
+
+          <label className={classes.Field}>
             Image
             <input
               className={classes.Input}
@@ -124,6 +161,15 @@ const AdminMenu = () => {
                 )}
                 <div>
                   <h3 className={classes.MealName}>{meal.name}</h3>
+                  <div className={classes.Badges}>
+                    <span className={classes.Badge}>{meal.category}</span>
+                    {meal.isFeatured && (
+                      <span className={classes.FeaturedBadge}>Featured</span>
+                    )}
+                    {!meal.isAvailable && (
+                      <span className={classes.SoldOutBadge}>Sold out</span>
+                    )}
+                  </div>
                   <p className={classes.MealDescription}>{meal.description}</p>
                 </div>
               </div>

@@ -13,5 +13,8 @@ test('normalizes and coerces meal payloads at the request boundary', () => {
     description: 'Beef, cheese, and pickles',
     priceCents: 1299,
     image: '/img/classic.jpg',
+    category: 'burger',
+    isAvailable: true,
+    isFeatured: false,
   });
 });

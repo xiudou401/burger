@@ -1,66 +1,129 @@
 /* Cart.module.css */
 .Cart {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   position: fixed;
-  width: 700rem;
-  height: 80rem;
-  background-color: #333;
-  border-radius: 20px;
-  bottom: 30rem;
+  width: min(704rem, calc(100vw - 36rem));
+  min-height: 92rem;
+  background-color: #202020;
+  border: 1rem solid rgba(255, 255, 255, 0.08);
+  border-radius: 8rem;
+  bottom: 24rem;
   left: 0;
   right: 0;
   margin: auto;
   z-index: 9999;
+  box-shadow: 0 18rem 42rem rgba(0, 0, 0, 0.26);
+  cursor: pointer;
 }
 
 .CartIcon {
-  width: 80rem;
+  width: 74rem;
+  height: 74rem;
   position: absolute;
-  bottom: -6rem;
+  left: 18rem;
+  bottom: 9rem;
+  display: grid;
+  place-items: center;
+  border-radius: 8rem;
+  background: #ffc72c;
 }
 
 .CartIconImg {
-  width: 100%;
+  width: 62rem;
 }
 
 .TotalQuantity {
   position: absolute;
-  width: 36rem;
-  height: 36rem;
-  line-height: 36rem;
+  width: 32rem;
+  height: 32rem;
+  line-height: 32rem;
   text-align: center;
-  background-color: #f00;
+  background-color: #bd0017;
   border-radius: 50%;
   color: #fff;
   font-weight: bold;
-  font-size: 22rem;
-  right: -10rem;
+  font-size: 18rem;
+  right: -8rem;
+  top: -8rem;
 }
 
 .Price,
 .NoMeal {
   display: flex;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-left: 120rem;
+  min-width: 0;
+  margin: 0 0 0 112rem;
   color: #fff;
   font-weight: bold;
-  font-size: 36rem;
+  font-size: 28rem;
+  line-height: 1.1;
 }
 
 .NoMeal {
-  color: #aaa;
+  color: #bdb5aa;
+}
+
+.Price span {
+  margin-bottom: 4rem;
+  color: #ffc72c;
+  font-size: 16rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.Price .Estimate {
+  margin: 5rem 0 0;
+  color: #bdb5aa;
+  font-size: 14rem;
+  text-transform: none;
 }
 
 .BuyButton {
+  align-self: stretch;
+  min-width: 196rem;
   border: none;
-  background-color: #fcbf49;
-  width: 200rem;
-  border-radius: 20px;
-  font-size: 36rem;
+  border-radius: 0 8rem 8rem 0;
+  background-color: #ffc72c;
+  color: #202020;
+  font-size: 26rem;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .Disabled {
-  background-color: #777;
-  color: #ccc;
+  background-color: #6d6a65;
+  color: #d4d0c8;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .Cart {
+    width: calc(100vw - 28rem);
+    min-height: 86rem;
+  }
+
+  .CartIcon {
+    width: 66rem;
+    height: 66rem;
+    left: 12rem;
+  }
+
+  .CartIconImg {
+    width: 54rem;
+  }
+
+  .Price,
+  .NoMeal {
+    margin-left: 92rem;
+    font-size: 24rem;
+  }
+
+  .BuyButton {
+    min-width: 166rem;
+    font-size: 22rem;
+  }
 }

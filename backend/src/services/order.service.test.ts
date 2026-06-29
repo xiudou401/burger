@@ -53,6 +53,16 @@ describe('order service', () => {
   const orderId = '507f1f77bcf86cd799439012';
   const mealId = '507f1f77bcf86cd799439013';
   const now = new Date('2026-01-01T00:00:00.000Z');
+  const validatedMeal = {
+    id: mealId,
+    name: 'Classic Burger',
+    image: '/img/burger.png',
+    priceCents: 1200,
+    category: 'burger',
+    isAvailable: true,
+    quantity: 2,
+    subtotalCents: 2400,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -64,16 +74,7 @@ describe('order service', () => {
 
   test('creates orders from backend-validated cart totals', async () => {
     jest.mocked(validateCart).mockResolvedValue({
-      items: [
-        {
-          id: mealId,
-          name: 'Classic Burger',
-          image: '/img/burger.png',
-          priceCents: 1200,
-          quantity: 2,
-          subtotalCents: 2400,
-        },
-      ],
+      items: [validatedMeal],
       totalCents: 2400,
       menuVersion: 7,
     });
@@ -138,16 +139,7 @@ describe('order service', () => {
 
   test('creates Stripe checkout sessions for validated orders', async () => {
     jest.mocked(validateCart).mockResolvedValue({
-      items: [
-        {
-          id: mealId,
-          name: 'Classic Burger',
-          image: '/img/burger.png',
-          priceCents: 1200,
-          quantity: 2,
-          subtotalCents: 2400,
-        },
-      ],
+      items: [validatedMeal],
       totalCents: 2400,
       menuVersion: 7,
     });
@@ -229,16 +221,7 @@ describe('order service', () => {
 
   test('marks checkout orders as failed when Stripe session creation fails', async () => {
     jest.mocked(validateCart).mockResolvedValue({
-      items: [
-        {
-          id: mealId,
-          name: 'Classic Burger',
-          image: '/img/burger.png',
-          priceCents: 1200,
-          quantity: 2,
-          subtotalCents: 2400,
-        },
-      ],
+      items: [validatedMeal],
       totalCents: 2400,
       menuVersion: 7,
     });
@@ -275,16 +258,7 @@ describe('order service', () => {
 
   test('marks checkout orders as failed when Stripe returns no checkout URL', async () => {
     jest.mocked(validateCart).mockResolvedValue({
-      items: [
-        {
-          id: mealId,
-          name: 'Classic Burger',
-          image: '/img/burger.png',
-          priceCents: 1200,
-          quantity: 2,
-          subtotalCents: 2400,
-        },
-      ],
+      items: [validatedMeal],
       totalCents: 2400,
       menuVersion: 7,
     });

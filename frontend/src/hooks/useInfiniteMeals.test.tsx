@@ -17,6 +17,9 @@ const meal = (id: string): Meal => ({
   description: `Description ${id}`,
   priceCents: Number(id) || 1,
   image: `${id}.jpg`,
+  category: 'burger',
+  isAvailable: true,
+  isFeatured: false,
 });
 
 const pageData = (

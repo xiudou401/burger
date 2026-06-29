@@ -13,6 +13,9 @@ const emptyForm: MealPayload = {
   description: '',
   priceCents: 0,
   image: '',
+  category: 'burger',
+  isAvailable: true,
+  isFeatured: false,
 };
 
 export const useAdminMenuPage = () => {
@@ -44,7 +47,7 @@ export const useAdminMenuPage = () => {
     loadMeals();
   }, []);
 
-  const updateForm = (field: keyof MealPayload, value: string) => {
+  const updateForm = (field: keyof MealPayload, value: string | boolean) => {
     setForm((current) => ({
       ...current,
       [field]: field === 'priceCents' ? Math.round(Number(value) * 100) : value,
@@ -63,6 +66,9 @@ export const useAdminMenuPage = () => {
       description: meal.description ?? '',
       priceCents: meal.priceCents,
       image: meal.image ?? '',
+      category: meal.category,
+      isAvailable: meal.isAvailable,
+      isFeatured: meal.isFeatured,
     });
   };
 

@@ -1,6 +1,7 @@
 .Counter {
   display: flex;
   align-items: center;
+  gap: 8rem;
 }
 
 .Decrease,
@@ -8,21 +9,48 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  border: none;
-  background-color: #fcbf49;
-  width: 36rem;
-  height: 36rem;
+  border: 1rem solid #202020;
+  background-color: #202020;
+  color: #ffc72c;
+  width: 38rem;
+  height: 38rem;
   border-radius: 50%;
-  font-size: 28rem;
+  font-size: 20rem;
   padding: 0;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .Decrease {
-  background-color: white;
-  border: 1px solid black;
+  background-color: #fff;
+  color: #202020;
+}
+
+.Decrease:hover,
+.Increase:hover {
+  transform: translateY(-1rem);
+}
+
+.Decrease:disabled,
+.Increase:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+  transform: none;
+}
+
+.Increase:hover {
+  background-color: #bd0017;
+  border-color: #bd0017;
+  color: #fff;
 }
 
 .Quantity {
-  font-size: 32rem;
-  margin: 0 5px;
+  min-width: 28rem;
+  color: #202020;
+  font-size: 24rem;
+  font-weight: 900;
+  text-align: center;
 }

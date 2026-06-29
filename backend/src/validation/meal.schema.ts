@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MEAL_CATEGORIES } from '../models/meal.model';
 import { ObjectIdSchema, paginationLimit } from './common.schema';
 
 export const MealSortSchema = z.enum([
@@ -11,6 +12,7 @@ export const MealSortSchema = z.enum([
 export const MealQuerySchema = z
   .object({
     keyword: z.string().trim().optional(),
+    category: z.enum(MEAL_CATEGORIES).optional(),
     minPriceCents: z.preprocess(
       (value) => (value === '' ? undefined : value),
       z.coerce
@@ -52,6 +54,9 @@ export const MealPayloadSchema = z
       .int('Meal priceCents must be an integer')
       .min(0, 'Meal priceCents must be non-negative'),
     image: z.string().trim().optional(),
+    category: z.enum(MEAL_CATEGORIES).default('burger'),
+    isAvailable: z.boolean().default(true),
+    isFeatured: z.boolean().default(false),
   })
   .strict();
 

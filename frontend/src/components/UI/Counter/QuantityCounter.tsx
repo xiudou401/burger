@@ -7,9 +7,10 @@ import { getCartItemQuantity } from '../../../store/cart/context-accessors';
 
 interface QuantityCounterProps {
   id: string;
+  disabled?: boolean;
 }
 
-const QuantityCounter = ({ id }: QuantityCounterProps) => {
+const QuantityCounter = ({ id, disabled = false }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
 
   const quantity = useCartSelector((ctx) => getCartItemQuantity(ctx, id));
@@ -19,6 +20,8 @@ const QuantityCounter = ({ id }: QuantityCounterProps) => {
   };
 
   const onIncrease = () => {
+    if (disabled) return;
+
     addItem(id);
   };
 
@@ -34,7 +37,11 @@ const QuantityCounter = ({ id }: QuantityCounterProps) => {
         </>
       )}
 
-      <button className={classes.Increase} onClick={onIncrease}>
+      <button
+        className={classes.Increase}
+        disabled={disabled}
+        onClick={onIncrease}
+      >
         <FontAwesomeIcon icon={faPlus} />
       </button>
     </div>

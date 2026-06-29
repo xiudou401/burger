@@ -1,19 +1,30 @@
 .MealItem {
   display: flex;
-  align-items: center;
-  padding: 30rem 20rem;
-  border-bottom: 1rem #f2f2f2 solid;
-  height: 250rem;
+  align-items: stretch;
+  gap: 22rem;
+  min-height: 208rem;
+  margin-bottom: 18rem;
+  padding: 18rem;
+  border: 1rem solid #eadfce;
+  border-radius: 8rem;
+  background: #fff;
+  box-shadow: 0 10rem 24rem rgba(58, 36, 10, 0.07);
+}
+
+.SoldOut {
+  opacity: 0.72;
 }
 
 .ImageWrapper {
   position: relative;
-  width: 280rem;
-  height: 190rem;
-  flex: 0 0 280rem;
+  width: 220rem;
+  min-height: 170rem;
+  flex: 0 0 220rem;
   display: grid;
   place-items: center;
   overflow: hidden;
+  border-radius: 8rem;
+  background: #f6efe2;
 }
 
 .ImageWrapper img {
@@ -22,35 +33,104 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
 }
 
 .Name {
-  font-weight: normal;
-  font-size: 36rem;
+  color: #202020;
+  font-weight: 900;
+  font-size: 28rem;
+  line-height: 1.16;
   margin: 0;
+}
+
+.Badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6rem;
+  margin-bottom: 8rem;
+}
+
+.CategoryBadge,
+.FeaturedBadge,
+.SoldOutBadge {
+  border-radius: 999rem;
+  padding: 4rem 9rem;
+  background: #fff3ce;
+  color: #6b4a12;
+  font-size: 12rem;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.FeaturedBadge {
+  background: #202020;
+  color: #ffc72c;
+}
+
+.SoldOutBadge {
+  background: #ffe1e6;
+  color: #bd0017;
 }
 
 .Description {
-  margin: 0;
-  color: #bbb;
-  font-size: 24rem;
-  padding-right: 40rem;
+  display: -webkit-box;
+  margin: 10rem 0 0;
+  overflow: hidden;
+  color: #6f675d;
+  font-size: 19rem;
+  font-weight: 700;
+  line-height: 1.35;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .PriceWrapper {
-  margin-top: 40rem;
-  padding-right: 40rem;
+  margin-top: auto;
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 16rem;
 }
 
 .Price {
+  color: #bd0017;
   font-weight: bold;
-  font-size: 36rem;
+  font-size: 28rem;
 }
 
 .DescBox {
-  flex: auto;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 4rem 0;
+}
+
+@media (max-width: 560px) {
+  .MealItem {
+    gap: 16rem;
+    min-height: 188rem;
+    padding: 14rem;
+  }
+
+  .ImageWrapper {
+    width: 176rem;
+    min-height: 148rem;
+    flex-basis: 176rem;
+  }
+
+  .Name {
+    font-size: 24rem;
+  }
+
+  .Description {
+    font-size: 17rem;
+  }
+
+  .Price {
+    font-size: 24rem;
+  }
 }

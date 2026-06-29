@@ -10,12 +10,15 @@ const meal = (id: string): Meal => ({
   description: '',
   priceCents: 1000,
   image: '',
+  category: 'burger',
+  isAvailable: true,
+  isFeatured: false,
 });
 
 describe('infinite meals utilities', () => {
   test('builds stable request keys', () => {
-    expect(buildInfiniteMealsLoadKey('chicken', 2, 4, 3)).toBe(
-      'chicken::2::4::3',
+    expect(buildInfiniteMealsLoadKey('chicken', 'burger', 2, 4, 3)).toBe(
+      'chicken::burger::2::4::3',
     );
   });
 

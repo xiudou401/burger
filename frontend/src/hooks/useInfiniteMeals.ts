@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Meal, PaginatedMeals } from '../types/meal';
+import { Meal, MealCategory, PaginatedMeals } from '../types/meal';
 import {
   buildInfiniteMealsLoadKey,
   mergeUniqueMeals,
@@ -8,6 +8,7 @@ import { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';
 
 type FetchMealsFn = (params: {
   keyword?: string;
+  category?: MealCategory;
   page?: number;
   limit?: number;
   signal?: AbortSignal;
@@ -38,6 +39,7 @@ export const useInfiniteMeals = ({
   const [meals, setMeals] = useState<Meal[]>([]);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
+  const [category, setCategory] = useState<MealCategory | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -51,15 +53,17 @@ export const useInfiniteMeals = ({
 
   const latestRef = useRef({
     keyword,
+    category,
     reloadKey,
   });
 
   useEffect(() => {
     latestRef.current = {
       keyword,
+      category,
       reloadKey,
     };
-  }, [keyword, reloadKey]);
+  }, [category, keyword, reloadKey]);
 
   const clearDebounceTimer = useCallback(() => {
     if (debounceTimerRef.current === null) return;
@@ -72,6 +76,7 @@ export const useInfiniteMeals = ({
     (pageToLoad: number, searchKeyword: string, currentReloadKey: number) => {
       const key = buildInfiniteMealsLoadKey(
         searchKeyword,
+        category ?? '',
         pageToLoad,
         limit,
         currentReloadKey,
@@ -97,6 +102,7 @@ export const useInfiniteMeals = ({
       const requestId = ++requestIdRef.current;
       const controller = new AbortController();
       const snapshotKeyword = searchKeyword;
+      const snapshotCategory = category;
       const snapshotReloadKey = currentReloadKey;
 
       let promise!: Promise<boolean>;
@@ -106,12 +112,14 @@ export const useInfiniteMeals = ({
           const data = await fetchMeals({
             page: pageToLoad,
             keyword: snapshotKeyword || undefined,
+            category: snapshotCategory,
             limit,
             signal: controller.signal,
           });
 
           if (requestId !== requestIdRef.current) return false;
           if (snapshotKeyword !== latestRef.current.keyword) return false;
+          if (snapshotCategory !== latestRef.current.category) return false;
           if (snapshotReloadKey !== latestRef.current.reloadKey) return false;
 
           setMeals((prev) => {
@@ -153,12 +161,12 @@ export const useInfiniteMeals = ({
 
       return promise;
     },
-    [fetchMeals, limit],
+    [category, fetchMeals, limit],
   );
 
   useEffect(() => {
     loadMeals(page, keyword, reloadKey);
-  }, [page, keyword, reloadKey, loadMeals]);
+  }, [category, keyword, loadMeals, page, reloadKey]);
 
   useEffect(() => {
     return () => {
@@ -203,6 +211,7 @@ export const useInfiniteMeals = ({
 
         resetAndInvalidate();
         setKeyword(k);
+        setCategory(undefined);
         setReloadKey((prev) => prev + 1);
         debounceTimerRef.current = null;
       }, SEARCH_DEBOUNCE_MS);
@@ -226,6 +235,17 @@ export const useInfiniteMeals = ({
     loadMeals(page, keyword, reloadKey);
   }, [keyword, loadMeals, page, reloadKey]);
 
+  const onCategoryChange = useCallback(
+    (nextCategory?: MealCategory) => {
+      clearDebounceTimer();
+      resetAndInvalidate();
+      setKeyword('');
+      setCategory(nextCategory);
+      setReloadKey((prev) => prev + 1);
+    },
+    [clearDebounceTimer, resetAndInvalidate],
+  );
+
   return {
     meals,
     isLoading,
@@ -233,9 +253,11 @@ export const useInfiniteMeals = ({
     hasMore,
     page,
     keyword,
+    category,
     listRef,
     sentinelRef,
     onSearch,
+    onCategoryChange,
     reload,
     retry,
   };

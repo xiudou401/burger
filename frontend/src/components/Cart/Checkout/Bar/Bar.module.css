@@ -1,25 +1,27 @@
 .Bar {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   position: fixed;
-  width: 700rem;
-  height: 80rem;
-  background-color: #333;
-  border-radius: 20px;
-  bottom: 30rem;
+  width: min(704rem, calc(100vw - 36rem));
+  min-height: 92rem;
+  background-color: #202020;
+  border-radius: 8rem;
+  bottom: 24rem;
   left: 0;
   right: 0;
   margin: auto;
   z-index: 9999;
+  box-shadow: 0 18rem 42rem rgba(0, 0, 0, 0.26);
 }
 
 .TotalPrice {
   display: flex;
   align-items: center;
-  margin-left: 60rem;
+  margin-left: 30rem;
   color: #fff;
   font-weight: bold;
-  font-size: 36rem;
+  font-size: 30rem;
 }
 
 .Actions {
@@ -33,7 +35,8 @@
   max-width: 220rem;
   margin: 0;
   color: #fff;
-  font-size: 18rem;
+  font-size: 16rem;
+  font-weight: 800;
   line-height: 1.2;
 }
 
@@ -42,14 +45,34 @@
 }
 
 .Button {
+  align-self: stretch;
   border: none;
-  background-color: #fcbf49;
-  width: 200rem;
-  border-radius: 20px;
-  font-size: 36rem;
+  background-color: #ffc72c;
+  color: #202020;
+  min-width: 246rem;
+  border-radius: 0 8rem 8rem 0;
+  font-size: 24rem;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .Button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+}
+
+@media (max-width: 560px) {
+  .Bar {
+    width: calc(100vw - 28rem);
+  }
+
+  .TotalPrice {
+    margin-left: 20rem;
+    font-size: 26rem;
+  }
+
+  .Button {
+    min-width: 196rem;
+    font-size: 21rem;
+  }
 }
