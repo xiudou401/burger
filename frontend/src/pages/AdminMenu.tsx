@@ -2,6 +2,7 @@ import AdminLayout from '../components/Admin/AdminLayout';
 import classes from './AdminMenu.module.css';
 import { useAdminMenuPage } from './hooks/useAdminMenuPage';
 import { formatCurrency } from '../utils/currency';
+import { MENU_CATEGORIES } from '../constants/menu-categories';
 
 const AdminMenu = () => {
   const {
@@ -69,11 +70,11 @@ const AdminMenu = () => {
               value={form.category}
               onChange={(event) => updateForm('category', event.target.value)}
             >
-              <option value="burger">Burger</option>
-              <option value="side">Side</option>
-              <option value="drink">Drink</option>
-              <option value="dessert">Dessert</option>
-              <option value="combo">Combo</option>
+              {MENU_CATEGORIES.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
+              ))}
             </select>
           </label>
 

@@ -9,16 +9,17 @@ import { fetchMenuItems } from '../api/menu-items';
 import { useInfiniteMenuItems } from '../hooks/useInfiniteMenuItems';
 import { useMenuRefreshPrompt } from './hooks/useMenuRefreshPrompt';
 import { useCartSelector } from '../store/cart/hooks/useCartSelector';
+import { MENU_CATEGORIES } from '../constants/menu-categories';
 import type { MenuItemCategory } from '../types/menu-item';
 import classes from './Home.module.css';
 
 const CATEGORY_FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'burger', label: 'Burgers', category: 'burger' },
-  { id: 'side', label: 'Sides', category: 'side' },
-  { id: 'drink', label: 'Drinks', category: 'drink' },
-  { id: 'dessert', label: 'Desserts', category: 'dessert' },
-  { id: 'combo', label: 'Combos', category: 'combo' },
+  { id: 'all', label: 'All', category: undefined },
+  ...MENU_CATEGORIES.map((category) => ({
+    id: category.value,
+    label: category.pluralLabel,
+    category: category.value,
+  })),
 ] satisfies Array<{
   id: string;
   label: string;
