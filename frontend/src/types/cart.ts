@@ -1,12 +1,12 @@
 import type { Dispatch } from 'react';
-import type { Meal } from './meal';
+import type { MenuItem } from './menu-item';
 
 export interface CartStoredItem {
   id: string;
   quantity: number;
 }
 
-export interface CartMeal extends Meal {
+export interface CartMenuItem extends MenuItem {
   quantity: number;
   subtotalCents: number;
 }
@@ -18,7 +18,7 @@ export interface CartState {
 
 export interface Quote {
   menuVersion: number;
-  meals: CartMeal[];
+  meals: CartMenuItem[];
   ts: number;
 }
 

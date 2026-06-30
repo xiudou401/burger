@@ -121,12 +121,12 @@
   color: #5b4a35;
 }
 
-.MealList {
+.MenuItemList {
   display: grid;
   gap: 12rem;
 }
 
-.MealRow {
+.MenuItemRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
@@ -135,18 +135,18 @@
   border-bottom: 1rem solid rgba(91, 74, 53, 0.18);
 }
 
-.MealRow:last-child {
+.MenuItemRow:last-child {
   border-bottom: 0;
 }
 
-.MealInfo {
+.MenuItemInfo {
   display: flex;
   align-items: center;
   gap: 14rem;
   min-width: 0;
 }
 
-.MealImage {
+.MenuItemImage {
   width: 64rem;
   height: 64rem;
   flex: 0 0 auto;
@@ -155,7 +155,7 @@
   background: #fff7e0;
 }
 
-.MealName {
+.MenuItemName {
   margin: 0;
   color: #292929;
   font-size: 19rem;
@@ -190,7 +190,7 @@
   color: #bd0017;
 }
 
-.MealDescription {
+.MenuItemDescription {
   margin: 5rem 0 0;
   color: #7a6954;
   font-size: 15rem;
@@ -209,7 +209,7 @@
 
 @media (max-width: 820px) {
   .Form,
-  .MealRow {
+  .MenuItemRow {
     grid-template-columns: 1fr;
   }
 

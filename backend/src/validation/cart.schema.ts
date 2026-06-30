@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const CartItemSchema = z.object({
-  id: z.string().trim().min(1, 'Meal id is required'),
+  id: z.string().trim().min(1, 'Menu item id is required'),
   quantity: z.number().int('Quantity must be an integer').positive(),
 });
 

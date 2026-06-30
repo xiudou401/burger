@@ -1,4 +1,4 @@
-.MealItem {
+.MenuItemCard {
   display: flex;
   align-items: stretch;
   gap: 22rem;
@@ -110,7 +110,7 @@
 }
 
 @media (max-width: 560px) {
-  .MealItem {
+  .MenuItemCard {
     gap: 16rem;
     min-height: 188rem;
     padding: 14rem;

@@ -5,7 +5,7 @@
   border-bottom: 1rem solid #eadfce;
 }
 
-.MealImg {
+.ItemImage {
   position: relative;
   width: 132rem;
   height: 112rem;
@@ -17,7 +17,7 @@
   background: #f6efe2;
 }
 
-.MealImg img {
+.ItemImage img {
   position: absolute;
   inset: 0;
   display: block;

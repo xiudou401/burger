@@ -2,7 +2,7 @@ import classes from './MenuFeedStatus.module.css';
 
 interface MenuFeedStatusProps {
   hasMore: boolean;
-  hasMeals: boolean;
+  hasMenuItems: boolean;
   isLoading: boolean;
   error: string | null;
   hasMenuUpdate: boolean;
@@ -12,7 +12,7 @@ interface MenuFeedStatusProps {
 
 const MenuFeedStatus = ({
   hasMore,
-  hasMeals,
+  hasMenuItems,
   isLoading,
   error,
   hasMenuUpdate,
@@ -54,7 +54,7 @@ const MenuFeedStatus = ({
     );
   }
 
-  if (!hasMore && hasMeals) {
+  if (!hasMore && hasMenuItems) {
     return (
       <div className={classes.EndStatus} role="status">
         You have reached the end of today's menu.

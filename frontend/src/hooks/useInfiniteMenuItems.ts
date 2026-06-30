@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Meal, MealCategory, PaginatedMeals } from '../types/meal';
+import type {
+  MenuItem,
+  MenuItemCategory,
+  PaginatedMenuItems,
+} from '../types/menu-item';
 import {
-  buildInfiniteMealsLoadKey,
-  mergeUniqueMeals,
-} from './infinite-meals-utils';
+  buildInfiniteMenuItemsLoadKey,
+  mergeUniqueMenuItems,
+} from './infinite-menu-items-utils';
 import { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';
 
-type FetchMealsFn = (params: {
+type FetchMenuItemsFn = (params: {
   keyword?: string;
-  category?: MealCategory;
+  category?: MenuItemCategory;
   page?: number;
   limit?: number;
   signal?: AbortSignal;
-}) => Promise<PaginatedMeals>;
+}) => Promise<PaginatedMenuItems>;
 
-interface UseInfiniteMealsOptions {
-  fetchMeals: FetchMealsFn;
+interface UseInfiniteMenuItemsOptions {
+  fetchMenuItems: FetchMenuItemsFn;
   limit?: number;
 }
 
@@ -32,14 +36,14 @@ type SettledLoadEntry = {
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-export const useInfiniteMeals = ({
-  fetchMeals,
+export const useInfiniteMenuItems = ({
+  fetchMenuItems,
   limit = 4,
-}: UseInfiniteMealsOptions) => {
-  const [meals, setMeals] = useState<Meal[]>([]);
+}: UseInfiniteMenuItemsOptions) => {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [page, setPage] = useState(1);
   const [keyword, setKeyword] = useState('');
-  const [category, setCategory] = useState<MealCategory | undefined>();
+  const [category, setCategory] = useState<MenuItemCategory | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
@@ -72,9 +76,9 @@ export const useInfiniteMeals = ({
     debounceTimerRef.current = null;
   }, []);
 
-  const loadMeals = useCallback(
+  const loadMenuItems = useCallback(
     (pageToLoad: number, searchKeyword: string, currentReloadKey: number) => {
-      const key = buildInfiniteMealsLoadKey(
+      const key = buildInfiniteMenuItemsLoadKey(
         searchKeyword,
         category ?? '',
         pageToLoad,
@@ -109,7 +113,7 @@ export const useInfiniteMeals = ({
 
       promise = (async () => {
         try {
-          const data = await fetchMeals({
+          const data = await fetchMenuItems({
             page: pageToLoad,
             keyword: snapshotKeyword || undefined,
             category: snapshotCategory,
@@ -122,12 +126,12 @@ export const useInfiniteMeals = ({
           if (snapshotCategory !== latestRef.current.category) return false;
           if (snapshotReloadKey !== latestRef.current.reloadKey) return false;
 
-          setMeals((prev) => {
+          setMenuItems((prev) => {
             if (pageToLoad === 1) {
               return data.items;
             }
 
-            return mergeUniqueMeals(prev, data.items);
+            return mergeUniqueMenuItems(prev, data.items);
           });
 
           loadedPageRef.current = Math.max(loadedPageRef.current, pageToLoad);
@@ -161,12 +165,12 @@ export const useInfiniteMeals = ({
 
       return promise;
     },
-    [category, fetchMeals, limit],
+    [category, fetchMenuItems, limit],
   );
 
   useEffect(() => {
-    loadMeals(page, keyword, reloadKey);
-  }, [category, keyword, loadMeals, page, reloadKey]);
+    loadMenuItems(page, keyword, reloadKey);
+  }, [category, keyword, loadMenuItems, page, reloadKey]);
 
   useEffect(() => {
     return () => {
@@ -197,7 +201,7 @@ export const useInfiniteMeals = ({
     loadedPageRef.current = 0;
     setIsLoading(false);
     setError(null);
-    setMeals([]);
+    setMenuItems([]);
     setHasMore(true);
     setPage(1);
   }, [clearDebounceTimer]);
@@ -226,17 +230,17 @@ export const useInfiniteMeals = ({
 
     resetAndInvalidate();
     setReloadKey(nextReloadKey);
-    return loadMeals(1, currentKeyword, nextReloadKey);
-  }, [loadMeals, resetAndInvalidate]);
+    return loadMenuItems(1, currentKeyword, nextReloadKey);
+  }, [loadMenuItems, resetAndInvalidate]);
 
   const retry = useCallback(() => {
     setError(null);
     settledLoadRef.current = null;
-    loadMeals(page, keyword, reloadKey);
-  }, [keyword, loadMeals, page, reloadKey]);
+    loadMenuItems(page, keyword, reloadKey);
+  }, [keyword, loadMenuItems, page, reloadKey]);
 
   const onCategoryChange = useCallback(
-    (nextCategory?: MealCategory) => {
+    (nextCategory?: MenuItemCategory) => {
       clearDebounceTimer();
       resetAndInvalidate();
       setKeyword('');
@@ -247,7 +251,7 @@ export const useInfiniteMeals = ({
   );
 
   return {
-    meals,
+    menuItems,
     isLoading,
     error,
     hasMore,

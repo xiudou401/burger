@@ -50,7 +50,7 @@
 }
 
 .Price,
-.NoMeal {
+.EmptyCartText {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -63,7 +63,7 @@
   line-height: 1.1;
 }
 
-.NoMeal {
+.EmptyCartText {
   color: #bdb5aa;
 }
 
@@ -117,7 +117,7 @@
   }
 
   .Price,
-  .NoMeal {
+  .EmptyCartText {
     margin-left: 92rem;
     font-size: 24rem;
   }

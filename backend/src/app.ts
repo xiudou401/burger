@@ -1,5 +1,5 @@
 import express, { NextFunction, Request, Response } from 'express';
-import mealRoutes from './routes/meal.routes';
+import menuItemRoutes from './routes/menu-item.routes';
 import cartRoutes from './routes/cart.routes';
 import menuVersionRoutes from './routes/menu-version.routes';
 import authRoutes from './routes/auth.routes';
@@ -44,7 +44,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 app.use('/api/auth', authRoutes);
-app.use('/api/meals', mealRoutes);
+app.use('/api/meals', menuItemRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/staff-invites', staffInviteRoutes);

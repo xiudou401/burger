@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import MealsList from '../components/Meals/MealsList';
+import MenuItemsList from '../components/MenuItems/MenuItemsList';
 import Cart from '../components/Cart/Cart';
-import FilterMeals from '../components/FilterMeals/FilterMeals';
+import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import AccountBar from '../components/Auth/AccountBar';
 import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
 import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
-import { fetchMeals } from '../api/meals';
-import { useInfiniteMeals } from '../hooks/useInfiniteMeals';
+import { fetchMenuItems } from '../api/menu-items';
+import { useInfiniteMenuItems } from '../hooks/useInfiniteMenuItems';
 import { useMenuRefreshPrompt } from './hooks/useMenuRefreshPrompt';
 import { useCartSelector } from '../store/cart/hooks/useCartSelector';
-import type { MealCategory } from '../types/meal';
+import type { MenuItemCategory } from '../types/menu-item';
 import classes from './Home.module.css';
 
 const CATEGORY_FILTERS = [
@@ -22,13 +22,13 @@ const CATEGORY_FILTERS = [
 ] satisfies Array<{
   id: string;
   label: string;
-  category?: MealCategory;
+  category?: MenuItemCategory;
 }>;
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const {
-    meals,
+    menuItems,
     isLoading,
     error,
     hasMore,
@@ -38,7 +38,7 @@ const Home = () => {
     onCategoryChange,
     reload,
     retry,
-  } = useInfiniteMeals({ fetchMeals, limit: 4 });
+  } = useInfiniteMenuItems({ fetchMenuItems, limit: 4 });
 
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
   const { hasMenuUpdate, acknowledgeMenuUpdate } =
@@ -88,7 +88,7 @@ const Home = () => {
       </section>
 
       <div className={classes.MenuTools}>
-        <FilterMeals onSearch={searchMenu} />
+        <MenuSearch onSearch={searchMenu} />
         <nav className={classes.CategoryRail} aria-label="Menu categories">
           {CATEGORY_FILTERS.map((category) => (
             <button
@@ -105,11 +105,15 @@ const Home = () => {
         </nav>
       </div>
 
-      <MealsList meals={meals} ref={listRef} sentinelRef={sentinelRef} />
+      <MenuItemsList
+        menuItems={menuItems}
+        ref={listRef}
+        sentinelRef={sentinelRef}
+      />
 
       <MenuFeedStatus
         hasMore={hasMore}
-        hasMeals={meals.length > 0}
+        hasMenuItems={menuItems.length > 0}
         isLoading={isLoading}
         error={error}
         hasMenuUpdate={hasMenuUpdate}

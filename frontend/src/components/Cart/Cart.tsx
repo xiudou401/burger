@@ -90,7 +90,7 @@ const Cart = () => {
       {showCartDetails && <CartDetails open={showCartDetails} />}
 
       {showCheckout && quote && (
-        <Checkout offCheckout={offCheckout} meals={quote.meals} />
+        <Checkout offCheckout={offCheckout} menuItems={quote.meals} />
       )}
 
       <div className={classes.CartIcon}>
@@ -102,7 +102,7 @@ const Cart = () => {
       </div>
 
       {totalQuantity === 0 ? (
-        <p className={classes.NoMeal}>Cart is empty</p>
+        <p className={classes.EmptyCartText}>Cart is empty</p>
       ) : !quote ? (
         <p className={classes.Price}>
           {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}

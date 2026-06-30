@@ -3,10 +3,10 @@ import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
 import { getMenuVersion } from './menu.service';
-import { mealRepository } from '../repositories/meal.repository';
-import type { MealPayload } from '../validation/meal.schema';
+import { menuItemRepository } from '../repositories/menu-item.repository';
+import type { MenuItemPayload } from '../validation/menu-item.schema';
 
-interface MealQuery {
+interface MenuItemQuery {
   keyword?: string;
   category?: string;
   minPriceCents?: number;
@@ -29,7 +29,7 @@ const SORT_MAP: Record<SortOption, Record<string, SortOrder>> = {
   created_desc: { createdAt: -1 },
 };
 
-export const findAllMeals = async (query: MealQuery = {}) => {
+export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
   try {
     const {
       keyword,
@@ -71,27 +71,27 @@ export const findAllMeals = async (query: MealQuery = {}) => {
     const skip = (page - 1) * limit;
 
     const [items, total, menuVersion] = await Promise.all([
-      mealRepository.findPage({
+      menuItemRepository.findPage({
         query: mongoQuery,
         sort: sortOption,
         skip,
         limit,
       }),
-      mealRepository.count(mongoQuery),
+      menuItemRepository.count(mongoQuery),
       getMenuVersion(),
     ]);
 
     return {
       menuVersion,
-      items: items.map((meal) => ({
-        id: meal._id.toString(),
-        name: meal.name,
-        description: meal.description,
-        priceCents: meal.priceCents,
-        image: meal.image,
-        category: meal.category ?? 'burger',
-        isAvailable: meal.isAvailable ?? true,
-        isFeatured: meal.isFeatured ?? false,
+      items: items.map((menuItem) => ({
+        id: menuItem._id.toString(),
+        name: menuItem.name,
+        description: menuItem.description,
+        priceCents: menuItem.priceCents,
+        image: menuItem.image,
+        category: menuItem.category ?? 'burger',
+        isAvailable: menuItem.isAvailable ?? true,
+        isFeatured: menuItem.isFeatured ?? false,
       })),
       page,
       limit,
@@ -99,7 +99,7 @@ export const findAllMeals = async (query: MealQuery = {}) => {
       totalPages: Math.ceil(total / limit),
     };
   } catch (error) {
-    console.error('Meal pagination failed:', error);
+    console.error('Menu item pagination failed:', error);
     throw new AppError(
       'Could not load menu items. Please try again later.',
       500,
@@ -107,7 +107,7 @@ export const findAllMeals = async (query: MealQuery = {}) => {
   }
 };
 
-const toPublicMeal = (meal: {
+const toPublicMenuItem = (menuItem: {
   _id: unknown;
   name: string;
   description?: string;
@@ -117,38 +117,41 @@ const toPublicMeal = (meal: {
   isAvailable?: boolean;
   isFeatured?: boolean;
 }) => ({
-  id: String(meal._id),
-  name: meal.name,
-  description: meal.description,
-  priceCents: meal.priceCents,
-  image: meal.image,
-  category: meal.category ?? 'burger',
-  isAvailable: meal.isAvailable ?? true,
-  isFeatured: meal.isFeatured ?? false,
+  id: String(menuItem._id),
+  name: menuItem.name,
+  description: menuItem.description,
+  priceCents: menuItem.priceCents,
+  image: menuItem.image,
+  category: menuItem.category ?? 'burger',
+  isAvailable: menuItem.isAvailable ?? true,
+  isFeatured: menuItem.isFeatured ?? false,
 });
 
-export const createMeal = async (payload: MealPayload) => {
-  const meal = await mealRepository.create(payload);
+export const createMenuItem = async (payload: MenuItemPayload) => {
+  const menuItem = await menuItemRepository.create(payload);
 
-  return toPublicMeal(meal);
+  return toPublicMenuItem(menuItem);
 };
 
-export const updateMeal = async (mealId: string, payload: MealPayload) => {
-  const meal = await mealRepository.updateById(mealId, payload);
+export const updateMenuItem = async (
+  menuItemId: string,
+  payload: MenuItemPayload,
+) => {
+  const menuItem = await menuItemRepository.updateById(menuItemId, payload);
 
-  if (!meal) {
-    throw new ServiceError('Meal not found', 404);
+  if (!menuItem) {
+    throw new ServiceError('Menu item not found', 404);
   }
 
-  return toPublicMeal(meal);
+  return toPublicMenuItem(menuItem);
 };
 
-export const deleteMeal = async (mealId: string) => {
-  const meal = await mealRepository.deleteById(mealId);
+export const deleteMenuItem = async (menuItemId: string) => {
+  const menuItem = await menuItemRepository.deleteById(menuItemId);
 
-  if (!meal) {
-    throw new ServiceError('Meal not found', 404);
+  if (!menuItem) {
+    throw new ServiceError('Menu item not found', 404);
   }
 
-  return toPublicMeal(meal);
+  return toPublicMenuItem(menuItem);
 };

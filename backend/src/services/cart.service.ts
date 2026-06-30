@@ -1,13 +1,13 @@
 import { getMenuVersion } from './menu.service';
 import { ServiceError } from '../errors/ServiceError';
-import { mealRepository } from '../repositories/meal.repository';
+import { menuItemRepository } from '../repositories/menu-item.repository';
 
 export interface CartStoredItem {
   id: string;
   quantity: number;
 }
 
-export interface ValidatedCartMeal {
+export interface ValidatedCartMenuItem {
   id: string;
   name: string;
   image?: string;
@@ -19,7 +19,7 @@ export interface ValidatedCartMeal {
 }
 
 export interface ValidateCartResult {
-  items: ValidatedCartMeal[];
+  items: ValidatedCartMenuItem[];
   totalCents: number;
   menuVersion: number;
 }
@@ -44,33 +44,35 @@ export const validateCart = async (
 
   const ids = items.map((item) => item.id);
 
-  const meals = await mealRepository.findByIds(ids);
+  const menuItems = await menuItemRepository.findByIds(ids);
 
-  const mealMap = new Map(meals.map((meal) => [meal._id.toString(), meal]));
+  const menuItemMap = new Map(
+    menuItems.map((menuItem) => [menuItem._id.toString(), menuItem]),
+  );
 
   let totalCents = 0;
 
-  const result: ValidatedCartMeal[] = items.map((item) => {
-    const meal = mealMap.get(item.id);
+  const result: ValidatedCartMenuItem[] = items.map((item) => {
+    const menuItem = menuItemMap.get(item.id);
 
-    if (!meal) {
-      throw new ServiceError('Meal removed', 400);
+    if (!menuItem) {
+      throw new ServiceError('Menu item removed', 400);
     }
 
-    if (meal.isAvailable === false) {
-      throw new ServiceError(`${meal.name} is currently sold out`, 400);
+    if (menuItem.isAvailable === false) {
+      throw new ServiceError(`${menuItem.name} is currently sold out`, 400);
     }
 
-    const subtotalCents = meal.priceCents * item.quantity;
+    const subtotalCents = menuItem.priceCents * item.quantity;
     totalCents += subtotalCents;
 
     return {
-      id: meal._id.toString(),
-      name: meal.name,
-      image: meal.image,
-      priceCents: meal.priceCents,
-      category: meal.category ?? 'burger',
-      isAvailable: meal.isAvailable ?? true,
+      id: menuItem._id.toString(),
+      name: menuItem.name,
+      image: menuItem.image,
+      priceCents: menuItem.priceCents,
+      category: menuItem.category ?? 'burger',
+      isAvailable: menuItem.isAvailable ?? true,
       quantity: item.quantity,
       subtotalCents,
     };

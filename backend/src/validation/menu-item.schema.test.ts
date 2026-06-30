@@ -1,8 +1,8 @@
-import { MealPayloadSchema } from './meal.schema';
+import { MenuItemPayloadSchema } from './menu-item.schema';
 
-test('normalizes and coerces meal payloads at the request boundary', () => {
+test('normalizes and coerces menu item payloads at the request boundary', () => {
   expect(
-    MealPayloadSchema.parse({
+    MenuItemPayloadSchema.parse({
       name: ' Classic Burger ',
       description: ' Beef, cheese, and pickles ',
       priceCents: '1299',

@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
 import Bar from './Bar/Bar';
-import type { CartMeal } from '../../../types/cart';
+import type { CartMenuItem } from '../../../types/cart';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import { formatCurrency } from '../../../utils/currency';
 
@@ -13,19 +13,19 @@ const CheckoutRoot = document.getElementById('checkout-root');
 
 interface CheckoutProps {
   offCheckout: () => void;
-  meals: CartMeal[];
+  menuItems: CartMenuItem[];
 }
 
-const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
+const Checkout = ({ offCheckout, menuItems }: CheckoutProps) => {
   const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
 
   const items = useCartSelector((ctx) => ctx.items);
 
-  const visibleMeals = useMemo(() => {
+  const visibleMenuItems = useMemo(() => {
     const qtyMap = new Map(items.map((i) => [i.id, i.quantity]));
 
-    return meals.filter((m) => (qtyMap.get(m.id) ?? 0) > 0);
-  }, [meals, items]);
+    return menuItems.filter((item) => (qtyMap.get(item.id) ?? 0) > 0);
+  }, [menuItems, items]);
 
   if (!CheckoutRoot) return null;
 
@@ -40,14 +40,14 @@ const Checkout = ({ offCheckout, meals }: CheckoutProps) => {
         <FontAwesomeIcon icon={faXmark} />
       </div>
 
-      <div className={classes.MealsDesc}>
+      <div className={classes.OrderSummary}>
         <header className={classes.Header}>
           <h2 className={classes.Title}>Order Details</h2>
         </header>
 
         <div>
-          {visibleMeals.map((meal) => (
-            <CheckoutItem key={meal.id} meal={meal} />
+          {visibleMenuItems.map((menuItem) => (
+            <CheckoutItem key={menuItem.id} menuItem={menuItem} />
           ))}
         </div>
 

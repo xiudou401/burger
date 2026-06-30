@@ -1,7 +1,10 @@
-import { CartMeal } from '../../../types/cart';
+import { CartMenuItem } from '../../../types/cart';
 
-export const calculateTotals = (meals: CartMeal[]) => {
-  const totalQuantity = meals.reduce((s, m) => s + m.quantity, 0);
-  const totalCents = meals.reduce((s, m) => s + m.priceCents * m.quantity, 0);
+export const calculateTotals = (menuItems: CartMenuItem[]) => {
+  const totalQuantity = menuItems.reduce((sum, item) => sum + item.quantity, 0);
+  const totalCents = menuItems.reduce(
+    (sum, item) => sum + item.priceCents * item.quantity,
+    0,
+  );
   return { totalQuantity, totalCents };
 };

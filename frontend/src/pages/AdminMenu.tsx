@@ -5,7 +5,7 @@ import { formatCurrency } from '../utils/currency';
 
 const AdminMenu = () => {
   const {
-    meals,
+    menuItems,
     form,
     isEditing,
     isLoading,
@@ -14,8 +14,8 @@ const AdminMenu = () => {
     message,
     updateForm,
     submit,
-    editMeal,
-    removeMeal,
+    editMenuItem,
+    removeMenuItem,
     resetForm,
     refresh,
   } = useAdminMenuPage();
@@ -35,7 +35,7 @@ const AdminMenu = () => {
     >
       <section className={classes.Card}>
         <h2 className={classes.CardTitle}>
-          {isEditing ? 'Edit meal' : 'Add meal'}
+          {isEditing ? 'Edit menu item' : 'Add menu item'}
         </h2>
 
         <form className={classes.Form} onSubmit={submit}>
@@ -126,7 +126,7 @@ const AdminMenu = () => {
                 ? 'Saving...'
                 : isEditing
                   ? 'Save changes'
-                  : 'Add meal'}
+                  : 'Add item'}
             </button>
             {isEditing && (
               <button
@@ -145,51 +145,57 @@ const AdminMenu = () => {
       </section>
 
       <section className={classes.Card}>
-        <h2 className={classes.CardTitle}>Meals</h2>
+        <h2 className={classes.CardTitle}>Menu items</h2>
 
         {isLoading && <p className={classes.StateText}>Loading menu...</p>}
-        {!isLoading && meals.length === 0 && (
-          <p className={classes.StateText}>No meals yet.</p>
+        {!isLoading && menuItems.length === 0 && (
+          <p className={classes.StateText}>No menu items yet.</p>
         )}
 
-        <div className={classes.MealList}>
-          {meals.map((meal) => (
-            <article className={classes.MealRow} key={meal.id}>
-              <div className={classes.MealInfo}>
-                {meal.image && (
-                  <img className={classes.MealImage} src={meal.image} alt="" />
+        <div className={classes.MenuItemList}>
+          {menuItems.map((menuItem) => (
+            <article className={classes.MenuItemRow} key={menuItem.id}>
+              <div className={classes.MenuItemInfo}>
+                {menuItem.image && (
+                  <img
+                    className={classes.MenuItemImage}
+                    src={menuItem.image}
+                    alt=""
+                  />
                 )}
                 <div>
-                  <h3 className={classes.MealName}>{meal.name}</h3>
+                  <h3 className={classes.MenuItemName}>{menuItem.name}</h3>
                   <div className={classes.Badges}>
-                    <span className={classes.Badge}>{meal.category}</span>
-                    {meal.isFeatured && (
+                    <span className={classes.Badge}>{menuItem.category}</span>
+                    {menuItem.isFeatured && (
                       <span className={classes.FeaturedBadge}>Featured</span>
                     )}
-                    {!meal.isAvailable && (
+                    {!menuItem.isAvailable && (
                       <span className={classes.SoldOutBadge}>Sold out</span>
                     )}
                   </div>
-                  <p className={classes.MealDescription}>{meal.description}</p>
+                  <p className={classes.MenuItemDescription}>
+                    {menuItem.description}
+                  </p>
                 </div>
               </div>
 
               <strong className={classes.Price}>
-                {formatCurrency(meal.priceCents)}
+                {formatCurrency(menuItem.priceCents)}
               </strong>
 
               <div className={classes.RowActions}>
                 <button
                   className={classes.SecondaryButton}
                   type="button"
-                  onClick={() => editMeal(meal)}
+                  onClick={() => editMenuItem(menuItem)}
                 >
                   Edit
                 </button>
                 <button
                   className={classes.DangerButton}
                   type="button"
-                  onClick={() => removeMeal(meal.id)}
+                  onClick={() => removeMenuItem(menuItem.id)}
                 >
                   Delete
                 </button>

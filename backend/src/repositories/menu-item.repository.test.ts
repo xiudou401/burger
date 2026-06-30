@@ -1,5 +1,5 @@
 import { MealModel } from '../models/meal.model';
-import { mealRepository } from './meal.repository';
+import { menuItemRepository } from './menu-item.repository';
 
 jest.mock('../models/meal.model', () => ({
   MealModel: {
@@ -11,12 +11,12 @@ jest.mock('../models/meal.model', () => ({
   },
 }));
 
-describe('mealRepository', () => {
+describe('menuItemRepository', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  test('finds paginated meals with filters and sorting', async () => {
+  test('finds paginated menu items with filters and sorting', async () => {
     const lean = jest.fn().mockResolvedValue([]);
     const limit = jest.fn().mockReturnValue({ lean });
     const skip = jest.fn().mockReturnValue({ limit });
@@ -27,7 +27,7 @@ describe('mealRepository', () => {
     jest.mocked(MealModel.find).mockReturnValue({ sort } as never);
 
     await expect(
-      mealRepository.findPage({
+      menuItemRepository.findPage({
         query,
         sort: sortOption,
         skip: 8,
@@ -41,12 +41,12 @@ describe('mealRepository', () => {
     expect(limit).toHaveBeenCalledWith(4);
   });
 
-  test('finds cart meals by ids', async () => {
+  test('finds cart menu items by ids', async () => {
     const lean = jest.fn().mockResolvedValue([]);
 
     jest.mocked(MealModel.find).mockReturnValue({ lean } as never);
 
-    await mealRepository.findByIds(['meal-1', 'meal-2']);
+    await menuItemRepository.findByIds(['meal-1', 'meal-2']);
 
     expect(MealModel.find).toHaveBeenCalledWith({
       _id: { $in: ['meal-1', 'meal-2'] },
@@ -54,12 +54,12 @@ describe('mealRepository', () => {
     expect(lean).toHaveBeenCalled();
   });
 
-  test('updates meals with validation enabled', async () => {
+  test('updates menu items with validation enabled', async () => {
     const exec = jest.fn().mockResolvedValue(null);
 
     jest.mocked(MealModel.findByIdAndUpdate).mockReturnValue({ exec } as never);
 
-    await mealRepository.updateById('meal-1', {
+    await menuItemRepository.updateById('meal-1', {
       name: 'Burger',
       description: 'Nice',
       priceCents: 1200,

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const meals = [
+const menuItems = [
   {
     name: 'Harbour Classic Burger',
     description:
@@ -142,7 +142,7 @@ const meals = [
   },
 ];
 
-const seedMeals = async () => {
+const seedMenuItems = async () => {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Cannot seed database in production');
   }
@@ -156,16 +156,16 @@ const seedMeals = async () => {
   console.log('MongoDB connected');
 
   await MealModel.deleteMany();
-  console.log('Old meals removed');
+  console.log('Old menu items removed');
 
-  await MealModel.insertMany(meals);
-  console.log('Meals seeded successfully');
+  await MealModel.insertMany(menuItems);
+  console.log('Menu items seeded successfully');
 
   await mongoose.disconnect();
   process.exit(0);
 };
 
-seedMeals().catch((err) => {
+seedMenuItems().catch((err) => {
   console.error(err);
   process.exit(1);
 });

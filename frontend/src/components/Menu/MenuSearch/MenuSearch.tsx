@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import classes from './FilterMeals.module.css';
+import classes from './MenuSearch.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faXmark } from '@fortawesome/free-solid-svg-icons';
 
@@ -7,7 +7,7 @@ interface Props {
   onSearch: (keyword: string) => void;
 }
 
-const FilterMeals = ({ onSearch }: Props) => {
+const MenuSearch = ({ onSearch }: Props) => {
   const [value, setValue] = useState('');
 
   const clearHandler = () => {
@@ -16,7 +16,7 @@ const FilterMeals = ({ onSearch }: Props) => {
   };
 
   return (
-    <div className={classes.FilterMeals}>
+    <div className={classes.MenuSearch}>
       <div className={classes.InputOuter}>
         <span className={classes.SearchIcon} aria-hidden="true">
           <FontAwesomeIcon icon={faSearch} />
@@ -48,4 +48,4 @@ const FilterMeals = ({ onSearch }: Props) => {
   );
 };
 
-export default FilterMeals;
+export default MenuSearch;

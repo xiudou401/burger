@@ -1,5 +1,5 @@
 import { request } from './request';
-import type { CartStoredItem, CartMeal } from '../types/cart';
+import type { CartStoredItem, CartMenuItem } from '../types/cart';
 
 export const validateCart = (
   items: CartStoredItem[],
@@ -8,7 +8,7 @@ export const validateCart = (
 ) => {
   return request<{
     menuVersion: number;
-    items: CartMeal[];
+    items: CartMenuItem[];
     totalCents: number;
   }>('/cart/validate', {
     method: 'POST',

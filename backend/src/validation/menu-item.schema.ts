@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { MEAL_CATEGORIES } from '../models/meal.model';
 import { ObjectIdSchema, paginationLimit } from './common.schema';
 
-export const MealSortSchema = z.enum([
+export const MenuItemSortSchema = z.enum([
   'price_asc',
   'price_desc',
   'created_asc',
   'created_desc',
 ]);
 
-export const MealQuerySchema = z
+export const MenuItemQuerySchema = z
   .object({
     keyword: z.string().trim().optional(),
     category: z.enum(MEAL_CATEGORIES).optional(),
@@ -31,7 +31,7 @@ export const MealQuerySchema = z
     ),
     page: z.coerce.number().int().positive().default(1),
     limit: paginationLimit(8, 100),
-    sort: MealSortSchema.optional(),
+    sort: MenuItemSortSchema.optional(),
   })
   .strict()
   .refine(
@@ -45,14 +45,14 @@ export const MealQuerySchema = z
     },
   );
 
-export const MealPayloadSchema = z
+export const MenuItemPayloadSchema = z
   .object({
-    name: z.string().trim().min(1, 'Meal name is required'),
+    name: z.string().trim().min(1, 'Menu item name is required'),
     description: z.string().trim().optional(),
     priceCents: z.coerce
       .number()
-      .int('Meal priceCents must be an integer')
-      .min(0, 'Meal priceCents must be non-negative'),
+      .int('Menu item priceCents must be an integer')
+      .min(0, 'Menu item priceCents must be non-negative'),
     image: z.string().trim().optional(),
     category: z.enum(MEAL_CATEGORIES).default('burger'),
     isAvailable: z.boolean().default(true),
@@ -60,12 +60,12 @@ export const MealPayloadSchema = z
   })
   .strict();
 
-export const MealParamsSchema = z
+export const MenuItemParamsSchema = z
   .object({
-    mealId: ObjectIdSchema,
+    menuItemId: ObjectIdSchema,
   })
   .strict();
 
-export type MealQueryPayload = z.infer<typeof MealQuerySchema>;
-export type MealPayload = z.infer<typeof MealPayloadSchema>;
-export type MealParamsPayload = z.infer<typeof MealParamsSchema>;
+export type MenuItemQueryPayload = z.infer<typeof MenuItemQuerySchema>;
+export type MenuItemPayload = z.infer<typeof MenuItemPayloadSchema>;
+export type MenuItemParamsPayload = z.infer<typeof MenuItemParamsSchema>;

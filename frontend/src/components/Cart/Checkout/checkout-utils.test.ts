@@ -1,7 +1,7 @@
 import { calculateTotals } from './checkout-utils';
 
 describe('calculateTotals', () => {
-  test('calculates quantity and total cents from cart meals', () => {
+  test('calculates quantity and total cents from cart menu items', () => {
     expect(
       calculateTotals([
         {

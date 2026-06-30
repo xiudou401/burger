@@ -42,7 +42,7 @@ describe('calculateEstimatedTotalCents', () => {
     ).toBe(3900);
   });
 
-  it('ignores quoted meals that are no longer in the cart', () => {
+  it('ignores quoted menu items that are no longer in the cart', () => {
     expect(
       calculateEstimatedTotalCents(quote, [{ id: 'burger', quantity: 1 }]),
     ).toBe(1200);

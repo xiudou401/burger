@@ -1,7 +1,7 @@
 import {
   CartStoredItem,
   validateCart,
-  ValidatedCartMeal,
+  ValidatedCartMenuItem,
 } from './cart.service';
 import type { OrderStatus, PaymentStatus } from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
@@ -58,13 +58,13 @@ const getStripeClient = () => {
   return stripeClient;
 };
 
-const toOrderItem = (meal: ValidatedCartMeal) => ({
-  mealId: meal.id,
-  name: meal.name,
-  image: meal.image,
-  priceCents: meal.priceCents,
-  quantity: meal.quantity,
-  subtotalCents: meal.subtotalCents,
+const toOrderItem = (menuItem: ValidatedCartMenuItem) => ({
+  mealId: menuItem.id,
+  name: menuItem.name,
+  image: menuItem.image,
+  priceCents: menuItem.priceCents,
+  quantity: menuItem.quantity,
+  subtotalCents: menuItem.subtotalCents,
 });
 
 const toPublicOrder = (order: {

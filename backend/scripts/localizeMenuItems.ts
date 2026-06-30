@@ -5,7 +5,7 @@ import { MenuModel } from '../src/models/menu.model';
 
 dotenv.config();
 
-const meals = [
+const menuItems = [
   {
     image: '/img/meals/1.png',
     name: 'Harbour Classic Burger',
@@ -143,7 +143,7 @@ const meals = [
   },
 ];
 
-const localizeMeals = async () => {
+const localizeMenuItems = async () => {
   if (!process.env.MONGO_URI) {
     throw new Error('MONGO_URI is not defined');
   }
@@ -151,17 +151,17 @@ const localizeMeals = async () => {
   await mongoose.connect(process.env.MONGO_URI);
 
   const results = await Promise.all(
-    meals.map((meal) =>
+    menuItems.map((menuItem) =>
       MealModel.collection.updateOne(
-        { image: meal.image },
+        { image: menuItem.image },
         {
           $set: {
-            name: meal.name,
-            description: meal.description,
-            priceCents: meal.priceCents,
-            category: meal.category,
-            isAvailable: meal.isAvailable,
-            isFeatured: meal.isFeatured,
+            name: menuItem.name,
+            description: menuItem.description,
+            priceCents: menuItem.priceCents,
+            category: menuItem.category,
+            isAvailable: menuItem.isAvailable,
+            isFeatured: menuItem.isFeatured,
           },
         },
         { upsert: true },
@@ -187,12 +187,12 @@ const localizeMeals = async () => {
 
   await mongoose.disconnect();
 
-  console.log(`Meals matched: ${matched}`);
-  console.log(`Meals modified: ${modified}`);
-  console.log(`Meals inserted: ${upserted}`);
+  console.log(`Menu items matched: ${matched}`);
+  console.log(`Menu items modified: ${modified}`);
+  console.log(`Menu items inserted: ${upserted}`);
 };
 
-localizeMeals().catch((err) => {
+localizeMenuItems().catch((err) => {
   console.error(err);
   process.exit(1);
 });

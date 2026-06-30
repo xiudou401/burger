@@ -1,16 +1,16 @@
 import type { SortOrder } from 'mongoose';
 import { MealModel, type Meal } from '../models/meal.model';
 
-type MealQuery = Record<string, unknown>;
+type MenuItemQuery = Record<string, unknown>;
 
-export const mealRepository = {
+export const menuItemRepository = {
   findPage({
     query,
     sort,
     skip,
     limit,
   }: {
-    query: MealQuery;
+    query: MenuItemQuery;
     sort: Record<string, SortOrder>;
     skip: number;
     limit: number;
@@ -18,7 +18,7 @@ export const mealRepository = {
     return MealModel.find(query).sort(sort).skip(skip).limit(limit).lean();
   },
 
-  count(query: MealQuery) {
+  count(query: MenuItemQuery) {
     return MealModel.countDocuments(query);
   },
 
@@ -44,7 +44,7 @@ export const mealRepository = {
   },
 
   updateById(
-    mealId: string,
+    menuItemId: string,
     data: Pick<
       Meal,
       | 'name'
@@ -56,13 +56,13 @@ export const mealRepository = {
       | 'isFeatured'
     >,
   ) {
-    return MealModel.findByIdAndUpdate(mealId, data, {
+    return MealModel.findByIdAndUpdate(menuItemId, data, {
       new: true,
       runValidators: true,
     }).exec();
   },
 
-  deleteById(mealId: string) {
-    return MealModel.findByIdAndDelete(mealId).exec();
+  deleteById(menuItemId: string) {
+    return MealModel.findByIdAndDelete(menuItemId).exec();
   },
 };

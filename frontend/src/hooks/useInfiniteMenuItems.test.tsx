@@ -5,15 +5,17 @@ import {
   screen,
   waitFor,
 } from '@testing-library/react';
-import { useInfiniteMeals } from './useInfiniteMeals';
-import type { Meal, PaginatedMeals } from '../types/meal';
+import { useInfiniteMenuItems } from './useInfiniteMenuItems';
+import type { MenuItem, PaginatedMenuItems } from '../types/menu-item';
 
-type FetchMealsFn = Parameters<typeof useInfiniteMeals>[0]['fetchMeals'];
-type HookResult = ReturnType<typeof useInfiniteMeals>;
+type FetchMenuItemsFn = Parameters<
+  typeof useInfiniteMenuItems
+>[0]['fetchMenuItems'];
+type HookResult = ReturnType<typeof useInfiniteMenuItems>;
 
-const meal = (id: string): Meal => ({
+const menuItem = (id: string): MenuItem => ({
   id,
-  name: `Meal ${id}`,
+  name: `MenuItem ${id}`,
   description: `Description ${id}`,
   priceCents: Number(id) || 1,
   image: `${id}.jpg`,
@@ -23,10 +25,10 @@ const meal = (id: string): Meal => ({
 });
 
 const pageData = (
-  items: Meal[],
+  items: MenuItem[],
   page: number,
   totalPages = page,
-): PaginatedMeals => ({
+): PaginatedMenuItems => ({
   items,
   page,
   limit: 4,
@@ -74,13 +76,13 @@ const triggerIntersection = () => {
 };
 
 const TestHarness = ({
-  fetchMeals,
+  fetchMenuItems,
   onRender,
 }: {
-  fetchMeals: FetchMealsFn;
+  fetchMenuItems: FetchMenuItemsFn;
   onRender: (result: HookResult) => void;
 }) => {
-  const result = useInfiniteMeals({ fetchMeals, limit: 4 });
+  const result = useInfiniteMenuItems({ fetchMenuItems, limit: 4 });
   onRender(result);
 
   return (
@@ -98,15 +100,15 @@ const TestHarness = ({
         Retry
       </button>
       <div ref={result.sentinelRef} />
-      <div data-testid="meals">
-        {result.meals.map((item) => item.id).join(',')}
+      <div data-testid="menu-items">
+        {result.menuItems.map((item) => item.id).join(',')}
       </div>
       <div data-testid="error">{result.error}</div>
     </div>
   );
 };
 
-describe('useInfiniteMeals', () => {
+describe('useInfiniteMenuItems', () => {
   beforeAll(() => {
     window.IntersectionObserver = MockIntersectionObserver;
   });
@@ -122,20 +124,20 @@ describe('useInfiniteMeals', () => {
   });
 
   it('debounces search and fetches only the latest keyword', async () => {
-    const initialLoad = deferred<PaginatedMeals>();
-    const searchLoad = deferred<PaginatedMeals>();
-    const fetchMeals = jest
-      .fn<ReturnType<FetchMealsFn>, Parameters<FetchMealsFn>>()
+    const initialLoad = deferred<PaginatedMenuItems>();
+    const searchLoad = deferred<PaginatedMenuItems>();
+    const fetchMenuItems = jest
+      .fn<ReturnType<FetchMenuItemsFn>, Parameters<FetchMenuItemsFn>>()
       .mockReturnValueOnce(initialLoad.promise)
       .mockReturnValueOnce(searchLoad.promise);
 
-    render(<TestHarness fetchMeals={fetchMeals} onRender={() => {}} />);
+    render(<TestHarness fetchMenuItems={fetchMenuItems} onRender={() => {}} />);
 
-    await waitFor(() => expect(fetchMeals).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(fetchMenuItems).toHaveBeenCalledTimes(1));
     await act(async () => {
       initialLoad.resolve(pageData([], 1));
     });
-    fetchMeals.mockClear();
+    fetchMenuItems.mockClear();
 
     fireEvent.click(screen.getByText('Search a'));
     fireEvent.click(screen.getByText('Search ab'));
@@ -145,14 +147,14 @@ describe('useInfiniteMeals', () => {
       jest.advanceTimersByTime(299);
     });
 
-    expect(fetchMeals).not.toHaveBeenCalled();
+    expect(fetchMenuItems).not.toHaveBeenCalled();
 
     act(() => {
       jest.advanceTimersByTime(1);
     });
 
-    await waitFor(() => expect(fetchMeals).toHaveBeenCalledTimes(1));
-    expect(fetchMeals).toHaveBeenCalledWith(
+    await waitFor(() => expect(fetchMenuItems).toHaveBeenCalledTimes(1));
+    expect(fetchMenuItems).toHaveBeenCalledWith(
       expect.objectContaining({ keyword: 'abc', page: 1, limit: 4 }),
     );
     await act(async () => {
@@ -164,14 +166,14 @@ describe('useInfiniteMeals', () => {
     const consoleErrorSpy = jest
       .spyOn(console, 'error')
       .mockImplementation(() => {});
-    const initialLoad = deferred<PaginatedMeals>();
-    const retryLoad = deferred<PaginatedMeals>();
-    const fetchMeals = jest
-      .fn<ReturnType<FetchMealsFn>, Parameters<FetchMealsFn>>()
+    const initialLoad = deferred<PaginatedMenuItems>();
+    const retryLoad = deferred<PaginatedMenuItems>();
+    const fetchMenuItems = jest
+      .fn<ReturnType<FetchMenuItemsFn>, Parameters<FetchMenuItemsFn>>()
       .mockReturnValueOnce(initialLoad.promise)
       .mockReturnValueOnce(retryLoad.promise);
 
-    render(<TestHarness fetchMeals={fetchMeals} onRender={() => {}} />);
+    render(<TestHarness fetchMenuItems={fetchMenuItems} onRender={() => {}} />);
     await act(async () => {
       initialLoad.reject(new Error('Network down'));
     });
@@ -181,13 +183,13 @@ describe('useInfiniteMeals', () => {
     fireEvent.click(screen.getByText('Retry'));
 
     await act(async () => {
-      retryLoad.resolve(pageData([meal('1')], 1));
+      retryLoad.resolve(pageData([menuItem('1')], 1));
     });
 
     await waitFor(() =>
-      expect(screen.getByTestId('meals').textContent).toBe('1'),
+      expect(screen.getByTestId('menu-items').textContent).toBe('1'),
     );
-    expect(fetchMeals).toHaveBeenCalledTimes(2);
+    expect(fetchMenuItems).toHaveBeenCalledTimes(2);
     consoleErrorSpy.mockRestore();
   });
 
@@ -196,16 +198,16 @@ describe('useInfiniteMeals', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => {});
     let result!: HookResult;
-    const initialLoad = deferred<PaginatedMeals>();
-    const reloadLoad = deferred<PaginatedMeals>();
-    const fetchMeals = jest
-      .fn<ReturnType<FetchMealsFn>, Parameters<FetchMealsFn>>()
+    const initialLoad = deferred<PaginatedMenuItems>();
+    const reloadLoad = deferred<PaginatedMenuItems>();
+    const fetchMenuItems = jest
+      .fn<ReturnType<FetchMenuItemsFn>, Parameters<FetchMenuItemsFn>>()
       .mockReturnValueOnce(initialLoad.promise)
       .mockReturnValueOnce(reloadLoad.promise);
 
     render(
       <TestHarness
-        fetchMeals={fetchMeals}
+        fetchMenuItems={fetchMenuItems}
         onRender={(nextResult) => {
           result = nextResult;
         }}
@@ -213,7 +215,7 @@ describe('useInfiniteMeals', () => {
     );
 
     await act(async () => {
-      initialLoad.resolve(pageData([meal('1')], 1));
+      initialLoad.resolve(pageData([menuItem('1')], 1));
     });
 
     const reloadPromise = result.reload();
@@ -227,42 +229,42 @@ describe('useInfiniteMeals', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('deduplicates meals when appending the next page', async () => {
+  it('deduplicates menu items when appending the next page', async () => {
     let result!: HookResult;
-    const firstPage = deferred<PaginatedMeals>();
-    const secondPage = deferred<PaginatedMeals>();
-    const fetchMeals = jest
-      .fn<ReturnType<FetchMealsFn>, Parameters<FetchMealsFn>>()
+    const firstPage = deferred<PaginatedMenuItems>();
+    const secondPage = deferred<PaginatedMenuItems>();
+    const fetchMenuItems = jest
+      .fn<ReturnType<FetchMenuItemsFn>, Parameters<FetchMenuItemsFn>>()
       .mockReturnValueOnce(firstPage.promise)
       .mockReturnValueOnce(secondPage.promise);
 
     render(
       <TestHarness
-        fetchMeals={fetchMeals}
+        fetchMenuItems={fetchMenuItems}
         onRender={(nextResult) => {
           result = nextResult;
         }}
       />,
     );
     await act(async () => {
-      firstPage.resolve(pageData([meal('1'), meal('2')], 1, 2));
+      firstPage.resolve(pageData([menuItem('1'), menuItem('2')], 1, 2));
     });
 
     await waitFor(() =>
-      expect(result.meals.map((item) => item.id)).toEqual(['1', '2']),
+      expect(result.menuItems.map((item) => item.id)).toEqual(['1', '2']),
     );
 
     act(() => {
       triggerIntersection();
     });
     await act(async () => {
-      secondPage.resolve(pageData([meal('2'), meal('3')], 2, 2));
+      secondPage.resolve(pageData([menuItem('2'), menuItem('3')], 2, 2));
     });
 
     await waitFor(() =>
-      expect(result.meals.map((item) => item.id)).toEqual(['1', '2', '3']),
+      expect(result.menuItems.map((item) => item.id)).toEqual(['1', '2', '3']),
     );
-    expect(fetchMeals).toHaveBeenLastCalledWith(
+    expect(fetchMenuItems).toHaveBeenLastCalledWith(
       expect.objectContaining({ page: 2, limit: 4 }),
     );
   });

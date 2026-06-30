@@ -1,14 +1,14 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
-  createMeal,
-  deleteMeal,
-  fetchMeals,
-  MealPayload,
-  updateMeal,
-} from '../../api/meals';
-import type { Meal } from '../../types/meal';
+  createMenuItem,
+  deleteMenuItem,
+  fetchMenuItems,
+  MenuItemPayload,
+  updateMenuItem,
+} from '../../api/menu-items';
+import type { MenuItem } from '../../types/menu-item';
 
-const emptyForm: MealPayload = {
+const emptyForm: MenuItemPayload = {
   name: '',
   description: '',
   priceCents: 0,
@@ -19,23 +19,25 @@ const emptyForm: MealPayload = {
 };
 
 export const useAdminMenuPage = () => {
-  const [meals, setMeals] = useState<Meal[]>([]);
-  const [form, setForm] = useState<MealPayload>(emptyForm);
-  const [editingMealId, setEditingMealId] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [form, setForm] = useState<MenuItemPayload>(emptyForm);
+  const [editingMenuItemId, setEditingMenuItemId] = useState<string | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const isEditing = useMemo(() => !!editingMealId, [editingMealId]);
+  const isEditing = useMemo(() => !!editingMenuItemId, [editingMenuItemId]);
 
-  const loadMeals = async () => {
+  const loadMenuItems = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const res = await fetchMeals({ page: 1, limit: 100 });
-      setMeals(res.items);
+      const res = await fetchMenuItems({ page: 1, limit: 100 });
+      setMenuItems(res.items);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load menu');
     } finally {
@@ -44,10 +46,13 @@ export const useAdminMenuPage = () => {
   };
 
   useEffect(() => {
-    loadMeals();
+    loadMenuItems();
   }, []);
 
-  const updateForm = (field: keyof MealPayload, value: string | boolean) => {
+  const updateForm = (
+    field: keyof MenuItemPayload,
+    value: string | boolean,
+  ) => {
     setForm((current) => ({
       ...current,
       [field]: field === 'priceCents' ? Math.round(Number(value) * 100) : value,
@@ -56,19 +61,19 @@ export const useAdminMenuPage = () => {
 
   const resetForm = () => {
     setForm(emptyForm);
-    setEditingMealId(null);
+    setEditingMenuItemId(null);
   };
 
-  const editMeal = (meal: Meal) => {
-    setEditingMealId(meal.id);
+  const editMenuItem = (menuItem: MenuItem) => {
+    setEditingMenuItemId(menuItem.id);
     setForm({
-      name: meal.name,
-      description: meal.description ?? '',
-      priceCents: meal.priceCents,
-      image: meal.image ?? '',
-      category: meal.category,
-      isAvailable: meal.isAvailable,
-      isFeatured: meal.isFeatured,
+      name: menuItem.name,
+      description: menuItem.description ?? '',
+      priceCents: menuItem.priceCents,
+      image: menuItem.image ?? '',
+      category: menuItem.category,
+      isAvailable: menuItem.isAvailable,
+      isFeatured: menuItem.isFeatured,
     });
   };
 
@@ -79,44 +84,48 @@ export const useAdminMenuPage = () => {
     setMessage(null);
 
     try {
-      const res = editingMealId
-        ? await updateMeal(editingMealId, form)
-        : await createMeal(form);
+      const res = editingMenuItemId
+        ? await updateMenuItem(editingMenuItemId, form)
+        : await createMenuItem(form);
 
-      setMeals((current) => {
-        if (editingMealId) {
-          return current.map((meal) =>
-            meal.id === editingMealId ? res.meal : meal,
+      setMenuItems((current) => {
+        if (editingMenuItemId) {
+          return current.map((menuItem) =>
+            menuItem.id === editingMenuItemId ? res.menuItem : menuItem,
           );
         }
 
-        return [res.meal, ...current];
+        return [res.menuItem, ...current];
       });
 
-      setMessage(editingMealId ? 'Meal updated' : 'Meal added');
+      setMessage(editingMenuItemId ? 'Menu item updated' : 'Menu item added');
       resetForm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save meal');
+      setError(err instanceof Error ? err.message : 'Could not save menu item');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const removeMeal = async (mealId: string) => {
+  const removeMenuItem = async (menuItemId: string) => {
     setError(null);
     setMessage(null);
 
     try {
-      await deleteMeal(mealId);
-      setMeals((current) => current.filter((meal) => meal.id !== mealId));
-      setMessage('Meal deleted');
+      await deleteMenuItem(menuItemId);
+      setMenuItems((current) =>
+        current.filter((menuItem) => menuItem.id !== menuItemId),
+      );
+      setMessage('Menu item deleted');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not delete meal');
+      setError(
+        err instanceof Error ? err.message : 'Could not delete menu item',
+      );
     }
   };
 
   return {
-    meals,
+    menuItems,
     form,
     isEditing,
     isLoading,
@@ -125,9 +134,9 @@ export const useAdminMenuPage = () => {
     message,
     updateForm,
     submit,
-    editMeal,
-    removeMeal,
+    editMenuItem,
+    removeMenuItem,
     resetForm,
-    refresh: loadMeals,
+    refresh: loadMenuItems,
   };
 };

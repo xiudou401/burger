@@ -1,7 +1,7 @@
 import React, { MouseEvent, useEffect, useMemo, useState } from 'react';
 import classes from './CartDetails.module.css';
 import Backdrop from '../../UI/Backdrop/Backdrop';
-import MealItem from '../../Meals/Meal/MealItem';
+import MenuItemCard from '../../MenuItems/MenuItemCard/MenuItemCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
@@ -28,7 +28,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
     ensureQuote().catch(() => {});
   }, [open, itemsLength, ensureQuote]);
 
-  const meals = useMemo(() => {
+  const menuItems = useMemo(() => {
     return quote?.meals ?? [];
   }, [quote]);
 
@@ -61,7 +61,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
           </div>
         </header>
 
-        <div className={classes.MealList}>
+        <div className={classes.MenuItemList}>
           {!quote && !quoteError && itemsLength > 0 && (
             <p className={classes.Status}>Loading...</p>
           )}
@@ -75,11 +75,11 @@ const CartDetails = ({ open }: CartDetailsProps) => {
             </div>
           )}
 
-          {meals.map((meal) => (
-            <MealItem key={meal.id} meal={meal} noDesc />
+          {menuItems.map((menuItem) => (
+            <MenuItemCard key={menuItem.id} menuItem={menuItem} noDesc />
           ))}
 
-          {quote && meals.length === 0 && (
+          {quote && menuItems.length === 0 && (
             <p style={{ padding: 12, color: '#999' }}>Your cart is empty.</p>
           )}
         </div>
