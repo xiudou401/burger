@@ -86,7 +86,7 @@ recent orders while staff manage orders and menu changes.
 
 | Menu                                      | Login                                       | Profile                                         |
 | ----------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
-| ![Menu screen](docs/screenshots/menu.svg) | ![Login screen](docs/screenshots/login.svg) | ![Profile screen](docs/screenshots/profile.svg) |
+| ![Menu screen](docs/screenshots/menu.png) | ![Login screen](docs/screenshots/login.png) | ![Profile screen](docs/screenshots/profile.png) |
 
 ## Local Setup
 
