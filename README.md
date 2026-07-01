@@ -43,7 +43,10 @@ recent orders while staff manage orders and menu changes.
 ## Core Features
 
 - Sydney-local restaurant ordering experience with AUD pricing.
-- Menu feed with search, sorting, pagination, and menu version polling.
+- Categorized menu feed with search, availability states, pagination, and menu
+  version polling.
+- Realistic restaurant menu coverage across burgers, sides, drinks, desserts,
+  and combos, including featured and sold-out availability states.
 - Backend cart validation so checkout totals are calculated server-side.
 - Stripe Checkout flow with signed webhook handling.
 - Payment lifecycle updates for success, failed, cancelled, and repeated webhook events.
@@ -51,7 +54,8 @@ recent orders while staff manage orders and menu changes.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
-- Staff/admin order console and menu management.
+- Staff/admin order console and menu management, including category and
+  availability updates.
 - Staff invitation flow with token validation.
 - Email workflows for verification, reset password, and order confirmation.
 - Seed scripts for local menu and demo users.
@@ -172,6 +176,9 @@ The current live demo uses Vercel and Render. An optional AWS path is documented
 in [`docs/aws-deployment.md`](docs/aws-deployment.md) for deploying the frontend
 to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
 Load Balancer.
+
+The repository also includes an optional GitHub Actions workflow for deploying
+the AWS stack.
 
 ## Test Commands
 
