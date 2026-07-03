@@ -26,8 +26,6 @@
   bottom: 9rem;
   display: grid;
   place-items: center;
-  border-radius: 8rem;
-  background: #ffc72c;
 }
 
 .CartIconImg {
