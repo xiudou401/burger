@@ -462,6 +462,40 @@ describe('order service', () => {
     expect(result.payment?.status).toBe('cancelled');
   });
 
+  test('ignores late failed checkout events for already paid orders', async () => {
+    const paidAt = new Date('2026-01-01T00:01:00.000Z');
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'paid',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValue(order as never);
+
+    const result = await markStripeCheckoutFailed('cs_test_123', 'cancelled');
+
+    expect(order.status).toBe('paid');
+    expect(order.payment.status).toBe('paid');
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(result.status).toBe('paid');
+    expect(result.payment?.paidAt).toBe(paidAt);
+  });
+
   test('marks Stripe payment intents as failed by order id', async () => {
     const order = {
       _id: orderId,
@@ -488,6 +522,38 @@ describe('order service', () => {
     expect(order.payment.status).toBe('failed');
     expect(orderRepository.save).toHaveBeenCalledWith(order);
     expect(result.payment?.status).toBe('failed');
+  });
+
+  test('ignores late failed payment intents for already paid orders', async () => {
+    const paidAt = new Date('2026-01-01T00:01:00.000Z');
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'paid',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
+
+    const result = await markStripeOrderFailed(orderId);
+
+    expect(order.status).toBe('paid');
+    expect(order.payment.status).toBe('paid');
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(result.status).toBe('paid');
+    expect(result.payment?.paidAt).toBe(paidAt);
   });
 
   test('rejects invalid order status transitions', async () => {

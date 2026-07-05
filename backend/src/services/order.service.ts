@@ -165,6 +165,13 @@ const markCheckoutOrderFailed = async <
   await orderRepository.save(order);
 };
 
+const isPaidOrder = (order: {
+  status: OrderStatus;
+  payment: {
+    status: PaymentStatus;
+  };
+}) => order.status === 'paid' || order.payment.status === 'paid';
+
 const assertStripeCheckoutMatchesOrder = (
   session: StripeCheckoutCompletedSession,
   order: {
@@ -448,6 +455,10 @@ export const markStripeCheckoutFailed = async (
     throw new ServiceError('Stripe order not found', 404);
   }
 
+  if (isPaidOrder(order)) {
+    return toPublicOrder(order);
+  }
+
   order.payment.status = paymentStatus;
 
   if (paymentStatus === 'cancelled') {
@@ -466,6 +477,10 @@ export const markStripeOrderFailed = async (
 
   if (!order) {
     throw new ServiceError('Stripe order not found', 404);
+  }
+
+  if (isPaidOrder(order)) {
+    return toPublicOrder(order);
   }
 
   order.payment.status = 'failed';
