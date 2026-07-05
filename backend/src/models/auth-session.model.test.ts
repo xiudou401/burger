@@ -7,6 +7,16 @@ test('declares a TTL index for expired auth sessions', () => {
   ]);
 });
 
+test('keeps refresh token hashes hidden and uniquely indexed', () => {
+  expect(AuthSessionModel.schema.path('refreshTokenHash').options.select).toBe(
+    false,
+  );
+  expect(AuthSessionModel.schema.indexes()).toContainEqual([
+    { refreshTokenHash: 1 },
+    { unique: true },
+  ]);
+});
+
 test('indexes active sessions by token family', () => {
   expect(AuthSessionModel.schema.indexes()).toContainEqual([
     { familyId: 1, revokedAt: 1, expiresAt: 1 },
