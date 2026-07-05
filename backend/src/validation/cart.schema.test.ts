@@ -59,4 +59,16 @@ describe('cart payload schema', () => {
       }).success,
     ).toBe(false);
   });
+
+  test('rejects duplicate menu item ids', () => {
+    expect(
+      CartPayloadSchema.safeParse({
+        items: [
+          { id: menuItemId, quantity: MAX_CART_ITEM_QUANTITY },
+          { id: menuItemId, quantity: MAX_CART_ITEM_QUANTITY },
+        ],
+        menuVersion: 0,
+      }).success,
+    ).toBe(false);
+  });
 });

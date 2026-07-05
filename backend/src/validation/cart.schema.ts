@@ -26,6 +26,10 @@ export const CartPayloadSchema = z
       .max(
         MAX_CART_ITEMS,
         `Cart cannot contain more than ${MAX_CART_ITEMS} items`,
+      )
+      .refine(
+        (items) => new Set(items.map((item) => item.id)).size === items.length,
+        'Cart cannot contain duplicate menu items',
       ),
     menuVersion: z
       .number()
