@@ -6,6 +6,7 @@ import {
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
   markStripeOrderFailed,
+  type StripeCheckoutCompletedSession,
 } from '../services/order.service';
 import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 
@@ -62,8 +63,8 @@ export const stripeWebhookHandler = async (
 
     try {
       if (event.type === 'checkout.session.completed') {
-        const session = event.data.object as { id: string };
-        await markStripeCheckoutPaid(session.id);
+        const session = event.data.object as StripeCheckoutCompletedSession;
+        await markStripeCheckoutPaid(session);
       }
 
       if (event.type === 'checkout.session.expired') {

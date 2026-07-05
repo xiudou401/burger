@@ -215,6 +215,12 @@ export const request = async <T>(
 };
 
 export const refreshAuthSession = async () => {
+  /**
+   * Refresh flow:
+   * 1. Share one in-flight refresh request so concurrent 401s do not rotate the same token repeatedly.
+   * 2. If another tab/request consumed the token first, the backend returns a short-lived 409.
+   * 3. Retry those 409s briefly so the winning refresh can settle and subsequent requests can recover.
+   */
   if (!refreshPromise) {
     const refreshWithConflictRetry = async (
       retriesRemaining: number,

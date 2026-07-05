@@ -2,6 +2,13 @@ import { NextFunction, Request, Response } from 'express';
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
 import { loginWithOAuth } from '../services/auth.service';
+import {
+  clearOAuthStateCookie,
+  createOAuthState,
+  isOAuthStateValid,
+  parseOAuthStateMode,
+  setOAuthStateCookie,
+} from '../utils/oauth-state-cookie';
 import { setRefreshCookie } from '../utils/refresh-cookie';
 import {
   OAuthCallbackQuerySchema,
@@ -53,13 +60,16 @@ export const oauthStartHandler = (
       );
     }
 
+    const state = createOAuthState(mode);
+    setOAuthStateCookie(res, state);
+
     const params = new URLSearchParams({
       client_id: env.GOOGLE_CLIENT_ID,
       redirect_uri: getOAuthCallbackUrl('google'),
       response_type: 'code',
       scope: 'openid email profile',
       prompt: 'select_account',
-      state: mode,
+      state,
     });
 
     return res.redirect(
@@ -76,13 +86,16 @@ export const oauthStartHandler = (
       );
     }
 
+    const state = createOAuthState(mode);
+    setOAuthStateCookie(res, state);
+
     const params = new URLSearchParams({
       client_id: env.APPLE_CLIENT_ID,
       redirect_uri: getOAuthCallbackUrl('apple'),
       response_type: 'code',
       scope: 'name email',
       response_mode: 'form_post',
-      state: mode,
+      state,
     });
 
     return res.redirect(
@@ -112,15 +125,13 @@ const redirectWithAuth = (
   setRefreshCookie(res, result.refreshToken);
 
   const params = new URLSearchParams({
-    user: JSON.stringify(result.user),
     ...(result.user.role === 'admin' || result.user.role === 'staff'
       ? { redirectTo: '/admin/orders' }
       : {}),
   });
+  const hash = params.size > 0 ? `#${params.toString()}` : '';
 
-  return res.redirect(
-    `${env.FRONTEND_URL}/oauth/callback#${params.toString()}`,
-  );
+  return res.redirect(`${env.FRONTEND_URL}/oauth/callback${hash}`);
 };
 
 export const oauthCallbackHandler = async (
@@ -130,13 +141,25 @@ export const oauthCallbackHandler = async (
 ) => {
   const params = OAuthProviderParamsSchema.safeParse(req.params);
   const query = OAuthCallbackQuerySchema.parse(req.query);
-  const mode = query.state;
+  const returnedState = query.state ?? '';
+  const mode = parseOAuthStateMode(returnedState) ?? 'login';
   const { code } = query;
 
   try {
     if (!params.success) {
       throw new ServiceError('Unsupported sign in provider', 400);
     }
+
+    if (!isOAuthStateValid(req, returnedState)) {
+      clearOAuthStateCookie(res);
+      return redirectWithError(
+        res,
+        'Could not verify sign in request',
+        'login',
+      );
+    }
+
+    clearOAuthStateCookie(res);
 
     const { provider } = params.data;
 

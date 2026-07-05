@@ -10,6 +10,7 @@ import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
 import { assertOrderTransition } from '../utils/order-status';
 import { env } from '../config/env';
+import type { AuthenticatedUser } from '../types/auth';
 import Stripe from 'stripe';
 
 export interface PublicOrderItem {
@@ -42,6 +43,15 @@ export interface PublicOrder {
 export interface CheckoutOrder {
   order: PublicOrder;
   checkoutUrl: string;
+}
+
+export interface StripeCheckoutCompletedSession {
+  id: string;
+  payment_status?: string | null;
+  amount_total?: number | null;
+  currency?: string | null;
+  metadata?: Record<string, string> | null;
+  client_reference_id?: string | null;
 }
 
 let stripeClient: ReturnType<typeof getStripeClientInstance> | null = null;
@@ -155,6 +165,45 @@ const markCheckoutOrderFailed = async <
   await orderRepository.save(order);
 };
 
+const assertStripeCheckoutMatchesOrder = (
+  session: StripeCheckoutCompletedSession,
+  order: {
+    _id: unknown;
+    totalCents: number;
+  },
+) => {
+  const orderId = String(order._id);
+
+  if (session.payment_status !== 'paid') {
+    throw new ServiceError('Stripe checkout session is not paid', 400);
+  }
+
+  if (session.amount_total !== order.totalCents) {
+    throw new ServiceError('Stripe checkout amount does not match order', 400);
+  }
+
+  if (session.currency?.toLowerCase() !== 'aud') {
+    throw new ServiceError(
+      'Stripe checkout currency does not match order',
+      400,
+    );
+  }
+
+  if (session.metadata?.orderId !== orderId) {
+    throw new ServiceError(
+      'Stripe checkout metadata does not match order',
+      400,
+    );
+  }
+
+  if (session.client_reference_id !== orderId) {
+    throw new ServiceError(
+      'Stripe checkout client reference does not match order',
+      400,
+    );
+  }
+};
+
 const buildStripeReturnUrl = (
   configuredUrl: string | undefined,
   payment: 'success' | 'cancelled',
@@ -171,33 +220,6 @@ const buildStripeReturnUrl = (
   url.searchParams.set('orderId', orderId);
 
   return url.toString();
-};
-
-export const createOrder = async (
-  userId: string,
-  items: CartStoredItem[],
-  menuVersion: number,
-): Promise<PublicOrder> => {
-  const validatedCart = await validateCart(items, menuVersion);
-
-  if (validatedCart.items.length === 0) {
-    throw new ServiceError('Cart is empty', 400);
-  }
-
-  const order = await orderRepository.create({
-    userId,
-    items: validatedCart.items.map(toOrderItem),
-    totalCents: validatedCart.totalCents,
-    menuVersion: validatedCart.menuVersion,
-    status: 'pending_payment',
-    payment: {
-      status: 'unpaid',
-      amountCents: validatedCart.totalCents,
-      currency: 'aud',
-    },
-  });
-
-  return toPublicOrder(order);
 };
 
 export const createCheckoutOrder = async (
@@ -334,6 +356,7 @@ export const getOrderById = async (orderId: string): Promise<PublicOrder> => {
 export const updateOrderStatus = async (
   orderId: string,
   nextStatus: OrderStatus,
+  actorRole: AuthenticatedUser['role'],
 ): Promise<PublicOrder> => {
   const order = await orderRepository.findById(orderId);
 
@@ -342,6 +365,24 @@ export const updateOrderStatus = async (
   }
 
   assertOrderTransition(order.status, nextStatus);
+
+  if (actorRole !== 'admin') {
+    const isStaffFulfillmentTransition =
+      (order.status === 'paid' && nextStatus === 'preparing') ||
+      (order.status === 'preparing' && nextStatus === 'ready') ||
+      (order.status === 'ready' && nextStatus === 'completed');
+
+    if (!isStaffFulfillmentTransition) {
+      throw new ServiceError('Staff cannot update payment status', 403);
+    }
+  }
+
+  if (nextStatus === 'paid' && order.payment?.provider === 'stripe') {
+    throw new ServiceError(
+      'Stripe payments must be marked paid by webhook',
+      400,
+    );
+  }
 
   order.status = nextStatus;
 
@@ -368,13 +409,15 @@ export const updateOrderStatus = async (
 };
 
 export const markStripeCheckoutPaid = async (
-  sessionId: string,
+  session: StripeCheckoutCompletedSession,
 ): Promise<PublicOrder> => {
-  const order = await orderRepository.findByStripeSessionId(sessionId);
+  const order = await orderRepository.findByStripeSessionId(session.id);
 
   if (!order) {
     throw new ServiceError('Stripe order not found', 404);
   }
+
+  assertStripeCheckoutMatchesOrder(session, order);
 
   const wasAlreadyPaid =
     order.status === 'paid' && order.payment.status === 'paid';

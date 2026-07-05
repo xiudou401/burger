@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import {
   createCheckoutOrder,
-  createOrder,
   getOrderById,
   getOrderForUser,
   listAllOrders,
@@ -15,26 +14,6 @@ import type {
   OrderParamsPayload,
   UpdateOrderStatusPayload,
 } from '../validation/order.schema';
-
-export const createOrderHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  if (!req.user) {
-    return next(new ServiceError('Unauthorized', 401));
-  }
-
-  try {
-    const { items, menuVersion } = req.body as CreateOrderPayload;
-
-    const order = await createOrder(req.user.id, items, menuVersion);
-
-    return res.status(201).json({ order });
-  } catch (error) {
-    next(error);
-  }
-};
 
 export const createCheckoutOrderHandler = async (
   req: Request,
@@ -114,11 +93,15 @@ export const updateOrderStatusHandler = async (
   res: Response,
   next: NextFunction,
 ) => {
+  if (!req.user) {
+    return next(new ServiceError('Unauthorized', 401));
+  }
+
   try {
     const { status } = req.body as UpdateOrderStatusPayload;
     const { orderId } = req.params as OrderParamsPayload;
 
-    const order = await updateOrderStatus(orderId, status);
+    const order = await updateOrderStatus(orderId, status, req.user.role);
 
     return res.status(200).json({ order });
   } catch (error) {

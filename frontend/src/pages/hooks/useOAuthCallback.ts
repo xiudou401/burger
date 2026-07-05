@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { refreshSession } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
-import type { User } from '../../types/auth';
 
 export const useOAuthCallback = () => {
   const navigate = useNavigate();
@@ -18,18 +17,11 @@ export const useOAuthCallback = () => {
     didHandleRef.current = true;
 
     const params = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-    const rawUser = params.get('user');
     const redirectTo = params.get('redirectTo');
 
-    if (!rawUser) {
-      setError('Sign in did not return account details.');
-      return;
-    }
-
     const finishSignIn = async () => {
-      const user = JSON.parse(rawUser) as User;
       const session = await refreshSession();
-      loginFn(session.accessToken, user);
+      loginFn(session.accessToken, session.user);
       const pendingInviteToken = localStorage.getItem(
         'pendingStaffInviteToken',
       );

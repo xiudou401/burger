@@ -29,6 +29,9 @@ const SORT_MAP: Record<SortOption, Record<string, SortOrder>> = {
   created_desc: { createdAt: -1 },
 };
 
+const escapeRegex = (value: string) =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
   try {
     const {
@@ -52,9 +55,11 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
     }
 
     if (keyword) {
+      const safeKeyword = escapeRegex(keyword);
+
       mongoQuery.$or = [
-        { name: { $regex: keyword, $options: 'i' } },
-        { description: { $regex: keyword, $options: 'i' } },
+        { name: { $regex: safeKeyword, $options: 'i' } },
+        { description: { $regex: safeKeyword, $options: 'i' } },
       ];
     }
 

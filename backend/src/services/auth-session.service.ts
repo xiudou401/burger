@@ -90,6 +90,13 @@ const isConcurrentRefresh = (
 export const rotateAuthSession = async (
   refreshToken: string,
 ): Promise<SessionAuthResult> => {
+  /**
+   * Refresh flow:
+   * 1. Active refresh tokens are atomically consumed so each token rotates once.
+   * 2. The replacement session stays in the same family as the consumed token.
+   * 3. Reusing the old token within the grace window is treated as a concurrent refresh.
+   * 4. Reusing it after the grace window revokes the active session family.
+   */
   if (!refreshToken) {
     throw new ServiceError('Refresh token required', 401);
   }

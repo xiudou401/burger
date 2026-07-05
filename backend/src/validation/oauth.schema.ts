@@ -20,7 +20,10 @@ export const OAuthStartQuerySchema = z
 
 export const OAuthCallbackQuerySchema = z
   .object({
-    state: OAuthModeSchema.optional().default('login'),
+    state: z.preprocess(
+      (value) => (typeof value === 'string' ? value : undefined),
+      z.string().trim().min(1).optional(),
+    ),
     code: z.preprocess(
       (value) => (typeof value === 'string' ? value : undefined),
       z.string().trim().min(1).optional(),

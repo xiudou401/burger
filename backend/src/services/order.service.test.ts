@@ -6,7 +6,6 @@ import { validateCart } from './cart.service';
 import { env } from '../config/env';
 import {
   createCheckoutOrder,
-  createOrder,
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
   markStripeOrderFailed,
@@ -72,60 +71,6 @@ describe('order service', () => {
     env.STRIPE_CANCEL_URL = undefined;
   });
 
-  test('creates orders from backend-validated cart totals', async () => {
-    jest.mocked(validateCart).mockResolvedValue({
-      items: [validatedMeal],
-      totalCents: 2400,
-      menuVersion: 7,
-    });
-    jest.mocked(orderRepository.create).mockResolvedValue({
-      _id: orderId,
-      userId,
-      items: [
-        {
-          mealId,
-          name: 'Classic Burger',
-          image: '/img/burger.png',
-          priceCents: 1200,
-          quantity: 2,
-          subtotalCents: 2400,
-        },
-      ],
-      totalCents: 2400,
-      menuVersion: 7,
-      status: 'pending_payment',
-      payment: {
-        status: 'unpaid',
-        amountCents: 2400,
-        currency: 'aud',
-        paidAt: undefined as Date | undefined,
-      },
-      createdAt: now,
-      updatedAt: now,
-    } as never);
-
-    const order = await createOrder(userId, [{ id: mealId, quantity: 999 }], 7);
-
-    expect(validateCart).toHaveBeenCalledWith(
-      [{ id: mealId, quantity: 999 }],
-      7,
-    );
-    expect(orderRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        totalCents: 2400,
-        menuVersion: 7,
-        status: 'pending_payment',
-        payment: {
-          status: 'unpaid',
-          amountCents: 2400,
-          currency: 'aud',
-        },
-      }),
-    );
-    expect(order.totalCents).toBe(2400);
-    expect(order.items[0].quantity).toBe(2);
-  });
-
   test('rejects empty validated carts', async () => {
     jest.mocked(validateCart).mockResolvedValue({
       items: [],
@@ -133,7 +78,9 @@ describe('order service', () => {
       menuVersion: 7,
     });
 
-    await expect(createOrder(userId, [], 7)).rejects.toThrow(ServiceError);
+    await expect(createCheckoutOrder(userId, [], 7)).rejects.toThrow(
+      ServiceError,
+    );
     expect(orderRepository.create).not.toHaveBeenCalled();
   });
 
@@ -328,7 +275,7 @@ describe('order service', () => {
       email: 'pat@example.com',
     } as never);
 
-    const result = await updateOrderStatus(orderId, 'paid');
+    const result = await updateOrderStatus(orderId, 'paid', 'admin');
 
     expect(order.status).toBe('paid');
     expect(order.payment.status).toBe('paid');
@@ -379,7 +326,14 @@ describe('order service', () => {
       email: 'pat@example.com',
     } as never);
 
-    const result = await markStripeCheckoutPaid('cs_test_123');
+    const result = await markStripeCheckoutPaid({
+      id: 'cs_test_123',
+      payment_status: 'paid',
+      amount_total: 2400,
+      currency: 'aud',
+      metadata: { orderId },
+      client_reference_id: orderId,
+    });
 
     expect(order.status).toBe('paid');
     expect(order.payment.status).toBe('paid');
@@ -424,12 +378,57 @@ describe('order service', () => {
       .mocked(orderRepository.findByStripeSessionId)
       .mockResolvedValue(order as never);
 
-    const result = await markStripeCheckoutPaid('cs_test_123');
+    const result = await markStripeCheckoutPaid({
+      id: 'cs_test_123',
+      payment_status: 'paid',
+      amount_total: 2400,
+      currency: 'aud',
+      metadata: { orderId },
+      client_reference_id: orderId,
+    });
 
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('paid');
     expect(result.payment?.paidAt).toBe(paidAt);
+  });
+
+  test('rejects completed Stripe sessions that do not match the order amount', async () => {
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValue(order as never);
+
+    await expect(
+      markStripeCheckoutPaid({
+        id: 'cs_test_123',
+        payment_status: 'paid',
+        amount_total: 1200,
+        currency: 'aud',
+        metadata: { orderId },
+        client_reference_id: orderId,
+      }),
+    ).rejects.toThrow('Stripe checkout amount does not match order');
+
+    expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
   });
 
   test('marks Stripe checkout sessions as cancelled', async () => {
@@ -497,8 +496,71 @@ describe('order service', () => {
       status: 'completed',
     } as never);
 
-    await expect(updateOrderStatus(orderId, 'paid')).rejects.toThrow(
+    await expect(updateOrderStatus(orderId, 'paid', 'admin')).rejects.toThrow(
       ServiceError,
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
+  });
+
+  test('rejects staff attempts to update payment status', async () => {
+    jest.mocked(orderRepository.findById).mockResolvedValue({
+      _id: orderId,
+      status: 'pending_payment',
+      payment: {
+        status: 'unpaid',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+    } as never);
+
+    await expect(updateOrderStatus(orderId, 'paid', 'staff')).rejects.toThrow(
+      'Staff cannot update payment status',
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
+  });
+
+  test('allows staff to advance fulfillment after payment', async () => {
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'paid',
+      payment: {
+        provider: 'stripe',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
+
+    const result = await updateOrderStatus(orderId, 'preparing', 'staff');
+
+    expect(order.status).toBe('preparing');
+    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(result.status).toBe('preparing');
+  });
+
+  test('rejects manual paid transitions for Stripe orders', async () => {
+    jest.mocked(orderRepository.findById).mockResolvedValue({
+      _id: orderId,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+    } as never);
+
+    await expect(updateOrderStatus(orderId, 'paid', 'admin')).rejects.toThrow(
+      'Stripe payments must be marked paid by webhook',
     );
     expect(orderRepository.save).not.toHaveBeenCalled();
   });

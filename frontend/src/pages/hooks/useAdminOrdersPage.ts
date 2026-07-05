@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
+import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { Order, OrderStatus } from '../../types/order';
+import type { User } from '../../types/auth';
 
-const nextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
+const adminNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
   pending_payment: ['paid', 'cancelled'],
   paid: ['preparing', 'cancelled'],
   preparing: ['ready', 'cancelled'],
@@ -11,7 +13,20 @@ const nextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
+const staffNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
+  pending_payment: [],
+  paid: ['preparing'],
+  preparing: ['ready'],
+  ready: ['completed'],
+  completed: [],
+  cancelled: [],
+};
+
+const getNextStatusesByRole = (role: User['role'] | undefined) =>
+  role === 'admin' ? adminNextStatusesByStatus : staffNextStatusesByStatus;
+
 export const useAdminOrdersPage = () => {
+  const role = useAuth((ctx) => ctx.user?.role);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +66,7 @@ export const useAdminOrdersPage = () => {
     }
   };
 
-  const nextStatuses = useMemo(() => nextStatusesByStatus, []);
+  const nextStatuses = useMemo(() => getNextStatusesByRole(role), [role]);
 
   return {
     orders,

@@ -11,7 +11,11 @@ export const MenuItemSortSchema = z.enum([
 
 export const MenuItemQuerySchema = z
   .object({
-    keyword: z.string().trim().optional(),
+    keyword: z
+      .string()
+      .trim()
+      .max(50, 'Search keyword cannot exceed 50 characters')
+      .optional(),
     category: z.enum(MEAL_CATEGORIES).optional(),
     minPriceCents: z.preprocess(
       (value) => (value === '' ? undefined : value),

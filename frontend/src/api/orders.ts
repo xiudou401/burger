@@ -2,16 +2,6 @@ import { request } from './request';
 import type { CartStoredItem } from '../types/cart';
 import type { Order, OrderStatus } from '../types/order';
 
-export const createOrder = (items: CartStoredItem[], menuVersion: number) => {
-  return request<{ order: Order }>('/orders', {
-    method: 'POST',
-    body: JSON.stringify({
-      items,
-      menuVersion,
-    }),
-  });
-};
-
 export const createCheckoutOrder = (
   items: CartStoredItem[],
   menuVersion: number,

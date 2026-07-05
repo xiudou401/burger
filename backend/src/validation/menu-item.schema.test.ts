@@ -1,4 +1,4 @@
-import { MenuItemPayloadSchema } from './menu-item.schema';
+import { MenuItemPayloadSchema, MenuItemQuerySchema } from './menu-item.schema';
 
 test('normalizes and coerces menu item payloads at the request boundary', () => {
   expect(
@@ -17,4 +17,18 @@ test('normalizes and coerces menu item payloads at the request boundary', () => 
     isAvailable: true,
     isFeatured: false,
   });
+});
+
+test('limits menu search keyword length', () => {
+  expect(
+    MenuItemQuerySchema.safeParse({
+      keyword: 'a'.repeat(50),
+    }).success,
+  ).toBe(true);
+
+  expect(
+    MenuItemQuerySchema.safeParse({
+      keyword: 'a'.repeat(51),
+    }).success,
+  ).toBe(false);
 });

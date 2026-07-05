@@ -1,7 +1,6 @@
 import express from 'express';
 import {
   createCheckoutOrderHandler,
-  createOrderHandler,
   getAdminOrderHandler,
   getMyOrderHandler,
   listAdminOrdersHandler,
@@ -33,12 +32,6 @@ router.post(
   requireVerifiedContact,
   validateBody(CreateOrderSchema, 'Checkout order payload'),
   createCheckoutOrderHandler,
-);
-router.post(
-  '/',
-  requireVerifiedContact,
-  validateBody(CreateOrderSchema, 'Create order payload'),
-  createOrderHandler,
 );
 router.get(
   '/me',
