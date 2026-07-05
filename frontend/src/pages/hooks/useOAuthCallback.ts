@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { refreshSession } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 
+const PENDING_STAFF_INVITE_TOKEN = 'pendingStaffInviteToken';
+
 export const useOAuthCallback = () => {
   const navigate = useNavigate();
   const loginFn = useAuth((ctx) => ctx.login);
@@ -22,12 +24,12 @@ export const useOAuthCallback = () => {
     const finishSignIn = async () => {
       const session = await refreshSession();
       loginFn(session.accessToken, session.user);
-      const pendingInviteToken = localStorage.getItem(
-        'pendingStaffInviteToken',
+      const pendingInviteToken = sessionStorage.getItem(
+        PENDING_STAFF_INVITE_TOKEN,
       );
 
       if (pendingInviteToken) {
-        localStorage.removeItem('pendingStaffInviteToken');
+        sessionStorage.removeItem(PENDING_STAFF_INVITE_TOKEN);
         navigate(`/admin/invitations/accept?token=${pendingInviteToken}`, {
           replace: true,
         });

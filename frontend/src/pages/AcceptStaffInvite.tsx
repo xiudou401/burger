@@ -11,6 +11,8 @@ import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useAcceptStaffInvitePage } from './hooks/useAcceptStaffInvitePage';
 
+const PENDING_STAFF_INVITE_TOKEN = 'pendingStaffInviteToken';
+
 const AcceptStaffInvite = () => {
   const { token, isAuthenticated, isAccepting, message, error, accept } =
     useAcceptStaffInvitePage();
@@ -18,7 +20,7 @@ const AcceptStaffInvite = () => {
 
   const signInWithGoogle = () => {
     if (token) {
-      localStorage.setItem('pendingStaffInviteToken', token);
+      sessionStorage.setItem(PENDING_STAFF_INVITE_TOKEN, token);
     }
 
     oauthLogin('google');
@@ -39,9 +41,7 @@ const AcceptStaffInvite = () => {
         {!isAuthenticated && (
           <AuthSocialButtons
             googleLabel="Continue with Google"
-            appleLabel="Continue with Apple"
             onGoogle={signInWithGoogle}
-            onApple={() => oauthLogin('apple')}
           />
         )}
 
