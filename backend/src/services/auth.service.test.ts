@@ -148,7 +148,10 @@ describe('auth service', () => {
         email: 'pat@example.com',
         password: 'Burger#2026',
       }),
-    ).rejects.toThrow(ServiceError);
+    ).rejects.toMatchObject({
+      message: 'Could not create account with these details',
+      statusCode: 409,
+    });
     expect(userRepository.create).not.toHaveBeenCalled();
   });
 

@@ -25,7 +25,7 @@ test('returns a clear 413 response for oversized JSON bodies', () => {
   });
 });
 
-test('maps Mongo duplicate email errors to a stable 409 response', () => {
+test('maps Mongo duplicate email errors to a generic 409 response', () => {
   const res = mockResponse();
 
   errorHandler(
@@ -37,7 +37,7 @@ test('maps Mongo duplicate email errors to a stable 409 response', () => {
 
   expect(res.status).toHaveBeenCalledWith(409);
   expect(res.json).toHaveBeenCalledWith({
-    message: 'Email already registered',
+    message: 'Could not create account with these details',
     statusCode: 409,
     type: 'DuplicateKeyError',
   });

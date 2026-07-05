@@ -48,6 +48,7 @@ interface MessageResult {
 }
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+const SIGNUP_DUPLICATE_MESSAGE = 'Could not create account with these details';
 const isDevEmailMode = () =>
   env.NODE_ENV !== 'production' && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
 
@@ -81,7 +82,7 @@ export const signup = async ({
   const existingUser = await userRepository.existsByEmail(email);
 
   if (existingUser) {
-    throw new ServiceError('Email already registered', 409);
+    throw new ServiceError(SIGNUP_DUPLICATE_MESSAGE, 409);
   }
 
   const user = await userRepository.create({
@@ -337,10 +338,7 @@ export const loginWithOAuth = async ({
     isNewUser = true;
   } else {
     if (mode === 'signup') {
-      throw new ServiceError(
-        'Email already registered. Please log in instead.',
-        409,
-      );
+      throw new ServiceError(SIGNUP_DUPLICATE_MESSAGE, 409);
     }
 
     user.name = user.name || normalizedName;

@@ -31,7 +31,7 @@ const getDuplicateKeyMessage = (error: {
   keyPattern?: Record<string, unknown>;
 }) => {
   if (error.keyPattern?.email) {
-    return 'Email already registered';
+    return 'Could not create account with these details';
   }
 
   if (error.keyPattern?.phone) {
