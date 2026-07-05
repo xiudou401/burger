@@ -44,9 +44,7 @@ const AdminLogin = () => {
 
         <AuthSocialButtons
           googleLabel="Continue with Google"
-          appleLabel="Continue with Apple"
           onGoogle={() => oauthLogin('google')}
-          onApple={() => oauthLogin('apple')}
         />
 
         <AuthFormElement onSubmit={submit}>

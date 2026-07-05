@@ -1,5 +1,5 @@
 type OAuthMode = 'login' | 'signup' | 'admin';
-type OAuthProvider = 'google' | 'apple';
+type OAuthProvider = 'google';
 
 export const useOAuthLogin = (mode: OAuthMode) => {
   const oauthLogin = (provider: OAuthProvider) => {

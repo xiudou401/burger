@@ -35,9 +35,7 @@ interface AuthSwitchProps {
 
 interface AuthSocialButtonsProps {
   googleLabel: string;
-  appleLabel: string;
   onGoogle: () => void;
-  onApple: () => void;
 }
 
 interface AuthTextLinkProps {
@@ -112,9 +110,7 @@ export const AuthSwitch = ({ children }: AuthSwitchProps) => {
 
 export const AuthSocialButtons = ({
   googleLabel,
-  appleLabel,
   onGoogle,
-  onApple,
 }: AuthSocialButtonsProps) => {
   return (
     <>
@@ -126,10 +122,6 @@ export const AuthSocialButtons = ({
         >
           <span className={classes.GoogleIcon}>G</span>
           {googleLabel}
-        </button>
-        <button className={classes.AppleButton} type="button" onClick={onApple}>
-          <span className={classes.AppleIcon}>Apple</span>
-          {appleLabel}
         </button>
       </div>
 

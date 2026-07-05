@@ -78,28 +78,10 @@ export const oauthStartHandler = (
   }
 
   if (provider === 'apple') {
-    if (!env.APPLE_CLIENT_ID) {
-      return redirectWithError(
-        res,
-        'Apple sign in is not configured yet',
-        getOAuthErrorTarget(mode),
-      );
-    }
-
-    const state = createOAuthState(mode);
-    setOAuthStateCookie(res, state);
-
-    const params = new URLSearchParams({
-      client_id: env.APPLE_CLIENT_ID,
-      redirect_uri: getOAuthCallbackUrl('apple'),
-      response_type: 'code',
-      scope: 'name email',
-      response_mode: 'form_post',
-      state,
-    });
-
-    return res.redirect(
-      `https://appleid.apple.com/auth/authorize?${params.toString()}`,
+    return redirectWithError(
+      res,
+      'Apple sign in is planned but not implemented yet',
+      getOAuthErrorTarget(mode),
     );
   }
 

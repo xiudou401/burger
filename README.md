@@ -82,9 +82,9 @@ recent orders while staff manage orders and menu changes.
 
 - Stripe runs in test mode and does not create real charges.
 - Google sign-in is available in the deployed app.
-- SMS codes are printed locally in development; no production SMS provider is
-  configured.
-- Apple sign-in is shown as a future provider but is not implemented yet.
+- SMS codes are printed locally in development; the production SMS entry point
+  is hidden until a provider is configured.
+- Apple sign-in is planned but not implemented yet.
 
 ## Screenshots
 

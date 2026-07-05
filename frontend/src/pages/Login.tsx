@@ -17,6 +17,8 @@ import { useLoginPage } from './hooks/useLoginPage';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useSmsLoginPage } from './hooks/useSmsLoginPage';
 
+const isSmsAuthEnabled = process.env.NODE_ENV !== 'production';
+
 const Login = () => {
   const [searchParams] = useSearchParams();
   const [loginMethod, setLoginMethod] = useState('email');
@@ -50,21 +52,21 @@ const Login = () => {
 
         <AuthSocialButtons
           googleLabel="Continue with Google"
-          appleLabel="Continue with Apple"
           onGoogle={() => oauthLogin('google')}
-          onApple={() => oauthLogin('apple')}
         />
 
-        <AuthTabs
-          value={loginMethod}
-          options={[
-            { value: 'email', label: 'Email' },
-            { value: 'phone', label: 'Phone' },
-          ]}
-          onChange={setLoginMethod}
-        />
+        {isSmsAuthEnabled && (
+          <AuthTabs
+            value={loginMethod}
+            options={[
+              { value: 'email', label: 'Email' },
+              { value: 'phone', label: 'Phone' },
+            ]}
+            onChange={setLoginMethod}
+          />
+        )}
 
-        {loginMethod === 'email' ? (
+        {!isSmsAuthEnabled || loginMethod === 'email' ? (
           <AuthFormElement onSubmit={submit}>
             <AuthField
               label="Email"
