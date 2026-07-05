@@ -24,6 +24,34 @@ test('allows trusted browser requests with the CSRF header', () => {
   expect(next).toHaveBeenCalledWith();
 });
 
+test('allows additional trusted origins from configuration', () => {
+  const previousTrustedOrigins = process.env.TRUSTED_ORIGINS;
+  jest.resetModules();
+  process.env.TRUSTED_ORIGINS = 'https://preview.example';
+
+  try {
+    jest.isolateModules(() => {
+      const { verifyTrustedOrigin: verifyConfiguredTrustedOrigin } =
+        jest.requireActual<typeof import('./security')>('./security');
+      const next = jest.fn() as NextFunction;
+      const req = makeRequest({
+        origin: 'https://preview.example',
+        'x-csrf-protection': '1',
+      });
+
+      verifyConfiguredTrustedOrigin(req, {} as Response, next);
+
+      expect(next).toHaveBeenCalledWith();
+    });
+  } finally {
+    if (previousTrustedOrigins === undefined) {
+      delete process.env.TRUSTED_ORIGINS;
+    } else {
+      process.env.TRUSTED_ORIGINS = previousTrustedOrigins;
+    }
+  }
+});
+
 test('blocks untrusted request origins', () => {
   const next = jest.fn() as NextFunction;
   const req = makeRequest({

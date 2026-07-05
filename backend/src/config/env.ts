@@ -23,6 +23,7 @@ const EnvSchema = z
       .trim()
       .min(32, 'JWT_SECRET must be at least 32 characters'),
     FRONTEND_URL: z.string().trim().url().default('http://localhost:3000'),
+    TRUSTED_ORIGINS: z.string().trim().optional(),
     API_URL: z.string().trim().url().optional(),
     GOOGLE_CLIENT_ID: optionalNonEmptyString,
     GOOGLE_CLIENT_SECRET: optionalNonEmptyString,
@@ -50,6 +51,15 @@ const EnvSchema = z
   .transform((parsed) => ({
     ...parsed,
     API_URL: parsed.API_URL ?? `http://localhost:${parsed.PORT}`,
+    TRUSTED_ORIGINS: Array.from(
+      new Set([
+        parsed.FRONTEND_URL,
+        ...(parsed.TRUSTED_ORIGINS ?? '')
+          .split(',')
+          .map((origin) => origin.trim())
+          .filter(Boolean),
+      ]),
+    ),
   }));
 
 const parseEnv = () => {

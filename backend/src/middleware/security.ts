@@ -8,6 +8,7 @@ const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const CSRF_PROTECTION_HEADER = 'X-CSRF-Protection';
 const CSRF_PROTECTION_VALUE = '1';
+const trustedOrigins = new Set(env.TRUSTED_ORIGINS);
 
 export const securityHeaders = helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -91,7 +92,7 @@ export const verifyTrustedOrigin = (
 ) => {
   const origin = req.get('origin');
 
-  if (origin !== env.FRONTEND_URL) {
+  if (!origin || !trustedOrigins.has(origin)) {
     return next(new ServiceError('Invalid request origin', 403));
   }
 

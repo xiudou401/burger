@@ -38,8 +38,22 @@ test('allows missing email configuration outside production', () => {
   const env = loadEnv();
 
   expect(env?.NODE_ENV).toBe('test');
+  expect(env?.TRUSTED_ORIGINS).toEqual(['http://localhost:3000']);
   expect(env?.RESEND_API_KEY).toBeUndefined();
   expect(env?.EMAIL_FROM).toBeUndefined();
+});
+
+test('parses trusted origins with frontend url as a default origin', () => {
+  process.env.TRUSTED_ORIGINS =
+    'https://burger-vert.vercel.app, https://preview.example';
+
+  const env = loadEnv();
+
+  expect(env?.TRUSTED_ORIGINS).toEqual([
+    'http://localhost:3000',
+    'https://burger-vert.vercel.app',
+    'https://preview.example',
+  ]);
 });
 
 test('rejects missing production email configuration', () => {
