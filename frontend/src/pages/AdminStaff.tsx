@@ -17,7 +17,6 @@ const AdminStaff = () => {
     email,
     setEmail,
     role,
-    setRole,
     isLoading,
     isSubmitting,
     error,
@@ -57,16 +56,12 @@ const AdminStaff = () => {
 
           <label className={classes.Field}>
             Role
-            <select
+            <input
               className={classes.Input}
+              type="text"
               value={role}
-              onChange={(event) =>
-                setRole(event.target.value as 'staff' | 'admin')
-              }
-            >
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
+              readOnly
+            />
           </label>
 
           <button className={classes.PrimaryButton} disabled={isSubmitting}>

@@ -4,12 +4,13 @@ import {
   fetchStaffInvites,
   revokeStaffInvite,
 } from '../../api/staff-invites';
-import type { StaffInvite, StaffInviteRole } from '../../types/staff-invite';
+import type { StaffInvite } from '../../types/staff-invite';
+
+const STAFF_INVITE_ROLE = 'staff' as const;
 
 export const useAdminStaffPage = () => {
   const [invites, setInvites] = useState<StaffInvite[]>([]);
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<StaffInviteRole>('staff');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +43,7 @@ export const useAdminStaffPage = () => {
     setDevInviteUrl(null);
 
     try {
-      const res = await createStaffInvite(email, role);
+      const res = await createStaffInvite(email, STAFF_INVITE_ROLE);
       setInvites((current) => [res.invite, ...current]);
       setMessage(`Invite sent to ${res.invite.email}`);
       setEmail('');
@@ -76,8 +77,7 @@ export const useAdminStaffPage = () => {
     invites,
     email,
     setEmail,
-    role,
-    setRole,
+    role: STAFF_INVITE_ROLE,
     isLoading,
     isSubmitting,
     error,

@@ -1,6 +1,6 @@
 import { model, Schema, Types } from 'mongoose';
 
-export type StaffInviteRole = 'staff' | 'admin';
+export type StaffInviteRole = 'staff';
 export type StaffInviteStatus = 'pending' | 'accepted' | 'revoked';
 
 export interface StaffInvite {
@@ -26,7 +26,7 @@ const staffInviteSchema = new Schema<StaffInvite>(
     },
     role: {
       type: String,
-      enum: ['staff', 'admin'],
+      enum: ['staff'],
       required: true,
     },
     tokenHash: {

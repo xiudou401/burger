@@ -1,6 +1,6 @@
 import type { User } from './auth';
 
-export type StaffInviteRole = 'staff' | 'admin';
+export type StaffInviteRole = 'staff';
 export type StaffInviteStatus = 'pending' | 'accepted' | 'revoked';
 
 export interface StaffInvite {

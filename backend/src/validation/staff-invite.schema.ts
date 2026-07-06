@@ -4,7 +4,7 @@ import { ObjectIdSchema } from './common.schema';
 export const CreateStaffInviteSchema = z
   .object({
     email: z.string().trim().toLowerCase().email('Invalid email'),
-    role: z.enum(['staff', 'admin']),
+    role: z.literal('staff'),
   })
   .strict();
 
