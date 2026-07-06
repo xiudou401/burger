@@ -32,6 +32,26 @@ const SORT_MAP: Record<SortOption, Record<string, SortOrder>> = {
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const toPublicMenuItem = (menuItem: {
+  _id: unknown;
+  name: string;
+  description?: string;
+  priceCents: number;
+  image?: string;
+  category?: string;
+  isAvailable?: boolean;
+  isFeatured?: boolean;
+}) => ({
+  id: String(menuItem._id),
+  name: menuItem.name,
+  description: menuItem.description,
+  priceCents: menuItem.priceCents,
+  image: menuItem.image,
+  category: menuItem.category ?? 'burger',
+  isAvailable: menuItem.isAvailable ?? true,
+  isFeatured: menuItem.isFeatured ?? false,
+});
+
 export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
   try {
     const {
@@ -88,16 +108,7 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
 
     return {
       menuVersion,
-      items: items.map((menuItem) => ({
-        id: menuItem._id.toString(),
-        name: menuItem.name,
-        description: menuItem.description,
-        priceCents: menuItem.priceCents,
-        image: menuItem.image,
-        category: menuItem.category ?? 'burger',
-        isAvailable: menuItem.isAvailable ?? true,
-        isFeatured: menuItem.isFeatured ?? false,
-      })),
+      items: items.map(toPublicMenuItem),
       page,
       limit,
       total,
@@ -111,26 +122,6 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
     );
   }
 };
-
-const toPublicMenuItem = (menuItem: {
-  _id: unknown;
-  name: string;
-  description?: string;
-  priceCents: number;
-  image?: string;
-  category?: string;
-  isAvailable?: boolean;
-  isFeatured?: boolean;
-}) => ({
-  id: String(menuItem._id),
-  name: menuItem.name,
-  description: menuItem.description,
-  priceCents: menuItem.priceCents,
-  image: menuItem.image,
-  category: menuItem.category ?? 'burger',
-  isAvailable: menuItem.isAvailable ?? true,
-  isFeatured: menuItem.isFeatured ?? false,
-});
 
 export const createMenuItem = async (payload: MenuItemPayload) => {
   const menuItem = await menuItemRepository.create(payload);
