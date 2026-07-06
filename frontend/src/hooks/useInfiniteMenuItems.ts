@@ -77,10 +77,15 @@ export const useInfiniteMenuItems = ({
   }, []);
 
   const loadMenuItems = useCallback(
-    (pageToLoad: number, searchKeyword: string, currentReloadKey: number) => {
+    (
+      pageToLoad: number,
+      searchKeyword: string,
+      categoryToLoad: MenuItemCategory | undefined,
+      currentReloadKey: number,
+    ) => {
       const key = buildInfiniteMenuItemsLoadKey(
         searchKeyword,
-        category ?? '',
+        categoryToLoad ?? '',
         pageToLoad,
         limit,
         currentReloadKey,
@@ -106,7 +111,7 @@ export const useInfiniteMenuItems = ({
       const requestId = ++requestIdRef.current;
       const controller = new AbortController();
       const snapshotKeyword = searchKeyword;
-      const snapshotCategory = category;
+      const snapshotCategory = categoryToLoad;
       const snapshotReloadKey = currentReloadKey;
 
       let promise!: Promise<boolean>;
@@ -165,11 +170,11 @@ export const useInfiniteMenuItems = ({
 
       return promise;
     },
-    [category, fetchMenuItems, limit],
+    [fetchMenuItems, limit],
   );
 
   useEffect(() => {
-    loadMenuItems(page, keyword, reloadKey);
+    loadMenuItems(page, keyword, category, reloadKey);
   }, [category, keyword, loadMenuItems, page, reloadKey]);
 
   useEffect(() => {
@@ -224,20 +229,23 @@ export const useInfiniteMenuItems = ({
   );
 
   const reload = useCallback(() => {
-    const { keyword: currentKeyword, reloadKey: currentReloadKey } =
-      latestRef.current;
+    const {
+      keyword: currentKeyword,
+      category: currentCategory,
+      reloadKey: currentReloadKey,
+    } = latestRef.current;
     const nextReloadKey = currentReloadKey + 1;
 
     resetAndInvalidate();
     setReloadKey(nextReloadKey);
-    return loadMenuItems(1, currentKeyword, nextReloadKey);
+    return loadMenuItems(1, currentKeyword, currentCategory, nextReloadKey);
   }, [loadMenuItems, resetAndInvalidate]);
 
   const retry = useCallback(() => {
     setError(null);
     settledLoadRef.current = null;
-    loadMenuItems(page, keyword, reloadKey);
-  }, [keyword, loadMenuItems, page, reloadKey]);
+    loadMenuItems(page, keyword, category, reloadKey);
+  }, [category, keyword, loadMenuItems, page, reloadKey]);
 
   const onCategoryChange = useCallback(
     (nextCategory?: MenuItemCategory) => {
