@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { MealModel } from '../src/models/meal.model';
+import { MenuItemModel } from '../src/models/menu-item.model';
 import { MenuModel } from '../src/models/menu.model';
 
 dotenv.config();
@@ -152,7 +152,7 @@ const localizeMenuItems = async () => {
 
   const results = await Promise.all(
     menuItems.map((menuItem) =>
-      MealModel.collection.updateOne(
+      MenuItemModel.collection.updateOne(
         { image: menuItem.image },
         {
           $set: {

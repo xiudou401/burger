@@ -21,7 +21,7 @@ export const fetchMenuItems = (params: FetchMenuItemsParams) => {
   if (params.page) query.append('page', String(params.page));
   if (params.limit) query.append('limit', String(params.limit));
 
-  return request<PaginatedMenuItems>(`/meals?${query.toString()}`, {
+  return request<PaginatedMenuItems>(`/menu-items?${query.toString()}`, {
     signal: params.signal,
   });
 };
@@ -37,15 +37,15 @@ export interface MenuItemPayload {
 }
 
 interface MenuItemResponse {
-  meal: MenuItem;
+  menuItem: MenuItem;
 }
 
 export const createMenuItem = (payload: MenuItemPayload) => {
-  return request<MenuItemResponse>('/meals', {
+  return request<MenuItemResponse>('/menu-items', {
     method: 'POST',
     body: JSON.stringify(payload),
   }).then((res) => ({
-    menuItem: res.meal,
+    menuItem: res.menuItem,
   }));
 };
 
@@ -53,18 +53,18 @@ export const updateMenuItem = (
   menuItemId: string,
   payload: MenuItemPayload,
 ) => {
-  return request<MenuItemResponse>(`/meals/${menuItemId}`, {
+  return request<MenuItemResponse>(`/menu-items/${menuItemId}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
   }).then((res) => ({
-    menuItem: res.meal,
+    menuItem: res.menuItem,
   }));
 };
 
 export const deleteMenuItem = (menuItemId: string) => {
-  return request<MenuItemResponse>(`/meals/${menuItemId}`, {
+  return request<MenuItemResponse>(`/menu-items/${menuItemId}`, {
     method: 'DELETE',
   }).then((res) => ({
-    menuItem: res.meal,
+    menuItem: res.menuItem,
   }));
 };

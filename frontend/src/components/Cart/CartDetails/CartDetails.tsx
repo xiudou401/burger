@@ -29,7 +29,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
   }, [open, itemsLength, ensureQuote]);
 
   const menuItems = useMemo(() => {
-    return quote?.meals ?? [];
+    return quote?.menuItems ?? [];
   }, [quote]);
 
   const handleClearCart = (e: MouseEvent<HTMLDivElement>) => {

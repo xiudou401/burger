@@ -155,7 +155,7 @@ export const useQuoteValidationRequest = ({
 
         onQuoteValidated({
           menuVersion: res.menuVersion,
-          meals: res.items,
+          menuItems: res.items,
           itemsSig: snapshotSig,
           ts: Date.now(),
         });

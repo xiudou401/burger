@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MEAL_CATEGORIES } from '../models/meal.model';
+import { MENU_ITEM_CATEGORIES } from '../models/menu-item.model';
 import { ObjectIdSchema, paginationLimit } from './common.schema';
 
 export const MenuItemSortSchema = z.enum([
@@ -16,7 +16,7 @@ export const MenuItemQuerySchema = z
       .trim()
       .max(50, 'Search keyword cannot exceed 50 characters')
       .optional(),
-    category: z.enum(MEAL_CATEGORIES).optional(),
+    category: z.enum(MENU_ITEM_CATEGORIES).optional(),
     minPriceCents: z.preprocess(
       (value) => (value === '' ? undefined : value),
       z.coerce
@@ -58,7 +58,7 @@ export const MenuItemPayloadSchema = z
       .int('Menu item priceCents must be an integer')
       .min(0, 'Menu item priceCents must be non-negative'),
     image: z.string().trim().optional(),
-    category: z.enum(MEAL_CATEGORIES).default('burger'),
+    category: z.enum(MENU_ITEM_CATEGORIES).default('burger'),
     isAvailable: z.boolean().default(true),
     isFeatured: z.boolean().default(false),
   })

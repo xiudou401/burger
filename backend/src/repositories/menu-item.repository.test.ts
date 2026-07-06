@@ -1,8 +1,8 @@
-import { MealModel } from '../models/meal.model';
+import { MenuItemModel } from '../models/menu-item.model';
 import { menuItemRepository } from './menu-item.repository';
 
-jest.mock('../models/meal.model', () => ({
-  MealModel: {
+jest.mock('../models/menu-item.model', () => ({
+  MenuItemModel: {
     find: jest.fn(),
     countDocuments: jest.fn(),
     create: jest.fn(),
@@ -24,7 +24,7 @@ describe('menuItemRepository', () => {
     const query = { priceCents: { $gte: 10 } };
     const sortOption = { priceCents: 1 as const };
 
-    jest.mocked(MealModel.find).mockReturnValue({ sort } as never);
+    jest.mocked(MenuItemModel.find).mockReturnValue({ sort } as never);
 
     await expect(
       menuItemRepository.findPage({
@@ -35,7 +35,7 @@ describe('menuItemRepository', () => {
       }),
     ).resolves.toEqual([]);
 
-    expect(MealModel.find).toHaveBeenCalledWith(query);
+    expect(MenuItemModel.find).toHaveBeenCalledWith(query);
     expect(sort).toHaveBeenCalledWith(sortOption);
     expect(skip).toHaveBeenCalledWith(8);
     expect(limit).toHaveBeenCalledWith(4);
@@ -44,12 +44,12 @@ describe('menuItemRepository', () => {
   test('finds cart menu items by ids', async () => {
     const lean = jest.fn().mockResolvedValue([]);
 
-    jest.mocked(MealModel.find).mockReturnValue({ lean } as never);
+    jest.mocked(MenuItemModel.find).mockReturnValue({ lean } as never);
 
-    await menuItemRepository.findByIds(['meal-1', 'meal-2']);
+    await menuItemRepository.findByIds(['menu-item-1', 'menu-item-2']);
 
-    expect(MealModel.find).toHaveBeenCalledWith({
-      _id: { $in: ['meal-1', 'meal-2'] },
+    expect(MenuItemModel.find).toHaveBeenCalledWith({
+      _id: { $in: ['menu-item-1', 'menu-item-2'] },
     });
     expect(lean).toHaveBeenCalled();
   });
@@ -57,9 +57,11 @@ describe('menuItemRepository', () => {
   test('updates menu items with validation enabled', async () => {
     const exec = jest.fn().mockResolvedValue(null);
 
-    jest.mocked(MealModel.findByIdAndUpdate).mockReturnValue({ exec } as never);
+    jest
+      .mocked(MenuItemModel.findByIdAndUpdate)
+      .mockReturnValue({ exec } as never);
 
-    await menuItemRepository.updateById('meal-1', {
+    await menuItemRepository.updateById('menu-item-1', {
       name: 'Burger',
       description: 'Nice',
       priceCents: 1200,
@@ -69,8 +71,8 @@ describe('menuItemRepository', () => {
       isFeatured: false,
     });
 
-    expect(MealModel.findByIdAndUpdate).toHaveBeenCalledWith(
-      'meal-1',
+    expect(MenuItemModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      'menu-item-1',
       {
         name: 'Burger',
         description: 'Nice',

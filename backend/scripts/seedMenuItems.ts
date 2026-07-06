@@ -1,4 +1,4 @@
-import { MealModel } from '../src/models/meal.model';
+import { MenuItemModel } from '../src/models/menu-item.model';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -155,10 +155,10 @@ const seedMenuItems = async () => {
 
   console.log('MongoDB connected');
 
-  await MealModel.deleteMany();
+  await MenuItemModel.deleteMany();
   console.log('Old menu items removed');
 
-  await MealModel.insertMany(menuItems);
+  await MenuItemModel.insertMany(menuItems);
   console.log('Menu items seeded successfully');
 
   await mongoose.disconnect();

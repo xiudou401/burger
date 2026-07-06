@@ -3,7 +3,7 @@ import { calculateEstimatedTotalCents } from './quote-utils';
 
 const quote: Quote = {
   menuVersion: 4,
-  meals: [
+  menuItems: [
     {
       id: 'burger',
       name: 'Classic Burger',

@@ -90,7 +90,7 @@ const Cart = () => {
       {showCartDetails && <CartDetails open={showCartDetails} />}
 
       {showCheckout && quote && (
-        <Checkout offCheckout={offCheckout} menuItems={quote.meals} />
+        <Checkout offCheckout={offCheckout} menuItems={quote.menuItems} />
       )}
 
       <div className={classes.CartIcon}>

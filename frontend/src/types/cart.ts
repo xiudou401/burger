@@ -18,7 +18,7 @@ export interface CartState {
 
 export interface Quote {
   menuVersion: number;
-  meals: CartMenuItem[];
+  menuItems: CartMenuItem[];
   ts: number;
 }
 

@@ -1,5 +1,5 @@
 import type { SortOrder } from 'mongoose';
-import { MealModel, type Meal } from '../models/meal.model';
+import { MenuItemModel, type MenuItem } from '../models/menu-item.model';
 
 type MenuItemQuery = Record<string, unknown>;
 
@@ -15,22 +15,22 @@ export const menuItemRepository = {
     skip: number;
     limit: number;
   }) {
-    return MealModel.find(query).sort(sort).skip(skip).limit(limit).lean();
+    return MenuItemModel.find(query).sort(sort).skip(skip).limit(limit).lean();
   },
 
   count(query: MenuItemQuery) {
-    return MealModel.countDocuments(query);
+    return MenuItemModel.countDocuments(query);
   },
 
   findByIds(ids: string[]) {
-    return MealModel.find({
+    return MenuItemModel.find({
       _id: { $in: ids },
     }).lean();
   },
 
   create(
     data: Pick<
-      Meal,
+      MenuItem,
       | 'name'
       | 'description'
       | 'priceCents'
@@ -40,13 +40,13 @@ export const menuItemRepository = {
       | 'isFeatured'
     >,
   ) {
-    return MealModel.create(data);
+    return MenuItemModel.create(data);
   },
 
   updateById(
     menuItemId: string,
     data: Pick<
-      Meal,
+      MenuItem,
       | 'name'
       | 'description'
       | 'priceCents'
@@ -56,13 +56,13 @@ export const menuItemRepository = {
       | 'isFeatured'
     >,
   ) {
-    return MealModel.findByIdAndUpdate(menuItemId, data, {
+    return MenuItemModel.findByIdAndUpdate(menuItemId, data, {
       new: true,
       runValidators: true,
     }).exec();
   },
 
   deleteById(menuItemId: string) {
-    return MealModel.findByIdAndDelete(menuItemId).exec();
+    return MenuItemModel.findByIdAndDelete(menuItemId).exec();
   },
 };

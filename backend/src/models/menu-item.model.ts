@@ -1,7 +1,7 @@
 import { MenuModel } from './menu.model';
 import { model, Schema } from 'mongoose';
 
-export const MEAL_CATEGORIES = [
+export const MENU_ITEM_CATEGORIES = [
   'burger',
   'side',
   'drink',
@@ -9,21 +9,21 @@ export const MEAL_CATEGORIES = [
   'combo',
 ] as const;
 
-export type MealCategory = (typeof MEAL_CATEGORIES)[number];
+export type MenuItemCategory = (typeof MENU_ITEM_CATEGORIES)[number];
 
-export interface Meal {
+export interface MenuItem {
   name: string;
   description?: string;
   priceCents: number;
   image?: string;
-  category: MealCategory;
+  category: MenuItemCategory;
   isAvailable: boolean;
   isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const mealSchema = new Schema<Meal>(
+const menuItemSchema = new Schema<MenuItem>(
   {
     name: { type: String, required: true },
     description: String,
@@ -33,13 +33,13 @@ const mealSchema = new Schema<Meal>(
       min: 0,
       validate: {
         validator: Number.isSafeInteger,
-        message: 'Meal priceCents must be an integer',
+        message: 'Menu item priceCents must be an integer',
       },
     },
     image: String,
     category: {
       type: String,
-      enum: MEAL_CATEGORIES,
+      enum: MENU_ITEM_CATEGORIES,
       required: true,
       default: 'burger',
     },
@@ -81,7 +81,7 @@ function scheduleMenuVersionUpdate() {
     }
   })();
 }
-mealSchema.post(
+menuItemSchema.post(
   [
     'save',
     'updateOne',
@@ -103,4 +103,8 @@ async function updateMenuVersion() {
   );
 }
 
-export const MealModel = model<Meal>('Meal', mealSchema);
+export const MenuItemModel = model<MenuItem>(
+  'MenuItem',
+  menuItemSchema,
+  'meals',
+);

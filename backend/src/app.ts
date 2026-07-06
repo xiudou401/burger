@@ -44,7 +44,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 app.use('/api/auth', authRoutes);
-app.use('/api/meals', menuItemRoutes);
+app.use('/api/menu-items', menuItemRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/staff-invites', staffInviteRoutes);

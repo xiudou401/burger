@@ -8,7 +8,7 @@ export const calculateEstimatedTotalCents = (
 
   const quantityById = new Map(items.map((item) => [item.id, item.quantity]));
 
-  return quote.meals.reduce((total, menuItem) => {
+  return quote.menuItems.reduce((total, menuItem) => {
     const quantity = quantityById.get(menuItem.id) ?? 0;
     return total + menuItem.priceCents * quantity;
   }, 0);

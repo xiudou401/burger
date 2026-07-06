@@ -36,7 +36,7 @@ export const createMenuItemHandler = async (
     const payload = req.body as MenuItemPayload;
     const menuItem = await createMenuItem(payload);
 
-    res.status(201).json({ meal: menuItem });
+    res.status(201).json({ menuItem });
   } catch (error) {
     next(error);
   }
@@ -52,7 +52,7 @@ export const updateMenuItemHandler = async (
     const payload = req.body as MenuItemPayload;
     const menuItem = await updateMenuItem(menuItemId, payload);
 
-    res.status(200).json({ meal: menuItem });
+    res.status(200).json({ menuItem });
   } catch (error) {
     next(error);
   }
@@ -67,7 +67,7 @@ export const deleteMenuItemHandler = async (
     const { menuItemId } = req.params as MenuItemParamsPayload;
     const menuItem = await deleteMenuItem(menuItemId);
 
-    res.status(200).json({ meal: menuItem });
+    res.status(200).json({ menuItem });
   } catch (error) {
     next(error);
   }
