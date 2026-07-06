@@ -104,7 +104,11 @@ export const useProfilePage = () => {
 
   const confirmRedirectedOrder = useCallback(
     async (orderId: string) => {
-      for (let attempt = 0; attempt < ORDER_CONFIRMATION_POLL_ATTEMPTS; attempt++) {
+      for (
+        let attempt = 0;
+        attempt < ORDER_CONFIRMATION_POLL_ATTEMPTS;
+        attempt++
+      ) {
         if (attempt > 0) {
           await wait(ORDER_CONFIRMATION_POLL_DELAY_MS);
         }
