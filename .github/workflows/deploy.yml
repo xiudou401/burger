@@ -19,16 +19,16 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  AWS_ACCOUNT_ID: '654654367739'
+  AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
   AWS_REGION: ap-southeast-2
-  AWS_ROLE_ARN: arn:aws:iam::654654367739:role/burger-club-github-deploy-role
-  CLOUDFRONT_DISTRIBUTION_ID: E2NJO3MTM48Z0J
+  AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
   ECS_CLUSTER: burger-club-cluster
   ECS_CONTAINER_NAME: burger-club-api
   ECS_SERVICE: burger-club-api-service
   ECS_TASK_DEFINITION: burger-club-api
   ECR_REPOSITORY: burger-club-api
-  FRONTEND_BUCKET: burger-club-frontend-654654367739-ap-southeast-2
+  FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
   IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
