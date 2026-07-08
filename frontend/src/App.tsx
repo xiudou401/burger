@@ -16,6 +16,7 @@ import AdminMenu from './pages/AdminMenu';
 import AcceptStaffInvite from './pages/AcceptStaffInvite';
 import RequireAuth from './components/Auth/RequireAuth';
 import RequireAdmin from './components/Auth/RequireAdmin';
+import RequireAdminRole from './components/Auth/RequireAdminRole';
 
 const App = () => {
   return (
@@ -45,6 +46,9 @@ const App = () => {
             path="/admin/orders/:orderId"
             element={<AdminOrderDetails />}
           />
+        </Route>
+
+        <Route element={<RequireAdminRole />}>
           <Route path="/admin/menu" element={<AdminMenu />} />
           <Route path="/admin/staff" element={<AdminStaff />} />
         </Route>
