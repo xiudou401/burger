@@ -380,7 +380,10 @@ export const updateOrderStatus = async (
       (order.status === 'ready' && nextStatus === 'completed');
 
     if (!isStaffFulfillmentTransition) {
-      throw new ServiceError('Staff cannot update payment status', 403);
+      throw new ServiceError(
+        'Staff can only advance order fulfillment status',
+        403,
+      );
     }
   }
 

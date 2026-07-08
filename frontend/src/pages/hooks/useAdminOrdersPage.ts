@@ -2,28 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { Order, OrderStatus } from '../../types/order';
-import type { User } from '../../types/auth';
-
-const adminNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ['paid', 'cancelled'],
-  paid: ['preparing', 'cancelled'],
-  preparing: ['ready', 'cancelled'],
-  ready: ['completed'],
-  completed: [],
-  cancelled: [],
-};
-
-const staffNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: [],
-  paid: ['preparing'],
-  preparing: ['ready'],
-  ready: ['completed'],
-  completed: [],
-  cancelled: [],
-};
-
-const getNextStatusesByRole = (role: User['role'] | undefined) =>
-  role === 'admin' ? adminNextStatusesByStatus : staffNextStatusesByStatus;
+import { getNextStatusesByRole } from './admin-order-status-permissions';
 
 export const useAdminOrdersPage = () => {
   const role = useAuth((ctx) => ctx.user?.role);

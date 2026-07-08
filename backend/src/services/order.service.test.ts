@@ -568,7 +568,7 @@ describe('order service', () => {
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
 
-  test('rejects staff attempts to update payment status', async () => {
+  test('rejects staff attempts to update non-fulfillment status', async () => {
     jest.mocked(orderRepository.findById).mockResolvedValue({
       _id: orderId,
       status: 'pending_payment',
@@ -580,7 +580,7 @@ describe('order service', () => {
     } as never);
 
     await expect(updateOrderStatus(orderId, 'paid', 'staff')).rejects.toThrow(
-      'Staff cannot update payment status',
+      'Staff can only advance order fulfillment status',
     );
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
@@ -611,6 +611,89 @@ describe('order service', () => {
     expect(order.status).toBe('preparing');
     expect(orderRepository.save).toHaveBeenCalledWith(order);
     expect(result.status).toBe('preparing');
+  });
+
+  test.each(['paid', 'preparing'] as const)(
+    'allows admins to cancel %s orders before completion',
+    async (status) => {
+      const order = {
+        _id: orderId,
+        userId,
+        items: [],
+        totalCents: 2400,
+        menuVersion: 7,
+        status,
+        payment: {
+          provider: 'stripe',
+          status: 'paid',
+          amountCents: 2400,
+          currency: 'aud',
+          paidAt: now,
+        },
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
+
+      const result = await updateOrderStatus(orderId, 'cancelled', 'admin');
+
+      expect(order.status).toBe('cancelled');
+      expect(order.payment.status).toBe('paid');
+      expect(orderRepository.save).toHaveBeenCalledWith(order);
+      expect(result.status).toBe('cancelled');
+      expect(result.payment?.status).toBe('paid');
+    },
+  );
+
+  test('rejects staff attempts to cancel paid orders', async () => {
+    jest.mocked(orderRepository.findById).mockResolvedValue({
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'paid',
+      payment: {
+        provider: 'stripe',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    } as never);
+
+    await expect(
+      updateOrderStatus(orderId, 'cancelled', 'staff'),
+    ).rejects.toThrow('Staff can only advance order fulfillment status');
+    expect(orderRepository.save).not.toHaveBeenCalled();
+  });
+
+  test('rejects attempts to cancel completed orders', async () => {
+    jest.mocked(orderRepository.findById).mockResolvedValue({
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'completed',
+      payment: {
+        provider: 'stripe',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    } as never);
+
+    await expect(
+      updateOrderStatus(orderId, 'cancelled', 'admin'),
+    ).rejects.toThrow('Cannot move order from completed to cancelled');
+    expect(orderRepository.save).not.toHaveBeenCalled();
   });
 
   test('rejects manual paid transitions for Stripe orders', async () => {
