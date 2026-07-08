@@ -56,10 +56,10 @@ const createAuthResult = async (
   user: AuthenticatedUser,
   extra?: Omit<AuthResult, 'accessToken' | 'refreshToken' | 'user'>,
 ): Promise<AuthResult> => {
-  const session = await createAuthSession(user);
+  const authResult = await createAuthSession(user);
 
   return {
-    ...session,
+    ...authResult,
     ...extra,
   };
 };
