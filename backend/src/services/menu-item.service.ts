@@ -2,7 +2,7 @@ import { AppError } from '../errors/AppError';
 import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
-import { getMenuVersion } from './menu.service';
+import { bumpMenuVersion, getMenuVersion } from './menu.service';
 import { menuItemRepository } from '../repositories/menu-item.repository';
 import type { MenuItemPayload } from '../validation/menu-item.schema';
 
@@ -125,6 +125,7 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
 
 export const createMenuItem = async (payload: MenuItemPayload) => {
   const menuItem = await menuItemRepository.create(payload);
+  await bumpMenuVersion();
 
   return toPublicMenuItem(menuItem);
 };
@@ -139,6 +140,8 @@ export const updateMenuItem = async (
     throw new ServiceError('Menu item not found', 404);
   }
 
+  await bumpMenuVersion();
+
   return toPublicMenuItem(menuItem);
 };
 
@@ -148,6 +151,8 @@ export const deleteMenuItem = async (menuItemId: string) => {
   if (!menuItem) {
     throw new ServiceError('Menu item not found', 404);
   }
+
+  await bumpMenuVersion();
 
   return toPublicMenuItem(menuItem);
 };

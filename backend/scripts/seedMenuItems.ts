@@ -1,4 +1,5 @@
 import { MenuItemModel } from '../src/models/menu-item.model';
+import { bumpMenuVersion } from '../src/services/menu.service';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
@@ -160,6 +161,9 @@ const seedMenuItems = async () => {
 
   await MenuItemModel.insertMany(menuItems);
   console.log('Menu items seeded successfully');
+
+  await bumpMenuVersion();
+  console.log('Menu version bumped');
 
   await mongoose.disconnect();
   process.exit(0);

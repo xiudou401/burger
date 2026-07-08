@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { MenuItemModel } from '../src/models/menu-item.model';
-import { MenuModel } from '../src/models/menu.model';
+import { bumpMenuVersion } from '../src/services/menu.service';
 
 dotenv.config();
 
@@ -169,11 +169,7 @@ const localizeMenuItems = async () => {
     ),
   );
 
-  await MenuModel.updateOne(
-    { _id: 'main' },
-    { $set: { version: Date.now(), updatedAt: new Date() } },
-    { upsert: true },
-  );
+  await bumpMenuVersion();
 
   const matched = results.reduce((sum, result) => sum + result.matchedCount, 0);
   const modified = results.reduce(

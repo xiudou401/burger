@@ -5,3 +5,11 @@ export const getMenuVersion = async (): Promise<number> => {
 
   return menuDoc?.version ?? 0;
 };
+
+export const bumpMenuVersion = async (): Promise<number> => {
+  const version = Date.now();
+
+  await menuRepository.updateMainVersion(version);
+
+  return version;
+};
