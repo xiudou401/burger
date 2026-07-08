@@ -203,6 +203,18 @@ Run `npm run format` in either project to format its source files, or
 
 ## Architecture
 
+```mermaid
+flowchart TD
+  user["Customer / Staff / Admin"] --> frontend["React frontend<br/>Vercel"]
+  frontend -->|"/api requests"| api["Express API<br/>Render"]
+  api --> mongo["MongoDB Atlas"]
+  api --> stripe["Stripe Checkout<br/>+ Webhooks"]
+  api --> resend["Resend Email"]
+  api --> google["Google OAuth"]
+
+  github["GitHub Actions<br/>optional AWS deploy"] --> aws["AWS S3 + CloudFront<br/>ECR + ECS Fargate"]
+```
+
 The frontend is split around pages, domain stores, API clients, and reusable UI
 components. Cart state lives in a dedicated cart provider, while quote validation
 and menu-version polling are handled through cart-specific hooks. Profile and
