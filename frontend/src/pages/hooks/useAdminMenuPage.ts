@@ -3,24 +3,19 @@ import {
   createMenuItem,
   deleteMenuItem,
   fetchMenuItems,
-  MenuItemPayload,
   updateMenuItem,
 } from '../../api/menu-items';
 import type { MenuItem } from '../../types/menu-item';
-
-const emptyForm: MenuItemPayload = {
-  name: '',
-  description: '',
-  priceCents: 0,
-  image: '',
-  category: 'burger',
-  isAvailable: true,
-  isFeatured: false,
-};
+import {
+  buildMenuItemPayload,
+  emptyMenuForm,
+  menuItemToForm,
+  type AdminMenuForm,
+} from './admin-menu-form';
 
 export const useAdminMenuPage = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [form, setForm] = useState<MenuItemPayload>(emptyForm);
+  const [form, setForm] = useState<AdminMenuForm>(emptyMenuForm);
   const [editingMenuItemId, setEditingMenuItemId] = useState<string | null>(
     null,
   );
@@ -49,44 +44,43 @@ export const useAdminMenuPage = () => {
     loadMenuItems();
   }, []);
 
-  const updateForm = (
-    field: keyof MenuItemPayload,
-    value: string | boolean,
-  ) => {
+  const updateForm = (field: keyof AdminMenuForm, value: string | boolean) => {
     setForm((current) => ({
       ...current,
-      [field]: field === 'priceCents' ? Math.round(Number(value) * 100) : value,
+      [field]: value,
     }));
   };
 
   const resetForm = () => {
-    setForm(emptyForm);
+    setForm(emptyMenuForm);
     setEditingMenuItemId(null);
   };
 
   const editMenuItem = (menuItem: MenuItem) => {
     setEditingMenuItemId(menuItem.id);
-    setForm({
-      name: menuItem.name,
-      description: menuItem.description ?? '',
-      priceCents: menuItem.priceCents,
-      image: menuItem.image ?? '',
-      category: menuItem.category,
-      isAvailable: menuItem.isAvailable,
-      isFeatured: menuItem.isFeatured,
-    });
+    setForm(menuItemToForm(menuItem));
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSubmitting(true);
     setError(null);
     setMessage(null);
 
+    let payload;
+
+    try {
+      payload = buildMenuItemPayload(form);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Invalid menu item');
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       const res = editingMenuItemId
-        ? await updateMenuItem(editingMenuItemId, form)
-        : await createMenuItem(form);
+        ? await updateMenuItem(editingMenuItemId, payload)
+        : await createMenuItem(payload);
 
       setMenuItems((current) => {
         if (editingMenuItemId) {

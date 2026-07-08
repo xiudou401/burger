@@ -54,12 +54,12 @@ const AdminMenu = () => {
             Price
             <input
               className={classes.Input}
-              min="0"
+              min="0.01"
               step="0.01"
               type="number"
-              value={form.priceCents / 100}
+              value={form.price}
               required
-              onChange={(event) => updateForm('priceCents', event.target.value)}
+              onChange={(event) => updateForm('price', event.target.value)}
             />
           </label>
 
@@ -196,7 +196,15 @@ const AdminMenu = () => {
                 <button
                   className={classes.DangerButton}
                   type="button"
-                  onClick={() => removeMenuItem(menuItem.id)}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        'Are you sure you want to delete this menu item?',
+                      )
+                    ) {
+                      removeMenuItem(menuItem.id);
+                    }
+                  }}
                 >
                   Delete
                 </button>
