@@ -13,11 +13,10 @@ import {
   AuthTextLink,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
+import { isSmsAuthEnabled } from '../config/features';
 import { useLoginPage } from './hooks/useLoginPage';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useSmsLoginPage } from './hooks/useSmsLoginPage';
-
-const isSmsAuthEnabled = process.env.NODE_ENV !== 'production';
 
 const Login = () => {
   const [searchParams] = useSearchParams();

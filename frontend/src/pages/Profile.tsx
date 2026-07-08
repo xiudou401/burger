@@ -4,6 +4,7 @@ import ProfileHero from '../components/Profile/ProfileHero';
 import ProfilePageLayout from '../components/Profile/ProfilePageLayout';
 import QuickActionsCard from '../components/Profile/QuickActionsCard';
 import RecentOrdersCard from '../components/Profile/RecentOrdersCard';
+import { isSmsAuthEnabled } from '../config/features';
 import { useProfilePage } from './hooks/useProfilePage';
 
 const Profile = () => {
@@ -63,6 +64,7 @@ const Profile = () => {
             devSmsCode={devSmsCode}
             isSendingSms={isSendingSms}
             isVerifyingSms={isVerifyingSms}
+            showPhoneVerification={isSmsAuthEnabled}
             onSendPhoneCode={sendPhoneCode}
             onVerifyPhoneCode={verifyPhoneCode}
           />

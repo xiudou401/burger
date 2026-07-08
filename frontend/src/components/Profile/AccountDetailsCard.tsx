@@ -16,6 +16,7 @@ interface AccountDetailsCardProps {
   devSmsCode: string | null;
   isSendingSms: boolean;
   isVerifyingSms: boolean;
+  showPhoneVerification: boolean;
   onSendPhoneCode: () => void;
   onVerifyPhoneCode: () => void;
 }
@@ -35,6 +36,7 @@ const AccountDetailsCard = ({
   devSmsCode,
   isSendingSms,
   isVerifyingSms,
+  showPhoneVerification,
   onSendPhoneCode,
   onVerifyPhoneCode,
 }: AccountDetailsCardProps) => {
@@ -102,7 +104,7 @@ const AccountDetailsCard = ({
         </>
       )}
 
-      {!user?.phoneVerified && (
+      {showPhoneVerification && !user?.phoneVerified && (
         <div className={classes.PhonePanel}>
           <h3 className={classes.PanelTitle}>Link phone number</h3>
           <label className={classes.Field}>

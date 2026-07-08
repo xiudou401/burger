@@ -18,11 +18,10 @@ import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_POLICY_MESSAGE,
 } from '../utils/password-policy';
+import { isSmsAuthEnabled } from '../config/features';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useSignupPage } from './hooks/useSignupPage';
 import { useSmsLoginPage } from './hooks/useSmsLoginPage';
-
-const isSmsAuthEnabled = process.env.NODE_ENV !== 'production';
 
 const Signup = () => {
   const [searchParams] = useSearchParams();
