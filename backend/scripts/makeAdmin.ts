@@ -1,8 +1,9 @@
 import '../src/config/env';
 import { connectDB } from '../src/config/db';
 import { UserModel } from '../src/models/user.model';
+import { normalizeEmail } from '../src/utils/email';
 
-const email = process.argv[2]?.trim().toLowerCase();
+const email = process.argv[2] ? normalizeEmail(process.argv[2]) : undefined;
 
 if (!email || !email.includes('@')) {
   console.error('Usage: npm run make:admin -- admin@example.com');

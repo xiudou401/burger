@@ -4,6 +4,7 @@ import {
   StaffInviteStatus,
 } from '../models/staff-invite.model';
 import { createSecureToken, hashToken } from '../utils/secure-token';
+import { normalizeEmail } from '../utils/email';
 import { sendStaffInviteEmail } from './email.service';
 import { createAuthSession } from './auth-session.service';
 import type { AuthenticatedUser } from '../types/auth';
@@ -39,8 +40,6 @@ interface StaffInviteDoc {
   acceptedAt?: Date;
   createdAt: Date;
 }
-
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 const toPublicInvite = (invite: StaffInviteDoc): PublicStaffInvite => ({
   id: String(invite._id),

@@ -7,6 +7,7 @@ import {
 import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { toPublicUser } from '../utils/public-user';
+import { normalizeEmail } from '../utils/email';
 import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import {
   sendPasswordResetEmail,
@@ -47,7 +48,6 @@ interface MessageResult {
   devSmsCode?: string;
 }
 
-const normalizeEmail = (email: string) => email.trim().toLowerCase();
 const SIGNUP_DUPLICATE_MESSAGE = 'Could not create account with these details';
 const isDevEmailMode = () =>
   env.NODE_ENV !== 'production' && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
