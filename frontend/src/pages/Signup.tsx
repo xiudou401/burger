@@ -10,7 +10,6 @@ import {
   AuthSubmitButton,
   AuthSwitch,
   AuthTabs,
-  AuthTextLink,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
 import {
@@ -36,7 +35,6 @@ const Signup = () => {
     confirmPassword,
     setConfirmPassword,
     error,
-    devVerificationToken,
     isSubmitting,
     submit,
   } = useSignupPage();
@@ -125,13 +123,6 @@ const Signup = () => {
                 required: true,
               }}
             />
-            {devVerificationToken && (
-              <AuthTextLink>
-                <Link to={`/verify-email?token=${devVerificationToken}`}>
-                  Open local verification link
-                </Link>
-              </AuthTextLink>
-            )}
             {error && <AuthStatus tone="error">{error}</AuthStatus>}
             <AuthSubmitButton disabled={isSubmitting}>
               {isSubmitting ? 'Creating account...' : 'Create account'}
