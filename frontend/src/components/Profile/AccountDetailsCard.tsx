@@ -7,18 +7,6 @@ interface AccountDetailsCardProps {
   verificationError: string | null;
   isSendingVerification: boolean;
   onResendVerification: () => void;
-  phone: string;
-  onPhoneChange: (phone: string) => void;
-  smsCode: string;
-  onSmsCodeChange: (code: string) => void;
-  smsMessage: string | null;
-  smsError: string | null;
-  devSmsCode: string | null;
-  isSendingSms: boolean;
-  isVerifyingSms: boolean;
-  showPhoneVerification: boolean;
-  onSendPhoneCode: () => void;
-  onVerifyPhoneCode: () => void;
 }
 
 const AccountDetailsCard = ({
@@ -27,18 +15,6 @@ const AccountDetailsCard = ({
   verificationError,
   isSendingVerification,
   onResendVerification,
-  phone,
-  onPhoneChange,
-  smsCode,
-  onSmsCodeChange,
-  smsMessage,
-  smsError,
-  devSmsCode,
-  isSendingSms,
-  isVerifyingSms,
-  showPhoneVerification,
-  onSendPhoneCode,
-  onVerifyPhoneCode,
 }: AccountDetailsCardProps) => {
   const isContactVerified = Boolean(user?.emailVerified || user?.phoneVerified);
 
@@ -102,63 +78,6 @@ const AccountDetailsCard = ({
             <p className={classes.ErrorMessage}>{verificationError}</p>
           )}
         </>
-      )}
-
-      {showPhoneVerification && !user?.phoneVerified && (
-        <div className={classes.PhonePanel}>
-          <h3 className={classes.PanelTitle}>Link phone number</h3>
-          <label className={classes.Field}>
-            Phone
-            <input
-              className={classes.Input}
-              value={phone}
-              onChange={(event) => onPhoneChange(event.target.value)}
-              type="tel"
-              autoComplete="tel"
-              placeholder="+61412345678"
-            />
-          </label>
-          <div className={classes.Actions}>
-            <button
-              className={classes.SecondaryAction}
-              type="button"
-              onClick={onSendPhoneCode}
-              disabled={isSendingSms || !phone}
-            >
-              {isSendingSms ? 'Sending...' : 'Send SMS code'}
-            </button>
-          </div>
-          <label className={classes.Field}>
-            SMS code
-            <input
-              className={classes.Input}
-              value={smsCode}
-              onChange={(event) => onSmsCodeChange(event.target.value)}
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-            />
-          </label>
-          <div className={classes.Actions}>
-            <button
-              className={classes.PrimaryAction}
-              type="button"
-              onClick={onVerifyPhoneCode}
-              disabled={isVerifyingSms || !phone || !smsCode}
-            >
-              {isVerifyingSms ? 'Verifying...' : 'Verify phone'}
-            </button>
-          </div>
-          {smsMessage && (
-            <p className={classes.StatusMessage}>
-              {devSmsCode
-                ? `${smsMessage}. Dev code: ${devSmsCode}`
-                : smsMessage}
-            </p>
-          )}
-          {smsError && <p className={classes.ErrorMessage}>{smsError}</p>}
-        </div>
       )}
     </section>
   );

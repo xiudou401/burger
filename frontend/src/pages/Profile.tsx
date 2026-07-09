@@ -4,7 +4,6 @@ import ProfileHero from '../components/Profile/ProfileHero';
 import ProfilePageLayout from '../components/Profile/ProfilePageLayout';
 import QuickActionsCard from '../components/Profile/QuickActionsCard';
 import RecentOrdersCard from '../components/Profile/RecentOrdersCard';
-import { isSmsAuthEnabled } from '../config/features';
 import { useProfilePage } from './hooks/useProfilePage';
 
 const Profile = () => {
@@ -22,18 +21,7 @@ const Profile = () => {
     verificationMessage,
     verificationError,
     isSendingVerification,
-    phone,
-    setPhone,
-    smsCode,
-    setSmsCode,
-    smsMessage,
-    smsError,
-    devSmsCode,
-    isSendingSms,
-    isVerifyingSms,
     resendVerification,
-    sendPhoneCode,
-    verifyPhoneCode,
     logout,
   } = useProfilePage();
 
@@ -55,18 +43,6 @@ const Profile = () => {
             verificationError={verificationError}
             isSendingVerification={isSendingVerification}
             onResendVerification={resendVerification}
-            phone={phone}
-            onPhoneChange={setPhone}
-            smsCode={smsCode}
-            onSmsCodeChange={setSmsCode}
-            smsMessage={smsMessage}
-            smsError={smsError}
-            devSmsCode={devSmsCode}
-            isSendingSms={isSendingSms}
-            isVerifyingSms={isVerifyingSms}
-            showPhoneVerification={isSmsAuthEnabled}
-            onSendPhoneCode={sendPhoneCode}
-            onVerifyPhoneCode={verifyPhoneCode}
           />
           <RecentOrdersCard
             orders={orders}

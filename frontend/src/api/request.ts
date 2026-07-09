@@ -20,8 +20,6 @@ const NO_AUTO_REFRESH_PATHS = new Set([
   '/auth/forgot-password',
   '/auth/reset-password',
   '/auth/verify-email',
-  '/auth/sms/send',
-  '/auth/sms/verify',
 ]);
 let refreshPromise: Promise<AuthRefreshResponse> | null = null;
 

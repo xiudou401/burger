@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  resendVerificationEmail,
-  sendSmsCode,
-  verifySmsCode,
-} from '../../api/auth';
+import { resendVerificationEmail } from '../../api/auth';
 import { fetchMyOrders, fetchOrder } from '../../api/orders';
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 import {
@@ -30,7 +26,6 @@ const isConfirmedStripeOrder = (order: Order) =>
 export const useProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuth((ctx) => ctx.user);
-  const updateUser = useAuth((ctx) => ctx.updateUser);
   const logout = useAuth((ctx) => ctx.logout);
   const totalQuantity = useCartSelector(getTotalQuantity);
   const estimatedTotalCents = useCartSelector(getEstimatedTotalPrice);
@@ -43,13 +38,6 @@ export const useProfilePage = () => {
     null,
   );
   const [isSendingVerification, setIsSendingVerification] = useState(false);
-  const [phone, setPhone] = useState(user?.phone ?? '');
-  const [smsCode, setSmsCode] = useState('');
-  const [smsMessage, setSmsMessage] = useState<string | null>(null);
-  const [smsError, setSmsError] = useState<string | null>(null);
-  const [devSmsCode, setDevSmsCode] = useState<string | null>(null);
-  const [isSendingSms, setIsSendingSms] = useState(false);
-  const [isVerifyingSms, setIsVerifyingSms] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [ordersError, setOrdersError] = useState<string | null>(null);
@@ -215,47 +203,6 @@ export const useProfilePage = () => {
     }
   };
 
-  const sendPhoneCode = async () => {
-    setSmsMessage(null);
-    setSmsError(null);
-    setDevSmsCode(null);
-    setIsSendingSms(true);
-
-    try {
-      const res = await sendSmsCode(phone);
-      setSmsMessage(res.message);
-      setDevSmsCode(res.devSmsCode ?? null);
-      setSmsCode(res.devSmsCode ?? '');
-    } catch (err) {
-      setSmsError(
-        err instanceof Error ? err.message : 'Could not send SMS code',
-      );
-    } finally {
-      setIsSendingSms(false);
-    }
-  };
-
-  const verifyPhoneCode = async () => {
-    setSmsMessage(null);
-    setSmsError(null);
-    setIsVerifyingSms(true);
-
-    try {
-      const res = await verifySmsCode(phone, smsCode);
-
-      updateUser(res.user);
-
-      setSmsMessage('Phone verified');
-      setDevSmsCode(null);
-    } catch (err) {
-      setSmsError(
-        err instanceof Error ? err.message : 'Could not verify phone',
-      );
-    } finally {
-      setIsVerifyingSms(false);
-    }
-  };
-
   return {
     user,
     initial,
@@ -270,18 +217,7 @@ export const useProfilePage = () => {
     verificationMessage,
     verificationError,
     isSendingVerification,
-    phone,
-    setPhone,
-    smsCode,
-    setSmsCode,
-    smsMessage,
-    smsError,
-    devSmsCode,
-    isSendingSms,
-    isVerifyingSms,
     resendVerification,
-    sendPhoneCode,
-    verifyPhoneCode,
     logout,
   };
 };

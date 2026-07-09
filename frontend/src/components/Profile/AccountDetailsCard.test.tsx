@@ -17,17 +17,6 @@ const baseProps = {
   verificationError: null,
   isSendingVerification: false,
   onResendVerification: jest.fn(),
-  phone: '',
-  onPhoneChange: jest.fn(),
-  smsCode: '',
-  onSmsCodeChange: jest.fn(),
-  smsMessage: null,
-  smsError: null,
-  devSmsCode: null,
-  isSendingSms: false,
-  isVerifyingSms: false,
-  onSendPhoneCode: jest.fn(),
-  onVerifyPhoneCode: jest.fn(),
 };
 
 describe('AccountDetailsCard', () => {
@@ -35,17 +24,12 @@ describe('AccountDetailsCard', () => {
     jest.clearAllMocks();
   });
 
-  test('hides SMS phone linking when SMS auth is disabled', () => {
-    render(<AccountDetailsCard {...baseProps} showPhoneVerification={false} />);
+  test('shows account verification details without phone linking controls', () => {
+    render(<AccountDetailsCard {...baseProps} />);
 
+    expect(screen.getByText('Email status')).toBeInTheDocument();
+    expect(screen.getByText('Phone status')).toBeInTheDocument();
     expect(screen.queryByText('Link phone number')).not.toBeInTheDocument();
-    expect(screen.queryByText('Send SMS code')).not.toBeInTheDocument();
-  });
-
-  test('shows SMS phone linking when SMS auth is enabled', () => {
-    render(<AccountDetailsCard {...baseProps} showPhoneVerification />);
-
-    expect(screen.getByText('Link phone number')).toBeInTheDocument();
-    expect(screen.getByText('Send SMS code')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /verify phone/i })).toBeNull();
   });
 });
