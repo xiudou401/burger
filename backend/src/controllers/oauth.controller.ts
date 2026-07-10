@@ -34,7 +34,7 @@ const getOAuthErrorTarget = (
 };
 
 const getOAuthCallbackUrl = (provider: 'google' | 'apple') =>
-  `${env.FRONTEND_URL}/api/auth/oauth/${provider}/callback`;
+  `${env.API_URL}/api/auth/oauth/${provider}/callback`;
 
 export const oauthStartHandler = (
   req: Request,
