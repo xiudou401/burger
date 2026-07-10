@@ -5,7 +5,7 @@ import {
   listCustomersHandler,
 } from '../controllers/admin-customer.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requireAdminRole } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requireAdmin';
 import {
   validateBody,
   validateParams,
@@ -19,7 +19,7 @@ import {
 
 const router = express.Router();
 
-router.use(authenticate, requireAdminRole);
+router.use(authenticate, requirePermission('manage_customers'));
 
 router.get(
   '/',

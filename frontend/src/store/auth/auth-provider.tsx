@@ -17,6 +17,7 @@ import {
   type AuthChannelMessage,
 } from './auth-channel';
 import type { User } from '../../types/auth';
+import { getPermissionsForRole } from '../../types/permissions';
 
 interface Props {
   children: ReactNode;
@@ -25,6 +26,8 @@ interface Props {
 const normalizeUser = (user: User): User => ({
   ...user,
   role: user.role ?? 'customer',
+  permissions:
+    user.permissions ?? getPermissionsForRole(user.role ?? 'customer'),
 });
 
 export const AuthProvider = ({ children }: Props) => {

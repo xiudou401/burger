@@ -10,14 +10,14 @@ import Profile from './pages/Profile';
 import OrderDetails from './pages/OrderDetails';
 import AdminOrders from './pages/AdminOrders';
 import AdminOrderDetails from './pages/AdminOrderDetails';
+import AdminDashboard from './pages/AdminDashboard';
 import AdminLogin from './pages/AdminLogin';
 import AdminStaff from './pages/AdminStaff';
 import AdminMenu from './pages/AdminMenu';
 import AdminCustomers from './pages/AdminCustomers';
 import AcceptStaffInvite from './pages/AcceptStaffInvite';
 import RequireAuth from './components/Auth/RequireAuth';
-import RequireAdmin from './components/Auth/RequireAdmin';
-import RequireAdminRole from './components/Auth/RequireAdminRole';
+import RequirePermission from './components/Auth/RequirePermission';
 
 const App = () => {
   return (
@@ -41,7 +41,8 @@ const App = () => {
           <Route path="/orders/:orderId" element={<OrderDetails />} />
         </Route>
 
-        <Route element={<RequireAdmin />}>
+        <Route element={<RequirePermission permission="view_orders" />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/orders" element={<AdminOrders />} />
           <Route
             path="/admin/orders/:orderId"
@@ -49,9 +50,15 @@ const App = () => {
           />
         </Route>
 
-        <Route element={<RequireAdminRole />}>
+        <Route element={<RequirePermission permission="manage_menu" />}>
           <Route path="/admin/menu" element={<AdminMenu />} />
+        </Route>
+
+        <Route element={<RequirePermission permission="manage_staff" />}>
           <Route path="/admin/staff" element={<AdminStaff />} />
+        </Route>
+
+        <Route element={<RequirePermission permission="manage_customers" />}>
           <Route path="/admin/customers" element={<AdminCustomers />} />
         </Route>
       </Routes>

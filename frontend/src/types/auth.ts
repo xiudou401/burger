@@ -1,8 +1,11 @@
+import type { Permission, UserRole } from './permissions';
+
 export interface User {
   id: string;
   email?: string;
   name: string;
-  role: 'customer' | 'admin' | 'staff';
+  role: UserRole;
+  permissions?: Permission[];
   status?: 'active' | 'disabled';
   emailVerified: boolean;
   phone?: string;

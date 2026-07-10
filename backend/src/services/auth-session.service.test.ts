@@ -8,6 +8,7 @@ import {
   revokeAuthSession,
   revokeUserSessions,
 } from './auth-session.service';
+import { getPermissionsForRole } from '../types/permissions';
 
 jest.mock('../repositories/auth-session.repository', () => ({
   authSessionRepository: {
@@ -38,6 +39,7 @@ describe('auth session service', () => {
     email: 'pat@example.com',
     name: 'Pat',
     role: 'customer' as const,
+    permissions: getPermissionsForRole('customer'),
     emailVerified: true,
     phoneVerified: false,
   };

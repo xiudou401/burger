@@ -89,6 +89,7 @@ test('keys verification resend limits by user and email', () => {
       id: 'user-123',
       name: 'Pat',
       role: 'customer',
+      permissions: ['create_order', 'view_own_orders'],
       email: 'PAT@example.com',
       emailVerified: false,
       phoneVerified: false,

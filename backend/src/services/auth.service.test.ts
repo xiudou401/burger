@@ -6,6 +6,7 @@ import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendVerificationEmail } from './email.service';
 import { hashPassword } from '../utils/password';
 import { login, resetPassword, signup, verifyEmail } from './auth.service';
+import { getPermissionsForRole } from '../types/permissions';
 
 jest.mock('../repositories/user.repository', () => ({
   userRepository: {
@@ -47,6 +48,7 @@ describe('auth service', () => {
     email: 'pat@example.com',
     name: 'Pat',
     role: 'customer' as const,
+    permissions: getPermissionsForRole('customer'),
     status: 'active' as const,
     emailVerified: false,
     phone: undefined,

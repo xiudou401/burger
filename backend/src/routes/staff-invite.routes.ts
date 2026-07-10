@@ -6,7 +6,7 @@ import {
   revokeStaffInviteHandler,
 } from '../controllers/staff-invite.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requireAdminRole } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requireAdmin';
 import { validateBody, validateParams } from '../middleware/validate';
 import {
   AcceptStaffInviteSchema,
@@ -23,7 +23,7 @@ router.post(
   acceptStaffInviteHandler,
 );
 
-router.use(authenticate, requireAdminRole);
+router.use(authenticate, requirePermission('manage_staff'));
 
 router.get('/', listStaffInvitesHandler);
 router.post(

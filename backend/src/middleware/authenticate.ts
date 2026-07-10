@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import { verifyAuthToken } from '../utils/token';
+import { getPermissionsForRole } from '../types/permissions';
 
 export const authenticate = async (
   req: Request,
@@ -34,6 +35,7 @@ export const authenticate = async (
       email: user.email,
       name: user.name,
       role: user.role ?? 'customer',
+      permissions: getPermissionsForRole(user.role ?? 'customer'),
       status: user.status ?? 'active',
       emailVerified: user.emailVerified,
       phone: user.phone,

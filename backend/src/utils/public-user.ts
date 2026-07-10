@@ -1,4 +1,5 @@
 import type { AuthenticatedUser } from '../types/auth';
+import { getPermissionsForRole } from '../types/permissions';
 
 export interface PublicUserSource {
   _id: unknown;
@@ -16,6 +17,7 @@ export const toPublicUser = (user: PublicUserSource): AuthenticatedUser => ({
   email: user.email,
   name: user.name,
   role: user.role ?? 'customer',
+  permissions: getPermissionsForRole(user.role ?? 'customer'),
   status: user.status ?? 'active',
   emailVerified: user.emailVerified,
   phone: user.phone,

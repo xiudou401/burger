@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import { requireVerifiedContact } from './requireVerifiedContact';
+import { getPermissionsForRole } from '../types/permissions';
 
 const makeRequest = (overrides: Partial<NonNullable<Request['user']>> = {}) =>
   ({
@@ -8,6 +9,7 @@ const makeRequest = (overrides: Partial<NonNullable<Request['user']>> = {}) =>
       id: 'user-123',
       name: 'Pat',
       role: 'customer',
+      permissions: getPermissionsForRole('customer'),
       emailVerified: false,
       phoneVerified: false,
       ...overrides,

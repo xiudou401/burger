@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { login } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import { hasPermission } from '../../types/permissions';
 import { useAuthSubmit } from './useAuthSubmit';
 
 interface LoginLocationState {
@@ -26,7 +27,7 @@ export const useAdminLoginPage = () => {
     runSubmit(async () => {
       const res = await login(email, password);
 
-      if (res.user.role !== 'admin' && res.user.role !== 'staff') {
+      if (!hasPermission(res.user, 'view_orders')) {
         throw new Error('Admin access required');
       }
 
@@ -34,7 +35,7 @@ export const useAdminLoginPage = () => {
 
       const state = location.state as LoginLocationState | null;
       const from = state?.from;
-      const redirectTo = `${from?.pathname ?? '/admin/orders'}${from?.search ?? ''}`;
+      const redirectTo = `${from?.pathname ?? '/admin/dashboard'}${from?.search ?? ''}`;
 
       navigate(redirectTo, { replace: true });
     });

@@ -6,7 +6,7 @@ import {
   updateMenuItemHandler,
 } from '../controllers/menu-item.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requireAdminRole } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requireAdmin';
 import {
   validateBody,
   validateParams,
@@ -28,14 +28,14 @@ router.get(
 router.post(
   '/',
   authenticate,
-  requireAdminRole,
+  requirePermission('manage_menu'),
   validateBody(MenuItemPayloadSchema, 'Menu item payload'),
   createMenuItemHandler,
 );
 router.patch(
   '/:menuItemId',
   authenticate,
-  requireAdminRole,
+  requirePermission('manage_menu'),
   validateParams(MenuItemParamsSchema, 'Menu item params'),
   validateBody(MenuItemPayloadSchema, 'Menu item payload'),
   updateMenuItemHandler,
@@ -43,7 +43,7 @@ router.patch(
 router.delete(
   '/:menuItemId',
   authenticate,
-  requireAdminRole,
+  requirePermission('manage_menu'),
   validateParams(MenuItemParamsSchema, 'Menu item params'),
   deleteMenuItemHandler,
 );

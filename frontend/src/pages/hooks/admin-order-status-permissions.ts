@@ -1,5 +1,6 @@
 import type { User } from '../../types/auth';
 import type { OrderStatus } from '../../types/order';
+import { hasPermission } from '../../types/permissions';
 
 export const adminNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
   pending_payment: ['paid', 'cancelled'],
@@ -19,5 +20,7 @@ export const staffNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
   cancelled: [],
 };
 
-export const getNextStatusesByRole = (role: User['role'] | undefined) =>
-  role === 'admin' ? adminNextStatusesByStatus : staffNextStatusesByStatus;
+export const getNextStatusesByUser = (user: User | null | undefined) =>
+  hasPermission(user, 'manage_orders')
+    ? adminNextStatusesByStatus
+    : staffNextStatusesByStatus;
