@@ -52,6 +52,12 @@ const SIGNUP_DUPLICATE_MESSAGE = 'Could not create account with these details';
 const isDevEmailMode = () =>
   env.NODE_ENV !== 'production' && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
 
+const assertUserIsActive = (user: { status?: 'active' | 'disabled' }) => {
+  if (user.status === 'disabled') {
+    throw new ServiceError('Account disabled', 403);
+  }
+};
+
 const createAuthResult = async (
   user: AuthenticatedUser,
   extra?: Omit<AuthResult, 'accessToken' | 'refreshToken' | 'user'>,
@@ -118,6 +124,8 @@ export const login = async ({
     throw new ServiceError('Invalid email or password', 401);
   }
 
+  assertUserIsActive(user);
+
   if (passwordHashNeedsUpgrade(user.passwordHash)) {
     user.passwordHash = await hashPassword(password);
     await userRepository.save(user);
@@ -153,6 +161,8 @@ export const resendVerificationEmail = async (
     return { message: 'Email already verified' };
   }
 
+  assertUserIsActive(user);
+
   if (!user.email) {
     throw new ServiceError('Email is not linked to this account', 400);
   }
@@ -182,6 +192,8 @@ export const verifyEmail = async ({
     throw new ServiceError('Verification link is invalid or expired', 400);
   }
 
+  assertUserIsActive(user);
+
   user.emailVerified = true;
   user.emailVerificationTokenHash = undefined;
   user.emailVerificationExpiresAt = undefined;
@@ -201,6 +213,8 @@ export const requestPasswordReset = async ({
   if (!user) {
     return { message: 'If the email exists, a reset link has been sent' };
   }
+
+  assertUserIsActive(user);
 
   const resetToken = createSecureToken();
   user.passwordResetTokenHash = hashToken(resetToken);
@@ -230,6 +244,8 @@ export const resetPassword = async ({
   if (!user) {
     throw new ServiceError('Reset link is invalid or expired', 400);
   }
+
+  assertUserIsActive(user);
 
   user.passwordHash = await hashPassword(password);
   user.passwordResetTokenHash = undefined;
@@ -297,6 +313,8 @@ export const verifySmsCode = async ({
     throw new ServiceError('SMS code is invalid or expired', 400);
   }
 
+  assertUserIsActive(user);
+
   user.phoneVerified = true;
   user.smsVerificationCodeHash = undefined;
   user.smsVerificationExpiresAt = undefined;
@@ -340,6 +358,8 @@ export const loginWithOAuth = async ({
     if (mode === 'signup') {
       throw new ServiceError(SIGNUP_DUPLICATE_MESSAGE, 409);
     }
+
+    assertUserIsActive(user);
 
     user.name = user.name || normalizedName;
     user.emailVerified = user.emailVerified || emailVerified;

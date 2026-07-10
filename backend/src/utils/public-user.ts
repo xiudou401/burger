@@ -5,6 +5,7 @@ export interface PublicUserSource {
   email?: string;
   name: string;
   role?: AuthenticatedUser['role'];
+  status?: AuthenticatedUser['status'];
   emailVerified: boolean;
   phone?: string;
   phoneVerified: boolean;
@@ -15,6 +16,7 @@ export const toPublicUser = (user: PublicUserSource): AuthenticatedUser => ({
   email: user.email,
   name: user.name,
   role: user.role ?? 'customer',
+  status: user.status ?? 'active',
   emailVerified: user.emailVerified,
   phone: user.phone,
   phoneVerified: user.phoneVerified,

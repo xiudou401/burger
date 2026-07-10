@@ -14,6 +14,7 @@ test('maps a user document to its public authenticated shape', () => {
     email: 'pat@example.com',
     name: 'Pat',
     role: 'customer',
+    status: 'active',
     emailVerified: true,
     phone: undefined,
     phoneVerified: false,

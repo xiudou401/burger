@@ -1,4 +1,5 @@
 import { UserModel } from '../models/user.model';
+import type { SortOrder } from 'mongoose';
 
 export const userRepository = {
   existsByEmail(email: string) {
@@ -55,6 +56,24 @@ export const userRepository = {
     })
       .select('+smsVerificationCodeHash +smsVerificationExpiresAt')
       .exec();
+  },
+
+  findCustomersPage({
+    query,
+    sort,
+    skip,
+    limit,
+  }: {
+    query: Record<string, unknown>;
+    sort: Record<string, SortOrder>;
+    skip: number;
+    limit: number;
+  }) {
+    return UserModel.find(query).sort(sort).skip(skip).limit(limit).exec();
+  },
+
+  count(query: Record<string, unknown>) {
+    return UserModel.countDocuments(query).exec();
   },
 
   setEmailVerificationToken(

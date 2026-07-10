@@ -136,6 +136,12 @@ export const rotateAuthSession = async (
     throw new ServiceError('User no longer exists', 401);
   }
 
+  if (user.status === 'disabled') {
+    session.revokedAt = new Date();
+    await authSessionRepository.save(session);
+    throw new ServiceError('Account disabled', 403);
+  }
+
   const familyId = session.familyId ?? randomUUID();
   const { result, session: replacementSession } = await createSession(
     toPublicUser(user),

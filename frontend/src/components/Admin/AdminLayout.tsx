@@ -60,6 +60,16 @@ const AdminLayout = ({
               >
                 Staff
               </NavLink>
+              <NavLink
+                className={({ isActive }) =>
+                  isActive
+                    ? `${classes.NavLink} ${classes.NavLinkActive}`
+                    : classes.NavLink
+                }
+                to="/admin/customers"
+              >
+                Customers
+              </NavLink>
             </>
           )}
         </nav>

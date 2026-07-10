@@ -25,11 +25,16 @@ export const authenticate = async (
       throw new ServiceError('User no longer exists', 401);
     }
 
+    if (user.status === 'disabled') {
+      throw new ServiceError('Account disabled', 403);
+    }
+
     req.user = {
       id: user._id.toString(),
       email: user.email,
       name: user.name,
       role: user.role ?? 'customer',
+      status: user.status ?? 'active',
       emailVerified: user.emailVerified,
       phone: user.phone,
       phoneVerified: user.phoneVerified,

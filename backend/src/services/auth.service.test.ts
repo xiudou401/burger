@@ -47,7 +47,9 @@ describe('auth service', () => {
     email: 'pat@example.com',
     name: 'Pat',
     role: 'customer' as const,
+    status: 'active' as const,
     emailVerified: false,
+    phone: undefined,
     phoneVerified: false,
   };
   const userDoc = {
@@ -55,7 +57,9 @@ describe('auth service', () => {
     email: publicUser.email,
     name: publicUser.name,
     role: publicUser.role,
+    status: publicUser.status,
     emailVerified: publicUser.emailVerified,
+    phone: publicUser.phone,
     phoneVerified: publicUser.phoneVerified,
   };
 

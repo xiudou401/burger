@@ -5,6 +5,9 @@ export interface User {
   email?: string;
   passwordHash?: string;
   role: 'customer' | 'admin' | 'staff';
+  status: 'active' | 'disabled';
+  disabledAt?: Date;
+  disabledReason?: string;
   emailVerified: boolean;
   phone?: string;
   phoneVerified: boolean;
@@ -42,6 +45,21 @@ const userSchema = new Schema<User>(
       enum: ['customer', 'admin', 'staff'],
       required: true,
       default: 'customer',
+    },
+    status: {
+      type: String,
+      enum: ['active', 'disabled'],
+      required: true,
+      default: 'active',
+      index: true,
+    },
+    disabledAt: {
+      type: Date,
+    },
+    disabledReason: {
+      type: String,
+      trim: true,
+      maxlength: 240,
     },
     emailVerified: {
       type: Boolean,
