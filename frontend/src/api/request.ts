@@ -5,8 +5,8 @@ import {
   notifyAuthSessionRefreshed,
 } from './auth-events';
 import type { AuthResponse } from '../types/auth';
+import { API_BASE } from './api-base';
 
-const API_BASE = '/api';
 const DEFAULT_TIMEOUT = 10000;
 const RETRY_COUNT = 1;
 const RETRY_DELAY_MS = 300;
