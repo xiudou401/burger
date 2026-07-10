@@ -29,17 +29,20 @@ interface ErrorResponse {
   message: string;
   statusCode?: number;
   type?: string;
+  requestId?: string;
 }
 
 export class ApiError extends Error {
   statusCode: number;
   body: ErrorResponse;
+  requestId?: string;
 
   constructor(statusCode: number, body: ErrorResponse) {
     super(body?.message || `API ${statusCode}`);
     this.name = 'ApiError';
     this.statusCode = statusCode;
     this.body = body;
+    this.requestId = body.requestId;
   }
 }
 

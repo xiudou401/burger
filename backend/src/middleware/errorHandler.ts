@@ -43,23 +43,48 @@ const getDuplicateKeyMessage = (error: {
 
 export const errorHandler = (
   err: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction,
 ) => {
+  const requestId = req.requestId ?? 'unknown';
+
+  const logError = (statusCode: number, type: string, message: string) => {
+    console.error(
+      JSON.stringify({
+        level: statusCode >= 500 ? 'error' : 'warn',
+        event: 'http_error',
+        requestId,
+        method: req.method,
+        path: req.originalUrl,
+        statusCode,
+        userId: req.user?.id,
+        errorType: type,
+        message,
+      }),
+    );
+  };
+
   if (isPayloadTooLargeError(err)) {
+    logError(413, 'PayloadTooLargeError', 'Request body is too large');
+
     return res.status(413).json({
       message: 'Request body is too large',
       statusCode: 413,
       type: 'PayloadTooLargeError',
+      requestId,
     });
   }
 
   if (isMongoDuplicateKeyError(err)) {
+    const message = getDuplicateKeyMessage(err);
+    logError(409, 'DuplicateKeyError', message);
+
     return res.status(409).json({
-      message: getDuplicateKeyMessage(err),
+      message,
       statusCode: 409,
       type: 'DuplicateKeyError',
+      requestId,
     });
   }
 
@@ -72,25 +97,30 @@ export const errorHandler = (
       message: string;
       statusCode: number;
       type: string;
+      requestId: string;
       issues?: ValidationError['issues'];
     } = {
       message: err.isOperational ? err.message : 'Internal server error',
       statusCode: err.statusCode,
       type: err.constructor.name,
+      requestId,
     };
 
     if (err instanceof ValidationError) {
       body.issues = err.issues;
     }
 
+    logError(err.statusCode, err.constructor.name, body.message);
+
     return res.status(err.statusCode).json(body);
   }
 
-  console.error('Unknown error:', err);
+  logError(500, 'UnknownError', 'Internal server error');
 
   return res.status(500).json({
     message: 'Internal server error',
     statusCode: 500,
     type: 'UnknownError',
+    requestId,
   });
 };

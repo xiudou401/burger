@@ -1,18 +1,34 @@
 import type { NextFunction, Request, Response } from 'express';
 import { errorHandler } from './errorHandler';
 
+const mockRequest = (overrides: Partial<Request> = {}) =>
+  ({
+    requestId: 'req-test-123',
+    method: 'POST',
+    originalUrl: '/api/test',
+    ...overrides,
+  }) as Request;
+
 const mockResponse = () =>
   ({
     status: jest.fn().mockReturnThis(),
     json: jest.fn().mockReturnThis(),
   }) as unknown as Response;
 
+beforeEach(() => {
+  jest.spyOn(console, 'error').mockImplementation(() => undefined);
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
 test('returns a clear 413 response for oversized JSON bodies', () => {
   const res = mockResponse();
 
   errorHandler(
     { status: 413, type: 'entity.too.large' },
-    {} as Request,
+    mockRequest(),
     res,
     jest.fn() as NextFunction,
   );
@@ -22,6 +38,7 @@ test('returns a clear 413 response for oversized JSON bodies', () => {
     message: 'Request body is too large',
     statusCode: 413,
     type: 'PayloadTooLargeError',
+    requestId: 'req-test-123',
   });
 });
 
@@ -30,7 +47,7 @@ test('maps Mongo duplicate email errors to a generic 409 response', () => {
 
   errorHandler(
     { code: 11000, keyPattern: { email: 1 } },
-    {} as Request,
+    mockRequest(),
     res,
     jest.fn() as NextFunction,
   );
@@ -40,6 +57,7 @@ test('maps Mongo duplicate email errors to a generic 409 response', () => {
     message: 'Could not create account with these details',
     statusCode: 409,
     type: 'DuplicateKeyError',
+    requestId: 'req-test-123',
   });
 });
 
@@ -48,7 +66,7 @@ test('maps Mongo duplicate phone errors to a stable 409 response', () => {
 
   errorHandler(
     { code: 11000, keyPattern: { phone: 1 } },
-    {} as Request,
+    mockRequest(),
     res,
     jest.fn() as NextFunction,
   );
@@ -58,5 +76,6 @@ test('maps Mongo duplicate phone errors to a stable 409 response', () => {
     message: 'Phone is already linked to another account',
     statusCode: 409,
     type: 'DuplicateKeyError',
+    requestId: 'req-test-123',
   });
 });
