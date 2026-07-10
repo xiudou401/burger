@@ -180,6 +180,22 @@ Load Balancer.
 The repository also includes an optional GitHub Actions workflow for deploying
 the AWS stack.
 
+## Technical Design Docs
+
+The project includes design notes for the main engineering decisions:
+
+- [`docs/architecture.md`](docs/architecture.md) explains the frontend/backend
+  structure, permission model, data integrity rules, and observability approach.
+- [`docs/auth-design.md`](docs/auth-design.md) covers refresh-token rotation,
+  OAuth state handling, email verification, and permission-based access.
+- [`docs/order-state-machine.md`](docs/order-state-machine.md) documents order
+  transitions, permission rules, optimistic concurrency, and failure cases.
+- [`docs/stripe-webhook-design.md`](docs/stripe-webhook-design.md) explains
+  webhook signature verification, idempotency, payment matching, and late event
+  handling.
+- [`docs/deployment.md`](docs/deployment.md) summarizes the production topology,
+  domains, environment variables, webhooks, and operational checks.
+
 ## Test Commands
 
 ```bash
