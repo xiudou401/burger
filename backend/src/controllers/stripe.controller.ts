@@ -10,6 +10,18 @@ import {
 } from '../services/order.service';
 import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 
+const getOrderIdFromCheckoutSession = (session: {
+  metadata?: Record<string, string> | null;
+  client_reference_id?: string | null;
+}) => session.metadata?.orderId ?? session.client_reference_id ?? undefined;
+
+const getOrderIdFromPaymentIntent = (paymentIntent: {
+  metadata?: Record<string, string>;
+}) =>
+  typeof paymentIntent.metadata?.orderId === 'string'
+    ? paymentIntent.metadata.orderId
+    : undefined;
+
 const getStripe = () => {
   if (!env.STRIPE_SECRET_KEY) {
     throw new ServiceError('Stripe is not configured', 503);
@@ -62,18 +74,31 @@ export const stripeWebhookHandler = async (
     }
 
     try {
+      let orderId: string | undefined;
+
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as StripeCheckoutCompletedSession;
+        orderId = getOrderIdFromCheckoutSession(session);
         await markStripeCheckoutPaid(session);
       }
 
       if (event.type === 'checkout.session.expired') {
-        const session = event.data.object as { id: string };
+        const session = event.data.object as {
+          id: string;
+          metadata?: Record<string, string> | null;
+          client_reference_id?: string | null;
+        };
+        orderId = getOrderIdFromCheckoutSession(session);
         await markStripeCheckoutFailed(session.id, 'cancelled');
       }
 
       if (event.type === 'checkout.session.async_payment_failed') {
-        const session = event.data.object as { id: string };
+        const session = event.data.object as {
+          id: string;
+          metadata?: Record<string, string> | null;
+          client_reference_id?: string | null;
+        };
+        orderId = getOrderIdFromCheckoutSession(session);
         await markStripeCheckoutFailed(session.id, 'failed');
       }
 
@@ -81,17 +106,14 @@ export const stripeWebhookHandler = async (
         const paymentIntent = event.data.object as {
           metadata?: Record<string, string>;
         };
-        const orderId =
-          typeof paymentIntent.metadata?.orderId === 'string'
-            ? paymentIntent.metadata.orderId
-            : undefined;
+        orderId = getOrderIdFromPaymentIntent(paymentIntent);
 
         if (orderId) {
           await markStripeOrderFailed(orderId);
         }
       }
 
-      await stripeWebhookEventRepository.markProcessed(event.id);
+      await stripeWebhookEventRepository.markProcessed(event.id, orderId);
     } catch (error) {
       await stripeWebhookEventRepository.markFailed(event.id, error);
       throw error;

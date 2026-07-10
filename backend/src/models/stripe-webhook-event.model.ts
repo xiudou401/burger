@@ -5,6 +5,7 @@ export type StripeWebhookEventStatus = 'processing' | 'processed' | 'failed';
 export interface StripeWebhookEvent {
   stripeEventId: string;
   eventType: string;
+  orderId?: string;
   status: StripeWebhookEventStatus;
   attempts: number;
   lastError?: string;
@@ -26,6 +27,11 @@ const stripeWebhookEventSchema = new Schema<StripeWebhookEvent>(
       type: String,
       required: true,
       trim: true,
+    },
+    orderId: {
+      type: String,
+      trim: true,
+      index: true,
     },
     status: {
       type: String,
@@ -51,6 +57,7 @@ const stripeWebhookEventSchema = new Schema<StripeWebhookEvent>(
 );
 
 stripeWebhookEventSchema.index({ status: 1, updatedAt: -1 });
+stripeWebhookEventSchema.index({ orderId: 1, createdAt: -1 });
 
 export const StripeWebhookEventModel = model<StripeWebhookEvent>(
   'StripeWebhookEvent',

@@ -109,6 +109,7 @@ describe('stripe webhook controller', () => {
     });
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
       'evt_test_123',
+      '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ received: true });
@@ -143,6 +144,9 @@ describe('stripe webhook controller', () => {
       data: {
         object: {
           id: 'cs_test_123',
+          metadata: {
+            orderId: '507f1f77bcf86cd799439012',
+          },
         },
       },
     });
@@ -161,6 +165,10 @@ describe('stripe webhook controller', () => {
     expect(markStripeCheckoutFailed).toHaveBeenCalledWith(
       'cs_test_123',
       'cancelled',
+    );
+    expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
+      'evt_test_123',
+      '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -190,6 +198,10 @@ describe('stripe webhook controller', () => {
     await stripeWebhookHandler(req, res, next);
 
     expect(markStripeOrderFailed).toHaveBeenCalledWith(
+      '507f1f77bcf86cd799439012',
+    );
+    expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
+      'evt_test_123',
       '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);

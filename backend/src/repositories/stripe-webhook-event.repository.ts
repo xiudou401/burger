@@ -47,13 +47,14 @@ export const stripeWebhookEventRepository = {
     return { shouldProcess: true, isDuplicate: true };
   },
 
-  markProcessed(stripeEventId: string) {
+  markProcessed(stripeEventId: string, orderId?: string) {
     return StripeWebhookEventModel.findOneAndUpdate(
       { stripeEventId },
       {
         $set: {
           status: 'processed',
           processedAt: new Date(),
+          ...(orderId ? { orderId } : {}),
         },
         $unset: {
           lastError: '',
