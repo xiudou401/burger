@@ -6,6 +6,8 @@ import authRoutes from './routes/auth.routes';
 import orderRoutes from './routes/order.routes';
 import staffInviteRoutes from './routes/staff-invite.routes';
 import adminCustomerRoutes from './routes/admin-customer.routes';
+import auditLogRoutes from './routes/audit-log.routes';
+import adminDashboardRoutes from './routes/admin-dashboard.routes';
 import stripeRoutes from './routes/stripe.routes';
 import path from 'path';
 import cors from 'cors';
@@ -48,8 +50,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/menu-items', menuItemRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
 app.use('/api/staff-invites', staffInviteRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/menu-version', menuVersionRoutes);
 
 // 404 handler

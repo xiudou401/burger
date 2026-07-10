@@ -28,6 +28,10 @@ export const menuItemRepository = {
     }).lean();
   },
 
+  findById(menuItemId: string) {
+    return MenuItemModel.findById(menuItemId).lean().exec();
+  },
+
   create(
     data: Pick<
       MenuItem,

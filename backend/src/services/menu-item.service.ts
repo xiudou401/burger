@@ -5,6 +5,8 @@ import type { SortOrder } from 'mongoose';
 import { bumpMenuVersion, getMenuVersion } from './menu.service';
 import { menuItemRepository } from '../repositories/menu-item.repository';
 import type { MenuItemPayload } from '../validation/menu-item.schema';
+import type { AuthenticatedUser } from '../types/auth';
+import { recordAuditLog } from './audit-log.service';
 
 interface MenuItemQuery {
   keyword?: string;
@@ -123,36 +125,86 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
   }
 };
 
-export const createMenuItem = async (payload: MenuItemPayload) => {
+type AuditActor = Pick<AuthenticatedUser, 'id' | 'role'>;
+
+export const createMenuItem = async (
+  payload: MenuItemPayload,
+  actor?: AuditActor,
+) => {
   const menuItem = await menuItemRepository.create(payload);
+  const publicMenuItem = toPublicMenuItem(menuItem);
+
   await bumpMenuVersion();
 
-  return toPublicMenuItem(menuItem);
+  if (actor) {
+    await recordAuditLog({
+      actorId: actor.id,
+      actorRole: actor.role,
+      action: 'menu_item.created',
+      entityType: 'menu_item',
+      entityId: publicMenuItem.id,
+      after: publicMenuItem,
+    });
+  }
+
+  return publicMenuItem;
 };
 
 export const updateMenuItem = async (
   menuItemId: string,
   payload: MenuItemPayload,
+  actor?: AuditActor,
 ) => {
+  const previousMenuItem = await menuItemRepository.findById(menuItemId);
   const menuItem = await menuItemRepository.updateById(menuItemId, payload);
 
   if (!menuItem) {
     throw new ServiceError('Menu item not found', 404);
   }
 
+  const publicMenuItem = toPublicMenuItem(menuItem);
+
   await bumpMenuVersion();
 
-  return toPublicMenuItem(menuItem);
+  if (actor) {
+    await recordAuditLog({
+      actorId: actor.id,
+      actorRole: actor.role,
+      action: 'menu_item.updated',
+      entityType: 'menu_item',
+      entityId: publicMenuItem.id,
+      before: previousMenuItem ? toPublicMenuItem(previousMenuItem) : undefined,
+      after: publicMenuItem,
+    });
+  }
+
+  return publicMenuItem;
 };
 
-export const deleteMenuItem = async (menuItemId: string) => {
+export const deleteMenuItem = async (
+  menuItemId: string,
+  actor?: AuditActor,
+) => {
   const menuItem = await menuItemRepository.deleteById(menuItemId);
 
   if (!menuItem) {
     throw new ServiceError('Menu item not found', 404);
   }
 
+  const publicMenuItem = toPublicMenuItem(menuItem);
+
   await bumpMenuVersion();
 
-  return toPublicMenuItem(menuItem);
+  if (actor) {
+    await recordAuditLog({
+      actorId: actor.id,
+      actorRole: actor.role,
+      action: 'menu_item.deleted',
+      entityType: 'menu_item',
+      entityId: publicMenuItem.id,
+      before: publicMenuItem,
+    });
+  }
+
+  return publicMenuItem;
 };
