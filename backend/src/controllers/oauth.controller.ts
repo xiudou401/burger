@@ -16,6 +16,7 @@ import {
   OAuthStartQuerySchema,
 } from '../validation/oauth.schema';
 import type { OAuthStartQueryPayload } from '../validation/oauth.schema';
+import { hasPermission } from '../types/permissions';
 
 const redirectWithError = (
   res: Response,
@@ -107,8 +108,8 @@ const redirectWithAuth = (
   setRefreshCookie(res, result.refreshToken);
 
   const params = new URLSearchParams({
-    ...(result.user.role === 'admin' || result.user.role === 'staff'
-      ? { redirectTo: '/admin/orders' }
+    ...(hasPermission(result.user, 'view_orders')
+      ? { redirectTo: '/admin/dashboard' }
       : {}),
   });
   const hash = params.size > 0 ? `#${params.toString()}` : '';
@@ -214,11 +215,7 @@ export const oauthCallbackHandler = async (
         mode: mode === 'signup' ? 'signup' : 'login',
       });
 
-      if (
-        mode === 'admin' &&
-        result.user.role !== 'admin' &&
-        result.user.role !== 'staff'
-      ) {
+      if (mode === 'admin' && !hasPermission(result.user, 'view_orders')) {
         return redirectWithError(
           res,
           'Admin access required',
