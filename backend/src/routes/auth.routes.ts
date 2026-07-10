@@ -7,12 +7,10 @@ import {
   refreshHandler,
   resendVerificationHandler,
   resetPasswordHandler,
-  sendSmsCodeHandler,
   signupHandler,
   verifyEmailHandler,
-  verifySmsCodeHandler,
 } from '../controllers/auth.controller';
-import { authenticate, optionalAuthenticate } from '../middleware/authenticate';
+import { authenticate } from '../middleware/authenticate';
 import {
   oauthCallbackHandler,
   oauthStartHandler,
@@ -29,10 +27,8 @@ import {
   ForgotPasswordSchema,
   LoginSchema,
   ResetPasswordSchema,
-  SendSmsCodeSchema,
   SignupSchema,
   VerifyEmailSchema,
-  VerifySmsCodeSchema,
 } from '../validation/auth.schema';
 
 const router = express.Router();
@@ -87,21 +83,6 @@ router.post(
   authAttemptRateLimiter,
   validateBody(ResetPasswordSchema, 'Reset password payload'),
   resetPasswordHandler,
-);
-router.post(
-  '/sms/send',
-  verifyTrustedOrigin,
-  authActionRateLimiter,
-  optionalAuthenticate,
-  validateBody(SendSmsCodeSchema, 'Send SMS code payload'),
-  sendSmsCodeHandler,
-);
-router.post(
-  '/sms/verify',
-  verifyTrustedOrigin,
-  authAttemptRateLimiter,
-  validateBody(VerifySmsCodeSchema, 'Verify SMS code payload'),
-  verifySmsCodeHandler,
 );
 router.get('/oauth/:provider/callback', oauthCallbackHandler);
 router.get('/oauth/:provider', oauthStartHandler);
