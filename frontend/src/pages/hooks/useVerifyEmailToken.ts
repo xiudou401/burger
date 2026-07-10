@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { verifyEmail } from '../../api/auth';
+import { resendVerificationEmail, verifyEmail } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+
+export type VerifyEmailTone = 'error' | 'info' | 'success';
 
 export const useVerifyEmailToken = (
   token: string,
@@ -10,7 +12,9 @@ export const useVerifyEmailToken = (
   const updateUser = useAuth((ctx) => ctx.updateUser);
   const didVerifyRef = useRef(false);
   const [message, setMessage] = useState('Checking your verification link...');
-  const [isError, setIsError] = useState(false);
+  const [tone, setTone] = useState<VerifyEmailTone>('info');
+  const [isResending, setIsResending] = useState(false);
+  const canResend = Boolean(user?.email && !user.emailVerified);
 
   useEffect(() => {
     if (didVerifyRef.current) {
@@ -25,29 +29,50 @@ export const useVerifyEmailToken = (
           ? 'Your account was created, but the verification email could not be sent. Please request a new verification email from your account.'
           : 'Check your email for the verification link.',
       );
-      setIsError(false);
+      setTone('info');
       return;
     }
 
-    verifyEmail(token)
+    const tokenToVerify = token;
+    window.history.replaceState({}, '', '/verify-email');
+
+    verifyEmail(tokenToVerify)
       .then((res) => {
-        window.history.replaceState({}, '', '/verify-email');
         setMessage(res.message);
-        setIsError(false);
+        setTone('success');
 
         if (user && res.user && user.id === res.user.id) {
           updateUser(res.user);
         }
       })
       .catch((err) => {
-        window.history.replaceState({}, '', '/verify-email');
         setMessage(err instanceof Error ? err.message : 'Verification failed');
-        setIsError(true);
+        setTone('error');
       });
   }, [emailDelivery, token, updateUser, user]);
 
+  const resendVerification = async () => {
+    if (!canResend || isResending) return;
+
+    setIsResending(true);
+
+    try {
+      const res = await resendVerificationEmail();
+      setMessage(res.message);
+      setTone('success');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Could not send email');
+      setTone('error');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return {
+    canResend,
+    isResending,
     message,
-    isError,
+    resendVerification,
+    tone,
   };
 };

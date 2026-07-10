@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   AuthHeader,
   AuthStatus,
+  AuthSubmitButton,
   AuthSwitch,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthCenteredPage } from '../components/Auth/AuthLayout/AuthLayout';
@@ -11,7 +12,8 @@ const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const emailDelivery = searchParams.get('emailDelivery');
-  const { message, isError } = useVerifyEmailToken(token, emailDelivery);
+  const { canResend, isResending, message, resendVerification, tone } =
+    useVerifyEmailToken(token, emailDelivery);
 
   return (
     <AuthCenteredPage>
@@ -20,7 +22,17 @@ const VerifyEmail = () => {
         subtitle="Your account security matters before checkout."
       />
 
-      <AuthStatus tone={isError ? 'error' : 'success'}>{message}</AuthStatus>
+      <AuthStatus tone={tone}>{message}</AuthStatus>
+
+      {canResend && (
+        <AuthSubmitButton
+          type="button"
+          disabled={isResending}
+          onClick={resendVerification}
+        >
+          {isResending ? 'Sending...' : 'Resend verification email'}
+        </AuthSubmitButton>
+      )}
 
       <AuthSwitch>
         Continue to <Link to="/">menu</Link>

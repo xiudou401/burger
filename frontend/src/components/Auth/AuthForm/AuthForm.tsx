@@ -25,7 +25,7 @@ interface AuthSubmitButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 interface AuthStatusProps {
-  tone: 'error' | 'success';
+  tone: 'error' | 'info' | 'success';
   children: ReactNode;
 }
 
@@ -97,11 +97,14 @@ export const AuthSubmitButton = ({
 };
 
 export const AuthStatus = ({ tone, children }: AuthStatusProps) => {
-  return (
-    <p className={tone === 'error' ? classes.Error : classes.Success}>
-      {children}
-    </p>
-  );
+  const className =
+    tone === 'error'
+      ? classes.Error
+      : tone === 'success'
+        ? classes.Success
+        : classes.Info;
+
+  return <p className={className}>{children}</p>;
 };
 
 export const AuthSwitch = ({ children }: AuthSwitchProps) => {

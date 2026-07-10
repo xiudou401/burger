@@ -188,6 +188,16 @@
   line-height: 1.35;
 }
 
+.Info {
+  margin: 0;
+  padding: 12rem 14rem;
+  border-radius: 8rem;
+  background: #fff4cf;
+  color: #6b4b00;
+  font-size: 15rem;
+  line-height: 1.35;
+}
+
 .Submit {
   height: 54rem;
   margin-top: 4rem;
