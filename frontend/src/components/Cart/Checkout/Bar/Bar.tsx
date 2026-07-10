@@ -6,6 +6,8 @@ import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
 import { formatCurrency } from '../../../../utils/currency';
+import { ApiError } from '../../../../api/request';
+import { HTTP_STATUS } from '../../../../api/http-status';
 
 interface BarProps {
   totalCents: number;
@@ -60,8 +62,17 @@ const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
       onOrderComplete();
       window.location.assign(checkoutUrl);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Could not place order';
+      const isMenuConflict =
+        err instanceof ApiError && err.statusCode === HTTP_STATUS.CONFLICT;
+      const requestId =
+        err instanceof ApiError && err.requestId
+          ? ` Reference: ${err.requestId}`
+          : '';
+      const errorMessage = isMenuConflict
+        ? `Some menu items have changed. Please review your cart before checkout.${requestId}`
+        : err instanceof Error
+          ? `${err.message}${requestId}`
+          : 'Could not place order';
 
       setError(errorMessage);
       showToast({ message: errorMessage, tone: 'error' });

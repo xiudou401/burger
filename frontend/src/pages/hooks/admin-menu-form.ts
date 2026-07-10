@@ -4,6 +4,10 @@ export type AdminMenuForm = Omit<MenuItemPayload, 'priceCents'> & {
   price: string;
 };
 
+export type AdminMenuFormErrors = Partial<
+  Record<'name' | 'price' | 'image', string>
+>;
+
 export const emptyMenuForm: AdminMenuForm = {
   name: '',
   description: '',
@@ -32,21 +36,43 @@ export const menuItemToForm = (menuItem: {
   isFeatured: menuItem.isFeatured,
 });
 
-export const buildMenuItemPayload = (form: AdminMenuForm): MenuItemPayload => {
+export const validateMenuItemForm = (
+  form: AdminMenuForm,
+): AdminMenuFormErrors => {
+  const errors: AdminMenuFormErrors = {};
   const name = form.name.trim();
 
   if (!name) {
-    throw new Error('Name is required');
+    errors.name = 'Name is required';
   }
 
   const price = Number(form.price);
 
   if (!Number.isFinite(price) || price <= 0) {
-    throw new Error('Price must be greater than 0');
+    errors.price = 'Price must be greater than 0';
   }
 
+  const image = form.image.trim();
+
+  if (image && !image.startsWith('/') && !/^https?:\/\/[^\s]+$/i.test(image)) {
+    errors.image = 'Image must be a URL or app path';
+  }
+
+  return errors;
+};
+
+export const buildMenuItemPayload = (form: AdminMenuForm): MenuItemPayload => {
+  const errors = validateMenuItemForm(form);
+  const firstError = Object.values(errors)[0];
+
+  if (firstError) {
+    throw new Error(firstError);
+  }
+
+  const price = Number(form.price);
+
   return {
-    name,
+    name: form.name.trim(),
     description: form.description.trim(),
     priceCents: Math.round(price * 100),
     image: form.image.trim(),

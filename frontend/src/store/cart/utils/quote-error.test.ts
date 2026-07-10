@@ -19,4 +19,12 @@ describe('getQuoteErrorMessage', () => {
       getQuoteErrorMessage(new ApiError(400, { message: 'Invalid cart' })),
     ).toBe('Could not validate your cart. Please try again.');
   });
+
+  it('uses a cart review message for menu version conflicts', () => {
+    expect(
+      getQuoteErrorMessage(new ApiError(409, { message: 'Menu updated' })),
+    ).toBe(
+      'Some menu items have changed. Please review your cart before checkout.',
+    );
+  });
 });

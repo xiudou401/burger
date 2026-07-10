@@ -13,6 +13,7 @@ const AdminMenu = () => {
     isSubmitting,
     error,
     message,
+    fieldErrors,
     updateForm,
     submit,
     editMenuItem,
@@ -43,17 +44,26 @@ const AdminMenu = () => {
           <label className={classes.Field}>
             Name
             <input
-              className={classes.Input}
+              className={`${classes.Input} ${
+                fieldErrors.name ? classes.InputError : ''
+              }`}
+              aria-invalid={fieldErrors.name ? 'true' : undefined}
               value={form.name}
               required
               onChange={(event) => updateForm('name', event.target.value)}
             />
+            {fieldErrors.name && (
+              <span className={classes.FieldError}>{fieldErrors.name}</span>
+            )}
           </label>
 
           <label className={classes.Field}>
             Price
             <input
-              className={classes.Input}
+              className={`${classes.Input} ${
+                fieldErrors.price ? classes.InputError : ''
+              }`}
+              aria-invalid={fieldErrors.price ? 'true' : undefined}
               min="0.01"
               step="0.01"
               type="number"
@@ -61,6 +71,9 @@ const AdminMenu = () => {
               required
               onChange={(event) => updateForm('price', event.target.value)}
             />
+            {fieldErrors.price && (
+              <span className={classes.FieldError}>{fieldErrors.price}</span>
+            )}
           </label>
 
           <label className={classes.Field}>
@@ -103,11 +116,17 @@ const AdminMenu = () => {
           <label className={classes.Field}>
             Image
             <input
-              className={classes.Input}
+              className={`${classes.Input} ${
+                fieldErrors.image ? classes.InputError : ''
+              }`}
+              aria-invalid={fieldErrors.image ? 'true' : undefined}
               placeholder="/img/meals/1.png"
               value={form.image}
               onChange={(event) => updateForm('image', event.target.value)}
             />
+            {fieldErrors.image && (
+              <span className={classes.FieldError}>{fieldErrors.image}</span>
+            )}
           </label>
 
           <label className={`${classes.Field} ${classes.DescriptionField}`}>

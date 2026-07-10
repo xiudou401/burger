@@ -1,4 +1,8 @@
-import { buildMenuItemPayload, menuItemToForm } from './admin-menu-form';
+import {
+  buildMenuItemPayload,
+  menuItemToForm,
+  validateMenuItemForm,
+} from './admin-menu-form';
 
 const validForm = {
   name: ' Classic Burger ',
@@ -37,6 +41,33 @@ describe('admin menu form helpers', () => {
 
   test('keeps image optional', () => {
     expect(buildMenuItemPayload({ ...validForm, image: ' ' }).image).toBe('');
+  });
+
+  test('accepts app paths and http image URLs', () => {
+    expect(
+      validateMenuItemForm({ ...validForm, image: '/img/item.png' }),
+    ).toEqual({});
+    expect(
+      validateMenuItemForm({
+        ...validForm,
+        image: 'https://example.com/item.png',
+      }),
+    ).toEqual({});
+  });
+
+  test('returns field-level errors', () => {
+    expect(
+      validateMenuItemForm({
+        ...validForm,
+        name: ' ',
+        price: '0',
+        image: 'not a url',
+      }),
+    ).toEqual({
+      name: 'Name is required',
+      price: 'Price must be greater than 0',
+      image: 'Image must be a URL or app path',
+    });
   });
 
   test('maps menu items into editable form state', () => {

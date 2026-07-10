@@ -10,7 +10,9 @@ import {
   buildMenuItemPayload,
   emptyMenuForm,
   menuItemToForm,
+  validateMenuItemForm,
   type AdminMenuForm,
+  type AdminMenuFormErrors,
 } from './admin-menu-form';
 
 export const useAdminMenuPage = () => {
@@ -23,6 +25,7 @@ export const useAdminMenuPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<AdminMenuFormErrors>({});
 
   const isEditing = useMemo(() => !!editingMenuItemId, [editingMenuItemId]);
 
@@ -49,31 +52,45 @@ export const useAdminMenuPage = () => {
       ...current,
       [field]: value,
     }));
+    setFieldErrors((current) => {
+      if (!(field in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field as keyof AdminMenuFormErrors];
+      return next;
+    });
   };
 
   const resetForm = () => {
     setForm(emptyMenuForm);
     setEditingMenuItemId(null);
+    setFieldErrors({});
   };
 
   const editMenuItem = (menuItem: MenuItem) => {
     setEditingMenuItemId(menuItem.id);
     setForm(menuItemToForm(menuItem));
+    setFieldErrors({});
   };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
     setMessage(null);
+    setFieldErrors({});
 
     let payload;
+    const nextFieldErrors = validateMenuItemForm(form);
 
-    try {
-      payload = buildMenuItemPayload(form);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid menu item');
+    if (Object.keys(nextFieldErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setError('Please fix the highlighted fields.');
       return;
     }
+
+    payload = buildMenuItemPayload(form);
 
     setIsSubmitting(true);
 
@@ -126,6 +143,7 @@ export const useAdminMenuPage = () => {
     isSubmitting,
     error,
     message,
+    fieldErrors,
     updateForm,
     submit,
     editMenuItem,

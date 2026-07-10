@@ -2,6 +2,10 @@ import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 
 export const getQuoteErrorMessage = (error: unknown) => {
+  if (error instanceof ApiError && error.statusCode === HTTP_STATUS.CONFLICT) {
+    return 'Some menu items have changed. Please review your cart before checkout.';
+  }
+
   if (
     error instanceof ApiError &&
     (error.statusCode === HTTP_STATUS.NETWORK_ERROR ||
