@@ -1,18 +1,52 @@
 import { ServiceError } from '../errors/ServiceError';
-import { assertOrderTransition } from './order-status';
+import {
+  allowedOrderTransitions,
+  assertCanTransitionOrderStatus,
+  canTransitionOrderStatus,
+} from './order-status-machine';
 
 test('allows expected order status transitions', () => {
-  expect(() => assertOrderTransition('pending_payment', 'paid')).not.toThrow();
-  expect(() => assertOrderTransition('paid', 'preparing')).not.toThrow();
-  expect(() => assertOrderTransition('preparing', 'ready')).not.toThrow();
-  expect(() => assertOrderTransition('ready', 'completed')).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('pending_payment', 'paid'),
+  ).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('pending_payment', 'cancelled'),
+  ).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('paid', 'preparing'),
+  ).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('paid', 'cancelled'),
+  ).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('preparing', 'ready'),
+  ).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('preparing', 'cancelled'),
+  ).not.toThrow();
+  expect(() =>
+    assertCanTransitionOrderStatus('ready', 'completed'),
+  ).not.toThrow();
 });
 
 test('blocks invalid order status transitions', () => {
-  expect(() => assertOrderTransition('pending_payment', 'completed')).toThrow(
+  expect(() =>
+    assertCanTransitionOrderStatus('pending_payment', 'completed'),
+  ).toThrow(ServiceError);
+  expect(() => assertCanTransitionOrderStatus('completed', 'paid')).toThrow(
     ServiceError,
   );
-  expect(() => assertOrderTransition('completed', 'paid')).toThrow(
+  expect(() => assertCanTransitionOrderStatus('cancelled', 'paid')).toThrow(
     ServiceError,
   );
+  expect(() =>
+    assertCanTransitionOrderStatus('ready', 'pending_payment'),
+  ).toThrow(ServiceError);
+});
+
+test('exposes transition checks for UI and service rules', () => {
+  expect(canTransitionOrderStatus('paid', 'preparing')).toBe(true);
+  expect(canTransitionOrderStatus('completed', 'preparing')).toBe(false);
+  expect(allowedOrderTransitions.completed).toEqual([]);
+  expect(allowedOrderTransitions.cancelled).toEqual([]);
 });

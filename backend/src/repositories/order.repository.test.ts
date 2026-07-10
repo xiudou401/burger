@@ -23,7 +23,7 @@ const chain = (value: unknown) => {
 describe('orderRepository', () => {
   const userId = '507f1f77bcf86cd799439011';
   const orderId = '507f1f77bcf86cd799439012';
-  const mealId = '507f1f77bcf86cd799439013';
+  const menuItemId = '507f1f77bcf86cd799439013';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -68,9 +68,9 @@ describe('orderRepository', () => {
         userId,
         items: [
           {
-            mealId,
-            name: 'Classic Burger',
-            priceCents: 1200,
+            menuItemId,
+            nameAtPurchase: 'Classic Burger',
+            priceCentsAtPurchase: 1200,
             quantity: 2,
             subtotalCents: 2400,
           },
@@ -92,7 +92,9 @@ describe('orderRepository', () => {
         userId: expect.any(Types.ObjectId),
         items: [
           expect.objectContaining({
-            mealId: expect.any(Types.ObjectId),
+            menuItemId: expect.any(Types.ObjectId),
+            nameAtPurchase: 'Classic Burger',
+            priceCentsAtPurchase: 1200,
           }),
         ],
       }),

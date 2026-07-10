@@ -82,7 +82,9 @@ const AdminOrders = () => {
                     disabled={updatingOrderId === order.id}
                     key={status}
                     type="button"
-                    onClick={() => changeStatus(order.id, status)}
+                    onClick={() =>
+                      changeStatus(order.id, status, order.version)
+                    }
                   >
                     {status}
                   </button>

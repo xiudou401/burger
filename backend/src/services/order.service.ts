@@ -8,12 +8,18 @@ import { ServiceError } from '../errors/ServiceError';
 import { sendOrderConfirmationEmail } from './email.service';
 import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
-import { assertOrderTransition } from '../utils/order-status';
+import { assertCanTransitionOrderStatus } from '../utils/order-status-machine';
 import { env } from '../config/env';
 import type { AuthenticatedUser } from '../types/auth';
+import { hasPermission } from '../types/permissions';
+import { recordAuditLog } from './audit-log.service';
 import Stripe from 'stripe';
 
 export interface PublicOrderItem {
+  menuItemId: string;
+  nameAtPurchase: string;
+  imageAtPurchase?: string;
+  priceCentsAtPurchase: number;
   mealId: string;
   name: string;
   image?: string;
@@ -28,6 +34,7 @@ export interface PublicOrder {
   totalCents: number;
   menuVersion: number;
   status: OrderStatus;
+  version: number;
   payment?: {
     provider?: 'stripe';
     providerPaymentId?: string;
@@ -68,11 +75,11 @@ const getStripeClient = () => {
   return stripeClient;
 };
 
-const toOrderItem = (menuItem: ValidatedCartMenuItem) => ({
-  mealId: menuItem.id,
-  name: menuItem.name,
-  image: menuItem.image,
-  priceCents: menuItem.priceCents,
+const toOrderSnapshotItem = (menuItem: ValidatedCartMenuItem) => ({
+  menuItemId: menuItem.id,
+  nameAtPurchase: menuItem.name,
+  imageAtPurchase: menuItem.image,
+  priceCentsAtPurchase: menuItem.priceCents,
   quantity: menuItem.quantity,
   subtotalCents: menuItem.subtotalCents,
 });
@@ -80,10 +87,14 @@ const toOrderItem = (menuItem: ValidatedCartMenuItem) => ({
 const toPublicOrder = (order: {
   _id: unknown;
   items: Array<{
-    mealId: unknown;
-    name: string;
+    menuItemId?: unknown;
+    nameAtPurchase?: string;
+    imageAtPurchase?: string;
+    priceCentsAtPurchase?: number;
+    mealId?: unknown;
+    name?: string;
     image?: string;
-    priceCents: number;
+    priceCents?: number;
     quantity: number;
     subtotalCents: number;
   }>;
@@ -98,21 +109,35 @@ const toPublicOrder = (order: {
     currency: string;
     paidAt?: Date;
   };
+  __v?: number;
   createdAt: Date;
   updatedAt: Date;
 }): PublicOrder => ({
   id: String(order._id),
-  items: order.items.map((item) => ({
-    mealId: String(item.mealId),
-    name: item.name,
-    image: item.image,
-    priceCents: item.priceCents,
-    quantity: item.quantity,
-    subtotalCents: item.subtotalCents,
-  })),
+  items: order.items.map((item) => {
+    const menuItemId = String(item.menuItemId ?? item.mealId);
+    const nameAtPurchase = item.nameAtPurchase ?? item.name ?? '';
+    const imageAtPurchase = item.imageAtPurchase ?? item.image;
+    const priceCentsAtPurchase =
+      item.priceCentsAtPurchase ?? item.priceCents ?? 0;
+
+    return {
+      menuItemId,
+      nameAtPurchase,
+      imageAtPurchase,
+      priceCentsAtPurchase,
+      mealId: menuItemId,
+      name: nameAtPurchase,
+      image: imageAtPurchase,
+      priceCents: priceCentsAtPurchase,
+      quantity: item.quantity,
+      subtotalCents: item.subtotalCents,
+    };
+  }),
   totalCents: order.totalCents,
   menuVersion: order.menuVersion,
   status: order.status,
+  version: order.__v ?? 0,
   payment: order.payment
     ? {
         provider: order.payment.provider,
@@ -229,6 +254,16 @@ const buildStripeReturnUrl = (
   return url.toString();
 };
 
+const isVersionConflictError = (error: unknown) =>
+  error instanceof Error && error.name === 'VersionError';
+
+const throwOrderVersionConflict = () => {
+  throw new ServiceError(
+    'Order has changed since it was loaded. Please refresh and try again.',
+    409,
+  );
+};
+
 export const createCheckoutOrder = async (
   userId: string,
   items: CartStoredItem[],
@@ -244,7 +279,7 @@ export const createCheckoutOrder = async (
 
   const order = await orderRepository.create({
     userId,
-    items: validatedCart.items.map(toOrderItem),
+    items: validatedCart.items.map(toOrderSnapshotItem),
     totalCents: validatedCart.totalCents,
     menuVersion: validatedCart.menuVersion,
     status: 'pending_payment',
@@ -363,7 +398,8 @@ export const getOrderById = async (orderId: string): Promise<PublicOrder> => {
 export const updateOrderStatus = async (
   orderId: string,
   nextStatus: OrderStatus,
-  actorRole: AuthenticatedUser['role'],
+  expectedVersion: number,
+  actor: Pick<AuthenticatedUser, 'id' | 'role' | 'permissions'>,
 ): Promise<PublicOrder> => {
   const order = await orderRepository.findById(orderId);
 
@@ -371,9 +407,15 @@ export const updateOrderStatus = async (
     throw new ServiceError('Order not found', 404);
   }
 
-  assertOrderTransition(order.status, nextStatus);
+  if ((order.__v ?? 0) !== expectedVersion) {
+    throwOrderVersionConflict();
+  }
 
-  if (actorRole !== 'admin') {
+  const previousStatus = order.status;
+
+  assertCanTransitionOrderStatus(previousStatus, nextStatus);
+
+  if (!hasPermission(actor, 'manage_orders')) {
     const isStaffFulfillmentTransition =
       (order.status === 'paid' && nextStatus === 'preparing') ||
       (order.status === 'preparing' && nextStatus === 'ready') ||
@@ -407,9 +449,27 @@ export const updateOrderStatus = async (
     order.payment.paidAt = order.payment.paidAt ?? new Date();
   }
 
-  await orderRepository.save(order);
+  try {
+    await orderRepository.save(order);
+  } catch (error) {
+    if (isVersionConflictError(error)) {
+      throwOrderVersionConflict();
+    }
+
+    throw error;
+  }
 
   const publicOrder = toPublicOrder(order);
+
+  await recordAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    action: 'order.status_changed',
+    entityType: 'order',
+    entityId: publicOrder.id,
+    before: { status: previousStatus },
+    after: { status: nextStatus },
+  });
 
   if (nextStatus === 'paid') {
     await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);

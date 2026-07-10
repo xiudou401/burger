@@ -6,8 +6,8 @@ import {
 } from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
 
-type RepositoryOrderItem = Omit<Order['items'][number], 'mealId'> & {
-  mealId: string;
+type RepositoryOrderItem = Omit<Order['items'][number], 'menuItemId'> & {
+  menuItemId: string;
 };
 
 const toObjectId = (id: string) => new Types.ObjectId(id);
@@ -31,7 +31,7 @@ export const orderRepository = {
       userId: toObjectId(data.userId),
       items: data.items.map((item) => ({
         ...item,
-        mealId: toObjectId(item.mealId),
+        menuItemId: toObjectId(item.menuItemId),
       })),
     });
   },
@@ -50,6 +50,25 @@ export const orderRepository = {
 
   listAll(limit: number) {
     return OrderModel.find().sort({ createdAt: -1 }).limit(limit).lean().exec();
+  },
+
+  listCreatedBetween(start: Date, end: Date) {
+    return OrderModel.find({
+      createdAt: {
+        $gte: start,
+        $lt: end,
+      },
+    })
+      .lean()
+      .exec();
+  },
+
+  countActive() {
+    return OrderModel.countDocuments({
+      status: {
+        $in: ['paid', 'preparing', 'ready'],
+      },
+    });
   },
 
   findForUser(userId: string, orderId: string) {

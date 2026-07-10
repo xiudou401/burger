@@ -16,6 +16,7 @@ export const OrderStatusSchema = z.enum([
 export const UpdateOrderStatusSchema = z
   .object({
     status: OrderStatusSchema,
+    version: z.number().int().nonnegative(),
   })
   .strict();
 

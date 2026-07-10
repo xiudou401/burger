@@ -8,7 +8,7 @@ import {
   updateOrderStatusHandler,
 } from '../controllers/order.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requireAdmin } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requireAdmin';
 import { requireVerifiedContact } from '../middleware/requireVerifiedContact';
 import {
   validateBody,
@@ -29,36 +29,39 @@ router.use(authenticate);
 
 router.post(
   '/checkout',
+  requirePermission('create_order'),
   requireVerifiedContact,
   validateBody(CreateOrderSchema, 'Checkout order payload'),
   createCheckoutOrderHandler,
 );
 router.get(
   '/me',
+  requirePermission('view_own_orders'),
   validateQuery(ListMyOrdersQuerySchema, 'List my orders query'),
   listMyOrdersHandler,
 );
 router.get(
   '/admin/all',
-  requireAdmin,
+  requirePermission('view_orders'),
   validateQuery(ListAdminOrdersQuerySchema, 'List admin orders query'),
   listAdminOrdersHandler,
 );
 router.get(
   '/admin/:orderId',
-  requireAdmin,
+  requirePermission('view_orders'),
   validateParams(OrderParamsSchema, 'Order params'),
   getAdminOrderHandler,
 );
 router.patch(
   '/:orderId/status',
-  requireAdmin,
+  requirePermission('update_order_status'),
   validateParams(OrderParamsSchema, 'Order params'),
   validateBody(UpdateOrderStatusSchema, 'Update order status payload'),
   updateOrderStatusHandler,
 );
 router.get(
   '/:orderId',
+  requirePermission('view_own_orders'),
   validateParams(OrderParamsSchema, 'Order params'),
   getMyOrderHandler,
 );

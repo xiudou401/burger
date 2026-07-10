@@ -31,9 +31,13 @@ export const fetchAdminOrder = (orderId: string) => {
   return request<{ order: Order }>(`/orders/admin/${orderId}`);
 };
 
-export const updateOrderStatus = (orderId: string, status: OrderStatus) => {
+export const updateOrderStatus = (
+  orderId: string,
+  status: OrderStatus,
+  version: number,
+) => {
   return request<{ order: Order }>(`/orders/${orderId}/status`, {
     method: 'PATCH',
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({ status, version }),
   });
 };

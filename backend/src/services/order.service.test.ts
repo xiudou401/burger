@@ -4,6 +4,7 @@ import { userRepository } from '../repositories/user.repository';
 import { sendOrderConfirmationEmail } from './email.service';
 import { validateCart } from './cart.service';
 import { env } from '../config/env';
+import { recordAuditLog } from './audit-log.service';
 import {
   createCheckoutOrder,
   markStripeCheckoutFailed,
@@ -11,6 +12,7 @@ import {
   markStripeOrderFailed,
   updateOrderStatus,
 } from './order.service';
+import { getPermissionsForRole } from '../types/permissions';
 
 const mockCreateSession = jest.fn();
 
@@ -30,6 +32,10 @@ jest.mock('./cart.service', () => ({
 
 jest.mock('./email.service', () => ({
   sendOrderConfirmationEmail: jest.fn(),
+}));
+
+jest.mock('./audit-log.service', () => ({
+  recordAuditLog: jest.fn(),
 }));
 
 jest.mock('../repositories/order.repository', () => ({
@@ -52,6 +58,16 @@ describe('order service', () => {
   const orderId = '507f1f77bcf86cd799439012';
   const mealId = '507f1f77bcf86cd799439013';
   const now = new Date('2026-01-01T00:00:00.000Z');
+  const adminActor = {
+    id: userId,
+    role: 'admin' as const,
+    permissions: getPermissionsForRole('admin'),
+  };
+  const staffActor = {
+    id: userId,
+    role: 'staff' as const,
+    permissions: getPermissionsForRole('staff'),
+  };
   const validatedMeal = {
     id: mealId,
     name: 'Classic Burger',
@@ -69,6 +85,7 @@ describe('order service', () => {
     env.FRONTEND_URL = 'http://localhost:3000';
     env.STRIPE_SUCCESS_URL = undefined;
     env.STRIPE_CANCEL_URL = undefined;
+    jest.mocked(orderRepository.save).mockResolvedValue(undefined as never);
   });
 
   test('rejects empty validated carts', async () => {
@@ -133,6 +150,16 @@ describe('order service', () => {
 
     expect(orderRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        items: [
+          {
+            menuItemId: mealId,
+            nameAtPurchase: 'Classic Burger',
+            imageAtPurchase: '/img/burger.png',
+            priceCentsAtPurchase: 1200,
+            quantity: 2,
+            subtotalCents: 2400,
+          },
+        ],
         status: 'pending_payment',
         payment: {
           provider: 'stripe',
@@ -275,7 +302,7 @@ describe('order service', () => {
       email: 'pat@example.com',
     } as never);
 
-    const result = await updateOrderStatus(orderId, 'paid', 'admin');
+    const result = await updateOrderStatus(orderId, 'paid', 0, adminActor);
 
     expect(order.status).toBe('paid');
     expect(order.payment.status).toBe('paid');
@@ -289,6 +316,15 @@ describe('order service', () => {
       }),
     );
     expect(result.status).toBe('paid');
+    expect(recordAuditLog).toHaveBeenCalledWith({
+      actorId: userId,
+      actorRole: 'admin',
+      action: 'order.status_changed',
+      entityType: 'order',
+      entityId: orderId,
+      before: { status: 'pending_payment' },
+      after: { status: 'paid' },
+    });
   });
 
   test('marks Stripe checkout sessions as paid and sends confirmation email', async () => {
@@ -562,10 +598,66 @@ describe('order service', () => {
       status: 'completed',
     } as never);
 
-    await expect(updateOrderStatus(orderId, 'paid', 'admin')).rejects.toThrow(
-      ServiceError,
-    );
+    await expect(
+      updateOrderStatus(orderId, 'paid', 0, adminActor),
+    ).rejects.toThrow(ServiceError);
     expect(orderRepository.save).not.toHaveBeenCalled();
+  });
+
+  test('rejects stale order status updates with a version conflict', async () => {
+    jest.mocked(orderRepository.findById).mockResolvedValue({
+      _id: orderId,
+      status: 'paid',
+      __v: 2,
+      payment: {
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+    } as never);
+
+    await expect(
+      updateOrderStatus(orderId, 'preparing', 1, staffActor),
+    ).rejects.toMatchObject({
+      message:
+        'Order has changed since it was loaded. Please refresh and try again.',
+      statusCode: 409,
+    });
+    expect(orderRepository.save).not.toHaveBeenCalled();
+  });
+
+  test('maps Mongoose optimistic concurrency failures to version conflicts', async () => {
+    const versionError = new Error('No matching document found for id');
+    versionError.name = 'VersionError';
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'paid',
+      __v: 1,
+      payment: {
+        provider: 'stripe',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
+    jest.mocked(orderRepository.save).mockRejectedValue(versionError as never);
+
+    await expect(
+      updateOrderStatus(orderId, 'preparing', 1, staffActor),
+    ).rejects.toMatchObject({
+      message:
+        'Order has changed since it was loaded. Please refresh and try again.',
+      statusCode: 409,
+    });
   });
 
   test('rejects staff attempts to update non-fulfillment status', async () => {
@@ -579,9 +671,9 @@ describe('order service', () => {
       },
     } as never);
 
-    await expect(updateOrderStatus(orderId, 'paid', 'staff')).rejects.toThrow(
-      'Staff can only advance order fulfillment status',
-    );
+    await expect(
+      updateOrderStatus(orderId, 'paid', 0, staffActor),
+    ).rejects.toThrow('Staff can only advance order fulfillment status');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
 
@@ -606,11 +698,20 @@ describe('order service', () => {
 
     jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
 
-    const result = await updateOrderStatus(orderId, 'preparing', 'staff');
+    const result = await updateOrderStatus(orderId, 'preparing', 0, staffActor);
 
     expect(order.status).toBe('preparing');
     expect(orderRepository.save).toHaveBeenCalledWith(order);
     expect(result.status).toBe('preparing');
+    expect(recordAuditLog).toHaveBeenCalledWith({
+      actorId: userId,
+      actorRole: 'staff',
+      action: 'order.status_changed',
+      entityType: 'order',
+      entityId: orderId,
+      before: { status: 'paid' },
+      after: { status: 'preparing' },
+    });
   });
 
   test.each(['paid', 'preparing'] as const)(
@@ -636,7 +737,12 @@ describe('order service', () => {
 
       jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
 
-      const result = await updateOrderStatus(orderId, 'cancelled', 'admin');
+      const result = await updateOrderStatus(
+        orderId,
+        'cancelled',
+        0,
+        adminActor,
+      );
 
       expect(order.status).toBe('cancelled');
       expect(order.payment.status).toBe('paid');
@@ -666,7 +772,7 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'cancelled', 'staff'),
+      updateOrderStatus(orderId, 'cancelled', 0, staffActor),
     ).rejects.toThrow('Staff can only advance order fulfillment status');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
@@ -691,7 +797,7 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'cancelled', 'admin'),
+      updateOrderStatus(orderId, 'cancelled', 0, adminActor),
     ).rejects.toThrow('Cannot move order from completed to cancelled');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
@@ -708,9 +814,9 @@ describe('order service', () => {
       },
     } as never);
 
-    await expect(updateOrderStatus(orderId, 'paid', 'admin')).rejects.toThrow(
-      'Stripe payments must be marked paid by webhook',
-    );
+    await expect(
+      updateOrderStatus(orderId, 'paid', 0, adminActor),
+    ).rejects.toThrow('Stripe payments must be marked paid by webhook');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
 });

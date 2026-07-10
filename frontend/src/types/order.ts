@@ -1,4 +1,8 @@
 export interface OrderItem {
+  menuItemId: string;
+  nameAtPurchase: string;
+  imageAtPurchase?: string;
+  priceCentsAtPurchase: number;
   mealId: string;
   name: string;
   image?: string;
@@ -13,6 +17,7 @@ export interface Order {
   totalCents: number;
   menuVersion: number;
   status: OrderStatus;
+  version: number;
   payment?: {
     provider?: 'stripe';
     providerPaymentId?: string;

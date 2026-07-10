@@ -17,10 +17,10 @@ export type PaymentStatus =
   | 'refunded';
 
 export interface OrderItem {
-  mealId: Types.ObjectId;
-  name: string;
-  image?: string;
-  priceCents: number;
+  menuItemId: Types.ObjectId;
+  nameAtPurchase: string;
+  imageAtPurchase?: string;
+  priceCentsAtPurchase: number;
   quantity: number;
   subtotalCents: number;
 }
@@ -39,30 +39,31 @@ export interface Order {
     currency: string;
     paidAt?: Date;
   };
+  __v?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const orderItemSchema = new Schema<OrderItem>(
   {
-    mealId: {
+    menuItemId: {
       type: Schema.Types.ObjectId,
-      ref: 'Meal',
+      ref: 'MenuItem',
       required: true,
     },
-    name: {
+    nameAtPurchase: {
       type: String,
       required: true,
       trim: true,
     },
-    image: String,
-    priceCents: {
+    imageAtPurchase: String,
+    priceCentsAtPurchase: {
       type: Number,
       required: true,
       min: 0,
       validate: {
         validator: Number.isSafeInteger,
-        message: 'Order item priceCents must be an integer',
+        message: 'Order item priceCentsAtPurchase must be an integer',
       },
     },
     quantity: {
@@ -167,7 +168,7 @@ const orderSchema = new Schema<Order>(
       paidAt: Date,
     },
   },
-  { timestamps: true },
+  { timestamps: true, optimisticConcurrency: true },
 );
 
 orderSchema.index({ userId: 1, createdAt: -1 });

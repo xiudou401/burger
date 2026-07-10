@@ -98,10 +98,10 @@ export const updateOrderStatusHandler = async (
   }
 
   try {
-    const { status } = req.body as UpdateOrderStatusPayload;
+    const { status, version } = req.body as UpdateOrderStatusPayload;
     const { orderId } = req.params as OrderParamsPayload;
 
-    const order = await updateOrderStatus(orderId, status, req.user.role);
+    const order = await updateOrderStatus(orderId, status, version, req.user);
 
     return res.status(200).json({ order });
   } catch (error) {
