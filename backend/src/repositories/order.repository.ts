@@ -19,6 +19,8 @@ export const orderRepository = {
     items: RepositoryOrderItem[];
     totalCents: number;
     menuVersion: number;
+    checkoutIdempotencyKey?: string;
+    checkoutUrl?: string;
     status: OrderStatus;
     payment: Order['payment'];
   }) {
@@ -104,6 +106,17 @@ export const orderRepository = {
     return OrderModel.findOne({
       'payment.provider': 'stripe',
       'payment.providerPaymentId': sessionId,
+    }).exec();
+  },
+
+  findCheckoutByIdempotencyKey(userId: string, idempotencyKey: string) {
+    if (!isObjectId(userId)) {
+      return Promise.resolve(null);
+    }
+
+    return OrderModel.findOne({
+      userId: toObjectId(userId),
+      checkoutIdempotencyKey: idempotencyKey,
     }).exec();
   },
 

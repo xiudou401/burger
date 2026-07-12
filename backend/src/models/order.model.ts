@@ -30,6 +30,8 @@ export interface Order {
   items: OrderItem[];
   totalCents: number;
   menuVersion: number;
+  checkoutIdempotencyKey?: string;
+  checkoutUrl?: string;
   status: OrderStatus;
   payment: {
     provider?: 'stripe';
@@ -113,6 +115,14 @@ const orderSchema = new Schema<Order>(
       type: Number,
       required: true,
     },
+    checkoutIdempotencyKey: {
+      type: String,
+      trim: true,
+    },
+    checkoutUrl: {
+      type: String,
+      trim: true,
+    },
     status: {
       type: String,
       enum: [
@@ -172,5 +182,14 @@ const orderSchema = new Schema<Order>(
 );
 
 orderSchema.index({ userId: 1, createdAt: -1 });
+orderSchema.index(
+  { userId: 1, checkoutIdempotencyKey: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      checkoutIdempotencyKey: { $type: 'string' },
+    },
+  },
+);
 
 export const OrderModel = model<Order>('Order', orderSchema);

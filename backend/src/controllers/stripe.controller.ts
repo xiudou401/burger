@@ -7,7 +7,7 @@ import {
   markStripeCheckoutPaid,
   markStripeOrderFailed,
   type StripeCheckoutCompletedSession,
-} from '../services/order.service';
+} from '../services/checkout.service';
 import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 
 const getOrderIdFromCheckoutSession = (session: {

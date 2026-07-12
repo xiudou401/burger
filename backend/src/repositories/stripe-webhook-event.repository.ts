@@ -1,5 +1,7 @@
 import { StripeWebhookEventModel } from '../models/stripe-webhook-event.model';
 
+const PROCESSING_LEASE_MS = 5 * 60 * 1000;
+
 const isMongoDuplicateKeyError = (error: unknown) => {
   if (!error || typeof error !== 'object') {
     return false;
@@ -11,6 +13,39 @@ const isMongoDuplicateKeyError = (error: unknown) => {
 export const stripeWebhookEventRepository = {
   async claim(stripeEventId: string, eventType: string) {
     const now = new Date();
+    const staleProcessingBefore = new Date(now.getTime() - PROCESSING_LEASE_MS);
+
+    const reclaimed = await StripeWebhookEventModel.findOneAndUpdate(
+      {
+        stripeEventId,
+        $or: [
+          { status: 'failed' },
+          {
+            status: 'processing',
+            updatedAt: { $lt: staleProcessingBefore },
+          },
+        ],
+      },
+      {
+        $set: {
+          eventType,
+          status: 'processing',
+          lastReceivedAt: now,
+        },
+        $inc: {
+          attempts: 1,
+        },
+        $unset: {
+          lastError: '',
+          processedAt: '',
+        },
+      },
+      { new: true },
+    ).exec();
+
+    if (reclaimed) {
+      return { shouldProcess: true, isDuplicate: true };
+    }
 
     try {
       await StripeWebhookEventModel.create({
@@ -26,25 +61,9 @@ export const stripeWebhookEventRepository = {
       if (!isMongoDuplicateKeyError(error)) {
         throw error;
       }
-    }
 
-    const existing = await StripeWebhookEventModel.findOne({
-      stripeEventId,
-    }).exec();
-
-    if (!existing || existing.status !== 'failed') {
       return { shouldProcess: false, isDuplicate: true };
     }
-
-    existing.status = 'processing';
-    existing.eventType = eventType;
-    existing.attempts += 1;
-    existing.lastError = undefined;
-    existing.lastReceivedAt = now;
-    existing.processedAt = undefined;
-    await existing.save();
-
-    return { shouldProcess: true, isDuplicate: true };
   },
 
   markProcessed(stripeEventId: string, orderId?: string) {

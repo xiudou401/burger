@@ -10,8 +10,8 @@ import {
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
   markStripeOrderFailed,
-  updateOrderStatus,
-} from './order.service';
+} from './checkout.service';
+import { updateOrderStatus } from './order.service';
 import { getPermissionsForRole } from '../types/permissions';
 
 const mockCreateSession = jest.fn();
@@ -42,6 +42,7 @@ jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
     create: jest.fn(),
     findById: jest.fn(),
+    findCheckoutByIdempotencyKey: jest.fn(),
     findByStripeSessionId: jest.fn(),
     save: jest.fn(),
   },
@@ -57,6 +58,7 @@ describe('order service', () => {
   const userId = '507f1f77bcf86cd799439011';
   const orderId = '507f1f77bcf86cd799439012';
   const mealId = '507f1f77bcf86cd799439013';
+  const idempotencyKey = '11111111-1111-4111-8111-111111111111';
   const now = new Date('2026-01-01T00:00:00.000Z');
   const adminActor = {
     id: userId,
@@ -86,6 +88,9 @@ describe('order service', () => {
     env.STRIPE_SUCCESS_URL = undefined;
     env.STRIPE_CANCEL_URL = undefined;
     jest.mocked(orderRepository.save).mockResolvedValue(undefined as never);
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(null);
   });
 
   test('rejects empty validated carts', async () => {
@@ -95,9 +100,9 @@ describe('order service', () => {
       menuVersion: 7,
     });
 
-    await expect(createCheckoutOrder(userId, [], 7)).rejects.toThrow(
-      ServiceError,
-    );
+    await expect(
+      createCheckoutOrder(userId, [], 7, idempotencyKey),
+    ).rejects.toThrow(ServiceError);
     expect(orderRepository.create).not.toHaveBeenCalled();
   });
 
@@ -123,6 +128,8 @@ describe('order service', () => {
       ],
       totalCents: 2400,
       menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: undefined as string | undefined,
       status: 'pending_payment',
       payment: {
         provider: 'stripe',
@@ -146,10 +153,16 @@ describe('order service', () => {
       userId,
       [{ id: mealId, quantity: 2 }],
       7,
+      idempotencyKey,
     );
 
+    expect(orderRepository.findCheckoutByIdempotencyKey).toHaveBeenCalledWith(
+      userId,
+      idempotencyKey,
+    );
     expect(orderRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        checkoutIdempotencyKey: idempotencyKey,
         items: [
           {
             menuItemId: mealId,
@@ -185,12 +198,129 @@ describe('order service', () => {
         success_url: `http://localhost:3000/profile?payment=success&orderId=${orderId}`,
         cancel_url: `http://localhost:3000/profile?payment=cancelled&orderId=${orderId}`,
       }),
+      {
+        idempotencyKey: `checkout:${userId}:${idempotencyKey}`,
+      },
     );
     expect(order.payment.providerPaymentId).toBe('cs_test_123');
+    expect(order.checkoutUrl).toBe(
+      'https://checkout.stripe.com/c/pay/cs_test_123',
+    );
     expect(orderRepository.save).toHaveBeenCalledWith(order);
     expect(checkout.checkoutUrl).toBe(
       'https://checkout.stripe.com/c/pay/cs_test_123',
     );
+  });
+
+  test('returns an existing checkout for the same idempotency key', async () => {
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId: mealId,
+          nameAtPurchase: 'Classic Burger',
+          imageAtPurchase: '/img/burger.png',
+          priceCentsAtPurchase: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_existing',
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_existing',
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(existingOrder as never);
+
+    const checkout = await createCheckoutOrder(
+      userId,
+      [{ id: mealId, quantity: 2 }],
+      7,
+      idempotencyKey,
+    );
+
+    expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
+    expect(checkout.order.id).toBe(orderId);
+    expect(validateCart).not.toHaveBeenCalled();
+    expect(orderRepository.create).not.toHaveBeenCalled();
+    expect(mockCreateSession).not.toHaveBeenCalled();
+  });
+
+  test('continues a partially created checkout for the same idempotency key', async () => {
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId: mealId,
+          nameAtPurchase: 'Classic Burger',
+          imageAtPurchase: '/img/burger.png',
+          priceCentsAtPurchase: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: undefined as string | undefined,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: undefined as string | undefined,
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(existingOrder as never);
+    mockCreateSession.mockResolvedValue({
+      id: 'cs_test_resumed',
+      url: 'https://checkout.stripe.com/c/pay/cs_test_resumed',
+    });
+
+    const checkout = await createCheckoutOrder(
+      userId,
+      [{ id: mealId, quantity: 2 }],
+      7,
+      idempotencyKey,
+    );
+
+    expect(validateCart).not.toHaveBeenCalled();
+    expect(orderRepository.create).not.toHaveBeenCalled();
+    expect(mockCreateSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        client_reference_id: orderId,
+      }),
+      {
+        idempotencyKey: `checkout:${userId}:${idempotencyKey}`,
+      },
+    );
+    expect(existingOrder.payment.providerPaymentId).toBe('cs_test_resumed');
+    expect(existingOrder.checkoutUrl).toBe(
+      'https://checkout.stripe.com/c/pay/cs_test_resumed',
+    );
+    expect(orderRepository.save).toHaveBeenCalledWith(existingOrder);
+    expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
   });
 
   test('marks checkout orders as failed when Stripe session creation fails', async () => {
@@ -223,7 +353,12 @@ describe('order service', () => {
     mockCreateSession.mockRejectedValue(new Error('Stripe unavailable'));
 
     await expect(
-      createCheckoutOrder(userId, [{ id: mealId, quantity: 2 }], 7),
+      createCheckoutOrder(
+        userId,
+        [{ id: mealId, quantity: 2 }],
+        7,
+        idempotencyKey,
+      ),
     ).rejects.toThrow('Stripe unavailable');
 
     expect(order.payment.status).toBe('failed');
@@ -263,7 +398,12 @@ describe('order service', () => {
     });
 
     await expect(
-      createCheckoutOrder(userId, [{ id: mealId, quantity: 2 }], 7),
+      createCheckoutOrder(
+        userId,
+        [{ id: mealId, quantity: 2 }],
+        7,
+        idempotencyKey,
+      ),
     ).rejects.toThrow('Stripe checkout session has no redirect URL');
 
     expect(order.payment.status).toBe('failed');

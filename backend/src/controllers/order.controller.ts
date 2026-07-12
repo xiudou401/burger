@@ -1,13 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import {
-  createCheckoutOrder,
   getOrderById,
   getOrderForUser,
   listAllOrders,
   listOrdersForUser,
   updateOrderStatus,
 } from '../services/order.service';
+import { createCheckoutOrder } from '../services/checkout.service';
 import type {
   CreateOrderPayload,
   ListOrdersQueryPayload,
@@ -25,9 +25,15 @@ export const createCheckoutOrderHandler = async (
   }
 
   try {
-    const { items, menuVersion } = req.body as CreateOrderPayload;
+    const { items, menuVersion, idempotencyKey } =
+      req.body as CreateOrderPayload;
 
-    const checkout = await createCheckoutOrder(req.user.id, items, menuVersion);
+    const checkout = await createCheckoutOrder(
+      req.user.id,
+      items,
+      menuVersion,
+      idempotencyKey,
+    );
 
     return res.status(201).json(checkout);
   } catch (error) {

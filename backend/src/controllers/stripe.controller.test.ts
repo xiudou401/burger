@@ -5,7 +5,7 @@ import {
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
   markStripeOrderFailed,
-} from '../services/order.service';
+} from '../services/checkout.service';
 import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 import { stripeWebhookHandler } from './stripe.controller';
 
@@ -19,7 +19,7 @@ jest.mock('stripe', () =>
   })),
 );
 
-jest.mock('../services/order.service', () => ({
+jest.mock('../services/checkout.service', () => ({
   markStripeCheckoutFailed: jest.fn(),
   markStripeCheckoutPaid: jest.fn(),
   markStripeOrderFailed: jest.fn(),

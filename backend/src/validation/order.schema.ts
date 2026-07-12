@@ -2,7 +2,9 @@ import { z } from 'zod';
 import { CartPayloadSchema } from './cart.schema';
 import { ObjectIdSchema, paginationLimit } from './common.schema';
 
-export const CreateOrderSchema = CartPayloadSchema;
+export const CreateOrderSchema = CartPayloadSchema.extend({
+  idempotencyKey: z.string().trim().uuid('Invalid checkout attempt'),
+}).strict();
 
 export const OrderStatusSchema = z.enum([
   'pending_payment',
