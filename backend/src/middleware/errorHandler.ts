@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 
 import { BaseError } from '../errors/BaseError';
 import { ValidationError } from '../errors/ValidationError';
+import { appLogger } from '../utils/logger';
 
 const isPayloadTooLargeError = (
   error: unknown,
@@ -50,19 +51,17 @@ export const errorHandler = (
   const requestId = req.requestId ?? 'unknown';
 
   const logError = (statusCode: number, type: string, message: string) => {
-    console.error(
-      JSON.stringify({
-        level: statusCode >= 500 ? 'error' : 'warn',
-        event: 'http_error',
-        requestId,
-        method: req.method,
-        path: req.originalUrl,
-        statusCode,
-        userId: req.user?.id,
-        errorType: type,
-        message,
-      }),
-    );
+    const log = statusCode >= 500 ? appLogger.error : appLogger.warn;
+
+    log('http_error', {
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+      statusCode,
+      userId: req.user?.id,
+      errorType: type,
+      message,
+    });
   };
 
   if (isPayloadTooLargeError(err)) {
@@ -90,7 +89,10 @@ export const errorHandler = (
 
   if (err instanceof BaseError) {
     if (!err.isOperational) {
-      console.error('Critical error:', err);
+      appLogger.error('critical_error', {
+        requestId,
+        error: err,
+      });
     }
 
     const body: {

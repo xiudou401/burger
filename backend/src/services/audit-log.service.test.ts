@@ -56,8 +56,7 @@ describe('audit log service', () => {
     ).resolves.toBeUndefined();
 
     expect(console.error).toHaveBeenCalledWith(
-      'Audit log write failed',
-      expect.any(Error),
+      expect.stringContaining('"event":"audit_log_write_failed"'),
     );
   });
 

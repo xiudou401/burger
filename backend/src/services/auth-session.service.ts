@@ -8,6 +8,7 @@ import { toPublicUser } from '../utils/public-user';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
 import { TTL_MS } from '../config/ttl';
+import { appLogger } from '../utils/logger';
 
 export interface SessionAuthResult {
   accessToken: string;
@@ -91,7 +92,7 @@ const restoreConsumedSession = async (sessionId: string) => {
   try {
     await authSessionRepository.restoreConsumedById(sessionId);
   } catch (error) {
-    console.error('Failed to restore consumed refresh session', {
+    appLogger.error('refresh_session_restore_failed', {
       sessionId,
       error,
     });
@@ -102,7 +103,7 @@ const revokeReplacementSession = async (sessionId: string) => {
   try {
     await authSessionRepository.revokeById(sessionId);
   } catch (error) {
-    console.error('Failed to revoke replacement refresh session', {
+    appLogger.error('refresh_replacement_revoke_failed', {
       sessionId,
       error,
     });
@@ -140,7 +141,7 @@ export const rotateAuthSession = async (
 
     if (consumedSession && familyId && isRefreshTokenReuse(consumedSession)) {
       await authSessionRepository.revokeActiveByFamilyId(familyId);
-      console.warn('Refresh token reuse detected', {
+      appLogger.warn('refresh_token_reuse_detected', {
         familyId,
         userId: String(consumedSession.userId),
       });

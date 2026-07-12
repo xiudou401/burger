@@ -21,6 +21,7 @@ import {
 } from './sms.service';
 import { env } from '../config/env';
 import { TTL_MS } from '../config/ttl';
+import { appLogger } from '../utils/logger';
 import type {
   ForgotPasswordPayload,
   LoginPayload,
@@ -75,7 +76,7 @@ const sendVerificationEmailSafely = async (email: string, token: string) => {
     await sendVerificationEmail({ email, token });
     return true;
   } catch (error) {
-    console.error('Verification email send failed:', error);
+    appLogger.error('verification_email_send_failed', { email, error });
     return false;
   }
 };

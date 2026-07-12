@@ -1,6 +1,8 @@
 import { randomUUID } from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 
+import { appLogger } from '../utils/logger';
+
 export const logger = (req: Request, res: Response, next: NextFunction) => {
   const startedAt = Date.now();
   const incomingRequestId = req.headers['x-request-id'];
@@ -13,18 +15,14 @@ export const logger = (req: Request, res: Response, next: NextFunction) => {
   res.setHeader('X-Request-Id', requestId);
 
   res.on('finish', () => {
-    console.log(
-      JSON.stringify({
-        level: 'info',
-        event: 'http_request',
-        requestId,
-        method: req.method,
-        path: req.originalUrl,
-        statusCode: res.statusCode,
-        durationMs: Date.now() - startedAt,
-        userId: req.user?.id,
-      }),
-    );
+    appLogger.info('http_request', {
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+      statusCode: res.statusCode,
+      durationMs: Date.now() - startedAt,
+      userId: req.user?.id,
+    });
   });
 
   next();

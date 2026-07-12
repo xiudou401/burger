@@ -1,5 +1,6 @@
 import { auditLogRepository } from '../repositories/audit-log.repository';
 import type { AuditLogCreateInput } from '../repositories/audit-log.repository';
+import { appLogger } from '../utils/logger';
 
 export interface PublicAuditLog {
   id: string;
@@ -39,7 +40,7 @@ export const recordAuditLog = async (input: AuditLogCreateInput) => {
   try {
     await auditLogRepository.create(input);
   } catch (error) {
-    console.error('Audit log write failed', error);
+    appLogger.error('audit_log_write_failed', { error });
   }
 };
 

@@ -7,6 +7,7 @@ import { assertCanTransitionOrderStatus } from '../utils/order-status-machine';
 import type { AuthenticatedUser } from '../types/auth';
 import { hasPermission } from '../types/permissions';
 import { recordAuditLog } from './audit-log.service';
+import { appLogger } from '../utils/logger';
 
 export interface PublicOrderItem {
   menuItemId: string;
@@ -127,7 +128,11 @@ export const sendOrderConfirmationIfPossible = async (
       totalCents: order.totalCents,
     });
   } catch (error) {
-    console.error('Order confirmation email failed', error);
+    appLogger.error('order_confirmation_email_failed', {
+      orderId: order.id,
+      userId: String(user._id),
+      error,
+    });
   }
 };
 

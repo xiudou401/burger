@@ -1,12 +1,16 @@
 import app from './app';
 import { connectDB } from './config/db';
 import { env } from './config/env';
+import { appLogger } from './utils/logger';
 
 const startServer = async () => {
   try {
     await connectDB();
     app.listen(Number(env.PORT), '0.0.0.0', () => {
-      console.log(`Server running on 0.0.0.0:${env.PORT}`);
+      appLogger.info('server_started', {
+        host: '0.0.0.0',
+        port: env.PORT,
+      });
     });
   } catch (error) {
     const errorMsg =
@@ -14,7 +18,7 @@ const startServer = async () => {
         ? error.message
         : `Unknown error: ${String(error)}`;
 
-    console.error('Server startup failed:', errorMsg);
+    appLogger.error('server_startup_failed', { message: errorMsg });
     process.exit(1);
   }
 };

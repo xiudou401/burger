@@ -7,6 +7,7 @@ import { menuItemRepository } from '../repositories/menu-item.repository';
 import type { MenuItemPayload } from '../validation/menu-item.schema';
 import type { AuthenticatedUser } from '../types/auth';
 import { recordAuditLog } from './audit-log.service';
+import { appLogger } from '../utils/logger';
 
 interface MenuItemQuery {
   keyword?: string;
@@ -117,7 +118,7 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
       totalPages: Math.ceil(total / limit),
     };
   } catch (error) {
-    console.error('Menu item pagination failed:', error);
+    appLogger.error('menu_item_pagination_failed', { error });
     throw new AppError(
       'Could not load menu items. Please try again later.',
       500,
