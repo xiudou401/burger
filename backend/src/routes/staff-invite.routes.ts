@@ -6,7 +6,7 @@ import {
   revokeStaffInviteHandler,
 } from '../controllers/staff-invite.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requirePermission } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requirePermission';
 import { validateBody, validateParams } from '../middleware/validate';
 import {
   AcceptStaffInviteSchema,

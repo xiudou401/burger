@@ -7,6 +7,7 @@ jest.mock('../models/user.model', () => ({
     create: jest.fn(),
     findById: jest.fn(),
     findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
     findByIdAndUpdate: jest.fn(),
   },
 }));
@@ -67,6 +68,123 @@ describe('userRepository', () => {
       emailVerificationTokenHash: 'token-hash',
       emailVerificationExpiresAt: expiresAt,
     });
+    expect(exec).toHaveBeenCalled();
+  });
+
+  test('atomically consumes email verification tokens', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    const now = new Date('2026-01-01T00:00:00.000Z');
+
+    jest.mocked(UserModel.findOneAndUpdate).mockReturnValue({ exec } as never);
+
+    await userRepository.consumeEmailVerificationToken('token-hash', now);
+
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        emailVerificationTokenHash: 'token-hash',
+        emailVerificationExpiresAt: { $gt: now },
+        status: 'active',
+      },
+      {
+        $set: {
+          emailVerified: true,
+        },
+        $unset: {
+          emailVerificationTokenHash: 1,
+          emailVerificationExpiresAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+    expect(exec).toHaveBeenCalled();
+  });
+
+  test('atomically consumes password reset tokens', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    const now = new Date('2026-01-01T00:00:00.000Z');
+
+    jest.mocked(UserModel.findOneAndUpdate).mockReturnValue({ exec } as never);
+
+    await userRepository.consumePasswordResetToken(
+      'token-hash',
+      'new-password-hash',
+      now,
+    );
+
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        passwordResetTokenHash: 'token-hash',
+        passwordResetExpiresAt: { $gt: now },
+        status: 'active',
+      },
+      {
+        $set: {
+          passwordHash: 'new-password-hash',
+        },
+        $unset: {
+          passwordResetTokenHash: 1,
+          passwordResetExpiresAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+    expect(exec).toHaveBeenCalled();
+  });
+
+  test('promotes staff invite users by id', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+
+    jest.mocked(UserModel.findByIdAndUpdate).mockReturnValue({ exec } as never);
+
+    await userRepository.acceptStaffInviteRole('user-1', 'staff');
+
+    expect(UserModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      'user-1',
+      {
+        $set: {
+          role: 'staff',
+          emailVerified: true,
+        },
+      },
+      {
+        new: true,
+      },
+    );
+    expect(exec).toHaveBeenCalled();
+  });
+
+  test('atomically consumes SMS codes', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    const now = new Date('2026-01-01T00:00:00.000Z');
+
+    jest.mocked(UserModel.findOneAndUpdate).mockReturnValue({ exec } as never);
+
+    await userRepository.consumeSmsCode('+61400000000', 'code-hash', now);
+
+    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        phone: '+61400000000',
+        smsVerificationCodeHash: 'code-hash',
+        smsVerificationExpiresAt: { $gt: now },
+        status: 'active',
+      },
+      {
+        $set: {
+          phoneVerified: true,
+        },
+        $unset: {
+          smsVerificationCodeHash: 1,
+          smsVerificationExpiresAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    );
     expect(exec).toHaveBeenCalled();
   });
 });

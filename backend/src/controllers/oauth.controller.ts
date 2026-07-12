@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
 import { loginWithOAuth } from '../services/auth.service';
@@ -94,12 +95,47 @@ interface GoogleTokenResponse {
   error_description?: string;
 }
 
-interface GoogleUserInfo {
-  email?: string;
-  name?: string;
-  email_verified?: 'true' | 'false' | boolean;
-  error_description?: string;
-}
+const googleOAuthClient = new OAuth2Client();
+const GOOGLE_ISSUERS = new Set([
+  'accounts.google.com',
+  'https://accounts.google.com',
+]);
+
+const verifyGoogleIdToken = async (idToken: string) => {
+  const ticket = await googleOAuthClient.verifyIdToken({
+    idToken,
+    audience: env.GOOGLE_CLIENT_ID,
+  });
+  const payload = ticket.getPayload();
+
+  if (!payload?.email) {
+    throw new ServiceError('Google did not return a verified email', 400);
+  }
+
+  const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+
+  if (!env.GOOGLE_CLIENT_ID || !audiences.includes(env.GOOGLE_CLIENT_ID)) {
+    throw new ServiceError('Google token audience is invalid', 400);
+  }
+
+  if (!payload.iss || !GOOGLE_ISSUERS.has(payload.iss)) {
+    throw new ServiceError('Google token issuer is invalid', 400);
+  }
+
+  if (typeof payload.exp !== 'number' || payload.exp * 1000 <= Date.now()) {
+    throw new ServiceError('Google token is expired', 400);
+  }
+
+  if (payload.email_verified !== true) {
+    throw new ServiceError('Google email must be verified', 400);
+  }
+
+  return {
+    email: payload.email,
+    name: payload.name ?? payload.email,
+    emailVerified: true,
+  };
+};
 
 const redirectWithAuth = (
   res: Response,
@@ -190,28 +226,25 @@ export const oauthCallbackHandler = async (
       );
     }
 
-    const userInfoRes = await fetch(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${tokenBody.id_token}`,
-    );
-    const userInfo = (await userInfoRes.json()) as GoogleUserInfo;
+    let googleUser: Awaited<ReturnType<typeof verifyGoogleIdToken>>;
 
-    if (!userInfoRes.ok || !userInfo.email) {
-      return redirectWithError(
-        res,
-        userInfo.error_description || 'Google user lookup failed',
-        getOAuthErrorTarget(mode),
-      );
+    try {
+      googleUser = await verifyGoogleIdToken(tokenBody.id_token);
+    } catch (error) {
+      const message =
+        error instanceof ServiceError
+          ? error.message
+          : 'Google token verification failed';
+      return redirectWithError(res, message, getOAuthErrorTarget(mode));
     }
 
     let result: Awaited<ReturnType<typeof loginWithOAuth>>;
 
     try {
       result = await loginWithOAuth({
-        email: userInfo.email,
-        name: userInfo.name ?? userInfo.email,
-        emailVerified:
-          userInfo.email_verified === true ||
-          userInfo.email_verified === 'true',
+        email: googleUser.email,
+        name: googleUser.name,
+        emailVerified: googleUser.emailVerified,
         mode: mode === 'signup' ? 'signup' : 'login',
       });
 

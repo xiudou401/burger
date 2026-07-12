@@ -19,7 +19,7 @@ export const authenticate = async (
       throw new ServiceError('Authorization token required', 401);
     }
 
-    const payload = verifyAuthToken(token);
+    const payload = await verifyAuthToken(token);
     const user = await UserModel.findById(payload.sub).lean();
 
     if (!user) {

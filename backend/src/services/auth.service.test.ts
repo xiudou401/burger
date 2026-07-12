@@ -5,16 +5,26 @@ import { userRepository } from '../repositories/user.repository';
 import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendVerificationEmail } from './email.service';
 import { hashPassword } from '../utils/password';
-import { login, resetPassword, signup, verifyEmail } from './auth.service';
+import {
+  login,
+  loginWithOAuth,
+  resetPassword,
+  signup,
+  verifyEmail,
+} from './auth.service';
 import { getPermissionsForRole } from '../types/permissions';
 
 jest.mock('../repositories/user.repository', () => ({
   userRepository: {
     existsByEmail: jest.fn(),
     create: jest.fn(),
+    findByEmail: jest.fn(),
     findByEmailWithPassword: jest.fn(),
     findByValidEmailVerificationToken: jest.fn(),
     findByValidPasswordResetToken: jest.fn(),
+    consumeEmailVerificationToken: jest.fn(),
+    consumePasswordResetToken: jest.fn(),
+    consumeSmsCode: jest.fn(),
     save: jest.fn(),
     setEmailVerificationToken: jest.fn(),
   },
@@ -216,22 +226,18 @@ describe('auth service', () => {
   test('verifies email and returns the updated public user', async () => {
     const verificationUser = {
       ...userDoc,
-      emailVerified: false,
-      emailVerificationTokenHash: 'hash',
-      emailVerificationExpiresAt: new Date(Date.now() + 60_000),
+      emailVerified: true,
     };
     jest
-      .mocked(userRepository.findByValidEmailVerificationToken)
+      .mocked(userRepository.consumeEmailVerificationToken)
       .mockResolvedValue(verificationUser as never);
 
     const result = await verifyEmail({ token: 'verification-token' });
 
-    expect(userRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: userId }),
+    expect(userRepository.consumeEmailVerificationToken).toHaveBeenCalledWith(
+      expect.any(String),
     );
-    expect(verificationUser.emailVerified).toBe(true);
-    expect(verificationUser.emailVerificationTokenHash).toBeUndefined();
-    expect(verificationUser.emailVerificationExpiresAt).toBeUndefined();
+    expect(userRepository.save).not.toHaveBeenCalled();
     expect(result).toEqual({
       message: 'Email verified',
       user: {
@@ -244,12 +250,10 @@ describe('auth service', () => {
   test('resets password and revokes existing sessions', async () => {
     const resetUser = {
       _id: userId,
-      passwordHash: 'old-hash',
-      passwordResetTokenHash: 'hash',
-      passwordResetExpiresAt: new Date(Date.now() + 60_000),
+      status: 'active' as const,
     };
     jest
-      .mocked(userRepository.findByValidPasswordResetToken)
+      .mocked(userRepository.consumePasswordResetToken)
       .mockResolvedValue(resetUser as never);
 
     const result = await resetPassword({
@@ -257,13 +261,29 @@ describe('auth service', () => {
       password: 'Burger#2027',
     });
 
-    expect(userRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ _id: userId }),
+    expect(userRepository.consumePasswordResetToken).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.stringContaining('210000:'),
     );
+    expect(userRepository.save).not.toHaveBeenCalled();
     expect(revokeUserSessions).toHaveBeenCalledWith(userId);
-    expect(resetUser.passwordHash).not.toBe('old-hash');
-    expect(resetUser.passwordResetTokenHash).toBeUndefined();
-    expect(resetUser.passwordResetExpiresAt).toBeUndefined();
     expect(result.message).toBe('Password reset successfully');
+  });
+
+  test('rejects OAuth users when the provider email is not verified', async () => {
+    await expect(
+      loginWithOAuth({
+        email: 'pat@example.com',
+        name: 'Pat',
+        emailVerified: false,
+      }),
+    ).rejects.toMatchObject({
+      message: 'OAuth email must be verified',
+      statusCode: 400,
+    });
+
+    expect(userRepository.findByEmail).not.toHaveBeenCalled();
+    expect(userRepository.create).not.toHaveBeenCalled();
+    expect(createAuthSession).not.toHaveBeenCalled();
   });
 });

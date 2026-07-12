@@ -6,7 +6,7 @@ import {
   updateMenuItemHandler,
 } from '../controllers/menu-item.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requirePermission } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requirePermission';
 import {
   validateBody,
   validateParams,

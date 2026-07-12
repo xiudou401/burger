@@ -39,6 +39,28 @@ export const userRepository = {
       .exec();
   },
 
+  consumeEmailVerificationToken(tokenHash: string, now = new Date()) {
+    return UserModel.findOneAndUpdate(
+      {
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationExpiresAt: { $gt: now },
+        status: 'active',
+      },
+      {
+        $set: {
+          emailVerified: true,
+        },
+        $unset: {
+          emailVerificationTokenHash: 1,
+          emailVerificationExpiresAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    ).exec();
+  },
+
   findByValidPasswordResetToken(tokenHash: string, now = new Date()) {
     return UserModel.findOne({
       passwordResetTokenHash: tokenHash,
@@ -46,6 +68,32 @@ export const userRepository = {
     })
       .select('+passwordHash +passwordResetTokenHash +passwordResetExpiresAt')
       .exec();
+  },
+
+  consumePasswordResetToken(
+    tokenHash: string,
+    passwordHash: string,
+    now = new Date(),
+  ) {
+    return UserModel.findOneAndUpdate(
+      {
+        passwordResetTokenHash: tokenHash,
+        passwordResetExpiresAt: { $gt: now },
+        status: 'active',
+      },
+      {
+        $set: {
+          passwordHash,
+        },
+        $unset: {
+          passwordResetTokenHash: 1,
+          passwordResetExpiresAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    ).exec();
   },
 
   findByValidSmsCode(phone: string, codeHash: string, now = new Date()) {
@@ -56,6 +104,29 @@ export const userRepository = {
     })
       .select('+smsVerificationCodeHash +smsVerificationExpiresAt')
       .exec();
+  },
+
+  consumeSmsCode(phone: string, codeHash: string, now = new Date()) {
+    return UserModel.findOneAndUpdate(
+      {
+        phone,
+        smsVerificationCodeHash: codeHash,
+        smsVerificationExpiresAt: { $gt: now },
+        status: 'active',
+      },
+      {
+        $set: {
+          phoneVerified: true,
+        },
+        $unset: {
+          smsVerificationCodeHash: 1,
+          smsVerificationExpiresAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    ).exec();
   },
 
   findCustomersPage({
@@ -85,6 +156,21 @@ export const userRepository = {
       emailVerificationTokenHash: tokenHash,
       emailVerificationExpiresAt: expiresAt,
     }).exec();
+  },
+
+  acceptStaffInviteRole(userId: string, role: 'staff') {
+    return UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          role,
+          emailVerified: true,
+        },
+      },
+      {
+        new: true,
+      },
+    ).exec();
   },
 
   save<T extends { save: () => Promise<unknown> }>(user: T) {

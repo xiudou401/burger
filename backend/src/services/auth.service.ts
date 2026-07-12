@@ -184,7 +184,7 @@ export const resendVerificationEmail = async (
 export const verifyEmail = async ({
   token,
 }: VerifyEmailPayload): Promise<MessageResult> => {
-  const user = await userRepository.findByValidEmailVerificationToken(
+  const user = await userRepository.consumeEmailVerificationToken(
     hashToken(token),
   );
 
@@ -193,11 +193,6 @@ export const verifyEmail = async ({
   }
 
   assertUserIsActive(user);
-
-  user.emailVerified = true;
-  user.emailVerificationTokenHash = undefined;
-  user.emailVerificationExpiresAt = undefined;
-  await userRepository.save(user);
 
   return {
     message: 'Email verified',
@@ -237,8 +232,9 @@ export const resetPassword = async ({
   token,
   password,
 }: ResetPasswordPayload): Promise<MessageResult> => {
-  const user = await userRepository.findByValidPasswordResetToken(
+  const user = await userRepository.consumePasswordResetToken(
     hashToken(token),
+    await hashPassword(password),
   );
 
   if (!user) {
@@ -246,11 +242,6 @@ export const resetPassword = async ({
   }
 
   assertUserIsActive(user);
-
-  user.passwordHash = await hashPassword(password);
-  user.passwordResetTokenHash = undefined;
-  user.passwordResetExpiresAt = undefined;
-  await userRepository.save(user);
   await revokeUserSessions(String(user._id));
 
   return { message: 'Password reset successfully' };
@@ -307,18 +298,13 @@ export const verifySmsCode = async ({
   phone,
   code,
 }: VerifySmsCodePayload): Promise<AuthResult> => {
-  const user = await userRepository.findByValidSmsCode(phone, hashToken(code));
+  const user = await userRepository.consumeSmsCode(phone, hashToken(code));
 
   if (!user) {
     throw new ServiceError('SMS code is invalid or expired', 400);
   }
 
   assertUserIsActive(user);
-
-  user.phoneVerified = true;
-  user.smsVerificationCodeHash = undefined;
-  user.smsVerificationExpiresAt = undefined;
-  await userRepository.save(user);
 
   const publicUser = toPublicUser(user);
 
@@ -341,6 +327,10 @@ export const loginWithOAuth = async ({
 
   if (!normalizedEmail || !normalizedEmail.includes('@')) {
     throw new ServiceError('OAuth provider did not return a valid email', 400);
+  }
+
+  if (!emailVerified) {
+    throw new ServiceError('OAuth email must be verified', 400);
   }
 
   let user = await userRepository.findByEmail(normalizedEmail);

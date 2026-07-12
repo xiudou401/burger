@@ -59,6 +59,56 @@ export const staffInviteRepository = {
       .exec();
   },
 
+  claimPendingByTokenHashForEmail(
+    tokenHash: string,
+    email: string,
+    acceptedAt = new Date(),
+  ) {
+    return StaffInviteModel.findOneAndUpdate(
+      {
+        tokenHash,
+        email,
+        status: 'pending',
+        expiresAt: { $gt: acceptedAt },
+      },
+      {
+        $set: {
+          status: 'accepted',
+          acceptedAt,
+        },
+      },
+      {
+        new: true,
+      },
+    )
+      .select('+tokenHash')
+      .exec();
+  },
+
+  restoreAcceptedInvite(inviteId: string) {
+    if (!isObjectId(inviteId)) {
+      return Promise.resolve(null);
+    }
+
+    return StaffInviteModel.findOneAndUpdate(
+      {
+        _id: inviteId,
+        status: 'accepted',
+      },
+      {
+        $set: {
+          status: 'pending',
+        },
+        $unset: {
+          acceptedAt: 1,
+        },
+      },
+      {
+        new: true,
+      },
+    ).exec();
+  },
+
   save<T extends { save: () => Promise<unknown> }>(invite: T) {
     return invite.save();
   },

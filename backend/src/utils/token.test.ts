@@ -1,5 +1,5 @@
+import { SignJWT, UnsecuredJWT } from 'jose';
 import { ServiceError } from '../errors/ServiceError';
-import { createHmac } from 'crypto';
 
 process.env.MONGO_URI =
   process.env.MONGO_URI ?? 'mongodb://localhost:27017/test';
@@ -9,28 +9,16 @@ process.env.JWT_SECRET = TEST_JWT_SECRET;
 const { signAuthToken, verifyAuthToken } =
   require('./token') as typeof import('./token');
 
-const toBase64Url = (value: string | Buffer) =>
-  Buffer.from(value).toString('base64url');
+const getJwtSecret = () => new TextEncoder().encode(TEST_JWT_SECRET);
 
-const signTestToken = (header: unknown, payload: unknown) => {
-  const encodedHeader = toBase64Url(JSON.stringify(header));
-  const encodedPayload = toBase64Url(JSON.stringify(payload));
-  const unsignedToken = `${encodedHeader}.${encodedPayload}`;
-  const signature = toBase64Url(
-    createHmac('sha256', TEST_JWT_SECRET).update(unsignedToken).digest(),
-  );
-
-  return `${unsignedToken}.${signature}`;
-};
-
-test('signs and verifies access tokens', () => {
-  const token = signAuthToken({
+test('signs and verifies access tokens', async () => {
+  const token = await signAuthToken({
     sub: 'user-123',
     email: 'pat@example.com',
     phone: '+61412345678',
   });
 
-  const payload = verifyAuthToken(token);
+  const payload = await verifyAuthToken(token);
 
   expect(payload.sub).toBe('user-123');
   expect(payload.email).toBe('pat@example.com');
@@ -40,8 +28,8 @@ test('signs and verifies access tokens', () => {
   expect(payload.exp).toBeGreaterThan(payload.iat);
 });
 
-test('rejects tampered access tokens', () => {
-  const token = signAuthToken({ sub: 'user-123' });
+test('rejects tampered access tokens', async () => {
+  const token = await signAuthToken({ sub: 'user-123' });
   const parts = token.split('.');
   const tamperedPayload = Buffer.from(
     JSON.stringify({
@@ -50,38 +38,37 @@ test('rejects tampered access tokens', () => {
     }),
   ).toString('base64url');
 
-  expect(() =>
+  await expect(
     verifyAuthToken(`${parts[0]}.${tamperedPayload}.${parts[2]}`),
-  ).toThrow(ServiceError);
+  ).rejects.toThrow(ServiceError);
 });
 
-test('rejects malformed access tokens', () => {
-  expect(() => verifyAuthToken('not-a-jwt')).toThrow(ServiceError);
+test('rejects malformed access tokens', async () => {
+  await expect(verifyAuthToken('not-a-jwt')).rejects.toThrow(ServiceError);
 });
 
-test('rejects tokens with unsupported headers', () => {
-  const token = signTestToken(
-    { alg: 'none', typ: 'JWT' },
-    {
-      sub: 'user-123',
-      iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 60,
-    },
-  );
+test('rejects tokens with unsupported headers', async () => {
+  const token = new UnsecuredJWT({
+    sub: 'user-123',
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 60,
+  })
+    .setIssuedAt()
+    .encode();
 
-  expect(() => verifyAuthToken(token)).toThrow(ServiceError);
+  await expect(verifyAuthToken(token)).rejects.toThrow(ServiceError);
 });
 
-test('treats tokens as expired at the exp second', () => {
+test('treats tokens as expired at the exp second', async () => {
   const now = Math.floor(Date.now() / 1000);
-  const token = signTestToken(
-    { alg: 'HS256', typ: 'JWT' },
-    {
-      sub: 'user-123',
-      iat: now - 60,
-      exp: now,
-    },
-  );
+  const token = await new SignJWT({ sub: 'user-123' })
+    .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+    .setIssuedAt(now - 60)
+    .setExpirationTime(now)
+    .sign(getJwtSecret());
 
-  expect(() => verifyAuthToken(token)).toThrow(ServiceError);
+  await expect(verifyAuthToken(token)).rejects.toMatchObject({
+    message: 'Token expired',
+    statusCode: 401,
+  });
 });

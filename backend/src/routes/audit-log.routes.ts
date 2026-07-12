@@ -1,7 +1,7 @@
 import express from 'express';
 import { listAuditLogsHandler } from '../controllers/audit-log.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requirePermission } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requirePermission';
 import { validateQuery } from '../middleware/validate';
 import { ListAuditLogsQuerySchema } from '../validation/audit-log.schema';
 

@@ -1,7 +1,7 @@
 import express from 'express';
 import { getAdminDashboardSummaryHandler } from '../controllers/admin-dashboard.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requirePermission } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requirePermission';
 
 const router = express.Router();
 

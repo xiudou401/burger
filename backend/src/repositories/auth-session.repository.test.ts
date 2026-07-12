@@ -5,6 +5,7 @@ import { authSessionRepository } from './auth-session.repository';
 jest.mock('../models/auth-session.model', () => ({
   AuthSessionModel: {
     create: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
     findOne: jest.fn(),
     findOneAndUpdate: jest.fn(),
     updateMany: jest.fn(),
@@ -73,6 +74,69 @@ describe('authSessionRepository', () => {
         refreshTokenHash: 'hash',
         revokedAt: { $exists: false },
       },
+      { revokedAt: expect.any(Date) },
+    );
+  });
+
+  test('links a replacement session to a consumed session', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+
+    jest
+      .mocked(AuthSessionModel.findByIdAndUpdate)
+      .mockReturnValue({ exec } as never);
+
+    await authSessionRepository.linkReplacement(
+      new Types.ObjectId().toString(),
+      'family-1',
+      new Types.ObjectId().toString(),
+    );
+
+    expect(AuthSessionModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      expect.any(Types.ObjectId),
+      {
+        familyId: 'family-1',
+        replacedBySessionId: expect.any(Types.ObjectId),
+      },
+      { new: true },
+    );
+  });
+
+  test('restores a consumed session without a linked replacement', async () => {
+    const sessionId = new Types.ObjectId().toString();
+    const exec = jest.fn().mockResolvedValue(null);
+
+    jest
+      .mocked(AuthSessionModel.findOneAndUpdate)
+      .mockReturnValue({ exec } as never);
+
+    await authSessionRepository.restoreConsumedById(sessionId);
+
+    expect(AuthSessionModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: expect.any(Types.ObjectId),
+        replacedBySessionId: { $exists: false },
+      },
+      {
+        $unset: {
+          revokedAt: '',
+          rotatedAt: '',
+          replacedBySessionId: '',
+        },
+      },
+    );
+  });
+
+  test('revokes a session by id', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+
+    jest
+      .mocked(AuthSessionModel.findByIdAndUpdate)
+      .mockReturnValue({ exec } as never);
+
+    await authSessionRepository.revokeById(new Types.ObjectId().toString());
+
+    expect(AuthSessionModel.findByIdAndUpdate).toHaveBeenCalledWith(
+      expect.any(Types.ObjectId),
       { revokedAt: expect.any(Date) },
     );
   });

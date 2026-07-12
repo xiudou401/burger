@@ -117,33 +117,60 @@ export const acceptStaffInvite = async ({
   user: AuthenticatedUser;
   invite: PublicStaffInvite;
 }> => {
-  const invite = await staffInviteRepository.findPendingByTokenHash(
-    hashToken(token),
-  );
-
-  if (!invite) {
-    throw new ServiceError('Invite link is invalid or expired', 400);
-  }
-
   const user = await userRepository.findById(userId);
 
   if (!user?.email) {
     throw new ServiceError('Sign in with the invited email first', 400);
   }
 
-  if (normalizeEmail(user.email) !== invite.email) {
+  const tokenHash = hashToken(token);
+  const normalizedEmail = normalizeEmail(user.email);
+  const invite = await staffInviteRepository.claimPendingByTokenHashForEmail(
+    tokenHash,
+    normalizedEmail,
+  );
+
+  if (!invite) {
+    const pendingInvite =
+      await staffInviteRepository.findPendingByTokenHash(tokenHash);
+
+    if (pendingInvite && normalizedEmail !== pendingInvite.email) {
+      throw new ServiceError('This invite belongs to another email', 403);
+    }
+
+    throw new ServiceError('Invite link is invalid or expired', 400);
+  }
+
+  let updatedUser: Awaited<
+    ReturnType<typeof userRepository.acceptStaffInviteRole>
+  >;
+
+  try {
+    updatedUser = await userRepository.acceptStaffInviteRole(
+      userId,
+      invite.role,
+    );
+  } catch (error) {
+    await staffInviteRepository.restoreAcceptedInvite(String(invite._id));
+    throw error;
+  }
+
+  if (!updatedUser) {
+    await staffInviteRepository.restoreAcceptedInvite(String(invite._id));
+    throw new ServiceError('User not found', 404);
+  }
+
+  if (!updatedUser.email) {
+    await staffInviteRepository.restoreAcceptedInvite(String(invite._id));
+    throw new ServiceError('Sign in with the invited email first', 400);
+  }
+
+  if (normalizeEmail(updatedUser.email) !== invite.email) {
+    await staffInviteRepository.restoreAcceptedInvite(String(invite._id));
     throw new ServiceError('This invite belongs to another email', 403);
   }
 
-  user.role = invite.role;
-  user.emailVerified = true;
-  await userRepository.save(user);
-
-  invite.status = 'accepted';
-  invite.acceptedAt = new Date();
-  await staffInviteRepository.save(invite);
-
-  const publicUser = toPublicUser(user);
+  const publicUser = toPublicUser(updatedUser);
   const session = await createAuthSession(publicUser);
 
   return {

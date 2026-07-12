@@ -8,7 +8,7 @@ import {
   updateOrderStatusHandler,
 } from '../controllers/order.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requirePermission } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requirePermission';
 import { requireVerifiedContact } from '../middleware/requireVerifiedContact';
 import {
   validateBody,

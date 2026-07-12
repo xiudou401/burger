@@ -16,6 +16,9 @@ jest.mock('../repositories/auth-session.repository', () => ({
     consumeActiveByRefreshTokenHash: jest.fn(),
     findByRefreshTokenHash: jest.fn(),
     revokeByRefreshTokenHash: jest.fn(),
+    linkReplacement: jest.fn(),
+    restoreConsumedById: jest.fn(),
+    revokeById: jest.fn(),
     revokeActiveByFamilyId: jest.fn(),
     revokeActiveByUserId: jest.fn(),
     save: jest.fn(),
@@ -76,8 +79,6 @@ describe('auth session service', () => {
       expiresAt: new Date(Date.now() + 60_000),
       revokedAt: new Date(),
       rotatedAt: new Date(),
-      replacedBySessionId: undefined as string | undefined,
-      save: jest.fn(),
     };
     const replacementSession = {
       _id: 'new-session',
@@ -113,9 +114,88 @@ describe('auth session service', () => {
         parentSessionId: 'old-session',
       }),
     );
-    expect(session.replacedBySessionId).toBe('new-session');
-    expect(authSessionRepository.save).toHaveBeenCalledWith(session);
+    expect(authSessionRepository.linkReplacement).toHaveBeenCalledWith(
+      'old-session',
+      'family-1',
+      'new-session',
+    );
     expect(result.user.id).toBe(user.id);
+  });
+
+  test('restores the consumed session when replacement creation fails', async () => {
+    const error = new Error('database unavailable');
+    const session = {
+      _id: 'old-session',
+      userId: user.id,
+      familyId: 'family-1',
+      revokedAt: new Date(),
+      rotatedAt: new Date(),
+    };
+    const userDoc = {
+      _id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
+    };
+
+    jest
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(session as never);
+    jest.mocked(userRepository.findById).mockResolvedValue(userDoc as never);
+    jest.mocked(authSessionRepository.create).mockRejectedValue(error);
+
+    await expect(rotateAuthSession('old-refresh-token')).rejects.toThrow(
+      'database unavailable',
+    );
+
+    expect(authSessionRepository.restoreConsumedById).toHaveBeenCalledWith(
+      'old-session',
+    );
+    expect(authSessionRepository.linkReplacement).not.toHaveBeenCalled();
+  });
+
+  test('revokes the replacement and restores the consumed session when linking fails', async () => {
+    const error = new Error('link failed');
+    const session = {
+      _id: 'old-session',
+      userId: user.id,
+      familyId: 'family-1',
+      revokedAt: new Date(),
+      rotatedAt: new Date(),
+    };
+    const replacementSession = {
+      _id: 'new-session',
+    };
+    const userDoc = {
+      _id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      phoneVerified: user.phoneVerified,
+    };
+
+    jest
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(session as never);
+    jest.mocked(userRepository.findById).mockResolvedValue(userDoc as never);
+    jest
+      .mocked(authSessionRepository.create)
+      .mockResolvedValue(replacementSession as never);
+    jest.mocked(authSessionRepository.linkReplacement).mockRejectedValue(error);
+
+    await expect(rotateAuthSession('old-refresh-token')).rejects.toThrow(
+      'link failed',
+    );
+
+    expect(authSessionRepository.revokeById).toHaveBeenCalledWith(
+      'new-session',
+    );
+    expect(authSessionRepository.restoreConsumedById).toHaveBeenCalledWith(
+      'old-session',
+    );
   });
 
   test('rejects missing refresh tokens with 401', async () => {

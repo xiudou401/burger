@@ -37,7 +37,7 @@ const createSession = async (
 
   return {
     result: {
-      accessToken: signAuthToken({
+      accessToken: await signAuthToken({
         sub: user.id,
         email: user.email,
         phone: user.phone,
@@ -85,6 +85,28 @@ const isConcurrentRefresh = (
   const elapsedMs = now.getTime() - session.rotatedAt.getTime();
 
   return elapsedMs >= 0 && elapsedMs <= TTL_MS.REFRESH_REUSE_GRACE;
+};
+
+const restoreConsumedSession = async (sessionId: string) => {
+  try {
+    await authSessionRepository.restoreConsumedById(sessionId);
+  } catch (error) {
+    console.error('Failed to restore consumed refresh session', {
+      sessionId,
+      error,
+    });
+  }
+};
+
+const revokeReplacementSession = async (sessionId: string) => {
+  try {
+    await authSessionRepository.revokeById(sessionId);
+  } catch (error) {
+    console.error('Failed to revoke replacement refresh session', {
+      sessionId,
+      error,
+    });
+  }
 };
 
 export const rotateAuthSession = async (
@@ -143,17 +165,33 @@ export const rotateAuthSession = async (
   }
 
   const familyId = session.familyId ?? randomUUID();
-  const { result, session: replacementSession } = await createSession(
-    toPublicUser(user),
-    {
+  let replacementSession: { _id: unknown };
+  let result: SessionAuthResult;
+
+  try {
+    const replacement = await createSession(toPublicUser(user), {
       familyId,
       parentSessionId: String(session._id),
-    },
-  );
+    });
 
-  session.familyId = familyId;
-  session.replacedBySessionId = replacementSession._id;
-  await authSessionRepository.save(session);
+    replacementSession = replacement.session;
+    result = replacement.result;
+  } catch (error) {
+    await restoreConsumedSession(String(session._id));
+    throw error;
+  }
+
+  try {
+    await authSessionRepository.linkReplacement(
+      String(session._id),
+      familyId,
+      String(replacementSession._id),
+    );
+  } catch (error) {
+    await revokeReplacementSession(String(replacementSession._id));
+    await restoreConsumedSession(String(session._id));
+    throw error;
+  }
 
   return result;
 };

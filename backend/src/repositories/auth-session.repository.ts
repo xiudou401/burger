@@ -42,6 +42,43 @@ export const authSessionRepository = {
       .exec();
   },
 
+  linkReplacement(
+    sessionId: string,
+    familyId: string,
+    replacementSessionId: string,
+  ) {
+    return AuthSessionModel.findByIdAndUpdate(
+      new Types.ObjectId(sessionId),
+      {
+        familyId,
+        replacedBySessionId: new Types.ObjectId(replacementSessionId),
+      },
+      { new: true },
+    ).exec();
+  },
+
+  restoreConsumedById(sessionId: string) {
+    return AuthSessionModel.findOneAndUpdate(
+      {
+        _id: new Types.ObjectId(sessionId),
+        replacedBySessionId: { $exists: false },
+      },
+      {
+        $unset: {
+          revokedAt: '',
+          rotatedAt: '',
+          replacedBySessionId: '',
+        },
+      },
+    ).exec();
+  },
+
+  revokeById(sessionId: string) {
+    return AuthSessionModel.findByIdAndUpdate(new Types.ObjectId(sessionId), {
+      revokedAt: new Date(),
+    }).exec();
+  },
+
   revokeByRefreshTokenHash(refreshTokenHash: string) {
     return AuthSessionModel.findOneAndUpdate(
       {

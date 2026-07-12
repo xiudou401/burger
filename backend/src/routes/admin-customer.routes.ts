@@ -5,7 +5,7 @@ import {
   listCustomersHandler,
 } from '../controllers/admin-customer.controller';
 import { authenticate } from '../middleware/authenticate';
-import { requirePermission } from '../middleware/requireAdmin';
+import { requirePermission } from '../middleware/requirePermission';
 import {
   validateBody,
   validateParams,
