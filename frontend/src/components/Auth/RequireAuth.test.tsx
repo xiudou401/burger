@@ -3,12 +3,14 @@ import RequireAuth from './RequireAuth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { AuthContextValue } from '../../store/auth/auth-context';
 
+let mockLocation = { pathname: '/profile', search: '' };
+
 jest.mock(
   'react-router-dom',
   () => ({
     Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
     Outlet: () => <div>Private profile</div>,
-    useLocation: () => ({ pathname: '/profile' }),
+    useLocation: () => mockLocation,
   }),
   { virtual: true },
 );
@@ -37,6 +39,7 @@ const renderGuard = (auth: Partial<AuthContextValue>) => {
 describe('RequireAuth', () => {
   afterEach(() => {
     jest.clearAllMocks();
+    mockLocation = { pathname: '/profile', search: '' };
   });
 
   test('shows a loading fallback while auth state is loading', () => {
@@ -51,6 +54,22 @@ describe('RequireAuth', () => {
     renderGuard({ isAuthenticated: false });
 
     expect(screen.getByText('Navigate to /login')).toBeInTheDocument();
+    expect(screen.queryByText('Private profile')).not.toBeInTheDocument();
+  });
+
+  test('redirects anonymous payment returns to the public return route', () => {
+    mockLocation = {
+      pathname: '/profile',
+      search: '?payment=success&orderId=order-123',
+    };
+
+    renderGuard({ isAuthenticated: false });
+
+    expect(
+      screen.getByText(
+        'Navigate to /payment/return?payment=success&orderId=order-123',
+      ),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Private profile')).not.toBeInTheDocument();
   });
 

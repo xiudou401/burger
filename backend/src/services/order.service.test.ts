@@ -195,8 +195,8 @@ describe('order service', () => {
             }),
           }),
         ],
-        success_url: `http://localhost:3000/profile?payment=success&orderId=${orderId}`,
-        cancel_url: `http://localhost:3000/profile?payment=cancelled&orderId=${orderId}`,
+        success_url: `http://localhost:3000/payment/return?payment=success&orderId=${orderId}`,
+        cancel_url: `http://localhost:3000/payment/return?payment=cancelled&orderId=${orderId}`,
       }),
       {
         idempotencyKey: `checkout:${userId}:${idempotencyKey}`,

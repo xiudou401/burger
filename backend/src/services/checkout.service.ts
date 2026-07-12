@@ -150,7 +150,7 @@ const buildStripeReturnUrl = (
   orderId: string,
 ) => {
   const rawUrl =
-    configuredUrl ?? `${env.FRONTEND_URL}/profile?payment=${payment}`;
+    configuredUrl ?? `${env.FRONTEND_URL}/payment/return?payment=${payment}`;
   const url = new URL(rawUrl);
 
   if (!url.searchParams.has('payment')) {

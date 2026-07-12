@@ -89,9 +89,10 @@ change it to cancelled.
 
 ## Frontend Return Experience
 
-The frontend success redirect is treated as a user experience signal only. The
-profile page can show a confirming state and reload the order, but payment state
-still comes from the backend after webhook processing.
+The frontend success redirect is treated as a user experience signal only. A
+public payment return route clears the local cart before sending the user to the
+right account area, but payment state still comes from the backend after webhook
+processing.
 
 ## Testing Strategy
 

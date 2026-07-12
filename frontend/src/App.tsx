@@ -11,6 +11,7 @@ import RequirePermission from './components/Auth/RequirePermission';
 import AuthLoadingFallback from './components/Auth/AuthLoadingFallback';
 
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
+const PaymentReturn = lazy(() => import('./pages/PaymentReturn'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const Profile = lazy(() => import('./pages/Profile'));
 const OrderDetails = lazy(() => import('./pages/OrderDetails'));
@@ -32,6 +33,7 @@ const App = () => {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/payment/return" element={<PaymentReturn />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/admin/login" element={<AdminLogin />} />
