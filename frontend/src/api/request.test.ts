@@ -254,7 +254,7 @@ describe('authenticated request refresh', () => {
     );
   });
 
-  test('does not mark the session expired for a refresh server error', async () => {
+  test('surfaces a refresh server error instead of the original 401', async () => {
     const sessionExpired = jest.fn();
     window.addEventListener('auth:session-expired', sessionExpired);
 
@@ -266,7 +266,29 @@ describe('authenticated request refresh', () => {
         mockResponse(503, { message: 'Service unavailable' }),
       );
 
-    await expect(request('/orders')).rejects.toBeInstanceOf(ApiError);
+    await expect(request('/orders')).rejects.toMatchObject({
+      statusCode: 503,
+      message: 'Service unavailable',
+    });
+
+    expect(sessionExpired).not.toHaveBeenCalled();
+    window.removeEventListener('auth:session-expired', sessionExpired);
+  });
+
+  test('surfaces a refresh network error instead of the original 401', async () => {
+    const sessionExpired = jest.fn();
+    window.addEventListener('auth:session-expired', sessionExpired);
+
+    fetchMock
+      .mockResolvedValueOnce(
+        mockResponse(401, { message: 'Access token expired' }),
+      )
+      .mockRejectedValueOnce(new Error('Failed to fetch'));
+
+    await expect(request('/orders')).rejects.toMatchObject({
+      statusCode: 0,
+      message: 'Failed to fetch',
+    });
 
     expect(sessionExpired).not.toHaveBeenCalled();
     window.removeEventListener('auth:session-expired', sessionExpired);

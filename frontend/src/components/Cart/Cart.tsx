@@ -86,41 +86,56 @@ const Cart = () => {
   }, [totalQuantity, clearQuote]);
 
   return (
-    <div className={classes.Cart} onClick={toggleCartDetailsHandler}>
+    <div className={classes.Cart}>
       {showCartDetails && <CartDetails open={showCartDetails} />}
 
       {showCheckout && quote && (
         <Checkout offCheckout={offCheckout} menuItems={quote.menuItems} />
       )}
 
-      <div className={classes.CartIcon}>
-        <img className={classes.CartIconImg} src={iconImg} alt="Shopping bag" />
+      <button
+        type="button"
+        className={classes.CartToggle}
+        aria-expanded={showCartDetails}
+        aria-controls="cart-details"
+        disabled={totalQuantity === 0}
+        onClick={toggleCartDetailsHandler}
+      >
+        <span className={classes.CartIcon}>
+          <img
+            className={classes.CartIconImg}
+            src={iconImg}
+            alt=""
+            aria-hidden="true"
+          />
 
-        {totalQuantity > 0 && (
-          <span className={classes.TotalQuantity}>{totalQuantity}</span>
-        )}
-      </div>
-
-      {totalQuantity === 0 ? (
-        <p className={classes.EmptyCartText}>Cart is empty</p>
-      ) : !quote ? (
-        <p className={classes.Price}>
-          {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
-          <span>Review cart</span>
-        </p>
-      ) : (
-        <p className={classes.Price}>
-          <span>
-            {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
-          </span>
-          {formatCurrency(estimatedTotalCents)}
-          {(quoteStale || quoteMismatch) && (
-            <span className={classes.Estimate}>Estimate</span>
+          {totalQuantity > 0 && (
+            <span className={classes.TotalQuantity}>{totalQuantity}</span>
           )}
-        </p>
-      )}
+        </span>
+
+        {totalQuantity === 0 ? (
+          <span className={classes.EmptyCartText}>Cart is empty</span>
+        ) : !quote ? (
+          <span className={classes.Price}>
+            {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
+            <span>Review cart</span>
+          </span>
+        ) : (
+          <span className={classes.Price}>
+            <span>
+              {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
+            </span>
+            {formatCurrency(estimatedTotalCents)}
+            {(quoteStale || quoteMismatch) && (
+              <span className={classes.Estimate}>Estimate</span>
+            )}
+          </span>
+        )}
+      </button>
 
       <button
+        type="button"
         className={`${classes.BuyButton} ${
           totalQuantity === 0 ? classes.Disabled : ''
         }`}

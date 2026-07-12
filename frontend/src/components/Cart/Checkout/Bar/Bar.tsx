@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import classes from './Bar.module.css';
 import { createCheckoutOrder } from '../../../../api/orders';
@@ -14,6 +14,16 @@ interface BarProps {
   onOrderComplete: () => void;
 }
 
+const createCheckoutAttemptKey = () => {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (char) =>
+    (Number(char) ^ ((Math.random() * 16) >> (Number(char) / 4))).toString(16),
+  );
+};
+
 const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,6 +36,18 @@ const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
   const [isPaying, setIsPaying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const checkoutAttemptKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    checkoutAttemptKeyRef.current = null;
+  }, [items, menuVersion]);
+
+  const getCheckoutAttemptKey = () => {
+    checkoutAttemptKeyRef.current =
+      checkoutAttemptKeyRef.current ?? createCheckoutAttemptKey();
+
+    return checkoutAttemptKeyRef.current;
+  };
 
   const payHandler = async () => {
     if (items.length === 0 || isPaying || isAuthLoading) return;
@@ -57,7 +79,11 @@ const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
         throw new Error('Menu is still loading');
       }
 
-      const { checkoutUrl } = await createCheckoutOrder(items, menuVersion);
+      const { checkoutUrl } = await createCheckoutOrder(
+        items,
+        menuVersion,
+        getCheckoutAttemptKey(),
+      );
       setMessage('Redirecting to secure payment');
       onOrderComplete();
       window.location.assign(checkoutUrl);

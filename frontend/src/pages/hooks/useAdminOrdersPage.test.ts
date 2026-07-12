@@ -1,4 +1,4 @@
-import { getNextStatusesByUser } from './admin-order-status-permissions';
+import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 import { getPermissionsForRole } from '../../types/permissions';
 
 describe('admin order status permissions', () => {

@@ -4,7 +4,7 @@ import { HTTP_STATUS } from '../../api/http-status';
 import { ApiError } from '../../api/request';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { Order, OrderStatus } from '../../types/order';
-import { getNextStatusesByUser } from './admin-order-status-permissions';
+import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 
 export const useAdminOrdersPage = () => {
   const user = useAuth((ctx) => ctx.user);

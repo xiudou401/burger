@@ -7,7 +7,7 @@ import {
 import type { AuthResponse } from '../types/auth';
 import { API_BASE } from './api-base';
 
-const DEFAULT_TIMEOUT = 10000;
+const REQUEST_TIMEOUT_MS = 10_000;
 const RETRY_COUNT = 1;
 const RETRY_DELAY_MS = 300;
 const REFRESH_CONFLICT_RETRY_COUNT = 3;
@@ -43,6 +43,16 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
     this.body = body;
     this.requestId = body.requestId;
+  }
+}
+
+class RefreshRequestError extends Error {
+  refreshError: unknown;
+
+  constructor(refreshError: unknown) {
+    super('Refresh request failed');
+    this.name = 'RefreshRequestError';
+    this.refreshError = refreshError;
   }
 }
 
@@ -101,7 +111,7 @@ export const request = async <T>(
   const timeoutId = window.setTimeout(() => {
     didTimeout = true;
     timeoutController.abort();
-  }, DEFAULT_TIMEOUT);
+  }, REQUEST_TIMEOUT_MS);
 
   const onExternalAbort = () => {
     timeoutController.abort();
@@ -147,6 +157,8 @@ export const request = async <T>(
           ) {
             clearAccessToken();
             notifyAuthSessionExpired();
+          } else {
+            throw new RefreshRequestError(refreshError);
           }
         }
       }
@@ -182,6 +194,10 @@ export const request = async <T>(
       throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
         message: 'Request cancelled',
       });
+    }
+
+    if (err instanceof RefreshRequestError) {
+      throw err.refreshError;
     }
 
     if (err instanceof ApiError) {

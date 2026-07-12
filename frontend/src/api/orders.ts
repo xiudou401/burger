@@ -5,12 +5,14 @@ import type { Order, OrderStatus } from '../types/order';
 export const createCheckoutOrder = (
   items: CartStoredItem[],
   menuVersion: number,
+  idempotencyKey: string,
 ) => {
   return request<{ order: Order; checkoutUrl: string }>('/orders/checkout', {
     method: 'POST',
     body: JSON.stringify({
       items,
       menuVersion,
+      idempotencyKey,
     }),
   });
 };

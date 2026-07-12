@@ -50,6 +50,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
       )}
 
       <div
+        id="cart-details"
         className={classes.CartDetails}
         onClick={(e: MouseEvent<HTMLDivElement>) => e.stopPropagation()}
       >

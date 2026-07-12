@@ -15,15 +15,37 @@
   margin: auto;
   z-index: 9999;
   box-shadow: 0 18rem 42rem rgba(0, 0, 0, 0.26);
+}
+
+.CartToggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  border-radius: 8rem 0 0 8rem;
+  background: transparent;
   cursor: pointer;
+}
+
+.CartToggle:disabled {
+  cursor: default;
+}
+
+.CartToggle:focus-visible,
+.BuyButton:focus-visible {
+  outline: 3rem solid #fff;
+  outline-offset: -6rem;
 }
 
 .CartIcon {
   width: 74rem;
   height: 74rem;
-  position: absolute;
-  left: 18rem;
-  bottom: 9rem;
+  position: relative;
+  flex: 0 0 74rem;
+  margin-left: 18rem;
   display: grid;
   place-items: center;
 }
@@ -54,11 +76,12 @@
   justify-content: center;
   align-items: center;
   min-width: 0;
-  margin: 0 0 0 112rem;
+  margin: 0 18rem;
   color: #fff;
   font-weight: bold;
   font-size: 28rem;
   line-height: 1.1;
+  text-align: center;
 }
 
 .EmptyCartText {
@@ -107,7 +130,8 @@
   .CartIcon {
     width: 66rem;
     height: 66rem;
-    left: 12rem;
+    flex-basis: 66rem;
+    margin-left: 12rem;
   }
 
   .CartIconImg {
@@ -116,7 +140,7 @@
 
   .Price,
   .EmptyCartText {
-    margin-left: 92rem;
+    margin: 0 12rem;
     font-size: 24rem;
   }
 

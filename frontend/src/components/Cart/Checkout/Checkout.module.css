@@ -18,11 +18,17 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
+  border: none;
   background: #fff;
   color: #202020;
   font-size: 26rem;
   box-shadow: 0 10rem 24rem rgba(0, 0, 0, 0.16);
   cursor: pointer;
+}
+
+.Close:focus-visible {
+  outline: 3rem solid #ffc72c;
+  outline-offset: 4rem;
 }
 
 .OrderSummary {

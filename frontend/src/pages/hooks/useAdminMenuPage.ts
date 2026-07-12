@@ -13,7 +13,7 @@ import {
   validateMenuItemForm,
   type AdminMenuForm,
   type AdminMenuFormErrors,
-} from './admin-menu-form';
+} from '../utils/admin-menu-form';
 
 export const useAdminMenuPage = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
