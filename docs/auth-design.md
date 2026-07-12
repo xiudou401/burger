@@ -46,6 +46,14 @@ Checkout requires a verified email or verified contact before payment. If email
 delivery fails, the frontend sends the user to the verification page with an
 informational state and offers a resend path.
 
+Email verification, password reset, SMS verification, and staff invites are
+modeled as one-time credentials. Their service flows do not first load a token
+document and then save it later. Instead, repository methods consume credentials
+with conditional atomic updates such as `consumeEmailVerificationToken`,
+`consumePasswordResetToken`, `consumeSmsCode`, and staff invite claim methods.
+Concurrent reuse attempts therefore match no active credential after the first
+successful request.
+
 ## Authorization
 
 Roles are still stored as `customer`, `staff`, and `admin`, but route access is
@@ -69,10 +77,30 @@ Backend route examples:
 The frontend mirrors these guards for user experience, but backend permission
 checks are the security boundary.
 
+## Disabled Accounts
+
+Access tokens are JWTs, but authenticated API routes are not fully stateless.
+The `authenticate` middleware verifies the JWT, then loads the current user from
+MongoDB and rejects users whose `status` is `disabled`.
+
+That means admin account disable takes effect on the next protected API request,
+even if the existing short-lived access token has not expired yet. Refresh
+rotation also loads the current user and rejects disabled accounts, so disabled
+users cannot obtain replacement access tokens.
+
+The tradeoff is an extra user lookup on authenticated routes. Burger Club keeps
+that lookup because immediate account disable is more important for admin/staff
+operations than avoiding one indexed read. The system does not currently use a
+Redis denylist or token-version claim.
+
 ## Failure Cases
 
 - Missing refresh token: backend returns `401` and clears the refresh cookie.
 - Refresh token reuse: backend revokes the active session family.
+- Replacement session creation failure after the previous refresh token is
+  consumed: the current implementation fails closed and the user must
+  authenticate again. A production multi-document deployment could wrap refresh
+  rotation in a MongoDB transaction to remove this partial-success window.
 - Disabled user: refresh and authenticated routes reject the session.
 - Invalid OAuth state: callback fails before creating a session.
 - Staff manually entering admin-only URLs: frontend blocks where possible;

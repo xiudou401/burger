@@ -1,113 +1,60 @@
-# Burger Club - Full-stack restaurant ordering platform
+# Burger Club Frontend
 
-Burger Club is a Sydney local restaurant ordering system for pickup and
-delivery. It demonstrates a full-stack customer ordering flow, staff kitchen
-console, live menu management, authenticated profiles, cart validation, AUD
-checkout totals, and Stripe payments.
+React + TypeScript frontend for Burger Club. The root
+[`README.md`](../README.md) is the main project overview; this file only covers
+frontend-specific development notes.
 
-The frontend is built with React and TypeScript. The backend API handles menu
-versioning, cart validation, order creation, Stripe Checkout, signed webhook
-payment updates, staff access, and email workflows.
+## Local Development
 
-Stripe payments require these backend environment variables:
-
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_SUCCESS_URL` (optional, defaults to the profile page)
-- `STRIPE_CANCEL_URL` (optional, defaults to the profile page)
-
-For local webhook testing, keep Stripe CLI running in a separate terminal:
+Install dependencies and start the CRA dev server:
 
 ```bash
-stripe listen --forward-to localhost:5001/api/stripe/webhook
+npm install
+npm start
 ```
 
-Use the `whsec_...` value printed by that command as `STRIPE_WEBHOOK_SECRET`,
-then restart the backend.
+Open [http://localhost:3000](http://localhost:3000). In development, relative
+`/api` requests are proxied to `http://localhost:5001` through the `proxy`
+setting in `package.json`.
 
-This frontend was originally bootstrapped with
-[Create React App](https://github.com/facebook/create-react-app).
+## Scripts
 
-## Architecture conventions
+```bash
+npm start
+npm run typecheck
+npm run lint
+npm run format
+npm run format:check
+CI=true npm test -- --watchAll=false
+npm run build
+```
 
-### Hooks (placement rules)
+## Frontend Notes
 
-Use these rules for **new** hooks. Existing files can stay where they are until a change in that area makes a move worthwhile (incremental migration, not a big-bang directory rewrite).
+- Access tokens are stored in memory through the auth provider; refresh tokens
+  stay in HttpOnly cookies managed by the backend.
+- The API wrapper handles request timeouts, CSRF headers, refresh retries, and
+  auth-session events.
+- Cart quote validation is debounced and always uses backend-calculated AUD
+  cents before checkout.
+- Admin, profile, order details, OAuth callback, reset password, and staff
+  invite routes are lazy-loaded at route boundaries.
+- Production routing and API rewrites are configured in `vercel.json`.
 
-1. **`store/<domain>/hooks/`** — hooks bound to **one** domain context or store (read/write that API only).  
-   Examples: `useAuth`, cart persistence / quote hooks that only touch cart context.
+## Architecture Conventions
 
-2. **`features/<domain>/hooks/`** — **feature-level** behavior: business logic that is not “just” store wiring (e.g. infinite list + request orchestration, checkout flow, order polling).  
-   If the repo does not yet have a `features/` tree, keep these temporarily under `src/hooks/` and move them when that layout exists.
+### Hooks Placement
 
-3. **`src/hooks/`** (or a future **`shared/hooks/`**) — **generic, reusable** hooks with no domain ownership.  
-   Examples: `useDebounce`, `useLocalStorage`, `useIntersectionObserver`.
+Use these rules for new hooks. Existing files can move incrementally when a
+nearby feature changes.
 
-**Why three layers:** with only `store/.../hooks` and `src/hooks/`, feature-level hooks tend to pile into `src/hooks/` until it becomes a junk drawer. The middle layer keeps feature logic discoverable as the app grows (orders, payments, profile, etc.).
+1. `store/<domain>/hooks/` for hooks bound to one domain context or store.
+   Examples: `useAuth`, cart persistence, cart quote hooks.
+2. `features/<domain>/hooks/` for feature-level behavior, such as request
+   orchestration or checkout flows. If a feature tree does not exist yet, keep
+   the hook near the page or in `src/hooks` until that feature is introduced.
+3. `src/hooks/` for generic reusable hooks with no domain ownership. Examples:
+   debounce, local storage, or intersection observer helpers.
 
-## Available Scripts
-
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The goal is to keep store wiring, feature behavior, and generic utilities from
+collapsing into one catch-all hooks directory.

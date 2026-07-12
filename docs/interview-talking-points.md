@@ -57,6 +57,8 @@ returned.
   `X-CSRF-Protection` header.
 - Login/signup/reset flows are rate limited.
 - JWT signature verification uses constant-time comparison.
+- Authenticated routes verify the access token and then load the current user,
+  so disabled accounts are rejected immediately on the next protected request.
 - Production mode requires real email configuration so development tokens are
   not leaked.
 
@@ -89,6 +91,15 @@ also check request origin and a custom CSRF header.
 
 If a refresh token is stolen, rotation limits reuse. After a successful refresh,
 the old session is consumed. If the old token appears again, it no longer works.
+
+**When does account disable take effect?**
+
+Immediately on the next protected API request. Although access tokens are JWTs,
+the backend authentication middleware loads the current user and rejects
+`status=disabled`. Refresh rotation also checks the user status, so disabled
+users cannot mint a replacement access token. The tradeoff is one indexed user
+lookup on authenticated routes; I chose that because admin disable should take
+effect quickly in this app.
 
 ## 2. Stripe Payment Flow
 

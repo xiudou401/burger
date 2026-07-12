@@ -46,16 +46,26 @@ a Stripe event collection:
 - `status`
 - `orderId`
 - `receivedAt`
+- `lastReceivedAt`
+- `attempts`
 - `processedAt`
+- `lastError`
 
 Processing flow:
 
 1. Verify the Stripe signature.
-2. Claim the event id for processing.
-3. If it was already processed, return `200`.
+2. Atomically claim the event id for processing.
+3. If it was already processed or is still inside an active processing lease,
+   return `200`.
 4. Apply the order update.
 5. Mark the event as processed.
 6. If processing fails, mark the event failed and return through error handling.
+
+The claim step uses a conditional database update so only one request can move a
+retryable event into `processing`. Failed events can be retried, and
+`processing` events older than the lease window can be reclaimed. This prevents
+a worker crash from leaving an event permanently stuck while still avoiding
+duplicate work for fresh in-flight deliveries.
 
 ## Payment Matching
 
