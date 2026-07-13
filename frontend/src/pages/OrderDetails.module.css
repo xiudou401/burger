@@ -22,6 +22,36 @@
   text-decoration: none;
 }
 
+.Confirmation {
+  margin-bottom: 24rem;
+  padding: 24rem 28rem;
+  border: 1rem solid rgba(29, 124, 73, 0.22);
+  border-radius: 8rem;
+  background: #f0fff6;
+}
+
+.ConfirmationEyebrow {
+  margin: 0 0 8rem;
+  color: #1d7c49;
+  font-size: 15rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ConfirmationTitle {
+  margin: 0;
+  color: #184d31;
+  font-size: 34rem;
+  line-height: 1.08;
+}
+
+.ConfirmationText {
+  margin: 10rem 0 0;
+  color: #2f6045;
+  font-size: 18rem;
+  line-height: 1.45;
+}
+
 .Hero {
   display: flex;
   align-items: flex-start;

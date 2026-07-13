@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import classes from './OrderDetails.module.css';
 import AccountBar from '../components/Auth/AccountBar';
 import { useOrderDetailsPage } from './hooks/useOrderDetailsPage';
@@ -13,7 +13,11 @@ const formatDate = (value: string) => {
 
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
+  const location = useLocation();
   const { order, isLoading, error } = useOrderDetailsPage(orderId);
+  const paymentConfirmed =
+    (location.state as { paymentConfirmed?: boolean } | null)
+      ?.paymentConfirmed === true;
 
   return (
     <main className={classes.Page}>
@@ -35,6 +39,17 @@ const OrderDetails = () => {
 
         {!isLoading && !error && order && (
           <>
+            {paymentConfirmed && (
+              <section className={classes.Confirmation} role="status">
+                <p className={classes.ConfirmationEyebrow}>Order confirmed</p>
+                <h1 className={classes.ConfirmationTitle}>Payment received</h1>
+                <p className={classes.ConfirmationText}>
+                  We have received your payment and your order is being
+                  confirmed by the kitchen.
+                </p>
+              </section>
+            )}
+
             <header className={classes.Hero}>
               <div>
                 <p className={classes.Eyebrow}>Order #{order.id.slice(-6)}</p>

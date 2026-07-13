@@ -5,11 +5,13 @@ import { useToast } from '../components/UI/Toast/ToastContext';
 import { useAuth } from '../store/auth/hooks/useAuth';
 import { useCartActions } from '../store/cart/hooks/useCartActions';
 import { clearPersistedCart } from '../store/cart/cart-reducer';
-import { hasPermission } from '../types/permissions';
 
-const buildLoginState = () => ({
+const buildOrderPath = (orderId: string | null) =>
+  orderId ? `/orders/${orderId}` : '/profile';
+
+const buildLoginState = (orderId: string | null) => ({
   from: {
-    pathname: '/profile',
+    pathname: buildOrderPath(orderId),
   },
 });
 
@@ -18,7 +20,6 @@ const PaymentReturn = () => {
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const { clearCart } = useCartActions();
-  const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
   const handledRef = useRef(false);
@@ -44,17 +45,15 @@ const PaymentReturn = () => {
       if (!isAuthenticated) {
         navigate('/login', {
           replace: true,
-          state: buildLoginState(),
+          state: buildLoginState(orderId),
         });
         return;
       }
 
-      navigate(
-        hasPermission(user, 'view_orders') ? '/admin/orders' : '/profile',
-        {
-          replace: true,
-        },
-      );
+      navigate(buildOrderPath(orderId), {
+        replace: true,
+        state: { paymentConfirmed: true },
+      });
       return;
     }
 
@@ -73,7 +72,6 @@ const PaymentReturn = () => {
     navigate,
     searchParams,
     showToast,
-    user,
   ]);
 
   return <AuthLoadingFallback />;
