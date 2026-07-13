@@ -1,13 +1,13 @@
 .Page {
   min-height: 100vh;
   padding: 160rem 28rem 56rem;
-  background: #f6f2ea;
+  background: #fffaf1;
   color: #292929;
   font-family: Arial, Helvetica, sans-serif;
 }
 
 .Shell {
-  width: min(860rem, 100%);
+  width: min(920rem, 100%);
   margin: 0 auto;
 }
 
@@ -97,8 +97,8 @@
   padding: 28rem;
   border-radius: 8rem;
   background: #fff;
-  border: 1rem solid #ead8b5;
-  box-shadow: 0 10rem 26rem rgba(68, 40, 0, 0.07);
+  border: 1rem solid #eadfce;
+  box-shadow: 0 10rem 24rem rgba(58, 36, 10, 0.07);
 }
 
 .CardHeader {
@@ -172,7 +172,7 @@
 
 @media (max-width: 560px) {
   .Page {
-    padding: 144rem 18rem 42rem;
+    padding: 124rem 14rem 36rem;
   }
 
   .Hero,
@@ -183,6 +183,15 @@
 
   .Item {
     grid-template-columns: 64rem minmax(0, 1fr);
+  }
+
+  .Card,
+  .Confirmation {
+    padding: 22rem;
+  }
+
+  .Title {
+    font-size: 34rem;
   }
 
   .ItemImage {

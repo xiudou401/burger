@@ -16,7 +16,7 @@
 
 .LoadingStatus {
   position: fixed;
-  bottom: 104rem;
+  bottom: 142rem;
   gap: 10rem;
   padding: 10rem 18rem;
   background: #ffc72c;
@@ -24,9 +24,8 @@
 }
 
 .EndStatus {
-  position: absolute;
-  right: 24rem;
-  bottom: 96rem;
+  position: fixed;
+  bottom: 142rem;
   padding: 9rem 16rem;
   background: #fff8eb;
   color: #7a5a18;
@@ -35,7 +34,7 @@
 
 .ErrorStatus {
   position: fixed;
-  bottom: 104rem;
+  bottom: 142rem;
   gap: 8rem;
   padding: 10rem 18rem;
   border: 0;
@@ -46,13 +45,23 @@
 
 .RefreshStatus {
   position: fixed;
-  bottom: 104rem;
+  bottom: 142rem;
   gap: 8rem;
   padding: 10rem 18rem;
   border: 0;
   background: #292929;
   color: #ffc72c;
   cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .LoadingStatus,
+  .EndStatus,
+  .ErrorStatus,
+  .RefreshStatus {
+    width: min(420rem, calc(100vw - 36rem));
+    text-align: center;
+  }
 }
 
 .ErrorStatus:hover {
