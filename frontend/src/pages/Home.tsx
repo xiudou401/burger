@@ -69,12 +69,12 @@ const Home = () => {
         <AccountBar variant="hero" />
 
         <div className={classes.HeroCopy}>
-          <p className={classes.Kicker}>Surry Hills pickup and delivery</p>
+          <p className={classes.Kicker}>Made fresh in Surry Hills</p>
           <h1 id="menu-title" className={classes.Title}>
             Smashed burgers, loaded sides, cold drinks.
           </h1>
           <p className={classes.Subtitle}>
-            Order ahead for fast local pickup or delivery from Surry Hills.
+            Browse the menu and build your next order in a few taps.
           </p>
         </div>
 
