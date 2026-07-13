@@ -7,75 +7,80 @@ dotenv.config();
 
 const menuItems = [
   {
-    name: 'Harbour Classic Burger',
+    name: 'Old School Cheese Burger',
     description:
-      'Grass-fed beef, pickles, onion, tomato relish, and soft milk bun.',
-    priceCents: 1200,
+      'Smashed beef patty, American cheese, pickles, red onion, lettuce, tomato, pink sauce and BBQ sauce.',
+    priceCents: 1490,
     image: '/img/meals/1.png',
     category: 'burger',
     isFeatured: true,
     isAvailable: true,
   },
   {
-    name: 'Double Cheese Stack',
+    name: 'Double Smash Royale',
     description:
-      'Two beef patties, double cheddar, burger sauce, and house pickles.',
-    priceCents: 2000,
+      'Two crispy-edged beef patties, double American cheese, pickles, red onion, mustard and house burger sauce.',
+    priceCents: 2290,
     image: '/img/meals/2.png',
     category: 'burger',
     isFeatured: true,
     isAvailable: true,
   },
   {
-    name: 'Sydney Club Burger',
-    description: 'Double beef, lettuce, onion, cheese, and a tangy club sauce.',
-    priceCents: 2400,
+    name: 'Smoky Bacon & Cheese',
+    description:
+      'Beef patty, American cheese, streaky smoked bacon, lettuce, tomato, pickles, BBQ sauce and pink sauce.',
+    priceCents: 1990,
     image: '/img/meals/3.png',
     category: 'burger',
     isFeatured: true,
     isAvailable: true,
   },
   {
-    name: 'Spicy Chicken Burger',
-    description: 'Crispy chicken thigh, chilli mayo, lettuce, and toasted bun.',
-    priceCents: 2100,
+    name: 'Lemon & Herb Chicken Burger',
+    description:
+      'Flame-grilled chicken breast, lettuce, tomato, red onion, pickles, aioli and pink sauce.',
+    priceCents: 1790,
     image: '/img/meals/4.png',
     category: 'burger',
     isFeatured: false,
     isAvailable: true,
   },
   {
-    name: 'Grilled Chicken Burger',
-    description: 'Grilled chicken, lettuce, smoky BBQ glaze, and creamy mayo.',
-    priceCents: 2200,
+    name: 'Southern Crispy Chicken Burger',
+    description:
+      'Double-crunch crispy chicken, cheese sauce, lettuce, red onion, pickles, aioli and chipotle pink sauce.',
+    priceCents: 1890,
     image: '/img/meals/5.png',
     category: 'burger',
     isFeatured: false,
     isAvailable: true,
   },
   {
-    name: 'Crispy Chicken Classic',
-    description: 'Golden chicken fillet, crisp lettuce, and light mayo.',
-    priceCents: 1400,
+    name: 'Aussie Burger',
+    description:
+      'Beef patty, American cheese, bacon, fried egg, beetroot, pineapple, lettuce, tomato, pickles and BBQ sauce.',
+    priceCents: 2190,
     image: '/img/meals/6.png',
     category: 'burger',
     isFeatured: false,
     isAvailable: true,
   },
   {
-    name: 'Cheeseburger',
-    description: 'Beef patty, cheddar, tomato relish, mustard, and pickles.',
-    priceCents: 1200,
+    name: 'Mushroom Halloumi Burger',
+    description:
+      'Grilled portobello mushroom, halloumi, lettuce, tomato, onion rings, pickles, aioli and herb sauce.',
+    priceCents: 1990,
     image: '/img/meals/7.png',
     category: 'burger',
     isFeatured: false,
     isAvailable: true,
   },
   {
-    name: 'Loaded Club Fries',
+    name: 'Cheesy Loaded Chips',
     description:
-      'Crispy fries topped with melted cheese, smoky bacon, and spring onion.',
-    priceCents: 900,
+      'Famous chips topped with cheese sauce, chilli mayo, smoky bacon and spring onion.',
+    priceCents: 1590,
     image: '/img/meals/8.png',
     category: 'side',
     isFeatured: true,
@@ -84,8 +89,8 @@ const menuItems = [
   {
     name: 'Golden Onion Rings',
     description:
-      'Crunchy battered onion rings served with a creamy house dipping sauce.',
-    priceCents: 800,
+      'Crispy onion rings served with creamy aioli for dipping.',
+    priceCents: 1090,
     image: '/img/meals/9.png',
     category: 'side',
     isFeatured: false,
@@ -94,18 +99,18 @@ const menuItems = [
   {
     name: 'House Lemonade',
     description:
-      'Cold sparkling lemonade with fresh lemon, ice, and a bright citrus finish.',
-    priceCents: 600,
+      'Cold sparkling lemonade with fresh lemon, ice and a bright citrus finish.',
+    priceCents: 650,
     image: '/img/meals/10.png',
     category: 'drink',
     isFeatured: false,
     isAvailable: true,
   },
   {
-    name: 'Vanilla Thickshake',
+    name: 'Vanilla Malt Thickshake',
     description:
-      'Creamy vanilla shake finished with whipped cream for a classic burger shop treat.',
-    priceCents: 850,
+      'Creamy vanilla malt shake finished thick and cold for a classic burger shop treat.',
+    priceCents: 1090,
     image: '/img/meals/11.png',
     category: 'drink',
     isFeatured: true,
@@ -115,7 +120,7 @@ const menuItems = [
     name: 'Warm Chocolate Brownie',
     description:
       'Rich chocolate brownie served with vanilla ice cream and chocolate sauce.',
-    priceCents: 950,
+    priceCents: 990,
     image: '/img/meals/12.png',
     category: 'dessert',
     isFeatured: true,
@@ -124,7 +129,7 @@ const menuItems = [
   {
     name: 'Vanilla Soft Serve',
     description:
-      'Classic soft serve in a takeaway cup. Temporarily sold out during dinner rush.',
+      'Classic vanilla soft serve in a takeaway cup. Temporarily sold out during dinner rush.',
     priceCents: 650,
     image: '/img/meals/13.png',
     category: 'dessert',
@@ -132,10 +137,10 @@ const menuItems = [
     isAvailable: false,
   },
   {
-    name: 'Classic Burger Combo',
+    name: 'Old School Combo',
     description:
-      'Harbour Classic Burger with crispy fries and a cold drink for one.',
-    priceCents: 1990,
+      'Old School Cheese Burger with famous chips and a cold soft drink.',
+    priceCents: 2490,
     image: '/img/meals/14.png',
     category: 'combo',
     isFeatured: true,

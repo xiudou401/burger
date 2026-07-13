@@ -72,7 +72,7 @@ const Home = () => {
           <p className={classes.Kicker}>Made fresh in Surry Hills</p>
           <div className={classes.HeroLine}>
             <h1 id="menu-title" className={classes.Title}>
-              Smashed burgers, loaded sides, cold drinks.
+              Grillhouse burgers, loaded chips, thickshakes.
             </h1>
             <div className={classes.StoreStatus}>
               <span className={classes.StatusDot} aria-hidden="true" />

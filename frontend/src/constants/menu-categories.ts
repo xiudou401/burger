@@ -1,11 +1,11 @@
 import type { MenuItemCategory } from '../types/menu-item';
 
 export const MENU_CATEGORIES = [
-  { value: 'burger', label: 'Burger', pluralLabel: 'Burgers' },
-  { value: 'side', label: 'Side', pluralLabel: 'Sides' },
-  { value: 'drink', label: 'Drink', pluralLabel: 'Drinks' },
+  { value: 'burger', label: 'Grillhouse Burger', pluralLabel: 'Burgers' },
+  { value: 'side', label: 'Snack & Side', pluralLabel: 'Snacks & Sides' },
+  { value: 'drink', label: 'Shake & Drink', pluralLabel: 'Shakes & Drinks' },
   { value: 'dessert', label: 'Dessert', pluralLabel: 'Desserts' },
-  { value: 'combo', label: 'Combo', pluralLabel: 'Combos' },
+  { value: 'combo', label: 'Burger Combo', pluralLabel: 'Burger Combos' },
 ] satisfies Array<{
   value: MenuItemCategory;
   label: string;
