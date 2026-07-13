@@ -74,8 +74,7 @@ const Home = () => {
             Smashed burgers, loaded sides, cold drinks.
           </h1>
           <p className={classes.Subtitle}>
-            Smashed burgers, loaded sides and cold drinks made for fast local
-            ordering.
+            Order ahead for fast local pickup or delivery from Surry Hills.
           </p>
         </div>
 
