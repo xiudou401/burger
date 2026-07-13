@@ -39,7 +39,6 @@ const Signup = () => {
     <AuthSplitPage
       title="Join the crave-worthy side."
       subtitle="Create an account and your next burger run starts a little faster."
-      imageIds={[4, 5, 6]}
     >
       <AuthCard>
         <AuthHeader

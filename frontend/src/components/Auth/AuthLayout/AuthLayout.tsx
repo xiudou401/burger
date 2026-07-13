@@ -4,7 +4,6 @@ import classes from './AuthLayout.module.css';
 interface AuthSplitPageProps {
   title: string;
   subtitle: string;
-  imageIds: number[];
   children: ReactNode;
 }
 
@@ -19,7 +18,6 @@ export const AuthLogo = () => {
 export const AuthSplitPage = ({
   title,
   subtitle,
-  imageIds,
   children,
 }: AuthSplitPageProps) => {
   return (
@@ -30,13 +28,6 @@ export const AuthSplitPage = ({
           <p className={classes.Eyebrow}>Sydney Burger</p>
           <h1 className={classes.Title}>{title}</h1>
           <p className={classes.Subtitle}>{subtitle}</p>
-        </div>
-        <div className={classes.FoodRow}>
-          {imageIds.map((imageId) => (
-            <div className={classes.FoodTile} key={imageId}>
-              <img src={`/img/meals/${imageId}.png`} alt="" />
-            </div>
-          ))}
         </div>
       </section>
 

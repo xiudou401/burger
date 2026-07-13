@@ -77,29 +77,6 @@
   line-height: 1.45;
 }
 
-.FoodRow {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 18rem;
-}
-
-.FoodTile {
-  width: 112rem;
-  height: 112rem;
-  display: grid;
-  place-items: center;
-  border-radius: 8rem;
-  background: rgba(255, 255, 255, 0.13);
-  border: 1rem solid rgba(255, 255, 255, 0.22);
-}
-
-.FoodTile img {
-  width: 96rem;
-  height: 96rem;
-  object-fit: contain;
-}
-
 .FormPanel {
   min-height: 100vh;
   padding: 56rem 48rem;
@@ -163,10 +140,6 @@
 
   .Subtitle {
     font-size: 20rem;
-  }
-
-  .FoodRow {
-    display: none;
   }
 
   .FormPanel {

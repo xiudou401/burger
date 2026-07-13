@@ -30,7 +30,6 @@ const AdminLogin = () => {
     <AuthSplitPage
       title="Kitchen console."
       subtitle="Sign in with a staff account to manage live Sydney Burger orders."
-      imageIds={[4, 5, 6]}
     >
       <AuthCard>
         <AuthHeader

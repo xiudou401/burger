@@ -31,7 +31,6 @@ const Login = () => {
     <AuthSplitPage
       title="Welcome back to big flavor."
       subtitle="Sign in to keep your favorites, cart, and checkout ready for your next order."
-      imageIds={[1, 2, 3]}
     >
       <AuthCard>
         <AuthHeader
