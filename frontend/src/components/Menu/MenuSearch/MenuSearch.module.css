@@ -70,8 +70,13 @@
 
 @media (min-width: 900px) {
   .MenuSearch {
+    flex: 0 1 520rem;
     height: 74rem;
-    padding: 10rem 40rem 6rem;
+    padding: 0;
+  }
+
+  .InputOuter {
+    width: 100%;
   }
 
   .SearchInput {
