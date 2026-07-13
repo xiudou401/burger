@@ -33,15 +33,6 @@
   line-height: 1;
 }
 
-.Subtitle {
-  max-width: 520rem;
-  margin: 12rem 0 0;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 24rem;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
 .StoreCard {
   position: absolute;
   right: 28rem;
@@ -136,11 +127,6 @@
     font-size: 50rem;
   }
 
-  .Subtitle {
-    max-width: 430rem;
-    font-size: 22rem;
-  }
-
   .StoreCard {
     left: 22rem;
     right: 22rem;
@@ -169,11 +155,6 @@
 
   .Title {
     font-size: 50rem;
-  }
-
-  .Subtitle {
-    max-width: 620rem;
-    font-size: 22rem;
   }
 
   .StoreCard {

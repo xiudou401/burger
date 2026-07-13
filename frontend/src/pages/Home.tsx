@@ -73,9 +73,6 @@ const Home = () => {
           <h1 id="menu-title" className={classes.Title}>
             Smashed burgers, loaded sides, cold drinks.
           </h1>
-          <p className={classes.Subtitle}>
-            Browse the menu and build your next order in a few taps.
-          </p>
         </div>
 
         <div className={classes.StoreCard}>
