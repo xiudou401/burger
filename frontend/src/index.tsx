@@ -6,8 +6,6 @@ import { CartProvider } from './store/cart/cart-provider';
 import { AuthProvider } from './store/auth/auth-provider';
 import { ToastProvider } from './components/UI/Toast/ToastContext';
 
-document.documentElement.style.fontSize = 100 / 750 + 'vw';
-
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 root.render(
   <React.StrictMode>

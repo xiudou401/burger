@@ -2,6 +2,10 @@
   box-sizing: border-box;
 }
 
+html {
+  font-size: min(0.133333vw, 1px);
+}
+
 body {
   margin: 0;
 }
