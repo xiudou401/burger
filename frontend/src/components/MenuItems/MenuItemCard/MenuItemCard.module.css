@@ -134,3 +134,29 @@
     font-size: 24rem;
   }
 }
+
+@media (min-width: 900px) {
+  .MenuItemCard {
+    gap: 28rem;
+    min-height: 244rem;
+    padding: 22rem;
+  }
+
+  .ImageWrapper {
+    width: 286rem;
+    min-height: 204rem;
+    flex-basis: 286rem;
+  }
+
+  .Name {
+    font-size: 32rem;
+  }
+
+  .Description {
+    font-size: 21rem;
+  }
+
+  .Price {
+    font-size: 32rem;
+  }
+}

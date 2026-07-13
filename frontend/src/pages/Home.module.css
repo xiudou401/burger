@@ -156,3 +156,37 @@
     padding-inline: 22rem;
   }
 }
+
+@media (min-width: 900px) {
+  .Hero {
+    top: 96rem;
+    min-height: 206rem;
+    padding: 24rem 40rem;
+  }
+
+  .HeroCopy {
+    max-width: 720rem;
+  }
+
+  .Title {
+    font-size: 50rem;
+  }
+
+  .Subtitle {
+    max-width: 620rem;
+    font-size: 22rem;
+  }
+
+  .StoreCard {
+    right: 40rem;
+    bottom: 18rem;
+  }
+
+  .MenuTools {
+    top: 302rem;
+  }
+
+  .CategoryRail {
+    padding: 0 40rem 16rem;
+  }
+}

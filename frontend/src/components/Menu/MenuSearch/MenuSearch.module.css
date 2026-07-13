@@ -67,3 +67,25 @@
   background-color: #e4e4e4;
   color: #555;
 }
+
+@media (min-width: 900px) {
+  .MenuSearch {
+    height: 74rem;
+    padding: 10rem 40rem 6rem;
+  }
+
+  .SearchInput {
+    height: 52rem;
+    font-size: 21rem;
+  }
+
+  .SearchIcon {
+    font-size: 23rem;
+  }
+
+  .ClearButton {
+    width: 40rem;
+    height: 40rem;
+    font-size: 22rem;
+  }
+}
