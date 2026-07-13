@@ -88,8 +88,7 @@ const menuItems = [
   },
   {
     name: 'Golden Onion Rings',
-    description:
-      'Crispy onion rings served with creamy aioli for dipping.',
+    description: 'Crispy onion rings served with creamy aioli for dipping.',
     priceCents: 1090,
     image: '/img/meals/9.png',
     category: 'side',
