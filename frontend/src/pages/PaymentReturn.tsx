@@ -4,6 +4,7 @@ import AuthLoadingFallback from '../components/Auth/AuthLoadingFallback';
 import { useToast } from '../components/UI/Toast/ToastContext';
 import { useAuth } from '../store/auth/hooks/useAuth';
 import { useCartActions } from '../store/cart/hooks/useCartActions';
+import { clearPersistedCart } from '../store/cart/cart-reducer';
 import { hasPermission } from '../types/permissions';
 
 const buildLoginState = () => ({
@@ -31,6 +32,7 @@ const PaymentReturn = () => {
     const orderId = searchParams.get('orderId');
 
     if (payment === 'success') {
+      clearPersistedCart();
       clearCart();
       showToast({
         message: orderId

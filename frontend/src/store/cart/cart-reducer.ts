@@ -11,6 +11,8 @@ export const initialCartState: CartState = {
   totalQuantity: 0,
 };
 
+const CART_STORAGE_KEY = 'CartItemsState';
+
 const calculateTotalQuantity = (items: CartStoredItem[]) =>
   items.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -19,8 +21,32 @@ const createCartState = (items: CartStoredItem[]): CartState => ({
   totalQuantity: calculateTotalQuantity(items),
 });
 
+const isSuccessfulPaymentReturn = () => {
+  if (typeof window === 'undefined') return false;
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const payment = searchParams.get('payment');
+
+  return (
+    payment === 'success' &&
+    ['/profile', '/payment/return'].includes(window.location.pathname)
+  );
+};
+
+export const clearPersistedCart = () => {
+  localStorage.setItem(
+    CART_STORAGE_KEY,
+    JSON.stringify(initialCartState.items),
+  );
+};
+
 export const loadCartState = (): CartState => {
-  const stored = localStorage.getItem('CartItemsState');
+  if (isSuccessfulPaymentReturn()) {
+    clearPersistedCart();
+    return initialCartState;
+  }
+
+  const stored = localStorage.getItem(CART_STORAGE_KEY);
   if (!stored) return initialCartState;
 
   try {
