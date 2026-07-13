@@ -116,8 +116,14 @@ const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
             {error ?? message}
           </p>
         )}
+        {!error && !message && (
+          <p className={classes.HelperText}>
+            Secure checkout powered by Stripe
+          </p>
+        )}
         <button
           className={classes.Button}
+          type="button"
           disabled={
             items.length === 0 ||
             isPaying ||
@@ -126,7 +132,9 @@ const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
           }
           onClick={payHandler}
         >
-          {isPaying ? 'Redirecting' : 'Pay with Stripe'}
+          <span className={classes.ButtonText}>
+            {isPaying ? 'Redirecting...' : 'Pay with Stripe'}
+          </span>
         </button>
       </div>
     </div>

@@ -2,42 +2,53 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 22rem;
   position: fixed;
   width: min(704rem, calc(100vw - 36rem));
-  min-height: 92rem;
-  background-color: #202020;
+  min-height: 104rem;
+  padding: 18rem;
+  background:
+    linear-gradient(135deg, rgba(44, 22, 14, 0.98), rgba(16, 16, 16, 0.98)),
+    #202020;
+  border: 1rem solid rgba(255, 199, 44, 0.24);
   border-radius: 8rem;
   bottom: 24rem;
   left: 0;
   right: 0;
   margin: auto;
   z-index: 9999;
-  box-shadow: 0 18rem 42rem rgba(0, 0, 0, 0.26);
+  box-shadow: 0 18rem 42rem rgba(0, 0, 0, 0.3);
 }
 
 .TotalPrice {
   display: flex;
   align-items: center;
-  margin-left: 30rem;
   color: #fff;
-  font-weight: bold;
-  font-size: 30rem;
+  font-weight: 900;
+  font-size: 32rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .Actions {
   display: flex;
   align-items: center;
-  gap: 18rem;
+  justify-content: flex-end;
+  gap: 16rem;
+  min-width: 0;
+  flex: 1;
 }
 
 .Message,
-.Error {
+.Error,
+.HelperText {
   max-width: 220rem;
   margin: 0;
-  color: #fff;
+  color: rgba(255, 255, 255, 0.82);
   font-size: 16rem;
   font-weight: 800;
   line-height: 1.2;
+  text-align: right;
 }
 
 .Error {
@@ -45,34 +56,88 @@
 }
 
 .Button {
-  align-self: stretch;
+  min-height: 64rem;
+  min-width: 238rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
-  background-color: #ffc72c;
-  color: #202020;
-  min-width: 246rem;
-  border-radius: 0 8rem 8rem 0;
-  font-size: 24rem;
+  border-radius: 8rem;
+  background: linear-gradient(180deg, #d71920 0%, #bd0017 100%);
+  color: #fff;
+  font-size: 22rem;
   font-weight: 900;
+  letter-spacing: 0;
+  box-shadow:
+    inset 0 1rem 0 rgba(255, 255, 255, 0.22),
+    0 12rem 24rem rgba(189, 0, 23, 0.34);
   cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease;
+}
+
+.Button:hover:not(:disabled) {
+  transform: translateY(-1rem);
+  background: linear-gradient(180deg, #e3262d 0%, #c90018 100%);
+  box-shadow:
+    inset 0 1rem 0 rgba(255, 255, 255, 0.24),
+    0 16rem 28rem rgba(189, 0, 23, 0.4);
+}
+
+.Button:focus-visible {
+  outline: 3rem solid #ffc72c;
+  outline-offset: 4rem;
+}
+
+.ButtonText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
 .Button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
+  transform: none;
+  box-shadow: none;
 }
 
 @media (max-width: 560px) {
   .Bar {
     width: calc(100vw - 28rem);
+    min-height: 128rem;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14rem;
+    padding: 16rem;
   }
 
   .TotalPrice {
-    margin-left: 20rem;
-    font-size: 26rem;
+    justify-content: center;
+    font-size: 28rem;
+  }
+
+  .Actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 10rem;
+  }
+
+  .Message,
+  .Error,
+  .HelperText {
+    max-width: none;
+    text-align: center;
+    font-size: 14rem;
   }
 
   .Button {
-    min-width: 196rem;
-    font-size: 21rem;
+    width: 100%;
+    min-width: 0;
+    min-height: 58rem;
+    font-size: 20rem;
   }
 }
