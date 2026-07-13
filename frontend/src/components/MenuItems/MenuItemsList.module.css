@@ -1,6 +1,6 @@
 .MenuItemsList {
   position: absolute;
-  top: 490rem;
+  top: 470rem;
   bottom: 128rem;
   left: 0;
   right: 0;
@@ -15,14 +15,14 @@
 
 @media (max-width: 560px) {
   .MenuItemsList {
-    top: 512rem;
+    top: 492rem;
     padding-inline: 18rem;
   }
 }
 
 @media (min-width: 900px) {
   .MenuItemsList {
-    top: 358rem;
+    top: 346rem;
     padding: 28rem 40rem 40rem;
   }
 }

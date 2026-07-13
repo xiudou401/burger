@@ -134,7 +134,7 @@
 
 .HeroAccountBar {
   position: relative;
-  height: 92rem;
+  height: 72rem;
   padding: 0;
   background: transparent;
   border-bottom: 0;
@@ -178,7 +178,7 @@
   }
 
   .HeroAccountBar {
-    height: 86rem;
+    height: 64rem;
     padding: 0;
   }
 

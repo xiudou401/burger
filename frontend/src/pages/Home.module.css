@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   z-index: 20;
-  min-height: 360rem;
+  min-height: 340rem;
   padding: 28rem 28rem 24rem;
   background:
     linear-gradient(90deg, rgba(24, 24, 24, 0.9), rgba(24, 24, 24, 0.35)),
@@ -14,7 +14,7 @@
 }
 
 .HeroCopy {
-  max-width: 620rem;
+  max-width: 900rem;
 }
 
 .Kicker {
@@ -26,6 +26,7 @@
 }
 
 .Title {
+  flex: 1;
   margin: 0;
   color: #fff;
   font-size: 54rem;
@@ -60,7 +61,7 @@
 
 .MenuTools {
   position: fixed;
-  top: 360rem;
+  top: 340rem;
   left: 0;
   right: 0;
   z-index: 30;
@@ -103,7 +104,7 @@
 
 @media (max-width: 560px) {
   .Hero {
-    min-height: 382rem;
+    min-height: 362rem;
     padding: 26rem 22rem;
   }
 
@@ -118,7 +119,7 @@
   }
 
   .MenuTools {
-    top: 382rem;
+    top: 362rem;
   }
 
   .CategoryRail {
@@ -128,20 +129,33 @@
 
 @media (min-width: 900px) {
   .Hero {
-    min-height: 276rem;
+    min-height: 264rem;
     padding: 24rem 40rem;
   }
 
   .HeroCopy {
-    max-width: 720rem;
+    max-width: 100%;
+  }
+
+  .HeroLine {
+    display: flex;
+    align-items: flex-end;
+    gap: 28rem;
   }
 
   .Title {
     font-size: 50rem;
   }
 
+  .StoreStatus {
+    flex: 0 0 auto;
+    margin-top: 0;
+    margin-bottom: 3rem;
+    white-space: nowrap;
+  }
+
   .MenuTools {
-    top: 276rem;
+    top: 264rem;
     display: flex;
     align-items: center;
     gap: 18rem;

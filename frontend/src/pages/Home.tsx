@@ -70,12 +70,14 @@ const Home = () => {
 
         <div className={classes.HeroCopy}>
           <p className={classes.Kicker}>Made fresh in Surry Hills</p>
-          <h1 id="menu-title" className={classes.Title}>
-            Smashed burgers, loaded sides, cold drinks.
-          </h1>
-          <div className={classes.StoreStatus}>
-            <span className={classes.StatusDot} aria-hidden="true" />
-            <span>Open today · Surry Hills pickup · 10:30 AM - 9:30 PM</span>
+          <div className={classes.HeroLine}>
+            <h1 id="menu-title" className={classes.Title}>
+              Smashed burgers, loaded sides, cold drinks.
+            </h1>
+            <div className={classes.StoreStatus}>
+              <span className={classes.StatusDot} aria-hidden="true" />
+              <span>Open today · Surry Hills pickup · 10:30 AM - 9:30 PM</span>
+            </div>
           </div>
         </div>
       </section>
