@@ -56,6 +56,30 @@ test('parses trusted origins with frontend url as a default origin', () => {
   ]);
 });
 
+test('trusts the local API origin in development for dev-server proxies', () => {
+  process.env.NODE_ENV = 'development';
+  process.env.PORT = '5001';
+  process.env.API_URL = 'http://localhost:5001';
+
+  const env = loadEnv();
+
+  expect(env?.TRUSTED_ORIGINS).toEqual([
+    'http://localhost:3000',
+    'http://localhost:5001',
+  ]);
+});
+
+test('does not trust the API origin by default outside development', () => {
+  process.env.NODE_ENV = 'production';
+  process.env.API_URL = 'https://api.sydneyburger.com';
+  process.env.RESEND_API_KEY = 're_test_key';
+  process.env.EMAIL_FROM = 'Burger Club <orders@example.com>';
+
+  const env = loadEnv();
+
+  expect(env?.TRUSTED_ORIGINS).toEqual(['http://localhost:3000']);
+});
+
 test('rejects missing production email configuration', () => {
   process.env.NODE_ENV = 'production';
   process.env.RESEND_API_KEY = '';

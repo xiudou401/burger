@@ -48,19 +48,26 @@ const EnvSchema = z
       });
     }
   })
-  .transform((parsed) => ({
-    ...parsed,
-    API_URL: parsed.API_URL ?? `http://localhost:${parsed.PORT}`,
-    TRUSTED_ORIGINS: Array.from(
-      new Set([
-        parsed.FRONTEND_URL,
-        ...(parsed.TRUSTED_ORIGINS ?? '')
-          .split(',')
-          .map((origin) => origin.trim())
-          .filter(Boolean),
-      ]),
-    ),
-  }));
+  .transform((parsed) => {
+    const apiUrl = parsed.API_URL ?? `http://localhost:${parsed.PORT}`;
+    const developmentApiOrigins =
+      parsed.NODE_ENV === 'development' ? [apiUrl] : [];
+
+    return {
+      ...parsed,
+      API_URL: apiUrl,
+      TRUSTED_ORIGINS: Array.from(
+        new Set([
+          parsed.FRONTEND_URL,
+          ...developmentApiOrigins,
+          ...(parsed.TRUSTED_ORIGINS ?? '')
+            .split(',')
+            .map((origin) => origin.trim())
+            .filter(Boolean),
+        ]),
+      ),
+    };
+  });
 
 const parseEnv = () => {
   try {
