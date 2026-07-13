@@ -46,9 +46,6 @@ const AccountBar = ({ variant = 'default' }: AccountBarProps) => {
         <span className={classes.Mark}>S</span>
         <span className={classes.BrandCopy}>
           <span className={classes.BrandText}>Sydney Burger</span>
-          <span className={classes.BrandSubtext}>
-            Sydney pickup and delivery
-          </span>
         </span>
       </Link>
 

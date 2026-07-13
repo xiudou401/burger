@@ -44,17 +44,8 @@
 }
 
 .BrandCopy {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
+  display: block;
   min-width: 0;
-}
-
-.BrandSubtext {
-  color: #8b7350;
-  font-size: 13rem;
-  font-weight: 800;
-  white-space: nowrap;
 }
 
 .AuthLinks,
@@ -166,7 +157,6 @@
   box-shadow: 0 12rem 28rem rgba(0, 0, 0, 0.2);
 }
 
-.HeroAccountBar .BrandSubtext,
 .HeroAccountBar .Member {
   color: rgba(255, 255, 255, 0.78);
 }
@@ -192,7 +182,6 @@
     padding: 0;
   }
 
-  .BrandSubtext,
   .UserText,
   .ProfileLink,
   .VerifyButton {
