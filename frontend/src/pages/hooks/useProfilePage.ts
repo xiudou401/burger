@@ -44,7 +44,7 @@ export const useProfilePage = () => {
   const mountedRef = useRef(true);
   const processedPaymentRef = useRef<string | null>(null);
 
-  const initial = user?.name?.trim().charAt(0).toUpperCase() || 'B';
+  const initial = user?.name?.trim().charAt(0).toUpperCase() || 'S';
   const firstName = user?.name?.trim().split(/\s+/)[0] || 'Burger fan';
   const accountStatus = user?.email
     ? user.emailVerified

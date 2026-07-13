@@ -1,10 +1,10 @@
 .Hero {
   position: fixed;
-  top: 120rem;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 20;
-  min-height: 280rem;
+  min-height: 400rem;
   padding: 28rem 28rem 24rem;
   background:
     linear-gradient(90deg, rgba(24, 24, 24, 0.9), rgba(24, 24, 24, 0.35)),
@@ -128,7 +128,7 @@
 
 @media (max-width: 560px) {
   .Hero {
-    min-height: 300rem;
+    min-height: 420rem;
     padding: 26rem 22rem;
   }
 
@@ -159,8 +159,7 @@
 
 @media (min-width: 900px) {
   .Hero {
-    top: 96rem;
-    min-height: 206rem;
+    min-height: 302rem;
     padding: 24rem 40rem;
   }
 

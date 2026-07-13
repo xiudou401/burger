@@ -29,7 +29,7 @@ const AcceptStaffInvite = () => {
   return (
     <AuthSplitPage
       title="Join the kitchen console."
-      subtitle="Accept your Burger Club staff invitation with the email address that received it."
+      subtitle="Accept your Sydney Burger staff invitation with the email address that received it."
       imageIds={[4, 6, 7]}
     >
       <AuthCard>

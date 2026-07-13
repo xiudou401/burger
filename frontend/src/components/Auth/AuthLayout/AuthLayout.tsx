@@ -13,7 +13,7 @@ interface AuthCenteredPageProps {
 }
 
 export const AuthLogo = () => {
-  return <div className={classes.Logo}>M</div>;
+  return <div className={classes.Logo}>S</div>;
 };
 
 export const AuthSplitPage = ({
@@ -27,7 +27,7 @@ export const AuthSplitPage = ({
       <section className={classes.BrandPanel}>
         <AuthLogo />
         <div className={classes.BrandCopy}>
-          <p className={classes.Eyebrow}>Burger Club</p>
+          <p className={classes.Eyebrow}>Sydney Burger</p>
           <h1 className={classes.Title}>{title}</h1>
           <p className={classes.Subtitle}>{subtitle}</p>
         </div>

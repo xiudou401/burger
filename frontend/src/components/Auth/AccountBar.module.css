@@ -141,9 +141,55 @@
   font-weight: 700;
 }
 
+.HeroAccountBar {
+  position: relative;
+  height: 92rem;
+  padding: 0;
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+  color: #fff;
+}
+
+.HeroAccountBar .Brand,
+.HeroAccountBar .BrandText,
+.HeroAccountBar .LoginLink,
+.HeroAccountBar .ProfileLink,
+.HeroAccountBar .VerifyButton,
+.HeroAccountBar .Greeting {
+  color: #fff;
+}
+
+.HeroAccountBar .Mark {
+  background: #ffc72c;
+  color: #bd0017;
+  box-shadow: 0 12rem 28rem rgba(0, 0, 0, 0.2);
+}
+
+.HeroAccountBar .BrandSubtext,
+.HeroAccountBar .Member {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.HeroAccountBar .JoinLink,
+.HeroAccountBar .Logout {
+  background: #ffc72c;
+  color: #202020;
+}
+
+.HeroAccountBar .VerifyButton {
+  border-color: rgba(255, 199, 44, 0.78);
+  background: rgba(32, 32, 32, 0.38);
+}
+
 @media (max-width: 560px) {
   .AccountBar {
     padding: 0 18rem;
+  }
+
+  .HeroAccountBar {
+    height: 86rem;
+    padding: 0;
   }
 
   .BrandSubtext,

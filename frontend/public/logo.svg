@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title">
+  <title id="title">Sydney Burger</title>
+  <rect width="192" height="192" rx="28" fill="#ffc72c" />
+  <circle cx="150" cy="42" r="16" fill="#bd0017" opacity="0.18" />
+  <text
+    x="96"
+    y="132"
+    fill="#bd0017"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="116"
+    font-weight="900"
+    text-anchor="middle"
+  >
+    S
+  </text>
+  <path
+    fill="#202020"
+    d="M44 140c12 14 30 22 52 22 21 0 39-7 52-22v20c-14 12-31 18-52 18s-38-6-52-18v-20Z"
+    opacity="0.16"
+  />
+</svg>

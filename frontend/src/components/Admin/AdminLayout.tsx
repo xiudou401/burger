@@ -28,7 +28,7 @@ const AdminLayout = ({
     <main className={classes.Page}>
       <aside className={classes.Sidebar}>
         <Link className={classes.Brand} to="/admin/dashboard">
-          <span className={classes.Mark}>B</span>
+          <span className={classes.Mark}>S</span>
           <span>Kitchen Console</span>
         </Link>
 

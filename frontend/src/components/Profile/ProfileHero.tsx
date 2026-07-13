@@ -18,7 +18,7 @@ const ProfileHero = ({
       <div className={classes.HeroMain}>
         <div className={classes.Avatar}>{initial}</div>
         <div className={classes.HeroCopy}>
-          <p className={classes.Eyebrow}>Burger Club</p>
+          <p className={classes.Eyebrow}>Sydney Burger</p>
           <h1 className={classes.Title}>Hi, {firstName}</h1>
           <p className={classes.Subtitle}>
             Track your account, keep checkout ready, and jump back into your

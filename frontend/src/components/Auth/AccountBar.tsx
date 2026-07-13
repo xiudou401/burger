@@ -4,13 +4,17 @@ import { useAuth } from '../../store/auth/hooks/useAuth';
 import { useToast } from '../UI/Toast/ToastContext';
 import classes from './AccountBar.module.css';
 
-const AccountBar = () => {
+interface AccountBarProps {
+  variant?: 'default' | 'hero';
+}
+
+const AccountBar = ({ variant = 'default' }: AccountBarProps) => {
   const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const logout = useAuth((ctx) => ctx.logout);
   const { showToast } = useToast();
 
-  const initial = user?.name?.trim().charAt(0).toUpperCase() || 'B';
+  const initial = user?.name?.trim().charAt(0).toUpperCase() || 'S';
   const memberStatus = user?.email
     ? user.emailVerified
       ? 'Ready to order'
@@ -31,12 +35,17 @@ const AccountBar = () => {
     }
   };
 
+  const accountBarClass =
+    variant === 'hero'
+      ? `${classes.AccountBar} ${classes.HeroAccountBar}`
+      : classes.AccountBar;
+
   return (
-    <header className={classes.AccountBar}>
+    <header className={accountBarClass}>
       <Link className={classes.Brand} to="/">
-        <span className={classes.Mark}>B</span>
+        <span className={classes.Mark}>S</span>
         <span className={classes.BrandCopy}>
-          <span className={classes.BrandText}>Burger Club</span>
+          <span className={classes.BrandText}>Sydney Burger</span>
           <span className={classes.BrandSubtext}>
             Sydney pickup and delivery
           </span>

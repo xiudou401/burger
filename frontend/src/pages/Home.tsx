@@ -65,13 +65,13 @@ const Home = () => {
 
   return (
     <MenuLayout>
-      <AccountBar />
-
       <section className={classes.Hero} aria-labelledby="menu-title">
+        <AccountBar variant="hero" />
+
         <div className={classes.HeroCopy}>
-          <p className={classes.Kicker}>Sydney pickup and delivery</p>
+          <p className={classes.Kicker}>Surry Hills pickup and delivery</p>
           <h1 id="menu-title" className={classes.Title}>
-            Burger Club
+            Smashed burgers, loaded sides, cold drinks.
           </h1>
           <p className={classes.Subtitle}>
             Smashed burgers, loaded sides and cold drinks made for fast local
