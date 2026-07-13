@@ -323,6 +323,128 @@ describe('order service', () => {
     expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
   });
 
+  test('returns the existing checkout when order creation loses an idempotency race', async () => {
+    jest.mocked(validateCart).mockResolvedValue({
+      items: [validatedMeal],
+      totalCents: 2400,
+      menuVersion: 7,
+    });
+
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId: mealId,
+          nameAtPurchase: 'Classic Burger',
+          imageAtPurchase: '/img/burger.png',
+          priceCentsAtPurchase: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_existing',
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_existing',
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest.mocked(orderRepository.create).mockRejectedValue({ code: 11000 });
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(existingOrder as never);
+
+    const checkout = await createCheckoutOrder(
+      userId,
+      [{ id: mealId, quantity: 2 }],
+      7,
+      idempotencyKey,
+    );
+
+    expect(orderRepository.create).toHaveBeenCalled();
+    expect(orderRepository.findCheckoutByIdempotencyKey).toHaveBeenCalledTimes(
+      2,
+    );
+    expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
+    expect(checkout.order.id).toBe(orderId);
+    expect(mockCreateSession).not.toHaveBeenCalled();
+  });
+
+  test('resets failed checkout payment state before retrying Stripe session creation', async () => {
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId: mealId,
+          nameAtPurchase: 'Classic Burger',
+          imageAtPurchase: '/img/burger.png',
+          priceCentsAtPurchase: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: undefined as string | undefined,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_failed',
+        status: 'failed',
+        amountCents: 2400,
+        currency: 'aud',
+        paidAt: now,
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(existingOrder as never);
+    mockCreateSession.mockImplementation(async () => {
+      expect(existingOrder.status).toBe('pending_payment');
+      expect(existingOrder.payment.status).toBe('requires_payment');
+      expect(existingOrder.payment.provider).toBe('stripe');
+      expect(existingOrder.payment.providerPaymentId).toBeUndefined();
+      expect(existingOrder.payment.paidAt).toBeUndefined();
+
+      return {
+        id: 'cs_test_retry',
+        url: 'https://checkout.stripe.com/c/pay/cs_test_retry',
+      };
+    });
+
+    const checkout = await createCheckoutOrder(
+      userId,
+      [{ id: mealId, quantity: 2 }],
+      7,
+      idempotencyKey,
+    );
+
+    expect(existingOrder.payment.status).toBe('requires_payment');
+    expect(existingOrder.payment.providerPaymentId).toBe('cs_test_retry');
+    expect(existingOrder.payment.paidAt).toBeUndefined();
+    expect(existingOrder.checkoutUrl).toBe(
+      'https://checkout.stripe.com/c/pay/cs_test_retry',
+    );
+    expect(orderRepository.save).toHaveBeenCalledWith(existingOrder);
+    expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
+  });
+
   test('marks checkout orders as failed when Stripe session creation fails', async () => {
     jest.mocked(validateCart).mockResolvedValue({
       items: [validatedMeal],

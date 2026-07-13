@@ -98,6 +98,14 @@ const markCheckoutOrderFailed = async <
   await orderRepository.save(order);
 };
 
+const isMongoDuplicateKeyError = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  return (error as { code?: unknown }).code === 11000;
+};
+
 const isPaidOrder = (order: {
   status: OrderStatus;
   payment: {
@@ -165,6 +173,38 @@ const buildStripeReturnUrl = (
 const buildStripeIdempotencyKey = (userId: string, idempotencyKey: string) =>
   `checkout:${userId}:${idempotencyKey}`;
 
+const toExistingCheckoutItems = (
+  order: CheckoutOrderDocument,
+): ValidatedCartMenuItem[] =>
+  order.items.map((item) => {
+    const menuItemId = item.menuItemId ?? item.mealId;
+    const name = item.nameAtPurchase ?? item.name;
+    const priceCents = item.priceCentsAtPurchase ?? item.priceCents;
+
+    if (!menuItemId || !name || priceCents === undefined) {
+      throw new ServiceError('Checkout order snapshot is incomplete', 500);
+    }
+
+    return {
+      id: String(menuItemId),
+      name,
+      image: item.imageAtPurchase ?? item.image,
+      priceCents,
+      category: 'burger',
+      isAvailable: true,
+      quantity: item.quantity,
+      subtotalCents: item.subtotalCents,
+    };
+  });
+
+const resetCheckoutPaymentState = (order: CheckoutOrderDocument) => {
+  order.status = 'pending_payment';
+  order.payment.provider = 'stripe';
+  order.payment.status = 'requires_payment';
+  order.payment.providerPaymentId = undefined;
+  order.payment.paidAt = undefined;
+};
+
 const createStripeCheckoutSession = async (
   order: CheckoutOrderDocument,
   items: ValidatedCartMenuItem[],
@@ -228,6 +268,8 @@ const completeCheckoutOrder = async (
     };
   }
 
+  resetCheckoutPaymentState(order);
+
   try {
     const session = await createStripeCheckoutSession(
       order,
@@ -260,6 +302,17 @@ const completeCheckoutOrder = async (
   }
 };
 
+const completeExistingCheckoutOrder = (
+  existingOrder: CheckoutOrderDocument,
+  idempotencyKey: string,
+) => {
+  return completeCheckoutOrder(
+    existingOrder,
+    toExistingCheckoutItems(existingOrder),
+    idempotencyKey,
+  );
+};
+
 export const createCheckoutOrder = async (
   userId: string,
   items: CartStoredItem[],
@@ -272,22 +325,7 @@ export const createCheckoutOrder = async (
   );
 
   if (existingOrder) {
-    const existingCheckoutItems = existingOrder.items.map((item) => ({
-      id: String(item.menuItemId),
-      name: item.nameAtPurchase,
-      image: item.imageAtPurchase,
-      priceCents: item.priceCentsAtPurchase,
-      category: 'burger',
-      isAvailable: true,
-      quantity: item.quantity,
-      subtotalCents: item.subtotalCents,
-    }));
-
-    return completeCheckoutOrder(
-      existingOrder,
-      existingCheckoutItems,
-      idempotencyKey,
-    );
+    return completeExistingCheckoutOrder(existingOrder, idempotencyKey);
   }
 
   const validatedCart = await validateCart(items, menuVersion);
@@ -296,20 +334,39 @@ export const createCheckoutOrder = async (
     throw new ServiceError('Cart is empty', 400);
   }
 
-  const order = await orderRepository.create({
-    userId,
-    items: validatedCart.items.map(toOrderSnapshotItem),
-    totalCents: validatedCart.totalCents,
-    menuVersion: validatedCart.menuVersion,
-    checkoutIdempotencyKey: idempotencyKey,
-    status: 'pending_payment',
-    payment: {
-      provider: 'stripe',
-      status: 'requires_payment',
-      amountCents: validatedCart.totalCents,
-      currency: 'aud',
-    },
-  });
+  let order: CheckoutOrderDocument;
+
+  try {
+    order = await orderRepository.create({
+      userId,
+      items: validatedCart.items.map(toOrderSnapshotItem),
+      totalCents: validatedCart.totalCents,
+      menuVersion: validatedCart.menuVersion,
+      checkoutIdempotencyKey: idempotencyKey,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        status: 'requires_payment',
+        amountCents: validatedCart.totalCents,
+        currency: 'aud',
+      },
+    });
+  } catch (error) {
+    if (!isMongoDuplicateKeyError(error)) {
+      throw error;
+    }
+
+    const racedOrder = await orderRepository.findCheckoutByIdempotencyKey(
+      userId,
+      idempotencyKey,
+    );
+
+    if (!racedOrder) {
+      throw error;
+    }
+
+    return completeExistingCheckoutOrder(racedOrder, idempotencyKey);
+  }
 
   return completeCheckoutOrder(order, validatedCart.items, idempotencyKey);
 };

@@ -16,7 +16,7 @@ const EnvSchema = z
     NODE_ENV: z
       .enum(['development', 'test', 'production'])
       .default('development'),
-    PORT: z.string().trim().min(1).default('3000'),
+    PORT: z.string().trim().min(1).default('5001'),
     MONGO_URI: z.string().trim().min(1, 'MONGO_URI is required'),
     JWT_SECRET: z
       .string()
