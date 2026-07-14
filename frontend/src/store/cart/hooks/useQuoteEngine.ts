@@ -90,7 +90,7 @@ export const useQuoteEngine = ({
     }
   }, [validateQuote]);
 
-  const validateQuoteSilently = useCallback(async () => {
+  const refreshQuoteSilently = useCallback(async () => {
     try {
       await validateQuote();
     } catch (error) {
@@ -125,7 +125,7 @@ export const useQuoteEngine = ({
     clearDebounceTimer();
 
     debounceTimerRef.current = window.setTimeout(() => {
-      validateQuoteSilently();
+      refreshQuoteSilently();
       debounceTimerRef.current = null;
     }, VALIDATE_DEBOUNCE_MS);
 
@@ -133,7 +133,7 @@ export const useQuoteEngine = ({
   }, [
     itemsSig,
     shouldDebounceCartValidation,
-    validateQuoteSilently,
+    refreshQuoteSilently,
     clearDebounceTimer,
   ]);
 
@@ -142,8 +142,8 @@ export const useQuoteEngine = ({
 
     clearDebounceTimer();
 
-    validateQuoteSilently();
-  }, [quoteStale, validateQuoteSilently, clearDebounceTimer]);
+    refreshQuoteSilently();
+  }, [quoteStale, refreshQuoteSilently, clearDebounceTimer]);
 
   const estimatedTotalCents = useMemo(
     () => calculateEstimatedTotalCents(quote, items),
