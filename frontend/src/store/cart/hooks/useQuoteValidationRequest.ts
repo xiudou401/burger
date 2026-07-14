@@ -58,7 +58,7 @@ export const useQuoteValidationRequest = ({
     inFlightRef.current = null;
   }, []);
 
-  const ensureQuote = useCallback((): Promise<void> => {
+  const validateQuote = useCallback((): Promise<void> => {
     const {
       items: latestItems,
       itemsSig: latestItemsSig,
@@ -180,7 +180,7 @@ export const useQuoteValidationRequest = ({
   }, [cancelQuoteRequest]);
 
   return {
-    ensureQuote,
+    validateQuote,
     cancelQuoteRequest,
   };
 };

@@ -67,33 +67,32 @@ export const useQuoteEngine = ({
     setQuoteError(null);
   }, []);
 
-  const { ensureQuote: requestQuote, cancelQuoteRequest } =
-    useQuoteValidationRequest({
-      items,
-      itemsSig,
-      menuVersion,
-      needsQuoteValidation,
-      refreshMenuVersion,
-      onQuoteValidated: handleQuoteValidated,
-      onMenuVersionConflict: clearQuote,
-    });
+  const { validateQuote, cancelQuoteRequest } = useQuoteValidationRequest({
+    items,
+    itemsSig,
+    menuVersion,
+    needsQuoteValidation,
+    refreshMenuVersion,
+    onQuoteValidated: handleQuoteValidated,
+    onMenuVersionConflict: clearQuote,
+  });
 
   const ensureQuote = useCallback(async () => {
     setQuoteError(null);
 
     try {
-      await requestQuote();
+      await validateQuote();
     } catch (error) {
       if (!isRequestCancelled(error)) {
         setQuoteError(getQuoteErrorMessage(error));
       }
       throw error;
     }
-  }, [requestQuote]);
+  }, [validateQuote]);
 
   const validateQuoteSilently = useCallback(async () => {
     try {
-      await requestQuote();
+      await validateQuote();
     } catch (error) {
       if (!isExpectedBackgroundError(error)) {
         reportError(error, {
@@ -102,7 +101,7 @@ export const useQuoteEngine = ({
         });
       }
     }
-  }, [requestQuote]);
+  }, [validateQuote]);
 
   useEffect(() => {
     return clearDebounceTimer;

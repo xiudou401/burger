@@ -27,7 +27,7 @@ const Harness = ({
   refreshMenuVersion = async () => 2,
   onMenuVersionConflict = () => {},
 }: HarnessProps) => {
-  const { ensureQuote } = useQuoteValidationRequest({
+  const { validateQuote } = useQuoteValidationRequest({
     items: [{ id: 'meal-1', quantity: 1 }],
     itemsSig,
     menuVersion,
@@ -39,7 +39,7 @@ const Harness = ({
 
   const validate = async () => {
     try {
-      await ensureQuote();
+      await validateQuote();
       document.body.dataset.quoteResult = 'resolved';
     } catch (error) {
       document.body.dataset.quoteResult =
