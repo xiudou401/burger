@@ -26,10 +26,9 @@
   gap: 18rem;
   padding: 14rem 16rem;
   background:
-    linear-gradient(135deg, rgba(44, 22, 14, 0.98), rgba(16, 16, 16, 0.98)),
+    linear-gradient(135deg, rgba(255, 199, 44, 0.1), rgba(32, 32, 32, 0)),
     #202020;
-  border: 1rem solid rgba(255, 199, 44, 0.24);
-  box-shadow: 0 18rem 42rem rgba(0, 0, 0, 0.3);
+  border: 1rem solid rgba(255, 199, 44, 0.18);
 }
 
 .Summary {
