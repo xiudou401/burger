@@ -1,11 +1,11 @@
 import React, { MouseEvent, useEffect, useState } from 'react';
 
 import classes from './CartBar.module.css';
-import iconImg from '../../asset/bag.png';
+import iconImg from '../../assets/bag.png';
 
 import BottomActionBar from './BottomActionBar/BottomActionBar';
 import CartDetails from './CartDetails/CartDetails';
-import Checkout from './Checkout/Checkout';
+import CheckoutDialog from './Checkout/CheckoutDialog';
 
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 import { useToast } from '../UI/Toast/ToastContext';
@@ -146,7 +146,7 @@ const CartBar = () => {
       {showCartDetails && <CartDetails open={showCartDetails} />}
 
       {showCheckout && quote && (
-        <Checkout onClose={closeCheckout} menuItems={quote.menuItems} />
+        <CheckoutDialog onClose={closeCheckout} menuItems={quote.menuItems} />
       )}
 
       <BottomActionBar summary={cartSummary} action={checkoutAction} />

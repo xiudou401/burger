@@ -1,6 +1,6 @@
 import React, { KeyboardEvent, useEffect, useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
-import classes from './Checkout.module.css';
+import classes from './CheckoutDialog.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
@@ -11,12 +11,12 @@ import { formatCurrency } from '../../../utils/currency';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 
-interface CheckoutProps {
+interface CheckoutDialogProps {
   onClose: () => void;
   menuItems: CartMenuItem[];
 }
 
-const Checkout = ({ onClose, menuItems }: CheckoutProps) => {
+const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
@@ -142,4 +142,4 @@ const Checkout = ({ onClose, menuItems }: CheckoutProps) => {
   );
 };
 
-export default Checkout;
+export default CheckoutDialog;

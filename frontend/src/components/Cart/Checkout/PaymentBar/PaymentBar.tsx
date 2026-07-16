@@ -51,7 +51,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     return checkoutAttemptKeyRef.current;
   };
 
-  const payHandler = async () => {
+  const handlePayClick = async () => {
     if (items.length === 0 || isPaying || isAuthLoading) return;
 
     if (!isAuthenticated) {
@@ -139,7 +139,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
           menuVersion === null ||
           isAuthLoading
         }
-        onClick={payHandler}
+        onClick={handlePayClick}
       >
         <span className={classes.ButtonText}>
           {isPaying ? 'Redirecting...' : 'Pay with Stripe'}
