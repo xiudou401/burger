@@ -14,15 +14,17 @@ import type { MenuItemCategory } from '../types/menu-item';
 import classes from './Home.module.css';
 
 const CATEGORY_FILTERS = [
-  { id: 'all', label: 'All', category: undefined },
+  { id: 'all', label: 'All', shortLabel: 'All', category: undefined },
   ...MENU_CATEGORIES.map((category) => ({
     id: category.value,
     label: category.pluralLabel,
+    shortLabel: category.shortPluralLabel,
     category: category.value,
   })),
 ] satisfies Array<{
   id: string;
   label: string;
+  shortLabel: string;
   category?: MenuItemCategory;
 }>;
 
@@ -94,7 +96,10 @@ const Home = () => {
               }
               onClick={() => selectCategory(category)}
             >
-              {category.label}
+              <span className={classes.CategoryLabel}>{category.label}</span>
+              <span className={classes.CategoryShortLabel}>
+                {category.shortLabel}
+              </span>
             </button>
           ))}
         </nav>

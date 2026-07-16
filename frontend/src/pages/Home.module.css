@@ -76,6 +76,8 @@
   overflow-x: auto;
   padding: 0 28rem 20rem;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(90deg, #000 calc(100% - 42rem), transparent);
 }
 
 .CategoryRail::-webkit-scrollbar {
@@ -102,6 +104,10 @@
   color: #ffc72c;
 }
 
+.CategoryShortLabel {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .Hero {
     min-height: 316rem;
@@ -124,6 +130,22 @@
 
   .CategoryRail {
     padding-inline: 22rem;
+    padding-bottom: 18rem;
+    gap: 10rem;
+  }
+
+  .CategoryRail button {
+    height: 44rem;
+    padding: 0 18rem;
+    font-size: 16rem;
+  }
+
+  .CategoryLabel {
+    display: none;
+  }
+
+  .CategoryShortLabel {
+    display: inline;
   }
 }
 
