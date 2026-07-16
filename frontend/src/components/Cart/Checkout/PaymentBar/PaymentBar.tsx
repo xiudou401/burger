@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import classes from './Bar.module.css';
+import classes from './PaymentBar.module.css';
+import BottomActionBar from '../../BottomActionBar/BottomActionBar';
 import { createCheckoutOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { useAuth } from '../../../../store/auth/hooks/useAuth';
@@ -9,7 +10,7 @@ import { formatCurrency } from '../../../../utils/currency';
 import { ApiError } from '../../../../api/request';
 import { HTTP_STATUS } from '../../../../api/http-status';
 
-interface BarProps {
+interface PaymentBarProps {
   totalCents: number;
   onOrderComplete: () => void;
 }
@@ -24,7 +25,7 @@ const createCheckoutAttemptKey = () => {
   );
 };
 
-const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
+const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const items = useCartSelector((ctx) => ctx.items);
@@ -107,38 +108,41 @@ const Bar = ({ totalCents, onOrderComplete }: BarProps) => {
     }
   };
 
-  return (
-    <div className={classes.Bar}>
-      <div className={classes.TotalPrice}>{formatCurrency(totalCents)}</div>
-      <div className={classes.Actions}>
-        {(error || message) && (
-          <p className={error ? classes.Error : classes.Message}>
-            {error ?? message}
-          </p>
-        )}
-        {!error && !message && (
-          <p className={classes.HelperText}>
-            Secure checkout powered by Stripe
-          </p>
-        )}
-        <button
-          className={classes.Button}
-          type="button"
-          disabled={
-            items.length === 0 ||
-            isPaying ||
-            menuVersion === null ||
-            isAuthLoading
-          }
-          onClick={payHandler}
-        >
-          <span className={classes.ButtonText}>
-            {isPaying ? 'Redirecting...' : 'Pay with Stripe'}
-          </span>
-        </button>
-      </div>
+  const summary = (
+    <div className={classes.TotalPrice}>{formatCurrency(totalCents)}</div>
+  );
+
+  const action = (
+    <div className={classes.Actions}>
+      {(error || message) && (
+        <p className={error ? classes.Error : classes.Message}>
+          {error ?? message}
+        </p>
+      )}
+      {!error && !message && (
+        <p className={classes.HelperText}>Secure checkout powered by Stripe</p>
+      )}
+      <button
+        className={classes.Button}
+        type="button"
+        disabled={
+          items.length === 0 ||
+          isPaying ||
+          menuVersion === null ||
+          isAuthLoading
+        }
+        onClick={payHandler}
+      >
+        <span className={classes.ButtonText}>
+          {isPaying ? 'Redirecting...' : 'Pay with Stripe'}
+        </span>
+      </button>
     </div>
+  );
+
+  return (
+    <BottomActionBar summary={summary} action={action} variant="checkout" />
   );
 };
 
-export default Bar;
+export default PaymentBar;

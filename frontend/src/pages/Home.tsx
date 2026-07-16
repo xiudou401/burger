@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import MenuItemsList from '../components/MenuItems/MenuItemsList';
-import Cart from '../components/Cart/Cart';
+import CartBar from '../components/Cart/CartBar';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import AccountBar from '../components/Auth/AccountBar';
 import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
@@ -116,7 +116,7 @@ const Home = () => {
         onRetry={retry}
       />
 
-      <Cart />
+      <CartBar />
     </MenuLayout>
   );
 };

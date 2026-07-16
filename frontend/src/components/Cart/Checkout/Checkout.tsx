@@ -4,7 +4,7 @@ import classes from './Checkout.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import CheckoutItem from './CheckoutItem/CheckoutItem';
-import Bar from './Bar/Bar';
+import PaymentBar from './PaymentBar/PaymentBar';
 import type { CartMenuItem } from '../../../types/cart';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import { formatCurrency } from '../../../utils/currency';
@@ -12,11 +12,11 @@ import { formatCurrency } from '../../../utils/currency';
 const CheckoutRoot = document.getElementById('checkout-root');
 
 interface CheckoutProps {
-  offCheckout: () => void;
+  onClose: () => void;
   menuItems: CartMenuItem[];
 }
 
-const Checkout = ({ offCheckout, menuItems }: CheckoutProps) => {
+const Checkout = ({ onClose, menuItems }: CheckoutProps) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
@@ -29,7 +29,7 @@ const Checkout = ({ offCheckout, menuItems }: CheckoutProps) => {
     return menuItems.filter((item) => (qtyMap.get(item.id) ?? 0) > 0);
   }, [menuItems, items]);
 
-  const offCheckoutHandler = () => offCheckout();
+  const handleClose = () => onClose();
 
   const getFocusableElements = () => {
     if (!dialogRef.current) return [];
@@ -51,7 +51,7 @@ const Checkout = ({ offCheckout, menuItems }: CheckoutProps) => {
   const handleDialogKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {
       event.preventDefault();
-      offCheckoutHandler();
+      handleClose();
       return;
     }
 
@@ -111,7 +111,7 @@ const Checkout = ({ offCheckout, menuItems }: CheckoutProps) => {
         type="button"
         className={classes.Close}
         aria-label="Close checkout"
-        onClick={offCheckoutHandler}
+        onClick={handleClose}
       >
         <FontAwesomeIcon icon={faXmark} />
       </button>
@@ -136,7 +136,7 @@ const Checkout = ({ offCheckout, menuItems }: CheckoutProps) => {
         </footer>
       </div>
 
-      <Bar totalCents={estimatedTotalCents} onOrderComplete={offCheckout} />
+      <PaymentBar totalCents={estimatedTotalCents} onOrderComplete={onClose} />
     </div>,
     CheckoutRoot,
   );

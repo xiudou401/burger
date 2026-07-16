@@ -4,7 +4,7 @@ import { resendVerificationEmail } from '../../api/auth';
 import { fetchMyOrders, fetchOrder } from '../../api/orders';
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 import {
-  getEstimatedTotalPrice,
+  getEstimatedTotalCents,
   getTotalQuantity,
 } from '../../store/cart/context-accessors';
 import { useCartActions } from '../../store/cart/hooks/useCartActions';
@@ -28,7 +28,7 @@ export const useProfilePage = () => {
   const user = useAuth((ctx) => ctx.user);
   const logout = useAuth((ctx) => ctx.logout);
   const totalQuantity = useCartSelector(getTotalQuantity);
-  const estimatedTotalCents = useCartSelector(getEstimatedTotalPrice);
+  const estimatedTotalCents = useCartSelector(getEstimatedTotalCents);
   const { clearCart } = useCartActions();
   const { showToast } = useToast();
   const [verificationMessage, setVerificationMessage] = useState<string | null>(
