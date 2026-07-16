@@ -29,6 +29,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const items = useCartSelector((ctx) => ctx.items);
+  const totalQuantity = useCartSelector((ctx) => ctx.totalQuantity);
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
@@ -108,8 +109,15 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     }
   };
 
+  const itemCountText = `${totalQuantity} ${
+    totalQuantity === 1 ? 'item' : 'items'
+  }`;
+
   const summary = (
-    <div className={classes.TotalPrice}>{formatCurrency(totalCents)}</div>
+    <div className={classes.Summary}>
+      <div className={classes.TotalPrice}>{formatCurrency(totalCents)}</div>
+      <div className={classes.ItemCount}>{itemCountText}</div>
+    </div>
   );
 
   const action = (

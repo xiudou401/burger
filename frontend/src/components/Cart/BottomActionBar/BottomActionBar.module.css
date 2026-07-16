@@ -22,9 +22,9 @@
 }
 
 .checkout {
-  min-height: 104rem;
-  gap: 22rem;
-  padding: 18rem;
+  min-height: 92rem;
+  gap: 18rem;
+  padding: 14rem 16rem;
   background:
     linear-gradient(135deg, rgba(44, 22, 14, 0.98), rgba(16, 16, 16, 0.98)),
     #202020;
