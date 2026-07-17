@@ -14,6 +14,7 @@ describe('admin order status permissions', () => {
 
     expect(nextStatuses.paid).toEqual(['preparing', 'cancelled']);
     expect(nextStatuses.preparing).toEqual(['ready', 'cancelled']);
+    expect(nextStatuses.pending_payment).toEqual(['cancelled']);
     expect(nextStatuses.completed).toEqual([]);
   });
 

@@ -1,17 +1,16 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   disableAdminCustomer,
   enableAdminCustomer,
   fetchAdminCustomers,
 } from '../../api/admin-customers';
-import type { AdminCustomer, CustomerStatus } from '../../types/admin-customer';
+import type { AdminCustomer } from '../../types/admin-customer';
 
 const PAGE_LIMIT = 20;
 
 export const useAdminCustomersPage = () => {
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<CustomerStatus | ''>('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +27,6 @@ export const useAdminCustomersPage = () => {
         page: pageToLoad,
         limit: PAGE_LIMIT,
         search,
-        status,
       });
       setCustomers(res.customers);
       setPage(res.page);
@@ -42,14 +40,9 @@ export const useAdminCustomersPage = () => {
 
   useEffect(() => {
     loadCustomers(1);
-    // Search and status are intentionally the query dependencies.
+    // Search is intentionally the query dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, status]);
-
-  const submitSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    loadCustomers(1);
-  };
+  }, [search]);
 
   const replaceCustomer = (customer: AdminCustomer) => {
     setCustomers((current) =>
@@ -57,10 +50,7 @@ export const useAdminCustomersPage = () => {
     );
   };
 
-  const disableCustomer = async (customer: AdminCustomer) => {
-    const reason =
-      window.prompt(`Disable ${customer.email ?? customer.name}?`, '') ?? '';
-
+  const disableCustomer = async (customer: AdminCustomer, reason: string) => {
     setBusyCustomerId(customer.id);
     setError(null);
     setMessage(null);
@@ -96,15 +86,12 @@ export const useAdminCustomersPage = () => {
     customers,
     search,
     setSearch,
-    status,
-    setStatus,
     page,
     totalPages,
     isLoading,
     busyCustomerId,
     error,
     message,
-    submitSearch,
     disableCustomer,
     enableCustomer,
     refresh: () => loadCustomers(page),

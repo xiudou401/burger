@@ -53,8 +53,11 @@ export const useAdminStaffPage = () => {
           `${window.location.origin}/admin/invitations/accept?token=${res.invite.token}`,
         );
       }
+
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not send invite');
+      return false;
     } finally {
       setIsSubmitting(false);
     }

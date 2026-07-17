@@ -24,11 +24,12 @@ describe('AccountDetailsCard', () => {
     jest.clearAllMocks();
   });
 
-  test('shows account verification details without phone linking controls', () => {
+  test('shows email verification details without phone rows', () => {
     render(<AccountDetailsCard {...baseProps} />);
 
     expect(screen.getByText('Email status')).toBeInTheDocument();
-    expect(screen.getByText('Phone status')).toBeInTheDocument();
+    expect(screen.queryByText('Phone')).not.toBeInTheDocument();
+    expect(screen.queryByText('Phone status')).not.toBeInTheDocument();
     expect(screen.queryByText('Link phone number')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /verify phone/i })).toBeNull();
   });

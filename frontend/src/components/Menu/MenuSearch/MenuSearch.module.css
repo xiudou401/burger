@@ -79,10 +79,18 @@
 }
 
 .Compact .SearchInput {
-  height: 44rem;
+  height: 48rem;
+  border: 2rem solid #ead8b5;
   padding-left: 46rem;
   padding-right: 44rem;
-  font-size: 16rem;
+  font-size: 17rem;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.Compact .SearchInput:focus {
+  border-color: #ffc72c;
+  box-shadow: 0 0 0 3rem rgba(255, 199, 44, 0.22);
 }
 
 .Compact .SearchIcon {
@@ -121,5 +129,16 @@
     width: 40rem;
     height: 40rem;
     font-size: 22rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .Compact,
+  .Compact .InputOuter {
+    width: 100%;
+  }
+
+  .Compact .SearchInput {
+    height: 48rem;
   }
 }

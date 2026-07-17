@@ -1,8 +1,10 @@
 import { Link } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
 import { formatCurrency } from '../utils/currency';
+import type { OrderStatus } from '../types/order';
 
 const formatDate = (value: string) => {
   return new Intl.DateTimeFormat(undefined, {
@@ -20,6 +22,36 @@ const summarizeItems = (items: { name: string; quantity: number }[]) => {
     .join(', ');
 };
 
+const getStatusClassName = (status: OrderStatus) => {
+  return `${classes.Status} ${classes[`Status-${status}`]}`;
+};
+
+const ACTION_LABELS: Record<OrderStatus, string> = {
+  pending_payment: 'Mark pending',
+  paid: 'Mark paid',
+  preparing: 'Start preparing',
+  ready: 'Mark ready',
+  completed: 'Complete order',
+  cancelled: 'Cancel order',
+};
+
+const getActionLabel = (
+  currentStatus: OrderStatus,
+  nextStatus: OrderStatus,
+) => {
+  if (currentStatus === 'pending_payment' && nextStatus === 'cancelled') {
+    return 'Cancel pending order';
+  }
+
+  return ACTION_LABELS[nextStatus];
+};
+
+const getActionClassName = (nextStatus: OrderStatus) => {
+  return nextStatus === 'cancelled'
+    ? `${classes.ActionButton} ${classes.CancelActionButton}`
+    : classes.ActionButton;
+};
+
 const AdminOrders = () => {
   const {
     orders,
@@ -34,15 +66,7 @@ const AdminOrders = () => {
   return (
     <AdminLayout
       title="Orders"
-      action={
-        <button
-          className={classes.RefreshButton}
-          type="button"
-          onClick={refresh}
-        >
-          Refresh
-        </button>
-      }
+      action={<AdminRefreshButton onClick={refresh} />}
     >
       {isLoading && <p className={classes.StateText}>Loading orders...</p>}
       {error && <p className={classes.Error}>{error}</p>}
@@ -56,17 +80,21 @@ const AdminOrders = () => {
           <article className={classes.OrderCard} key={order.id}>
             <div className={classes.OrderTop}>
               <div>
-                <Link
-                  className={classes.OrderId}
-                  to={`/admin/orders/${order.id}`}
-                >
-                  #{order.id.slice(-6).toUpperCase()}
-                </Link>
+                <div className={classes.OrderMetaLine}>
+                  <Link
+                    className={classes.OrderId}
+                    to={`/admin/orders/${order.id}`}
+                  >
+                    #{order.id.slice(-6).toUpperCase()}
+                  </Link>
+                  <span className={getStatusClassName(order.status)}>
+                    {order.status.replace('_', ' ')}
+                  </span>
+                </div>
                 <p className={classes.OrderDate}>
                   {formatDate(order.createdAt)}
                 </p>
               </div>
-              <span className={classes.Status}>{order.status}</span>
             </div>
 
             <p className={classes.Summary}>{summarizeItems(order.items)}</p>
@@ -78,7 +106,7 @@ const AdminOrders = () => {
               <div className={classes.Actions}>
                 {nextStatuses[order.status].map((status) => (
                   <button
-                    className={classes.ActionButton}
+                    className={getActionClassName(status)}
                     disabled={updatingOrderId === order.id}
                     key={status}
                     type="button"
@@ -86,7 +114,7 @@ const AdminOrders = () => {
                       changeStatus(order.id, status, order.version)
                     }
                   >
-                    {status}
+                    {getActionLabel(order.status, status)}
                   </button>
                 ))}
               </div>

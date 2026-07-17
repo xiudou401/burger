@@ -4,25 +4,35 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 interface Props {
+  value?: string;
   onSearch: (keyword: string) => void;
   placeholder?: string;
   variant?: 'default' | 'compact';
 }
 
 const MenuSearch = ({
+  value: controlledValue,
   onSearch,
   placeholder = 'Search the Sydney menu',
   variant = 'default',
 }: Props) => {
-  const [value, setValue] = useState('');
+  const [uncontrolledValue, setUncontrolledValue] = useState('');
+  const value = controlledValue ?? uncontrolledValue;
   const menuSearchClass =
     variant === 'compact'
       ? `${classes.MenuSearch} ${classes.Compact}`
       : classes.MenuSearch;
 
+  const updateValue = (nextValue: string) => {
+    if (controlledValue === undefined) {
+      setUncontrolledValue(nextValue);
+    }
+
+    onSearch(nextValue);
+  };
+
   const clearHandler = () => {
-    setValue('');
-    onSearch('');
+    updateValue('');
   };
 
   return (
@@ -36,9 +46,7 @@ const MenuSearch = ({
           className={classes.SearchInput}
           value={value}
           onChange={(e) => {
-            const next = e.target.value;
-            setValue(next);
-            onSearch(next);
+            updateValue(e.target.value);
           }}
           placeholder={placeholder}
         />

@@ -27,7 +27,6 @@ const isConfirmedStripeOrder = (order: Order) =>
 export const useProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuth((ctx) => ctx.user);
-  const logout = useAuth((ctx) => ctx.logout);
   const totalQuantity = useCartSelector(getTotalQuantity);
   const estimatedTotalCents = useCartSelector(getEstimatedTotalCents);
   const { clearCart } = useCartActions();
@@ -45,16 +44,8 @@ export const useProfilePage = () => {
   const mountedRef = useRef(true);
   const processedPaymentRef = useRef<string | null>(null);
 
-  const initial = user?.name?.trim().charAt(0).toUpperCase() || 'S';
-  const firstName = user?.name?.trim().split(/\s+/)[0] || 'Burger fan';
-  const accountStatus = user?.email
-    ? user.emailVerified
-      ? 'Ready to order'
-      : 'Email pending'
-    : user?.phoneVerified
-      ? 'Phone verified'
-      : 'Phone pending';
   const hasCartItems = totalQuantity > 0;
+  const canCreateOrder = hasPermission(user, 'create_order');
   const canViewOwnOrders = hasPermission(user, 'view_own_orders');
 
   const upsertRecentOrder = useCallback((order: Order) => {
@@ -215,9 +206,8 @@ export const useProfilePage = () => {
 
   return {
     user,
-    initial,
-    firstName,
-    accountStatus,
+    canCreateOrder,
+    canViewOwnOrders,
     totalQuantity,
     estimatedTotalCents,
     hasCartItems,
@@ -228,6 +218,5 @@ export const useProfilePage = () => {
     verificationError,
     isSendingVerification,
     resendVerification,
-    logout,
   };
 };

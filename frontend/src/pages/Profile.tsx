@@ -1,7 +1,6 @@
 import AccountDetailsCard from '../components/Profile/AccountDetailsCard';
 import CurrentCartCard from '../components/Profile/CurrentCartCard';
 import ProfilePageLayout from '../components/Profile/ProfilePageLayout';
-import QuickActionsCard from '../components/Profile/QuickActionsCard';
 import RecentOrdersCard from '../components/Profile/RecentOrdersCard';
 import { useProfilePage } from './hooks/useProfilePage';
 
@@ -11,14 +10,15 @@ const Profile = () => {
     totalQuantity,
     estimatedTotalCents,
     hasCartItems,
+    canCreateOrder,
     orders,
+    canViewOwnOrders,
     isLoadingOrders,
     ordersError,
     verificationMessage,
     verificationError,
     isSendingVerification,
     resendVerification,
-    logout,
   } = useProfilePage();
 
   return (
@@ -32,22 +32,23 @@ const Profile = () => {
             isSendingVerification={isSendingVerification}
             onResendVerification={resendVerification}
           />
-          <RecentOrdersCard
-            orders={orders}
-            isLoading={isLoadingOrders}
-            error={ordersError}
-          />
+          {canViewOwnOrders && (
+            <RecentOrdersCard
+              orders={orders}
+              isLoading={isLoadingOrders}
+              error={ordersError}
+            />
+          )}
         </>
       }
       side={
-        <>
+        canCreateOrder ? (
           <CurrentCartCard
             totalQuantity={totalQuantity}
             estimatedTotalCents={estimatedTotalCents}
             hasCartItems={hasCartItems}
           />
-          <QuickActionsCard onLogout={logout} />
-        </>
+        ) : undefined
       }
     />
   );

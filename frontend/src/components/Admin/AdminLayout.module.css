@@ -6,12 +6,13 @@
 }
 
 .AppBar {
-  min-height: 96rem;
+  box-sizing: border-box;
+  height: 124rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24rem;
-  padding: 0 38rem;
+  padding: 24rem 28rem 8rem;
   background: #fff;
   border-bottom: 1rem solid #f0e4d0;
   box-shadow: 0 6rem 20rem rgba(68, 40, 0, 0.06);
@@ -25,6 +26,7 @@
   color: #292929;
   font-size: 24rem;
   font-weight: 900;
+  line-height: 1;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -45,12 +47,12 @@
 
 .NavRail {
   display: flex;
-  gap: 12rem;
+  gap: 28rem;
   overflow-x: auto;
-  padding: 18rem 38rem;
-  background: #fffaf1;
+  padding: 0 38rem;
+  background: #fff;
   border-bottom: 1rem solid #eadfce;
-  box-shadow: 0 10rem 24rem rgba(58, 36, 10, 0.08);
+  box-shadow: 0 8rem 18rem rgba(58, 36, 10, 0.05);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(90deg, #000 calc(100% - 42rem), transparent);
@@ -61,27 +63,23 @@
 }
 
 .NavLink {
-  height: 46rem;
+  min-height: 56rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  border: 1rem solid #eadfce;
-  border-radius: 999rem;
-  background: #fff;
-  color: #342719;
-  padding: 0 22rem;
-  font-size: 18rem;
+  border-bottom: 3rem solid transparent;
+  color: #6b5a42;
+  padding: 3rem 2rem 0;
+  font-size: 16rem;
   font-weight: 900;
   text-decoration: none;
   white-space: nowrap;
-  box-shadow: 0 5rem 12rem rgba(58, 36, 10, 0.06);
 }
 
 .NavLinkActive {
-  border-color: #202020;
-  background: #202020;
-  color: #ffc72c;
+  border-bottom-color: #ffc72c;
+  color: #292929;
 }
 
 .Content {
@@ -105,14 +103,6 @@
   justify-content: flex-end;
 }
 
-.Eyebrow {
-  margin: 0 0 8rem;
-  color: #7a6954;
-  font-size: 15rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
 .Title {
   margin: 0;
   font-size: 40rem;
@@ -121,30 +111,30 @@
 
 @media (max-width: 760px) {
   .AppBar {
-    min-height: 86rem;
-    gap: 16rem;
-    padding: 0 18rem;
+    height: 116rem;
+    gap: 12rem;
+    padding: 22rem 22rem 8rem;
   }
 
   .Brand {
-    font-size: 20rem;
+    font-size: 24rem;
   }
 
   .Mark {
-    width: 48rem;
-    height: 48rem;
-    font-size: 32rem;
+    width: 58rem;
+    height: 58rem;
+    font-size: 38rem;
   }
 
   .NavRail {
-    gap: 10rem;
-    padding: 16rem 18rem;
+    gap: 22rem;
+    padding: 0 18rem;
   }
 
   .NavLink {
-    height: 44rem;
-    padding: 0 18rem;
-    font-size: 16rem;
+    min-height: 50rem;
+    padding-top: 3rem;
+    font-size: 15rem;
   }
 
   .Content {
@@ -152,12 +142,33 @@
   }
 
   .Topbar {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: flex-end;
+    flex-direction: row;
   }
 
   .ActionBar {
-    width: 100%;
-    justify-content: flex-start;
+    width: auto;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+  }
+
+  .ActionBar > button {
+    min-height: 38rem;
+    width: auto;
+    padding: 0 12rem;
+    font-size: 14rem;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1359px) {
+  .AppBar {
+    padding-inline: 40rem;
+  }
+}
+
+@media (min-width: 1360px) {
+  .AppBar {
+    height: 120rem;
+    padding: 20rem 40rem 8rem;
   }
 }

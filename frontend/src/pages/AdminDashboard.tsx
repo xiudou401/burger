@@ -1,4 +1,5 @@
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import classes from './AdminDashboard.module.css';
 import { useAdminDashboardPage } from './hooks/useAdminDashboardPage';
 import { formatCurrency } from '../utils/currency';
@@ -22,16 +23,7 @@ const AdminDashboard = () => {
   return (
     <AdminLayout
       title="Dashboard"
-      eyebrow="Operations"
-      action={
-        <button
-          className={classes.RefreshButton}
-          type="button"
-          onClick={refresh}
-        >
-          Refresh
-        </button>
-      }
+      action={<AdminRefreshButton onClick={refresh} />}
     >
       {isLoading && <p className={classes.StateText}>Loading dashboard...</p>}
       {error && <p className={classes.Error}>{error}</p>}

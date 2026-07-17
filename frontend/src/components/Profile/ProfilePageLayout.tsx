@@ -1,21 +1,25 @@
 import { ReactNode } from 'react';
-import AccountBar from '../Auth/AccountBar';
+import BrandHero from '../BrandHero/BrandHero';
 import classes from './ProfilePageLayout.module.css';
 
 interface ProfilePageLayoutProps {
   main: ReactNode;
-  side: ReactNode;
+  side?: ReactNode;
 }
 
 const ProfilePageLayout = ({ main, side }: ProfilePageLayoutProps) => {
+  const gridClassName = side
+    ? classes.Grid
+    : `${classes.Grid} ${classes.GridSingle}`;
+
   return (
     <div className={classes.ProfilePage}>
-      <AccountBar />
+      <BrandHero as="header" labelledBy="profile-title" />
 
       <main className={classes.Shell}>
-        <div className={classes.Grid}>
+        <div className={gridClassName}>
           <div className={classes.Stack}>{main}</div>
-          <aside className={classes.Stack}>{side}</aside>
+          {side && <aside className={classes.Stack}>{side}</aside>}
         </div>
       </main>
     </div>

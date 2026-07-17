@@ -1,14 +1,13 @@
 .ProfilePage {
   min-height: 100vh;
-  padding: 160rem 28rem 56rem;
   background: #fffaf1;
   color: #292929;
-  font-family: Arial, Helvetica, sans-serif;
 }
 
 .Shell {
   width: min(1120rem, 100%);
   margin: 0 auto;
+  padding: 48rem 28rem 56rem;
 }
 
 .Grid {
@@ -18,14 +17,19 @@
   margin-top: 24rem;
 }
 
+.GridSingle {
+  grid-template-columns: minmax(0, 760rem);
+  justify-content: center;
+}
+
 .Stack {
   display: grid;
   gap: 24rem;
 }
 
 @media (max-width: 820px) {
-  .ProfilePage {
-    padding: 136rem 18rem 42rem;
+  .Shell {
+    padding: 34rem 18rem 42rem;
   }
 
   .Grid {
@@ -34,8 +38,8 @@
 }
 
 @media (max-width: 520px) {
-  .ProfilePage {
-    padding: 124rem 14rem 36rem;
+  .Shell {
+    padding: 28rem 14rem 36rem;
   }
 
   .Grid,

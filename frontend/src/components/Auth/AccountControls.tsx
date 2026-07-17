@@ -1,18 +1,27 @@
 import { Link } from 'react-router-dom';
 import { resendVerificationEmail } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import { hasPermission } from '../../types/permissions';
 import { useToast } from '../UI/Toast/ToastContext';
 import classes from './AccountControls.module.css';
 
 interface AccountControlsProps {
   variant?: 'default' | 'hero' | 'admin';
   showMemberStatus?: boolean;
+  memberStatusLabel?: string;
   showVerifyButton?: boolean;
 }
+
+const formatRoleLabel = (role: string | undefined) => {
+  if (!role) return 'Staff';
+
+  return role.charAt(0).toUpperCase() + role.slice(1);
+};
 
 const AccountControls = ({
   variant = 'default',
   showMemberStatus = true,
+  memberStatusLabel,
   showVerifyButton = true,
 }: AccountControlsProps) => {
   const user = useAuth((ctx) => ctx.user);
@@ -29,6 +38,12 @@ const AccountControls = ({
     : user.phoneVerified
       ? 'Phone verified'
       : 'Phone login';
+  const hasAdminAccess = hasPermission(user, 'view_orders');
+  const displayedMemberStatus =
+    memberStatusLabel ??
+    (hasAdminAccess ? formatRoleLabel(user.role) : memberStatus);
+  const showConsoleLink = variant !== 'admin' && hasAdminAccess;
+  const showStorefrontLink = variant === 'admin';
   const accountControlsClass =
     variant === 'default'
       ? classes.AccountControls
@@ -54,7 +69,7 @@ const AccountControls = ({
       <div className={classes.UserText}>
         <span className={classes.Greeting}>Hi, {user.name}</span>
         {showMemberStatus && (
-          <span className={classes.Member}>{memberStatus}</span>
+          <span className={classes.Member}>{displayedMemberStatus}</span>
         )}
       </div>
       {showVerifyButton && user.email && !user.emailVerified && (
@@ -65,6 +80,17 @@ const AccountControls = ({
         >
           Verify
         </button>
+      )}
+      {showConsoleLink && (
+        <Link className={classes.ConsoleLink} to="/admin/orders">
+          Console
+        </Link>
+      )}
+      {showStorefrontLink && (
+        <Link className={classes.StorefrontLink} to="/">
+          <span className={classes.StorefrontLabel}>Storefront</span>
+          <span className={classes.StorefrontShortLabel}>Store</span>
+        </Link>
       )}
       <button className={classes.Logout} type="button" onClick={logout}>
         Logout

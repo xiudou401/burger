@@ -36,14 +36,15 @@
   min-width: 240rem;
 }
 
-.AdminActionButtons {
-  display: flex;
-  align-items: center;
-  gap: 12rem;
-}
-
 .CardHeader {
   margin-bottom: 18rem;
+}
+
+.HeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rem;
 }
 
 .DialogBackdrop {
@@ -169,6 +170,14 @@
 .Input {
   height: 48rem;
   padding: 0 14rem;
+}
+
+.Input:focus,
+.Textarea:focus,
+.PriceInputGroup:focus-within {
+  border-color: #ffc72c;
+  outline: none;
+  box-shadow: 0 0 0 3rem rgba(255, 199, 44, 0.22);
 }
 
 .Textarea {
@@ -381,13 +390,18 @@
     padding: 22rem;
   }
 
-  .AdminSearch,
-  .AdminActionButtons {
+  .AdminSearch {
     width: 100%;
   }
 
-  .AdminActionButtons .PrimaryButton,
-  .AdminActionButtons .SecondaryButton {
-    flex: 1;
+  .HeaderActions {
+    gap: 8rem;
+  }
+
+  .HeaderActions .PrimaryButton {
+    min-height: 38rem;
+    width: auto;
+    padding: 0 12rem;
+    font-size: 14rem;
   }
 }

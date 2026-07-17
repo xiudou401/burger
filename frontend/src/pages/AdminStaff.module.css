@@ -14,9 +14,32 @@
   font-weight: 900;
 }
 
+.HeaderActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rem;
+}
+
+.DialogBackdrop {
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 28rem;
+}
+
+.Dialog {
+  width: min(560rem, 100%);
+  border-radius: 8rem;
+  background: #fff;
+  border: 1rem solid #ead8b5;
+  box-shadow: 0 24rem 70rem rgba(68, 40, 0, 0.24);
+  padding: 24rem;
+}
+
 .Form {
   display: grid;
-  grid-template-columns: minmax(220rem, 1fr) 180rem auto;
+  grid-template-columns: minmax(220rem, 1fr) 180rem;
   gap: 14rem;
   align-items: end;
 }
@@ -39,6 +62,12 @@
   background: #fff;
   color: #292929;
   font-size: 17rem;
+}
+
+.Input:focus {
+  border-color: #ffc72c;
+  outline: none;
+  box-shadow: 0 0 0 3rem rgba(255, 199, 44, 0.22);
 }
 
 .PrimaryButton,
@@ -66,9 +95,18 @@
   background: #bd0017;
 }
 
-.PrimaryButton:disabled {
+.PrimaryButton:disabled,
+.SecondaryButton:disabled,
+.DangerButton:disabled {
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+.FormActions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rem;
 }
 
 .Success,
@@ -125,6 +163,21 @@
 }
 
 @media (max-width: 760px) {
+  .DialogBackdrop {
+    align-items: end;
+    padding: 0;
+  }
+
+  .Dialog {
+    width: 100%;
+    border-radius: 16rem 16rem 0 0;
+    padding: 22rem;
+  }
+
+  .HeaderActions {
+    gap: 8rem;
+  }
+
   .Form,
   .InviteRow {
     grid-template-columns: 1fr;
@@ -136,5 +189,9 @@
   .SecondaryButton,
   .DangerButton {
     width: 100%;
+  }
+
+  .FormActions {
+    flex-direction: column;
   }
 }

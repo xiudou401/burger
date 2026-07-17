@@ -16,14 +16,14 @@ const AccountDetailsCard = ({
   isSendingVerification,
   onResendVerification,
 }: AccountDetailsCardProps) => {
-  const isContactVerified = Boolean(user?.emailVerified || user?.phoneVerified);
+  const isEmailVerified = Boolean(user?.emailVerified);
 
   return (
     <section className={classes.Card}>
       <div className={classes.CardHeader}>
         <h2 className={classes.CardTitle}>Account details</h2>
         <span className={classes.Badge}>
-          {isContactVerified ? 'Verified' : 'Needs verification'}
+          {isEmailVerified ? 'Verified' : 'Needs verification'}
         </span>
       </div>
 
@@ -44,16 +44,6 @@ const AccountDetailsCard = ({
                 ? 'Verified'
                 : 'Not verified'
               : 'Not linked'}
-          </span>
-        </div>
-        <div className={classes.Row}>
-          <span className={classes.Label}>Phone</span>
-          <span className={classes.Value}>{user?.phone ?? 'Not linked'}</span>
-        </div>
-        <div className={classes.Row}>
-          <span className={classes.Label}>Phone status</span>
-          <span className={classes.Value}>
-            {user?.phoneVerified ? 'Verified' : 'Not verified'}
           </span>
         </div>
       </div>

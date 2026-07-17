@@ -7,18 +7,16 @@
   margin-bottom: 18rem;
 }
 
-.CardTitle {
-  margin: 0 0 18rem;
-  color: #292929;
-  font-size: 26rem;
-  font-weight: 900;
+.SearchToolbar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin-bottom: 18rem;
 }
 
-.Filters {
-  display: grid;
-  grid-template-columns: minmax(220rem, 1fr) 180rem auto;
-  gap: 14rem;
-  align-items: end;
+.AdminSearch {
+  flex: 1 1 340rem;
+  min-width: 240rem;
 }
 
 .Field {
@@ -39,6 +37,31 @@
   background: #fff;
   color: #292929;
   font-size: 17rem;
+}
+
+.Input::placeholder,
+.Textarea::placeholder {
+  color: #9f9485;
+}
+
+.Input:focus,
+.Textarea:focus {
+  border-color: #ffc72c;
+  outline: none;
+  box-shadow: 0 0 0 3rem rgba(255, 199, 44, 0.22);
+}
+
+.Textarea {
+  width: 100%;
+  min-height: 96rem;
+  padding: 12rem 14rem;
+  border: 2rem solid #ead8b5;
+  border-radius: 8rem;
+  background: #fff;
+  color: #292929;
+  font-family: inherit;
+  font-size: 17rem;
+  resize: vertical;
 }
 
 .PrimaryButton,
@@ -90,6 +113,48 @@
   color: #5b4a35;
 }
 
+.DialogBackdrop {
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 28rem;
+}
+
+.Dialog {
+  width: min(520rem, 100%);
+  border-radius: 8rem;
+  background: #fff;
+  border: 1rem solid #ead8b5;
+  box-shadow: 0 24rem 70rem rgba(68, 40, 0, 0.24);
+  padding: 24rem;
+}
+
+.DialogTitle {
+  margin: 0;
+  color: #292929;
+  font-size: 26rem;
+  font-weight: 900;
+}
+
+.DialogText {
+  margin: 8rem 0 20rem;
+  color: #7a6954;
+  font-size: 16rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.DisableForm {
+  display: grid;
+  gap: 16rem;
+}
+
+.DialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rem;
+}
+
 .CustomerList {
   display: grid;
   gap: 12rem;
@@ -106,6 +171,13 @@
 
 .CustomerRow:last-child {
   border-bottom: 0;
+}
+
+.CustomerMetaLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rem;
 }
 
 .Name {
@@ -133,12 +205,12 @@
 .StatusBadge {
   display: inline-flex;
   align-items: center;
-  min-height: 30rem;
-  padding: 0 10rem;
+  min-height: 24rem;
   border-radius: 999rem;
+  padding: 0 9rem;
   background: #e5f7e7;
   color: #176b2c;
-  font-size: 14rem;
+  font-size: 12rem;
   font-weight: 900;
   text-transform: capitalize;
 }
@@ -163,18 +235,65 @@
 }
 
 @media (max-width: 760px) {
-  .Filters,
-  .CustomerRow,
-  .RowActions,
-  .Pagination {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-    flex-direction: column;
+  .DialogBackdrop {
+    align-items: end;
+    padding: 0;
   }
 
-  .PrimaryButton,
-  .SecondaryButton,
-  .DangerButton {
+  .Dialog {
     width: 100%;
+    border-radius: 16rem 16rem 0 0;
+    padding: 22rem;
+  }
+
+  .AdminSearch {
+    width: 100%;
+  }
+
+  .SearchToolbar {
+    margin-bottom: 18rem;
+  }
+
+  .CustomerRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 10rem;
+    row-gap: 8rem;
+    padding: 14rem 0;
+  }
+
+  .RowActions {
+    align-self: start;
+    margin-top: 0;
+  }
+
+  .RowActions .SecondaryButton,
+  .RowActions .DangerButton {
+    min-height: 34rem;
+    width: auto;
+    padding: 0 10rem;
+    font-size: 13rem;
+  }
+
+  .Pagination {
+    justify-content: space-between;
+    gap: 8rem;
+    margin-top: 12rem;
+  }
+
+  .Pagination .SecondaryButton {
+    min-height: 34rem;
+    width: auto;
+    padding: 0 12rem;
+    font-size: 13rem;
+  }
+
+  .PageText {
+    font-size: 13rem;
+  }
+
+  .DialogActions {
+    flex-direction: column-reverse;
   }
 }

@@ -3,7 +3,7 @@ import type { OrderStatus } from '../../types/order';
 import { hasPermission } from '../../types/permissions';
 
 export const adminNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ['paid', 'cancelled'],
+  pending_payment: ['cancelled'],
   paid: ['preparing', 'cancelled'],
   preparing: ['ready', 'cancelled'],
   ready: ['completed'],

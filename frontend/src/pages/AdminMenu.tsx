@@ -1,5 +1,6 @@
 import { FormEvent, useMemo, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import classes from './AdminMenu.module.css';
 import { useAdminMenuPage } from './hooks/useAdminMenuPage';
 import { formatCurrency } from '../utils/currency';
@@ -71,7 +72,21 @@ const AdminMenu = () => {
   };
 
   return (
-    <AdminLayout title="Menu">
+    <AdminLayout
+      title="Menu"
+      action={
+        <div className={classes.HeaderActions}>
+          <button
+            className={classes.PrimaryButton}
+            type="button"
+            onClick={openAddMenuItemDialog}
+          >
+            Add item
+          </button>
+          <AdminRefreshButton onClick={refresh} />
+        </div>
+      }
+    >
       {isMenuItemDialogOpen && (
         <Backdrop className={classes.DialogBackdrop}>
           <section
@@ -214,13 +229,14 @@ const AdminMenu = () => {
       )}
 
       <section className={classes.Card}>
-        <div className={classes.CardHeader}>
-          <h2 className={classes.CardTitle}>Menu items</h2>
-          {message && <p className={classes.Success}>{message}</p>}
-          {!isMenuItemDialogOpen && error && (
-            <p className={classes.Error}>{error}</p>
-          )}
-        </div>
+        {(message || (!isMenuItemDialogOpen && error)) && (
+          <div className={classes.CardHeader}>
+            {message && <p className={classes.Success}>{message}</p>}
+            {!isMenuItemDialogOpen && error && (
+              <p className={classes.Error}>{error}</p>
+            )}
+          </div>
+        )}
 
         <div className={classes.MenuToolbar}>
           <div className={classes.AdminSearch}>
@@ -229,22 +245,6 @@ const AdminMenu = () => {
               placeholder="Search menu items"
               variant="compact"
             />
-          </div>
-          <div className={classes.AdminActionButtons}>
-            <button
-              className={classes.PrimaryButton}
-              type="button"
-              onClick={openAddMenuItemDialog}
-            >
-              Add item
-            </button>
-            <button
-              className={classes.SecondaryButton}
-              type="button"
-              onClick={refresh}
-            >
-              Refresh
-            </button>
           </div>
         </div>
 

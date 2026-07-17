@@ -2,7 +2,7 @@ import { useState } from 'react';
 import MenuItemsList from '../components/MenuItems/MenuItemsList';
 import CartBar from '../components/Cart/CartBar';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
-import AccountBar from '../components/Auth/AccountBar';
+import BrandHero from '../components/BrandHero/BrandHero';
 import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
 import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
 import { fetchMenuItems } from '../api/menu-items';
@@ -67,21 +67,7 @@ const Home = () => {
 
   return (
     <MenuLayout>
-      <section className={classes.Hero} aria-labelledby="menu-title">
-        <AccountBar variant="hero" />
-
-        <div className={classes.HeroCopy}>
-          <div className={classes.HeroLine}>
-            <h1 id="menu-title" className={classes.Title}>
-              Grillhouse burgers, loaded chips, and thickshakes
-            </h1>
-            <div className={classes.StoreStatus}>
-              <span className={classes.StatusDot} aria-hidden="true" />
-              <span>Open today · Surry Hills · 10:30 AM - 9:30 PM</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <BrandHero labelledBy="menu-title" className={classes.FixedHero} />
 
       <div className={classes.MenuTools}>
         <MenuSearch onSearch={searchMenu} />

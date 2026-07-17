@@ -83,14 +83,6 @@
   font-weight: 800;
 }
 
-.PhonePanel {
-  display: grid;
-  gap: 14rem;
-  margin-top: 24rem;
-  padding-top: 22rem;
-  border-top: 1rem solid #f0e4d0;
-}
-
 .PanelTitle {
   margin: 0;
   color: #292929;

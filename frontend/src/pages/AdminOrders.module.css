@@ -1,4 +1,3 @@
-.RefreshButton,
 .ActionButton {
   min-height: 44rem;
   border: 0;
@@ -14,11 +13,15 @@
 }
 
 .ActionButton {
-  background: #292929;
+  background: #ffc72c;
+  color: #292929;
+}
+
+.CancelActionButton {
+  background: #bd0017;
   color: #fff;
 }
 
-.RefreshButton:disabled,
 .ActionButton:disabled {
   cursor: not-allowed;
   opacity: 0.62;
@@ -64,6 +67,13 @@
   text-decoration: none;
 }
 
+.OrderMetaLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8rem;
+}
+
 .OrderId:hover {
   color: #bd0017;
 }
@@ -82,13 +92,42 @@
 }
 
 .Status {
-  padding: 6rem 12rem;
-  border-radius: 8rem;
-  background: rgba(39, 134, 82, 0.12);
-  color: #1d7c49;
-  font-size: 15rem;
+  min-height: 24rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999rem;
+  padding: 0 9rem;
+  background: #fff3ce;
+  color: #654611;
+  font-size: 12rem;
   font-weight: 900;
   text-transform: capitalize;
+}
+
+.Status-paid {
+  background: #e5f7e7;
+  color: #176b2c;
+}
+
+.Status-cancelled {
+  background: #ffe2e2;
+  color: #bd0017;
+}
+
+.Status-completed {
+  background: #e8f1ff;
+  color: #235a9f;
+}
+
+.Status-preparing,
+.Status-ready {
+  background: #fff3ce;
+  color: #654611;
+}
+
+.Status-pending_payment {
+  background: #f1ece3;
+  color: #6b5a42;
 }
 
 .Total {
@@ -104,15 +143,29 @@
 }
 
 @media (max-width: 620px) {
-  .OrderTop,
-  .OrderBottom {
+  .OrderTop {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .RefreshButton,
-  .Actions,
+  .OrderBottom {
+    align-items: center;
+    flex-direction: row;
+    gap: 12rem;
+  }
+
+  .Actions {
+    width: auto;
+    flex: 0 1 auto;
+    justify-content: flex-end;
+    gap: 8rem;
+  }
+
   .ActionButton {
-    width: 100%;
+    min-height: 36rem;
+    width: auto;
+    padding: 0 12rem;
+    font-size: 13rem;
+    line-height: 1.1;
   }
 }
