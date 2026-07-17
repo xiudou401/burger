@@ -1,6 +1,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminMenu.module.css';
 import { useAdminMenuPage } from './hooks/useAdminMenuPage';
 import { formatCurrency } from '../utils/currency';
@@ -231,9 +232,11 @@ const AdminMenu = () => {
       <section className={classes.Card}>
         {(message || (!isMenuItemDialogOpen && error)) && (
           <div className={classes.CardHeader}>
-            {message && <p className={classes.Success}>{message}</p>}
+            {message && (
+              <AdminStatusText tone="success">{message}</AdminStatusText>
+            )}
             {!isMenuItemDialogOpen && error && (
-              <p className={classes.Error}>{error}</p>
+              <AdminStatusText tone="error">{error}</AdminStatusText>
             )}
           </div>
         )}
@@ -248,16 +251,14 @@ const AdminMenu = () => {
           </div>
         </div>
 
-        {isLoading && <p className={classes.StateText}>Loading menu...</p>}
+        {isLoading && <AdminStatusText>Loading menu...</AdminStatusText>}
         {!isLoading && menuItems.length === 0 && (
-          <p className={classes.StateText}>No menu items yet.</p>
+          <AdminStatusText>No menu items yet.</AdminStatusText>
         )}
         {!isLoading &&
           menuItems.length > 0 &&
           filteredMenuItems.length === 0 && (
-            <p className={classes.StateText}>
-              No menu items match your search.
-            </p>
+            <AdminStatusText>No menu items match your search.</AdminStatusText>
           )}
 
         <div className={classes.MenuItemList}>

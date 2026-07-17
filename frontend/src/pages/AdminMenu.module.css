@@ -228,23 +228,6 @@
   opacity: 0.62;
 }
 
-.Success,
-.Error,
-.StateText {
-  margin: 0;
-  color: #176b2c;
-  font-size: 16rem;
-  line-height: 1.4;
-}
-
-.Error {
-  color: #bd0017;
-}
-
-.StateText {
-  color: #5b4a35;
-}
-
 .MenuItemList {
   display: grid;
   gap: 12rem;

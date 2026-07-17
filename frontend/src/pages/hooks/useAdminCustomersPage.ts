@@ -14,12 +14,24 @@ export const useAdminCustomersPage = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [busyCustomerId, setBusyCustomerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const loadCustomers = async (pageToLoad = page) => {
-    setIsLoading(true);
+  const loadCustomers = async ({
+    pageToLoad = 1,
+    append = false,
+  }: {
+    pageToLoad?: number;
+    append?: boolean;
+  } = {}) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
     setError(null);
 
     try {
@@ -28,21 +40,37 @@ export const useAdminCustomersPage = () => {
         limit: PAGE_LIMIT,
         search,
       });
-      setCustomers(res.customers);
+      setCustomers((current) =>
+        append ? [...current, ...res.customers] : res.customers,
+      );
       setPage(res.page);
       setTotalPages(Math.max(res.totalPages, 1));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load customers');
     } finally {
-      setIsLoading(false);
+      if (append) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadCustomers(1);
+    loadCustomers();
     // Search is intentionally the query dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
+
+  const refresh = () => {
+    loadCustomers();
+  };
+
+  const loadMore = () => {
+    if (page >= totalPages || isLoadingMore) return;
+
+    loadCustomers({ pageToLoad: page + 1, append: true });
+  };
 
   const replaceCustomer = (customer: AdminCustomer) => {
     setCustomers((current) =>
@@ -89,13 +117,14 @@ export const useAdminCustomersPage = () => {
     page,
     totalPages,
     isLoading,
+    isLoadingMore,
+    hasMoreCustomers: page < totalPages,
     busyCustomerId,
     error,
     message,
     disableCustomer,
     enableCustomer,
-    refresh: () => loadCustomers(page),
-    nextPage: () => loadCustomers(Math.min(page + 1, totalPages)),
-    previousPage: () => loadCustomers(Math.max(page - 1, 1)),
+    refresh,
+    loadMore,
   };
 };

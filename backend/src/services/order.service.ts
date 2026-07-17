@@ -41,6 +41,11 @@ export interface PublicOrder {
   updatedAt: Date;
 }
 
+export interface PaginatedPublicOrders {
+  orders: PublicOrder[];
+  nextCursor: string | null;
+}
+
 export const toPublicOrder = (order: {
   _id: unknown;
   items: Array<{
@@ -156,11 +161,71 @@ export const listOrdersForUser = async (
   return orders.map(toPublicOrder);
 };
 
-export const listAllOrders = async (limit = 25): Promise<PublicOrder[]> => {
-  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
-  const orders = await orderRepository.listAll(safeLimit);
+interface AdminOrderCursor {
+  createdAt: Date;
+  id: string;
+}
 
-  return orders.map(toPublicOrder);
+const encodeAdminOrderCursor = (order: PublicOrder) => {
+  return Buffer.from(
+    JSON.stringify({
+      createdAt: order.createdAt.toISOString(),
+      id: order.id,
+    }),
+  ).toString('base64url');
+};
+
+const isObjectId = (value: string) => /^[0-9a-fA-F]{24}$/.test(value);
+
+const decodeAdminOrderCursor = (
+  cursor?: string,
+): AdminOrderCursor | undefined => {
+  if (!cursor) return undefined;
+
+  try {
+    const decoded = JSON.parse(
+      Buffer.from(cursor, 'base64url').toString('utf8'),
+    ) as { createdAt?: unknown; id?: unknown };
+    const createdAt =
+      typeof decoded.createdAt === 'string'
+        ? new Date(decoded.createdAt)
+        : null;
+
+    if (
+      !createdAt ||
+      Number.isNaN(createdAt.getTime()) ||
+      typeof decoded.id !== 'string' ||
+      !isObjectId(decoded.id)
+    ) {
+      throw new Error('Invalid cursor');
+    }
+
+    return { createdAt, id: decoded.id };
+  } catch {
+    throw new ServiceError('Invalid orders cursor', 400);
+  }
+};
+
+export const listAllOrders = async ({
+  limit = 20,
+  cursor,
+}: {
+  limit?: number;
+  cursor?: string;
+} = {}): Promise<PaginatedPublicOrders> => {
+  const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
+  const decodedCursor = decodeAdminOrderCursor(cursor);
+  const orders = await orderRepository.listAll(safeLimit + 1, decodedCursor);
+  const hasMore = orders.length > safeLimit;
+  const visibleOrders = orders.slice(0, safeLimit).map(toPublicOrder);
+
+  return {
+    orders: visibleOrders,
+    nextCursor:
+      hasMore && visibleOrders.length > 0
+        ? encodeAdminOrderCursor(visibleOrders[visibleOrders.length - 1])
+        : null,
+  };
 };
 
 export const getOrderForUser = async (

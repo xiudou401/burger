@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusText from '../components/Admin/AdminStatusText';
 import Backdrop from '../components/UI/Backdrop/Backdrop';
 import classes from './AdminStaff.module.css';
 import { useAdminStaffPage } from './hooks/useAdminStaffPage';
@@ -95,7 +96,7 @@ const AdminStaff = () => {
                 />
               </label>
 
-              {error && <p className={classes.Error}>{error}</p>}
+              {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 
               <div className={classes.FormActions}>
                 <button
@@ -118,18 +119,20 @@ const AdminStaff = () => {
         </Backdrop>
       )}
 
-      {message && <p className={classes.Success}>{message}</p>}
+      {message && <AdminStatusText tone="success">{message}</AdminStatusText>}
       {devInviteUrl && (
         <p className={classes.DevLink}>Dev invite link: {devInviteUrl}</p>
       )}
-      {!isInviteDialogOpen && error && <p className={classes.Error}>{error}</p>}
+      {!isInviteDialogOpen && error && (
+        <AdminStatusText tone="error">{error}</AdminStatusText>
+      )}
 
       <section className={classes.Card}>
         <h2 className={classes.CardTitle}>Invitations</h2>
 
-        {isLoading && <p className={classes.StateText}>Loading invites...</p>}
+        {isLoading && <AdminStatusText>Loading invites...</AdminStatusText>}
         {!isLoading && invites.length === 0 && (
-          <p className={classes.StateText}>No invites yet.</p>
+          <AdminStatusText>No invites yet.</AdminStatusText>
         )}
 
         <div className={classes.InviteList}>

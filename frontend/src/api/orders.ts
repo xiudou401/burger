@@ -25,8 +25,22 @@ export const fetchOrder = (orderId: string) => {
   return request<{ order: Order }>(`/orders/${orderId}`);
 };
 
-export const fetchAdminOrders = (limit = 25) => {
-  return request<{ orders: Order[] }>(`/orders/admin/all?limit=${limit}`);
+interface FetchAdminOrdersParams {
+  limit?: number;
+  cursor?: string | null;
+}
+
+export const fetchAdminOrders = ({
+  limit = 20,
+  cursor,
+}: FetchAdminOrdersParams = {}) => {
+  const query = new URLSearchParams({ limit: String(limit) });
+
+  if (cursor) query.set('cursor', cursor);
+
+  return request<{ orders: Order[]; nextCursor: string | null }>(
+    `/orders/admin/all?${query.toString()}`,
+  );
 };
 
 export const fetchAdminOrder = (orderId: string) => {

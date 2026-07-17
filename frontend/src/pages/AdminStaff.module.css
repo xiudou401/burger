@@ -109,23 +109,12 @@
   gap: 12rem;
 }
 
-.Success,
-.Error,
-.StateText,
 .DevLink {
   margin: 16rem 0 0;
-  color: #176b2c;
+  color: #5b4a35;
   font-size: 16rem;
   line-height: 1.4;
-}
-
-.Error {
-  color: #bd0017;
-}
-
-.StateText,
-.DevLink {
-  color: #5b4a35;
+  font-weight: 800;
 }
 
 .DevLink {

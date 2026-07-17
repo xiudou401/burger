@@ -1,5 +1,6 @@
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminDashboard.module.css';
 import { useAdminDashboardPage } from './hooks/useAdminDashboardPage';
 import { formatCurrency } from '../utils/currency';
@@ -25,8 +26,8 @@ const AdminDashboard = () => {
       title="Dashboard"
       action={<AdminRefreshButton onClick={refresh} />}
     >
-      {isLoading && <p className={classes.StateText}>Loading dashboard...</p>}
-      {error && <p className={classes.Error}>{error}</p>}
+      {isLoading && <AdminStatusText>Loading dashboard...</AdminStatusText>}
+      {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 
       {!isLoading && !error && summary && (
         <>
@@ -73,7 +74,7 @@ const AdminDashboard = () => {
             <article className={classes.Panel}>
               <h2 className={classes.PanelTitle}>Top selling items</h2>
               {summary.topItems.length === 0 ? (
-                <p className={classes.EmptyText}>No paid orders yet today.</p>
+                <AdminStatusText>No paid orders yet today.</AdminStatusText>
               ) : (
                 <div className={classes.TopItems}>
                   {summary.topItems.map((item) => (

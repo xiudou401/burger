@@ -30,7 +30,8 @@ export const ListMyOrdersQuerySchema = z
 
 export const ListAdminOrdersQuerySchema = z
   .object({
-    limit: paginationLimit(25, 100),
+    limit: paginationLimit(20, 100),
+    cursor: z.string().trim().max(200).optional(),
   })
   .strict();
 
@@ -43,4 +44,7 @@ export const OrderParamsSchema = z
 export type CreateOrderPayload = z.infer<typeof CreateOrderSchema>;
 export type UpdateOrderStatusPayload = z.infer<typeof UpdateOrderStatusSchema>;
 export type ListOrdersQueryPayload = z.infer<typeof ListMyOrdersQuerySchema>;
+export type ListAdminOrdersQueryPayload = z.infer<
+  typeof ListAdminOrdersQuerySchema
+>;
 export type OrderParamsPayload = z.infer<typeof OrderParamsSchema>;

@@ -11,7 +11,7 @@ import {
   markStripeCheckoutPaid,
   markStripeOrderFailed,
 } from './checkout.service';
-import { updateOrderStatus } from './order.service';
+import { listAllOrders, updateOrderStatus } from './order.service';
 import { getPermissionsForRole } from '../types/permissions';
 
 const mockCreateSession = jest.fn();
@@ -44,6 +44,7 @@ jest.mock('../repositories/order.repository', () => ({
     findById: jest.fn(),
     findCheckoutByIdempotencyKey: jest.fn(),
     findByStripeSessionId: jest.fn(),
+    listAll: jest.fn(),
     save: jest.fn(),
   },
 }));
@@ -104,6 +105,59 @@ describe('order service', () => {
       createCheckoutOrder(userId, [], 7, idempotencyKey),
     ).rejects.toThrow(ServiceError);
     expect(orderRepository.create).not.toHaveBeenCalled();
+  });
+
+  test('lists admin orders with a cursor for the next page', async () => {
+    const firstOrder = {
+      _id: orderId,
+      items: [
+        {
+          menuItemId: mealId,
+          nameAtPurchase: 'Classic Burger',
+          priceCentsAtPurchase: 1200,
+          quantity: 1,
+          subtotalCents: 1200,
+        },
+      ],
+      totalCents: 1200,
+      menuVersion: 7,
+      status: 'paid',
+      payment: {
+        status: 'paid',
+        amountCents: 1200,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    const extraOrder = {
+      ...firstOrder,
+      _id: '507f1f77bcf86cd799439099',
+      createdAt: new Date('2025-12-31T23:59:00.000Z'),
+      updatedAt: new Date('2025-12-31T23:59:00.000Z'),
+    };
+
+    jest
+      .mocked(orderRepository.listAll)
+      .mockResolvedValueOnce([firstOrder, extraOrder] as never);
+
+    const result = await listAllOrders({ limit: 1 });
+
+    expect(orderRepository.listAll).toHaveBeenCalledWith(2, undefined);
+    expect(result.orders).toHaveLength(1);
+    expect(result.nextCursor).toEqual(expect.any(String));
+
+    jest.mocked(orderRepository.listAll).mockResolvedValueOnce([] as never);
+
+    await listAllOrders({ limit: 1, cursor: result.nextCursor ?? undefined });
+
+    expect(orderRepository.listAll).toHaveBeenLastCalledWith(
+      2,
+      expect.objectContaining({
+        createdAt: now,
+        id: orderId,
+      }),
+    );
   });
 
   test('creates Stripe checkout sessions for validated orders', async () => {

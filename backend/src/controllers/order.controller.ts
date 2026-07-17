@@ -10,6 +10,7 @@ import {
 import { createCheckoutOrder } from '../services/checkout.service';
 import type {
   CreateOrderPayload,
+  ListAdminOrdersQueryPayload,
   ListOrdersQueryPayload,
   OrderParamsPayload,
   UpdateOrderStatusPayload,
@@ -85,10 +86,11 @@ export const listAdminOrdersHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { limit } = req.query as unknown as ListOrdersQueryPayload;
-    const orders = await listAllOrders(limit);
+    const { limit, cursor } =
+      req.query as unknown as ListAdminOrdersQueryPayload;
+    const result = await listAllOrders({ limit, cursor });
 
-    return res.status(200).json({ orders });
+    return res.status(200).json(result);
   } catch (error) {
     next(error);
   }

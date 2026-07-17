@@ -42,6 +42,34 @@ describe('orderRepository', () => {
     expect(query.exec).toHaveBeenCalled();
   });
 
+  test('lists all orders after a cursor with stable newest-first sorting', async () => {
+    const query = chain([]);
+    const cursorDate = new Date('2026-01-02T03:04:05.000Z');
+
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+
+    await expect(
+      orderRepository.listAll(21, {
+        createdAt: cursorDate,
+        id: orderId,
+      }),
+    ).resolves.toEqual([]);
+
+    expect(OrderModel.find).toHaveBeenCalledWith({
+      $or: [
+        { createdAt: { $lt: cursorDate } },
+        {
+          createdAt: cursorDate,
+          _id: { $lt: expect.any(Types.ObjectId) },
+        },
+      ],
+    });
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
+    expect(query.limit).toHaveBeenCalledWith(21);
+    expect(query.lean).toHaveBeenCalled();
+    expect(query.exec).toHaveBeenCalled();
+  });
+
   test('finds an order scoped to a user', async () => {
     const exec = jest.fn().mockResolvedValue(null);
     const lean = jest.fn().mockReturnValue({ exec });

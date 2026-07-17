@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusText from '../components/Admin/AdminStatusText';
 import Backdrop from '../components/UI/Backdrop/Backdrop';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import classes from './AdminCustomers.module.css';
@@ -26,17 +27,16 @@ const AdminCustomers = () => {
     customers,
     search,
     setSearch,
-    page,
-    totalPages,
     isLoading,
+    isLoadingMore,
+    hasMoreCustomers,
     busyCustomerId,
     error,
     message,
     disableCustomer,
     enableCustomer,
     refresh,
-    nextPage,
-    previousPage,
+    loadMore,
   } = useAdminCustomersPage();
 
   const openDisableDialog = (customer: AdminCustomer) => {
@@ -128,12 +128,12 @@ const AdminCustomers = () => {
           </div>
         </div>
 
-        {message && <p className={classes.Success}>{message}</p>}
-        {error && <p className={classes.Error}>{error}</p>}
+        {message && <AdminStatusText tone="success">{message}</AdminStatusText>}
+        {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 
-        {isLoading && <p className={classes.StateText}>Loading customers...</p>}
+        {isLoading && <AdminStatusText>Loading customers...</AdminStatusText>}
         {!isLoading && customers.length === 0 && (
-          <p className={classes.StateText}>No customers found.</p>
+          <AdminStatusText>No customers found.</AdminStatusText>
         )}
 
         <div className={classes.CustomerList}>
@@ -189,27 +189,18 @@ const AdminCustomers = () => {
           ))}
         </div>
 
-        <div className={classes.Pagination}>
-          <button
-            className={classes.SecondaryButton}
-            type="button"
-            disabled={page <= 1}
-            onClick={previousPage}
-          >
-            Previous
-          </button>
-          <span className={classes.PageText}>
-            Page {page} of {totalPages}
-          </span>
-          <button
-            className={classes.SecondaryButton}
-            type="button"
-            disabled={page >= totalPages}
-            onClick={nextPage}
-          >
-            Next
-          </button>
-        </div>
+        {hasMoreCustomers && (
+          <div className={classes.LoadMoreBar}>
+            <button
+              className={classes.LoadMoreButton}
+              type="button"
+              disabled={isLoadingMore}
+              onClick={loadMore}
+            >
+              {isLoadingMore ? 'Loading...' : 'Load more'}
+            </button>
+          </div>
+        )}
       </section>
     </AdminLayout>
   );

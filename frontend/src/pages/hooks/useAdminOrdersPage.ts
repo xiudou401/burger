@@ -6,30 +6,66 @@ import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { Order, OrderStatus } from '../../types/order';
 import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 
+const ORDER_PAGE_LIMIT = 20;
+
 export const useAdminOrdersPage = () => {
   const user = useAuth((ctx) => ctx.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
 
-  const loadOrders = async () => {
-    setIsLoading(true);
+  const loadOrders = async ({
+    cursor,
+    append = false,
+  }: {
+    cursor?: string | null;
+    append?: boolean;
+  } = {}) => {
+    if (append) {
+      setIsLoadingMore(true);
+    } else {
+      setIsLoading(true);
+    }
+
     setError(null);
 
     try {
-      const res = await fetchAdminOrders(50);
-      setOrders(res.orders);
+      const res = await fetchAdminOrders({
+        limit: ORDER_PAGE_LIMIT,
+        cursor,
+      });
+
+      setOrders((current) =>
+        append ? [...current, ...res.orders] : res.orders,
+      );
+      setNextCursor(res.nextCursor);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not load orders');
     } finally {
-      setIsLoading(false);
+      if (append) {
+        setIsLoadingMore(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     loadOrders();
   }, []);
+
+  const loadMore = () => {
+    if (!nextCursor || isLoadingMore) return;
+
+    loadOrders({ cursor: nextCursor, append: true });
+  };
+
+  const refresh = () => {
+    loadOrders();
+  };
 
   const changeStatus = async (
     orderId: string,
@@ -83,10 +119,13 @@ export const useAdminOrdersPage = () => {
   return {
     orders,
     isLoading,
+    isLoadingMore,
     error,
     updatingOrderId,
+    hasMoreOrders: nextCursor !== null,
     nextStatuses,
-    refresh: loadOrders,
+    refresh,
+    loadMore,
     changeStatus,
   };
 };

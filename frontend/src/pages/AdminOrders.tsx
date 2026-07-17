@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
 import { formatCurrency } from '../utils/currency';
@@ -56,10 +57,13 @@ const AdminOrders = () => {
   const {
     orders,
     isLoading,
+    isLoadingMore,
     error,
     updatingOrderId,
+    hasMoreOrders,
     nextStatuses,
     refresh,
+    loadMore,
     changeStatus,
   } = useAdminOrdersPage();
 
@@ -68,11 +72,11 @@ const AdminOrders = () => {
       title="Orders"
       action={<AdminRefreshButton onClick={refresh} />}
     >
-      {isLoading && <p className={classes.StateText}>Loading orders...</p>}
-      {error && <p className={classes.Error}>{error}</p>}
+      {isLoading && <AdminStatusText>Loading orders...</AdminStatusText>}
+      {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 
       {!isLoading && orders.length === 0 && !error && (
-        <p className={classes.StateText}>No orders yet.</p>
+        <AdminStatusText>No orders yet.</AdminStatusText>
       )}
 
       <div className={classes.OrderList}>
@@ -122,6 +126,19 @@ const AdminOrders = () => {
           </article>
         ))}
       </div>
+
+      {hasMoreOrders && (
+        <div className={classes.LoadMoreBar}>
+          <button
+            className={classes.LoadMoreButton}
+            type="button"
+            disabled={isLoadingMore}
+            onClick={loadMore}
+          >
+            {isLoadingMore ? 'Loading...' : 'Load more'}
+          </button>
+        </div>
+      )}
     </AdminLayout>
   );
 };

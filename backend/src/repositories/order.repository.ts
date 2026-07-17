@@ -13,6 +13,11 @@ type RepositoryOrderItem = Omit<Order['items'][number], 'menuItemId'> & {
 const toObjectId = (id: string) => new Types.ObjectId(id);
 const isObjectId = (id: string) => Types.ObjectId.isValid(id);
 
+interface OrderCursor {
+  createdAt: Date;
+  id: string;
+}
+
 export const orderRepository = {
   create(data: {
     userId: string;
@@ -50,8 +55,24 @@ export const orderRepository = {
       .exec();
   },
 
-  listAll(limit: number) {
-    return OrderModel.find().sort({ createdAt: -1 }).limit(limit).lean().exec();
+  listAll(limit: number, cursor?: OrderCursor) {
+    const query = cursor
+      ? {
+          $or: [
+            { createdAt: { $lt: cursor.createdAt } },
+            {
+              createdAt: cursor.createdAt,
+              _id: { $lt: toObjectId(cursor.id) },
+            },
+          ],
+        }
+      : {};
+
+    return OrderModel.find(query)
+      .sort({ createdAt: -1, _id: -1 })
+      .limit(limit)
+      .lean()
+      .exec();
   },
 
   listCreatedBetween(start: Date, end: Date) {

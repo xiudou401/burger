@@ -1,5 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './OrderDetails.module.css';
 import { useAdminOrderDetailsPage } from './hooks/useAdminOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
@@ -21,12 +22,12 @@ const AdminOrderDetails = () => {
         Back to orders
       </Link>
 
-      {isLoading && <p className={classes.StateText}>Loading order...</p>}
+      {isLoading && <AdminStatusText>Loading order...</AdminStatusText>}
 
       {error && (
         <div className={classes.Card}>
           <h2 className={classes.CardTitle}>Order unavailable</h2>
-          <p className={classes.StateText}>{error}</p>
+          <AdminStatusText tone="error">{error}</AdminStatusText>
         </div>
       )}
 
