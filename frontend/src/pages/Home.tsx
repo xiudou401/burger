@@ -71,14 +71,13 @@ const Home = () => {
         <AccountBar variant="hero" />
 
         <div className={classes.HeroCopy}>
-          <p className={classes.Kicker}>Made fresh in Surry Hills</p>
           <div className={classes.HeroLine}>
             <h1 id="menu-title" className={classes.Title}>
-              Grillhouse burgers, loaded chips, thickshakes.
+              Grillhouse burgers, loaded chips, and thickshakes
             </h1>
             <div className={classes.StoreStatus}>
               <span className={classes.StatusDot} aria-hidden="true" />
-              <span>Open today · Surry Hills pickup · 10:30 AM - 9:30 PM</span>
+              <span>Open today · Surry Hills · 10:30 AM - 9:30 PM</span>
             </div>
           </div>
         </div>

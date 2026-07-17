@@ -143,12 +143,16 @@
 }
 
 .HeroAccountBar .Brand,
-.HeroAccountBar .BrandText,
 .HeroAccountBar .LoginLink,
 .HeroAccountBar .ProfileLink,
 .HeroAccountBar .VerifyButton,
 .HeroAccountBar .Greeting {
   color: #fff;
+}
+
+.HeroAccountBar .BrandText {
+  color: #fff7e8;
+  text-shadow: 0 2rem 12rem rgba(0, 0, 0, 0.38);
 }
 
 .HeroAccountBar .Mark {
