@@ -2,13 +2,16 @@
   position: absolute;
   display: flex;
   flex-flow: column;
-  width: 750rem;
+  left: 0;
+  right: 0;
+  width: min(820rem, calc(100vw - 48rem));
   height: 80vh;
+  margin: 0 auto;
   background-color: #fff;
   bottom: 0;
   padding-bottom: 120rem;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
+  border-top-left-radius: 20rem;
+  border-top-right-radius: 20rem;
 }
 
 .Header {
@@ -68,4 +71,12 @@
 .ErrorStatus button:focus-visible {
   outline: 3rem solid rgba(255, 199, 44, 0.8);
   outline-offset: 3rem;
+}
+
+@media (max-width: 560px) {
+  .CartDetails {
+    width: 100vw;
+    border-top-left-radius: 16rem;
+    border-top-right-radius: 16rem;
+  }
 }
