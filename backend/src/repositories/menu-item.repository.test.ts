@@ -68,7 +68,6 @@ describe('menuItemRepository', () => {
       image: '/img/burger.png',
       category: 'burger',
       isAvailable: true,
-      isFeatured: false,
     });
 
     expect(MenuItemModel.findByIdAndUpdate).toHaveBeenCalledWith(
@@ -80,7 +79,6 @@ describe('menuItemRepository', () => {
         image: '/img/burger.png',
         category: 'burger',
         isAvailable: true,
-        isFeatured: false,
       },
       { new: true, runValidators: true },
     );

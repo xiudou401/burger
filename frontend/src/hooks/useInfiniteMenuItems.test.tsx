@@ -21,7 +21,6 @@ const menuItem = (id: string): MenuItem => ({
   image: `${id}.jpg`,
   category: 'burger',
   isAvailable: true,
-  isFeatured: false,
 });
 
 const pageData = (

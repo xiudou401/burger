@@ -29,7 +29,7 @@ const Login = () => {
 
   return (
     <AuthSplitPage
-      title="Welcome back to big flavor."
+      title="Welcome back to big flavor"
       subtitle="Sign in to keep your favorites, cart, and checkout ready for your next order."
     >
       <AuthCard>

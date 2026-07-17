@@ -37,7 +37,7 @@ const Signup = () => {
 
   return (
     <AuthSplitPage
-      title="Join the crave-worthy side."
+      title="Join the crave-worthy side"
       subtitle="Create an account and your next burger run starts a little faster."
     >
       <AuthCard>

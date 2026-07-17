@@ -1,6 +1,5 @@
 import AccountDetailsCard from '../components/Profile/AccountDetailsCard';
 import CurrentCartCard from '../components/Profile/CurrentCartCard';
-import ProfileHero from '../components/Profile/ProfileHero';
 import ProfilePageLayout from '../components/Profile/ProfilePageLayout';
 import QuickActionsCard from '../components/Profile/QuickActionsCard';
 import RecentOrdersCard from '../components/Profile/RecentOrdersCard';
@@ -9,9 +8,6 @@ import { useProfilePage } from './hooks/useProfilePage';
 const Profile = () => {
   const {
     user,
-    initial,
-    firstName,
-    accountStatus,
     totalQuantity,
     estimatedTotalCents,
     hasCartItems,
@@ -27,14 +23,6 @@ const Profile = () => {
 
   return (
     <ProfilePageLayout
-      hero={
-        <ProfileHero
-          initial={initial}
-          firstName={firstName}
-          accountStatus={accountStatus}
-          contact={user?.email ?? user?.phone}
-        />
-      }
       main={
         <>
           <AccountDetailsCard

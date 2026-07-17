@@ -5,10 +5,20 @@ import { faSearch, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 interface Props {
   onSearch: (keyword: string) => void;
+  placeholder?: string;
+  variant?: 'default' | 'compact';
 }
 
-const MenuSearch = ({ onSearch }: Props) => {
+const MenuSearch = ({
+  onSearch,
+  placeholder = 'Search the Sydney menu',
+  variant = 'default',
+}: Props) => {
   const [value, setValue] = useState('');
+  const menuSearchClass =
+    variant === 'compact'
+      ? `${classes.MenuSearch} ${classes.Compact}`
+      : classes.MenuSearch;
 
   const clearHandler = () => {
     setValue('');
@@ -16,7 +26,7 @@ const MenuSearch = ({ onSearch }: Props) => {
   };
 
   return (
-    <div className={classes.MenuSearch}>
+    <div className={menuSearchClass}>
       <div className={classes.InputOuter}>
         <span className={classes.SearchIcon} aria-hidden="true">
           <FontAwesomeIcon icon={faSearch} />
@@ -30,7 +40,7 @@ const MenuSearch = ({ onSearch }: Props) => {
             setValue(next);
             onSearch(next);
           }}
-          placeholder="Search the Sydney menu"
+          placeholder={placeholder}
         />
 
         {value && (

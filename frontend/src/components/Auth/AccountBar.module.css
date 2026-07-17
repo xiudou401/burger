@@ -48,18 +48,14 @@
   min-width: 0;
 }
 
-.AuthLinks,
-.UserArea {
+.AuthLinks {
   display: flex;
   align-items: center;
   gap: 16rem;
 }
 
 .LoginLink,
-.JoinLink,
-.ProfileLink,
-.Logout,
-.VerifyButton {
+.JoinLink {
   height: 52rem;
   display: inline-flex;
   align-items: center;
@@ -72,64 +68,15 @@
   white-space: nowrap;
 }
 
-.LoginLink,
-.ProfileLink,
-.VerifyButton {
+.LoginLink {
   color: #292929;
 }
 
-.VerifyButton {
-  border: 2rem solid #ffc72c;
-  background: #fff8eb;
-  cursor: pointer;
-  font-family: inherit;
-}
-
-.JoinLink,
-.Logout {
+.JoinLink {
   border: 0;
   background: #ffc72c;
   color: #292929;
   cursor: pointer;
-}
-
-.Logout {
-  font-family: inherit;
-}
-
-.Avatar {
-  width: 52rem;
-  height: 52rem;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: #bd0017;
-  color: #ffc72c;
-  font-size: 22rem;
-  font-weight: 900;
-}
-
-.UserText {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.Greeting {
-  color: #292929;
-  font-size: 18rem;
-  font-weight: 900;
-  max-width: 180rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.Member {
-  margin-top: 4rem;
-  color: #8b7350;
-  font-size: 14rem;
-  font-weight: 700;
 }
 
 .HeroAccountBar {
@@ -143,16 +90,9 @@
 }
 
 .HeroAccountBar .Brand,
-.HeroAccountBar .LoginLink,
-.HeroAccountBar .ProfileLink,
-.HeroAccountBar .VerifyButton,
-.HeroAccountBar .Greeting {
+.HeroAccountBar .BrandText,
+.HeroAccountBar .LoginLink {
   color: #fff;
-}
-
-.HeroAccountBar .BrandText {
-  color: #fff7e8;
-  text-shadow: 0 2rem 12rem rgba(0, 0, 0, 0.38);
 }
 
 .HeroAccountBar .Mark {
@@ -161,19 +101,9 @@
   box-shadow: 0 12rem 28rem rgba(0, 0, 0, 0.2);
 }
 
-.HeroAccountBar .Member {
-  color: rgba(255, 255, 255, 0.78);
-}
-
-.HeroAccountBar .JoinLink,
-.HeroAccountBar .Logout {
+.HeroAccountBar .JoinLink {
   background: #ffc72c;
   color: #202020;
-}
-
-.HeroAccountBar .VerifyButton {
-  border-color: rgba(255, 199, 44, 0.78);
-  background: rgba(32, 32, 32, 0.38);
 }
 
 @media (max-width: 560px) {
@@ -186,21 +116,12 @@
     padding: 0;
   }
 
-  .UserText,
-  .ProfileLink,
-  .VerifyButton {
-    display: none;
-  }
-
-  .AuthLinks,
-  .UserArea {
+  .AuthLinks {
     gap: 10rem;
   }
 
   .LoginLink,
-  .JoinLink,
-  .Logout,
-  .VerifyButton {
+  .JoinLink {
     height: 48rem;
     padding: 0 16rem;
     font-size: 16rem;

@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
-import { resendVerificationEmail } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
-import { useToast } from '../UI/Toast/ToastContext';
+import AccountControls from './AccountControls';
 import classes from './AccountBar.module.css';
 
 interface AccountBarProps {
@@ -9,31 +8,7 @@ interface AccountBarProps {
 }
 
 const AccountBar = ({ variant = 'default' }: AccountBarProps) => {
-  const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
-  const logout = useAuth((ctx) => ctx.logout);
-  const { showToast } = useToast();
-
-  const initial = user?.name?.trim().charAt(0).toUpperCase() || 'S';
-  const memberStatus = user?.email
-    ? user.emailVerified
-      ? 'Ready to order'
-      : 'Email not verified'
-    : user?.phoneVerified
-      ? 'Phone verified'
-      : 'Phone login';
-
-  const resendVerification = async () => {
-    try {
-      const res = await resendVerificationEmail();
-      showToast({ message: res.message, tone: 'success' });
-    } catch (err) {
-      showToast({
-        message: err instanceof Error ? err.message : 'Could not send email',
-        tone: 'error',
-      });
-    }
-  };
 
   const accountBarClass =
     variant === 'hero'
@@ -49,29 +24,8 @@ const AccountBar = ({ variant = 'default' }: AccountBarProps) => {
         </span>
       </Link>
 
-      {isAuthenticated && user ? (
-        <div className={classes.UserArea}>
-          <div className={classes.Avatar}>{initial}</div>
-          <div className={classes.UserText}>
-            <span className={classes.Greeting}>Hi, {user.name}</span>
-            <span className={classes.Member}>{memberStatus}</span>
-          </div>
-          {user.email && !user.emailVerified && (
-            <button
-              className={classes.VerifyButton}
-              type="button"
-              onClick={resendVerification}
-            >
-              Verify
-            </button>
-          )}
-          <Link className={classes.ProfileLink} to="/profile">
-            Profile
-          </Link>
-          <button className={classes.Logout} type="button" onClick={logout}>
-            Logout
-          </button>
-        </div>
+      {isAuthenticated ? (
+        <AccountControls variant={variant} />
       ) : (
         <nav className={classes.AuthLinks} aria-label="Account">
           <Link className={classes.LoginLink} to="/login">

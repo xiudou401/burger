@@ -65,7 +65,6 @@ describe('menu item service', () => {
       priceCents: 1200,
       category: 'burger',
       isAvailable: true,
-      isFeatured: false,
     } as never);
 
     await createMenuItem(
@@ -74,7 +73,6 @@ describe('menu item service', () => {
         priceCents: 1200,
         category: 'burger',
         isAvailable: true,
-        isFeatured: false,
       },
       adminActor,
     );
@@ -98,7 +96,6 @@ describe('menu item service', () => {
       priceCents: 1200,
       category: 'burger',
       isAvailable: true,
-      isFeatured: false,
     } as never);
     jest.mocked(menuItemRepository.updateById).mockResolvedValue({
       _id: 'menu-item-1',
@@ -106,7 +103,6 @@ describe('menu item service', () => {
       priceCents: 1300,
       category: 'burger',
       isAvailable: true,
-      isFeatured: false,
     } as never);
 
     await updateMenuItem(
@@ -116,7 +112,6 @@ describe('menu item service', () => {
         priceCents: 1300,
         category: 'burger',
         isAvailable: true,
-        isFeatured: false,
       },
       adminActor,
     );
@@ -144,7 +139,6 @@ describe('menu item service', () => {
         priceCents: 1300,
         category: 'burger',
         isAvailable: true,
-        isFeatured: false,
       }),
     ).rejects.toThrow('Menu item not found');
 
@@ -158,7 +152,6 @@ describe('menu item service', () => {
       priceCents: 1200,
       category: 'burger',
       isAvailable: true,
-      isFeatured: false,
     } as never);
 
     await deleteMenuItem('menu-item-1', adminActor);

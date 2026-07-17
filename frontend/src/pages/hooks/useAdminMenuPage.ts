@@ -87,7 +87,7 @@ export const useAdminMenuPage = () => {
     if (Object.keys(nextFieldErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
       setError('Please fix the highlighted fields.');
-      return;
+      return false;
     }
 
     payload = buildMenuItemPayload(form);
@@ -111,8 +111,10 @@ export const useAdminMenuPage = () => {
 
       setMessage(editingMenuItemId ? 'Menu item updated' : 'Menu item added');
       resetForm();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save menu item');
+      return false;
     } finally {
       setIsSubmitting(false);
     }

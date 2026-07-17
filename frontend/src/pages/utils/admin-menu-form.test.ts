@@ -11,7 +11,6 @@ const validForm = {
   image: ' /img/meals/1.png ',
   category: 'burger' as const,
   isAvailable: true,
-  isFeatured: false,
 };
 
 describe('admin menu form helpers', () => {
@@ -23,7 +22,6 @@ describe('admin menu form helpers', () => {
       image: '/img/meals/1.png',
       category: 'burger',
       isAvailable: true,
-      isFeatured: false,
     });
   });
 
@@ -77,7 +75,6 @@ describe('admin menu form helpers', () => {
         priceCents: 1200,
         category: 'burger',
         isAvailable: true,
-        isFeatured: true,
       }),
     ).toEqual({
       name: 'Classic Burger',
@@ -86,7 +83,6 @@ describe('admin menu form helpers', () => {
       image: '',
       category: 'burger',
       isAvailable: true,
-      isFeatured: true,
     });
   });
 });

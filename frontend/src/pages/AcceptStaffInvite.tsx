@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import {
   AuthCard,
+  AuthField,
+  AuthFormElement,
   AuthHeader,
   AuthSocialButtons,
   AuthStatus,
@@ -14,8 +16,21 @@ import { useAcceptStaffInvitePage } from './hooks/useAcceptStaffInvitePage';
 const PENDING_STAFF_INVITE_TOKEN = 'pendingStaffInviteToken';
 
 const AcceptStaffInvite = () => {
-  const { token, isAuthenticated, isAccepting, message, error, accept } =
-    useAcceptStaffInvitePage();
+  const {
+    token,
+    isAuthenticated,
+    email,
+    setEmail,
+    password,
+    setPassword,
+    isSigningIn,
+    signInError,
+    isAccepting,
+    message,
+    error,
+    submitSignIn,
+    accept,
+  } = useAcceptStaffInvitePage();
   const { oauthLogin } = useOAuthLogin('login');
 
   const signInWithGoogle = () => {
@@ -37,11 +52,42 @@ const AcceptStaffInvite = () => {
           subtitle="Sign in first, then confirm the invitation."
         />
 
-        {!isAuthenticated && (
-          <AuthSocialButtons
-            googleLabel="Continue with Google"
-            onGoogle={signInWithGoogle}
-          />
+        {!isAuthenticated && token && (
+          <>
+            <AuthSocialButtons
+              googleLabel="Continue with Google"
+              onGoogle={signInWithGoogle}
+            />
+
+            <AuthFormElement onSubmit={submitSignIn}>
+              <AuthField
+                label="Email"
+                inputProps={{
+                  value: email,
+                  onChange: (event) => setEmail(event.target.value),
+                  type: 'email',
+                  autoComplete: 'email',
+                  required: true,
+                }}
+              />
+              <AuthField
+                label="Password"
+                inputProps={{
+                  value: password,
+                  onChange: (event) => setPassword(event.target.value),
+                  type: 'password',
+                  autoComplete: 'current-password',
+                  required: true,
+                }}
+              />
+              {signInError && (
+                <AuthStatus tone="error">{signInError}</AuthStatus>
+              )}
+              <AuthSubmitButton disabled={isSigningIn}>
+                {isSigningIn ? 'Signing in...' : 'Sign in to continue'}
+              </AuthSubmitButton>
+            </AuthFormElement>
+          </>
         )}
 
         {isAuthenticated && token && (

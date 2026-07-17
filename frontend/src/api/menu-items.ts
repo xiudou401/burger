@@ -33,7 +33,6 @@ export interface MenuItemPayload {
   image: string;
   category: MenuItemCategory;
   isAvailable: boolean;
-  isFeatured: boolean;
 }
 
 interface MenuItemResponse {

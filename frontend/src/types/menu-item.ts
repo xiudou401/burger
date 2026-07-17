@@ -13,7 +13,6 @@ export interface MenuItem {
   image: string;
   category: MenuItemCategory;
   isAvailable: boolean;
-  isFeatured: boolean;
 }
 
 export interface PaginatedMenuItems {

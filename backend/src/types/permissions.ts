@@ -18,8 +18,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   customer: ['create_order', 'view_own_orders'],
   staff: ['view_orders', 'update_order_status'],
   admin: [
-    'create_order',
-    'view_own_orders',
     'view_orders',
     'manage_orders',
     'update_order_status',

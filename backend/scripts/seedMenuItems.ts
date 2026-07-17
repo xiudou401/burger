@@ -13,7 +13,6 @@ const menuItems = [
     priceCents: 1490,
     image: '/img/meals/1.png',
     category: 'burger',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -23,7 +22,6 @@ const menuItems = [
     priceCents: 2290,
     image: '/img/meals/2.png',
     category: 'burger',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -33,7 +31,6 @@ const menuItems = [
     priceCents: 1990,
     image: '/img/meals/3.png',
     category: 'burger',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -43,7 +40,6 @@ const menuItems = [
     priceCents: 1790,
     image: '/img/meals/4.png',
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -53,7 +49,6 @@ const menuItems = [
     priceCents: 1890,
     image: '/img/meals/5.png',
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -63,7 +58,6 @@ const menuItems = [
     priceCents: 2190,
     image: '/img/meals/6.png',
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -73,7 +67,6 @@ const menuItems = [
     priceCents: 1990,
     image: '/img/meals/7.png',
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -83,7 +76,6 @@ const menuItems = [
     priceCents: 1590,
     image: '/img/meals/8.png',
     category: 'side',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -92,7 +84,6 @@ const menuItems = [
     priceCents: 1090,
     image: '/img/meals/9.png',
     category: 'side',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -102,7 +93,6 @@ const menuItems = [
     priceCents: 650,
     image: '/img/meals/10.png',
     category: 'drink',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -112,7 +102,6 @@ const menuItems = [
     priceCents: 1090,
     image: '/img/meals/11.png',
     category: 'drink',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -122,7 +111,6 @@ const menuItems = [
     priceCents: 990,
     image: '/img/meals/12.png',
     category: 'dessert',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -132,7 +120,6 @@ const menuItems = [
     priceCents: 650,
     image: '/img/meals/13.png',
     category: 'dessert',
-    isFeatured: false,
     isAvailable: false,
   },
   {
@@ -142,7 +129,6 @@ const menuItems = [
     priceCents: 2490,
     image: '/img/meals/14.png',
     category: 'combo',
-    isFeatured: true,
     isAvailable: true,
   },
 ];

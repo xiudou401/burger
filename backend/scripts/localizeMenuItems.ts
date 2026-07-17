@@ -13,7 +13,6 @@ const menuItems = [
       'Grass-fed beef, pickles, onion, tomato relish, and soft milk bun.',
     priceCents: 1200,
     category: 'burger',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -23,7 +22,6 @@ const menuItems = [
       'Two beef patties, double cheddar, burger sauce, and house pickles.',
     priceCents: 2000,
     category: 'burger',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -32,7 +30,6 @@ const menuItems = [
     description: 'Double beef, lettuce, onion, cheese, and a tangy club sauce.',
     priceCents: 2400,
     category: 'burger',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -41,7 +38,6 @@ const menuItems = [
     description: 'Crispy chicken thigh, chilli mayo, lettuce, and toasted bun.',
     priceCents: 2100,
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -50,7 +46,6 @@ const menuItems = [
     description: 'Grilled chicken, lettuce, smoky BBQ glaze, and creamy mayo.',
     priceCents: 2200,
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -59,7 +54,6 @@ const menuItems = [
     description: 'Golden chicken fillet, crisp lettuce, and light mayo.',
     priceCents: 1400,
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -68,7 +62,6 @@ const menuItems = [
     description: 'Beef patty, cheddar, tomato relish, mustard, and pickles.',
     priceCents: 1200,
     category: 'burger',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -78,7 +71,6 @@ const menuItems = [
       'Crispy fries topped with melted cheese, smoky bacon, and spring onion.',
     priceCents: 900,
     category: 'side',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -88,7 +80,6 @@ const menuItems = [
       'Crunchy battered onion rings served with a creamy house dipping sauce.',
     priceCents: 800,
     category: 'side',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -98,7 +89,6 @@ const menuItems = [
       'Cold sparkling lemonade with fresh lemon, ice, and a bright citrus finish.',
     priceCents: 600,
     category: 'drink',
-    isFeatured: false,
     isAvailable: true,
   },
   {
@@ -108,7 +98,6 @@ const menuItems = [
       'Creamy vanilla shake finished with whipped cream for a classic burger shop treat.',
     priceCents: 850,
     category: 'drink',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -118,7 +107,6 @@ const menuItems = [
       'Rich chocolate brownie served with vanilla ice cream and chocolate sauce.',
     priceCents: 950,
     category: 'dessert',
-    isFeatured: true,
     isAvailable: true,
   },
   {
@@ -128,7 +116,6 @@ const menuItems = [
       'Classic soft serve in a takeaway cup. Temporarily sold out during dinner rush.',
     priceCents: 650,
     category: 'dessert',
-    isFeatured: false,
     isAvailable: false,
   },
   {
@@ -138,7 +125,6 @@ const menuItems = [
       'Harbour Classic Burger with crispy fries and a cold drink for one.',
     priceCents: 1990,
     category: 'combo',
-    isFeatured: true,
     isAvailable: true,
   },
 ];
@@ -161,7 +147,6 @@ const localizeMenuItems = async () => {
             priceCents: menuItem.priceCents,
             category: menuItem.category,
             isAvailable: menuItem.isAvailable,
-            isFeatured: menuItem.isFeatured,
           },
         },
         { upsert: true },

@@ -43,7 +43,6 @@ const toPublicMenuItem = (menuItem: {
   image?: string;
   category?: string;
   isAvailable?: boolean;
-  isFeatured?: boolean;
 }) => ({
   id: String(menuItem._id),
   name: menuItem.name,
@@ -52,7 +51,6 @@ const toPublicMenuItem = (menuItem: {
   image: menuItem.image,
   category: menuItem.category ?? 'burger',
   isAvailable: menuItem.isAvailable ?? true,
-  isFeatured: menuItem.isFeatured ?? false,
 });
 
 export const findAllMenuItems = async (query: MenuItemQuery = {}) => {

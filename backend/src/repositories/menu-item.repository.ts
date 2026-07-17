@@ -41,7 +41,6 @@ export const menuItemRepository = {
       | 'image'
       | 'category'
       | 'isAvailable'
-      | 'isFeatured'
     >,
   ) {
     return MenuItemModel.create(data);
@@ -57,7 +56,6 @@ export const menuItemRepository = {
       | 'image'
       | 'category'
       | 'isAvailable'
-      | 'isFeatured'
     >,
   ) {
     return MenuItemModel.findByIdAndUpdate(menuItemId, data, {

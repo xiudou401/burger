@@ -15,7 +15,6 @@ export const emptyMenuForm: AdminMenuForm = {
   image: '',
   category: 'burger',
   isAvailable: true,
-  isFeatured: false,
 };
 
 export const menuItemToForm = (menuItem: {
@@ -25,7 +24,6 @@ export const menuItemToForm = (menuItem: {
   image?: string;
   category: MenuItemPayload['category'];
   isAvailable: boolean;
-  isFeatured: boolean;
 }): AdminMenuForm => ({
   name: menuItem.name,
   description: menuItem.description ?? '',
@@ -33,7 +31,6 @@ export const menuItemToForm = (menuItem: {
   image: menuItem.image ?? '',
   category: menuItem.category,
   isAvailable: menuItem.isAvailable,
-  isFeatured: menuItem.isFeatured,
 });
 
 export const validateMenuItemForm = (
@@ -78,6 +75,5 @@ export const buildMenuItemPayload = (form: AdminMenuForm): MenuItemPayload => {
     image: form.image.trim(),
     category: form.category,
     isAvailable: form.isAvailable,
-    isFeatured: form.isFeatured,
   };
 };

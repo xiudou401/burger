@@ -60,7 +60,6 @@ export const MenuItemPayloadSchema = z
     image: z.string().trim().optional(),
     category: z.enum(MENU_ITEM_CATEGORIES).default('burger'),
     isAvailable: z.boolean().default(true),
-    isFeatured: z.boolean().default(false),
   })
   .strict();
 

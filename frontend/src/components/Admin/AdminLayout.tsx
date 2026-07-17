@@ -2,6 +2,7 @@ import { Link, NavLink } from 'react-router-dom';
 import { ReactNode } from 'react';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import { hasPermission } from '../../types/permissions';
+import AccountControls from '../Auth/AccountControls';
 import classes from './AdminLayout.module.css';
 
 interface AdminLayoutProps {
@@ -18,83 +19,54 @@ const AdminLayout = ({
   children,
 }: AdminLayoutProps) => {
   const user = useAuth((ctx) => ctx.user);
-  const logout = useAuth((ctx) => ctx.logout);
   const canViewOrders = hasPermission(user, 'view_orders');
   const canManageMenu = hasPermission(user, 'manage_menu');
   const canManageStaff = hasPermission(user, 'manage_staff');
   const canManageCustomers = hasPermission(user, 'manage_customers');
+  const navItems = [
+    ...(canViewOrders
+      ? [
+          { label: 'Dashboard', to: '/admin/dashboard' },
+          { label: 'Orders', to: '/admin/orders' },
+        ]
+      : []),
+    ...(canManageMenu ? [{ label: 'Menu', to: '/admin/menu' }] : []),
+    ...(canManageStaff ? [{ label: 'Staff', to: '/admin/staff' }] : []),
+    ...(canManageCustomers
+      ? [{ label: 'Customers', to: '/admin/customers' }]
+      : []),
+  ];
 
   return (
     <main className={classes.Page}>
-      <aside className={classes.Sidebar}>
+      <header className={classes.AppBar}>
         <Link className={classes.Brand} to="/admin/dashboard">
           <span className={classes.Mark}>S</span>
           <span>Kitchen Console</span>
         </Link>
 
-        <nav className={classes.Nav} aria-label="Admin">
-          {canViewOrders && (
-            <>
-              <NavLink
-                className={({ isActive }) =>
-                  isActive
-                    ? `${classes.NavLink} ${classes.NavLinkActive}`
-                    : classes.NavLink
-                }
-                to="/admin/dashboard"
-              >
-                Dashboard
-              </NavLink>
-              <NavLink
-                className={({ isActive }) =>
-                  isActive
-                    ? `${classes.NavLink} ${classes.NavLinkActive}`
-                    : classes.NavLink
-                }
-                to="/admin/orders"
-              >
-                Orders
-              </NavLink>
-            </>
-          )}
-          {canManageMenu && (
-            <NavLink
-              className={({ isActive }) =>
-                isActive
-                  ? `${classes.NavLink} ${classes.NavLinkActive}`
-                  : classes.NavLink
-              }
-              to="/admin/menu"
-            >
-              Menu
-            </NavLink>
-          )}
-          {canManageStaff && (
-            <NavLink
-              className={({ isActive }) =>
-                isActive
-                  ? `${classes.NavLink} ${classes.NavLinkActive}`
-                  : classes.NavLink
-              }
-              to="/admin/staff"
-            >
-              Staff
-            </NavLink>
-          )}
-          {canManageCustomers && (
-            <NavLink
-              className={({ isActive }) =>
-                isActive
-                  ? `${classes.NavLink} ${classes.NavLinkActive}`
-                  : classes.NavLink
-              }
-              to="/admin/customers"
-            >
-              Customers
-            </NavLink>
-          )}
-        </nav>
-      </aside>
+        <AccountControls
+          variant="admin"
+          showMemberStatus={false}
+          showVerifyButton={false}
+        />
+      </header>
+
+      <nav className={classes.NavRail} aria-label="Admin">
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            className={({ isActive }) =>
+              isActive
+                ? `${classes.NavLink} ${classes.NavLinkActive}`
+                : classes.NavLink
+            }
+            to={item.to}
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
 
       <section className={classes.Content}>
         <header className={classes.Topbar}>
@@ -102,15 +74,8 @@ const AdminLayout = ({
             <p className={classes.Eyebrow}>{eyebrow}</p>
             <h1 className={classes.Title}>{title}</h1>
           </div>
-          <div className={classes.UserArea}>
-            <span className={classes.UserName}>{user?.name ?? 'Admin'}</span>
-            <button className={classes.Logout} type="button" onClick={logout}>
-              Logout
-            </button>
-          </div>
+          {action && <div className={classes.ActionBar}>{action}</div>}
         </header>
-
-        {action && <div className={classes.ActionBar}>{action}</div>}
 
         {children}
       </section>

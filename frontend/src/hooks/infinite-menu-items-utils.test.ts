@@ -12,7 +12,6 @@ const menuItem = (id: string): MenuItem => ({
   image: '',
   category: 'burger',
   isAvailable: true,
-  isFeatured: false,
 });
 
 describe('infinite menu item utilities', () => {

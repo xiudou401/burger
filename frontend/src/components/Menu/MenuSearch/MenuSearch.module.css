@@ -68,8 +68,37 @@
   color: #555;
 }
 
+.Compact {
+  height: auto;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.Compact .InputOuter {
+  width: min(340rem, 100%);
+}
+
+.Compact .SearchInput {
+  height: 44rem;
+  padding-left: 46rem;
+  padding-right: 44rem;
+  font-size: 16rem;
+}
+
+.Compact .SearchIcon {
+  left: 15rem;
+  font-size: 18rem;
+}
+
+.Compact .ClearButton {
+  right: 6rem;
+  width: 36rem;
+  height: 36rem;
+  font-size: 18rem;
+}
+
 @media (min-width: 900px) {
-  .MenuSearch {
+  .MenuSearch:not(.Compact) {
     flex: 0 1 520rem;
     height: 74rem;
     padding: 0;

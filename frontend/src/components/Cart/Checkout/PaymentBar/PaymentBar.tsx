@@ -9,11 +9,15 @@ import { useToast } from '../../../UI/Toast/ToastContext';
 import { formatCurrency } from '../../../../utils/currency';
 import { ApiError } from '../../../../api/request';
 import { HTTP_STATUS } from '../../../../api/http-status';
+import { hasPermission } from '../../../../types/permissions';
 
 interface PaymentBarProps {
   totalCents: number;
   onOrderComplete: () => void;
 }
+
+const STAFF_CHECKOUT_MESSAGE =
+  'Admin and staff accounts cannot place customer orders';
 
 const createCheckoutAttemptKey = () => {
   if (window.crypto?.randomUUID) {
@@ -32,6 +36,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const totalQuantity = useCartSelector((ctx) => ctx.totalQuantity);
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
+  const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
   const { showToast } = useToast();
@@ -51,6 +56,8 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     return checkoutAttemptKeyRef.current;
   };
 
+  const canCreateOrder = hasPermission(user, 'create_order');
+
   const handlePayClick = async () => {
     if (items.length === 0 || isPaying || isAuthLoading) return;
 
@@ -67,6 +74,13 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
           },
         },
       });
+      return;
+    }
+
+    if (!canCreateOrder) {
+      const message = STAFF_CHECKOUT_MESSAGE;
+      setError(message);
+      showToast({ message, tone: 'error' });
       return;
     }
 
@@ -128,7 +142,11 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
         </p>
       )}
       {!error && !message && (
-        <p className={classes.HelperText}>Secure checkout powered by Stripe</p>
+        <p className={classes.HelperText}>
+          {isAuthenticated && !canCreateOrder
+            ? STAFF_CHECKOUT_MESSAGE
+            : 'Secure checkout powered by Stripe'}
+        </p>
       )}
       <button
         className={classes.Button}

@@ -26,9 +26,6 @@ const MenuItemCard = ({ menuItem, noDesc }: MenuItemCardProps) => {
       <div className={classes.DescBox}>
         <div className={classes.Badges}>
           <span className={classes.CategoryBadge}>{categoryLabel}</span>
-          {menuItem.isFeatured && (
-            <span className={classes.FeaturedBadge}>Popular</span>
-          )}
           {!menuItem.isAvailable && (
             <span className={classes.SoldOutBadge}>Sold out</span>
           )}

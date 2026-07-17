@@ -17,7 +17,6 @@ export interface MenuItem {
   image?: string;
   category: MenuItemCategory;
   isAvailable: boolean;
-  isFeatured: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -43,7 +42,6 @@ const menuItemSchema = new Schema<MenuItem>(
       default: 'burger',
     },
     isAvailable: { type: Boolean, default: true },
-    isFeatured: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

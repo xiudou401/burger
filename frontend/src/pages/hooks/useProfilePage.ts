@@ -10,6 +10,7 @@ import {
 import { useCartActions } from '../../store/cart/hooks/useCartActions';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import { useToast } from '../../components/UI/Toast/ToastContext';
+import { hasPermission } from '../../types/permissions';
 import type { Order } from '../../types/order';
 
 const ORDER_CONFIRMATION_POLL_ATTEMPTS = 5;
@@ -54,6 +55,7 @@ export const useProfilePage = () => {
       ? 'Phone verified'
       : 'Phone pending';
   const hasCartItems = totalQuantity > 0;
+  const canViewOwnOrders = hasPermission(user, 'view_own_orders');
 
   const upsertRecentOrder = useCallback((order: Order) => {
     setOrders((current) => {
@@ -68,6 +70,13 @@ export const useProfilePage = () => {
   }, []);
 
   const loadOrders = useCallback(async () => {
+    if (!canViewOwnOrders) {
+      setOrders([]);
+      setOrdersError(null);
+      setIsLoadingOrders(false);
+      return;
+    }
+
     setIsLoadingOrders(true);
     setOrdersError(null);
 
@@ -88,7 +97,7 @@ export const useProfilePage = () => {
         setIsLoadingOrders(false);
       }
     }
-  }, []);
+  }, [canViewOwnOrders]);
 
   const confirmRedirectedOrder = useCallback(
     async (orderId: string) => {
@@ -155,7 +164,7 @@ export const useProfilePage = () => {
         tone: 'success',
       });
 
-      if (orderId) {
+      if (orderId && canViewOwnOrders) {
         void confirmRedirectedOrder(orderId);
       }
     }
@@ -176,6 +185,7 @@ export const useProfilePage = () => {
     }
   }, [
     clearCart,
+    canViewOwnOrders,
     confirmRedirectedOrder,
     searchParams,
     setSearchParams,
