@@ -2,28 +2,14 @@ import { Link } from 'react-router-dom';
 import classes from './RecentOrdersCard.module.css';
 import type { Order } from '../../types/order';
 import { formatCurrency } from '../../utils/currency';
+import { formatShortDateTime } from '../../utils/date';
+import { formatOrderStatus, summarizeOrderItems } from '../../utils/order';
 
 interface RecentOrdersCardProps {
   orders: Order[];
   isLoading: boolean;
   error: string | null;
 }
-
-const formatDate = (value: string) => {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-};
-
-const summarizeItems = (order: Order) => {
-  return order.items
-    .slice(0, 2)
-    .map((item) => `${item.quantity}x ${item.name}`)
-    .join(', ');
-};
 
 const RecentOrdersCard = ({
   orders,
@@ -64,10 +50,14 @@ const RecentOrdersCard = ({
             >
               <div>
                 <div className={classes.OrderMeta}>
-                  <span>{formatDate(order.createdAt)}</span>
-                  <span className={classes.Status}>{order.status}</span>
+                  <span>{formatShortDateTime(order.createdAt)}</span>
+                  <span className={classes.Status}>
+                    {formatOrderStatus(order.status)}
+                  </span>
                 </div>
-                <p className={classes.OrderSummary}>{summarizeItems(order)}</p>
+                <p className={classes.OrderSummary}>
+                  {summarizeOrderItems(order.items, { limit: 2 })}
+                </p>
               </div>
               <strong className={classes.OrderTotal}>
                 {formatCurrency(order.totalCents)}

@@ -1,0 +1,8 @@
+.Card {
+  padding: 24rem;
+  border-radius: 8rem;
+  background: #fff;
+  border: 1rem solid #ead8b5;
+  box-shadow: 0 10rem 26rem rgba(68, 40, 0, 0.07);
+  margin-bottom: 18rem;
+}

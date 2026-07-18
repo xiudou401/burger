@@ -1,12 +1,16 @@
 import { FormEvent, useMemo, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminButton from '../components/Admin/AdminButton';
+import AdminCard from '../components/Admin/AdminCard';
+import AdminDialog from '../components/Admin/AdminDialog';
+import AdminFormField from '../components/Admin/AdminFormField';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import AdminStatusText from '../components/Admin/AdminStatusText';
+import formControls from '../components/Admin/AdminFormControls.module.css';
 import classes from './AdminMenu.module.css';
 import { useAdminMenuPage } from './hooks/useAdminMenuPage';
 import { formatCurrency } from '../utils/currency';
 import { MENU_CATEGORIES } from '../constants/menu-categories';
-import Backdrop from '../components/UI/Backdrop/Backdrop';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import type { MenuItem } from '../types/menu-item';
 
@@ -77,159 +81,153 @@ const AdminMenu = () => {
       title="Menu"
       action={
         <div className={classes.HeaderActions}>
-          <button
-            className={classes.PrimaryButton}
+          <AdminButton
+            size="compact"
             type="button"
             onClick={openAddMenuItemDialog}
           >
             Add item
-          </button>
+          </AdminButton>
           <AdminRefreshButton onClick={refresh} />
         </div>
       }
     >
       {isMenuItemDialogOpen && (
-        <Backdrop className={classes.DialogBackdrop}>
-          <section
-            className={classes.Dialog}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="menu-item-dialog-title"
-          >
-            <header className={classes.DialogHeader}>
-              <h2 id="menu-item-dialog-title" className={classes.CardTitle}>
-                {isEditing ? 'Edit menu item' : 'Add menu item'}
-              </h2>
-            </header>
+        <AdminDialog
+          title={isEditing ? 'Edit menu item' : 'Add menu item'}
+          size="wide"
+          onClose={closeMenuItemDialog}
+          closeDisabled={isSubmitting}
+        >
+          <form className={classes.Form} onSubmit={submitMenuItemForm}>
+            <AdminFormField
+              label="Name"
+              htmlFor="menu-item-name"
+              error={fieldErrors.name}
+            >
+              <input
+                id="menu-item-name"
+                className={`${formControls.Input} ${
+                  fieldErrors.name ? formControls.Invalid : ''
+                }`}
+                aria-invalid={fieldErrors.name ? 'true' : undefined}
+                value={form.name}
+                required
+                onChange={(event) => updateForm('name', event.target.value)}
+              />
+            </AdminFormField>
 
-            <form className={classes.Form} onSubmit={submitMenuItemForm}>
-              <label className={classes.Field}>
-                Name
+            <AdminFormField
+              label="Price"
+              htmlFor="menu-item-price"
+              error={fieldErrors.price}
+            >
+              <span
+                className={`${formControls.ControlGroup} ${
+                  classes.PriceInputGroup
+                } ${fieldErrors.price ? formControls.Invalid : ''}`}
+              >
+                <span className={classes.PricePrefix}>$</span>
                 <input
-                  className={`${classes.Input} ${
-                    fieldErrors.name ? classes.InputError : ''
-                  }`}
-                  aria-invalid={fieldErrors.name ? 'true' : undefined}
-                  value={form.name}
+                  id="menu-item-price"
+                  className={classes.PriceInput}
+                  aria-invalid={fieldErrors.price ? 'true' : undefined}
+                  inputMode="decimal"
+                  value={form.price}
                   required
-                  onChange={(event) => updateForm('name', event.target.value)}
+                  onChange={(event) => updateForm('price', event.target.value)}
                 />
-                {fieldErrors.name && (
-                  <span className={classes.FieldError}>{fieldErrors.name}</span>
-                )}
-              </label>
+              </span>
+            </AdminFormField>
 
-              <label className={classes.Field}>
-                Price
-                <span
-                  className={`${classes.PriceInputGroup} ${
-                    fieldErrors.price ? classes.InputError : ''
-                  }`}
-                >
-                  <span className={classes.PricePrefix}>$</span>
-                  <input
-                    className={classes.PriceInput}
-                    aria-invalid={fieldErrors.price ? 'true' : undefined}
-                    inputMode="decimal"
-                    value={form.price}
-                    required
-                    onChange={(event) =>
-                      updateForm('price', event.target.value)
-                    }
-                  />
-                </span>
-                {fieldErrors.price && (
-                  <span className={classes.FieldError}>
-                    {fieldErrors.price}
-                  </span>
-                )}
-              </label>
+            <AdminFormField
+              label="Category"
+              htmlFor="menu-item-category"
+              className={classes.CategoryField}
+            >
+              <select
+                id="menu-item-category"
+                className={formControls.Select}
+                value={form.category}
+                onChange={(event) => updateForm('category', event.target.value)}
+              >
+                {MENU_CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+            </AdminFormField>
 
-              <label className={`${classes.Field} ${classes.CategoryField}`}>
-                Category
-                <select
-                  className={classes.Input}
-                  value={form.category}
-                  onChange={(event) =>
-                    updateForm('category', event.target.value)
-                  }
-                >
-                  {MENU_CATEGORIES.map((category) => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <label className={classes.CheckboxField}>
+              <input
+                type="checkbox"
+                checked={form.isAvailable}
+                onChange={(event) =>
+                  updateForm('isAvailable', event.target.checked)
+                }
+              />
+              Available
+            </label>
 
-              <label className={`${classes.Field} ${classes.CheckboxField}`}>
-                <input
-                  type="checkbox"
-                  checked={form.isAvailable}
-                  onChange={(event) =>
-                    updateForm('isAvailable', event.target.checked)
-                  }
-                />
-                Available
-              </label>
+            <AdminFormField
+              label="Image"
+              htmlFor="menu-item-image"
+              className={classes.ImageField}
+              error={fieldErrors.image}
+            >
+              <input
+                id="menu-item-image"
+                className={`${formControls.Input} ${
+                  fieldErrors.image ? formControls.Invalid : ''
+                }`}
+                aria-invalid={fieldErrors.image ? 'true' : undefined}
+                placeholder="/img/meals/1.png"
+                value={form.image}
+                onChange={(event) => updateForm('image', event.target.value)}
+              />
+            </AdminFormField>
 
-              <label className={`${classes.Field} ${classes.ImageField}`}>
-                Image
-                <input
-                  className={`${classes.Input} ${
-                    fieldErrors.image ? classes.InputError : ''
-                  }`}
-                  aria-invalid={fieldErrors.image ? 'true' : undefined}
-                  placeholder="/img/meals/1.png"
-                  value={form.image}
-                  onChange={(event) => updateForm('image', event.target.value)}
-                />
-                {fieldErrors.image && (
-                  <span className={classes.FieldError}>
-                    {fieldErrors.image}
-                  </span>
-                )}
-              </label>
+            <AdminFormField
+              label="Description"
+              htmlFor="menu-item-description"
+              className={classes.DescriptionField}
+            >
+              <textarea
+                id="menu-item-description"
+                className={formControls.Textarea}
+                value={form.description}
+                onChange={(event) =>
+                  updateForm('description', event.target.value)
+                }
+              />
+            </AdminFormField>
 
-              <label className={`${classes.Field} ${classes.DescriptionField}`}>
-                Description
-                <textarea
-                  className={classes.Textarea}
-                  value={form.description}
-                  onChange={(event) =>
-                    updateForm('description', event.target.value)
-                  }
-                />
-              </label>
+            {error && <p className={classes.Error}>{error}</p>}
 
-              {error && <p className={classes.Error}>{error}</p>}
-
-              <div className={classes.FormActions}>
-                <button
-                  className={classes.PrimaryButton}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting
-                    ? 'Saving...'
-                    : isEditing
-                      ? 'Save changes'
-                      : 'Add item'}
-                </button>
-                <button
-                  className={classes.SecondaryButton}
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={closeMenuItemDialog}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </section>
-        </Backdrop>
+            <div className={classes.FormActions}>
+              <AdminButton disabled={isSubmitting} fullWidthOnMobile>
+                {isSubmitting
+                  ? 'Saving...'
+                  : isEditing
+                    ? 'Save changes'
+                    : 'Add item'}
+              </AdminButton>
+              <AdminButton
+                variant="secondary"
+                type="button"
+                disabled={isSubmitting}
+                onClick={closeMenuItemDialog}
+                fullWidthOnMobile
+              >
+                Cancel
+              </AdminButton>
+            </div>
+          </form>
+        </AdminDialog>
       )}
 
-      <section className={classes.Card}>
+      <AdminCard>
         {(message || (!isMenuItemDialogOpen && error)) && (
           <div className={classes.CardHeader}>
             {message && (
@@ -291,15 +289,17 @@ const AdminMenu = () => {
               </strong>
 
               <div className={classes.RowActions}>
-                <button
-                  className={classes.SecondaryButton}
+                <AdminButton
+                  variant="secondary"
+                  size="compact"
                   type="button"
                   onClick={() => openEditMenuItemDialog(menuItem)}
                 >
                   Edit
-                </button>
-                <button
-                  className={classes.DangerButton}
+                </AdminButton>
+                <AdminButton
+                  variant="danger"
+                  size="compact"
                   type="button"
                   onClick={() => {
                     if (
@@ -312,12 +312,12 @@ const AdminMenu = () => {
                   }}
                 >
                   Delete
-                </button>
+                </AdminButton>
               </div>
             </article>
           ))}
         </div>
-      </section>
+      </AdminCard>
     </AdminLayout>
   );
 };

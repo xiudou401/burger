@@ -4,13 +4,8 @@ import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './OrderDetails.module.css';
 import { useAdminOrderDetailsPage } from './hooks/useAdminOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
-
-const formatDate = (value: string) => {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-};
+import { formatMediumDateTime } from '../utils/date';
+import { formatOrderShortId, formatOrderStatus } from '../utils/order';
 
 const AdminOrderDetails = () => {
   const { orderId = '' } = useParams();
@@ -35,11 +30,17 @@ const AdminOrderDetails = () => {
         <>
           <header className={classes.Hero}>
             <div>
-              <p className={classes.Eyebrow}>Order #{order.id.slice(-6)}</p>
+              <p className={classes.Eyebrow}>
+                Order #{formatOrderShortId(order.id)}
+              </p>
               <h2 className={classes.Title}>Kitchen ticket</h2>
-              <p className={classes.Meta}>{formatDate(order.createdAt)}</p>
+              <p className={classes.Meta}>
+                {formatMediumDateTime(order.createdAt)}
+              </p>
             </div>
-            <div className={classes.Status}>{order.status}</div>
+            <div className={classes.Status}>
+              {formatOrderStatus(order.status)}
+            </div>
           </header>
 
           <section className={classes.Card}>

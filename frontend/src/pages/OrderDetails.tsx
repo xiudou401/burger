@@ -3,13 +3,8 @@ import classes from './OrderDetails.module.css';
 import AccountBar from '../components/Auth/AccountBar';
 import { useOrderDetailsPage } from './hooks/useOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
-
-const formatDate = (value: string) => {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value));
-};
+import { formatMediumDateTime } from '../utils/date';
+import { formatOrderShortId, formatOrderStatus } from '../utils/order';
 
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
@@ -52,11 +47,17 @@ const OrderDetails = () => {
 
             <header className={classes.Hero}>
               <div>
-                <p className={classes.Eyebrow}>Order #{order.id.slice(-6)}</p>
+                <p className={classes.Eyebrow}>
+                  Order #{formatOrderShortId(order.id)}
+                </p>
                 <h1 className={classes.Title}>Order details</h1>
-                <p className={classes.Meta}>{formatDate(order.createdAt)}</p>
+                <p className={classes.Meta}>
+                  {formatMediumDateTime(order.createdAt)}
+                </p>
               </div>
-              <div className={classes.Status}>{order.status}</div>
+              <div className={classes.Status}>
+                {formatOrderStatus(order.status)}
+              </div>
             </header>
 
             <section className={classes.Card}>

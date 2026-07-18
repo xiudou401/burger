@@ -1,19 +1,15 @@
 import { FormEvent, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminButton from '../components/Admin/AdminButton';
+import AdminCard from '../components/Admin/AdminCard';
+import AdminDialog from '../components/Admin/AdminDialog';
+import AdminFormField from '../components/Admin/AdminFormField';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import AdminStatusText from '../components/Admin/AdminStatusText';
-import Backdrop from '../components/UI/Backdrop/Backdrop';
+import formControls from '../components/Admin/AdminFormControls.module.css';
 import classes from './AdminStaff.module.css';
 import { useAdminStaffPage } from './hooks/useAdminStaffPage';
-
-const formatDate = (value: string) => {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-};
+import { formatShortDateTime } from '../utils/date';
 
 const AdminStaff = () => {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -51,72 +47,63 @@ const AdminStaff = () => {
       title="Staff"
       action={
         <div className={classes.HeaderActions}>
-          <button
-            className={classes.PrimaryButton}
+          <AdminButton
+            size="compact"
             type="button"
             onClick={() => setIsInviteDialogOpen(true)}
           >
             Invite staff
-          </button>
+          </AdminButton>
           <AdminRefreshButton onClick={refresh} />
         </div>
       }
     >
       {isInviteDialogOpen && (
-        <Backdrop className={classes.DialogBackdrop}>
-          <section
-            className={classes.Dialog}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="invite-staff-title"
-          >
-            <h2 id="invite-staff-title" className={classes.CardTitle}>
-              Invite staff
-            </h2>
+        <AdminDialog
+          title="Invite staff"
+          onClose={closeInviteDialog}
+          closeDisabled={isSubmitting}
+        >
+          <form className={classes.Form} onSubmit={submitInvite}>
+            <AdminFormField label="Email" htmlFor="staff-invite-email">
+              <input
+                id="staff-invite-email"
+                className={formControls.Input}
+                type="email"
+                value={email}
+                required
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </AdminFormField>
 
-            <form className={classes.Form} onSubmit={submitInvite}>
-              <label className={classes.Field}>
-                Email
-                <input
-                  className={classes.Input}
-                  type="email"
-                  value={email}
-                  required
-                  onChange={(event) => setEmail(event.target.value)}
-                />
-              </label>
+            <AdminFormField label="Role" htmlFor="staff-invite-role">
+              <input
+                id="staff-invite-role"
+                className={formControls.Input}
+                type="text"
+                value={role}
+                readOnly
+              />
+            </AdminFormField>
 
-              <label className={classes.Field}>
-                Role
-                <input
-                  className={classes.Input}
-                  type="text"
-                  value={role}
-                  readOnly
-                />
-              </label>
+            {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 
-              {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
-
-              <div className={classes.FormActions}>
-                <button
-                  className={classes.PrimaryButton}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Sending...' : 'Send invite'}
-                </button>
-                <button
-                  className={classes.SecondaryButton}
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={closeInviteDialog}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </section>
-        </Backdrop>
+            <div className={classes.FormActions}>
+              <AdminButton disabled={isSubmitting} fullWidthOnMobile>
+                {isSubmitting ? 'Sending...' : 'Send invite'}
+              </AdminButton>
+              <AdminButton
+                variant="secondary"
+                type="button"
+                disabled={isSubmitting}
+                onClick={closeInviteDialog}
+                fullWidthOnMobile
+              >
+                Cancel
+              </AdminButton>
+            </div>
+          </form>
+        </AdminDialog>
       )}
 
       {message && <AdminStatusText tone="success">{message}</AdminStatusText>}
@@ -127,7 +114,7 @@ const AdminStaff = () => {
         <AdminStatusText tone="error">{error}</AdminStatusText>
       )}
 
-      <section className={classes.Card}>
+      <AdminCard>
         <h2 className={classes.CardTitle}>Invitations</h2>
 
         {isLoading && <AdminStatusText>Loading invites...</AdminStatusText>}
@@ -142,23 +129,23 @@ const AdminStaff = () => {
                 <strong className={classes.Email}>{invite.email}</strong>
                 <p className={classes.Meta}>
                   {invite.role} · {invite.status} · expires{' '}
-                  {formatDate(invite.expiresAt)}
+                  {formatShortDateTime(invite.expiresAt)}
                 </p>
               </div>
 
               {invite.status === 'pending' && (
-                <button
-                  className={classes.DangerButton}
+                <AdminButton
+                  variant="danger"
                   type="button"
                   onClick={() => revoke(invite.id)}
                 >
                   Revoke
-                </button>
+                </AdminButton>
               )}
             </article>
           ))}
         </div>
-      </section>
+      </AdminCard>
     </AdminLayout>
   );
 };

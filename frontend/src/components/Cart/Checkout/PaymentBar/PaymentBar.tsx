@@ -10,6 +10,7 @@ import { formatCurrency } from '../../../../utils/currency';
 import { ApiError } from '../../../../api/request';
 import { HTTP_STATUS } from '../../../../api/http-status';
 import { hasPermission } from '../../../../types/permissions';
+import { createCheckoutAttemptKey } from '../../../../utils/idempotency';
 
 interface PaymentBarProps {
   totalCents: number;
@@ -18,16 +19,6 @@ interface PaymentBarProps {
 
 const STAFF_CHECKOUT_MESSAGE =
   'Admin and staff accounts cannot place customer orders';
-
-const createCheckoutAttemptKey = () => {
-  if (window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-
-  return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (char) =>
-    (Number(char) ^ ((Math.random() * 16) >> (Number(char) / 4))).toString(16),
-  );
-};
 
 const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const navigate = useNavigate();

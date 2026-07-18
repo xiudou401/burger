@@ -1,12 +1,3 @@
-.Card {
-  padding: 24rem;
-  border-radius: 8rem;
-  background: #fff;
-  border: 1rem solid #ead8b5;
-  box-shadow: 0 10rem 26rem rgba(68, 40, 0, 0.07);
-  margin-bottom: 18rem;
-}
-
 .CardTitle {
   margin: 0 0 18rem;
   color: #292929;
@@ -21,85 +12,11 @@
   gap: 12rem;
 }
 
-.DialogBackdrop {
-  z-index: 1200;
-  display: grid;
-  place-items: center;
-  padding: 28rem;
-}
-
-.Dialog {
-  width: min(560rem, 100%);
-  border-radius: 8rem;
-  background: #fff;
-  border: 1rem solid #ead8b5;
-  box-shadow: 0 24rem 70rem rgba(68, 40, 0, 0.24);
-  padding: 24rem;
-}
-
 .Form {
   display: grid;
   grid-template-columns: minmax(220rem, 1fr) 180rem;
   gap: 14rem;
   align-items: end;
-}
-
-.Field {
-  display: flex;
-  flex-direction: column;
-  gap: 8rem;
-  color: #3c3022;
-  font-size: 16rem;
-  font-weight: 800;
-}
-
-.Input {
-  width: 100%;
-  height: 48rem;
-  padding: 0 14rem;
-  border: 2rem solid #ead8b5;
-  border-radius: 8rem;
-  background: #fff;
-  color: #292929;
-  font-size: 17rem;
-}
-
-.Input:focus {
-  border-color: #ffc72c;
-  outline: none;
-  box-shadow: 0 0 0 3rem rgba(255, 199, 44, 0.22);
-}
-
-.PrimaryButton,
-.SecondaryButton,
-.DangerButton {
-  min-height: 44rem;
-  border: 0;
-  border-radius: 8rem;
-  padding: 0 16rem;
-  background: #ffc72c;
-  color: #292929;
-  font-family: inherit;
-  font-size: 16rem;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.SecondaryButton,
-.DangerButton {
-  background: #292929;
-  color: #fff;
-}
-
-.DangerButton {
-  background: #bd0017;
-}
-
-.PrimaryButton:disabled,
-.SecondaryButton:disabled,
-.DangerButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.62;
 }
 
 .FormActions {
@@ -152,17 +69,6 @@
 }
 
 @media (max-width: 760px) {
-  .DialogBackdrop {
-    align-items: end;
-    padding: 0;
-  }
-
-  .Dialog {
-    width: 100%;
-    border-radius: 16rem 16rem 0 0;
-    padding: 22rem;
-  }
-
   .HeaderActions {
     gap: 8rem;
   }
@@ -172,12 +78,6 @@
     grid-template-columns: 1fr;
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .PrimaryButton,
-  .SecondaryButton,
-  .DangerButton {
-    width: 100%;
   }
 
   .FormActions {

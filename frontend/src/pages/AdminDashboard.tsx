@@ -4,6 +4,7 @@ import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminDashboard.module.css';
 import { useAdminDashboardPage } from './hooks/useAdminDashboardPage';
 import { formatCurrency } from '../utils/currency';
+import { formatOrderStatus } from '../utils/order';
 import type { OrderStatus } from '../types/order';
 
 const ORDER_STATUSES: OrderStatus[] = [
@@ -61,7 +62,7 @@ const AdminDashboard = () => {
                 {ORDER_STATUSES.map((status) => (
                   <div className={classes.StatusRow} key={status}>
                     <span className={classes.StatusName}>
-                      {status.replace('_', ' ')}
+                      {formatOrderStatus(status)}
                     </span>
                     <span className={classes.StatusCount}>
                       {summary.ordersByStatus[status]}

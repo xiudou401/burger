@@ -1,4 +1,4 @@
-import classes from './AdminRefreshButton.module.css';
+import AdminButton from './AdminButton';
 
 interface AdminRefreshButtonProps {
   onClick: () => void;
@@ -10,14 +10,14 @@ const AdminRefreshButton = ({
   disabled = false,
 }: AdminRefreshButtonProps) => {
   return (
-    <button
-      className={classes.RefreshButton}
+    <AdminButton
+      size="compact"
       type="button"
       disabled={disabled}
       onClick={onClick}
     >
       Refresh
-    </button>
+    </AdminButton>
   );
 };
 

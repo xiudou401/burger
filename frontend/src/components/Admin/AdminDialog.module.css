@@ -1,0 +1,61 @@
+.Backdrop {
+  z-index: 1200;
+}
+
+.BackdropContent {
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 28rem;
+}
+
+.Dialog {
+  max-height: min(820rem, calc(100vh - 56rem));
+  overflow: auto;
+  border-radius: 8rem;
+  background: #fff;
+  border: 1rem solid #ead8b5;
+  box-shadow: 0 24rem 70rem rgba(68, 40, 0, 0.24);
+  padding: 24rem;
+}
+
+.normal {
+  width: min(560rem, 100%);
+}
+
+.wide {
+  width: min(860rem, 100%);
+}
+
+.Header {
+  margin-bottom: 20rem;
+}
+
+.Title {
+  margin: 0;
+  color: #292929;
+  font-size: 26rem;
+  font-weight: 900;
+}
+
+.Description {
+  margin: 8rem 0 0;
+  color: #7a6954;
+  font-size: 16rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .BackdropContent {
+    align-items: end;
+    padding: 0;
+  }
+
+  .Dialog {
+    width: 100%;
+    max-height: 88vh;
+    border-radius: 16rem 16rem 0 0;
+    padding: 22rem;
+  }
+}

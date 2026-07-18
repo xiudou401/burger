@@ -1,23 +1,19 @@
 import { FormEvent, useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminButton from '../components/Admin/AdminButton';
+import AdminCard from '../components/Admin/AdminCard';
+import AdminDialog from '../components/Admin/AdminDialog';
+import AdminFormField from '../components/Admin/AdminFormField';
+import AdminLoadMore from '../components/Admin/AdminLoadMore';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusBadge from '../components/Admin/AdminStatusBadge';
 import AdminStatusText from '../components/Admin/AdminStatusText';
-import Backdrop from '../components/UI/Backdrop/Backdrop';
+import formControls from '../components/Admin/AdminFormControls.module.css';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import classes from './AdminCustomers.module.css';
 import { useAdminCustomersPage } from './hooks/useAdminCustomersPage';
+import { formatOptionalShortDateTime } from '../utils/date';
 import type { AdminCustomer } from '../types/admin-customer';
-
-const formatDate = (value?: string) => {
-  if (!value) return 'Not set';
-
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-};
 
 const AdminCustomers = () => {
   const [customerToDisable, setCustomerToDisable] =
@@ -67,56 +63,49 @@ const AdminCustomers = () => {
       action={<AdminRefreshButton onClick={refresh} />}
     >
       {customerToDisable && (
-        <Backdrop className={classes.DialogBackdrop}>
-          <section
-            className={classes.Dialog}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="disable-customer-title"
+        <AdminDialog
+          title="Disable customer"
+          description={customerToDisable.email ?? customerToDisable.name}
+          onClose={closeDisableDialog}
+          closeDisabled={Boolean(busyCustomerId)}
+        >
+          <form
+            className={classes.DisableForm}
+            onSubmit={submitDisableCustomer}
           >
-            <h2 id="disable-customer-title" className={classes.DialogTitle}>
-              Disable customer
-            </h2>
-            <p className={classes.DialogText}>
-              {customerToDisable.email ?? customerToDisable.name}
-            </p>
+            <AdminFormField label="Reason" htmlFor="disable-customer-reason">
+              <textarea
+                id="disable-customer-reason"
+                className={formControls.Textarea}
+                value={disableReason}
+                placeholder="Optional note for the account record"
+                onChange={(event) => setDisableReason(event.target.value)}
+              />
+            </AdminFormField>
 
-            <form
-              className={classes.DisableForm}
-              onSubmit={submitDisableCustomer}
-            >
-              <label className={classes.Field}>
-                Reason
-                <textarea
-                  className={classes.Textarea}
-                  value={disableReason}
-                  placeholder="Optional note for the account record"
-                  onChange={(event) => setDisableReason(event.target.value)}
-                />
-              </label>
-
-              <div className={classes.DialogActions}>
-                <button
-                  className={classes.SecondaryButton}
-                  type="button"
-                  disabled={busyCustomerId === customerToDisable.id}
-                  onClick={closeDisableDialog}
-                >
-                  Cancel
-                </button>
-                <button
-                  className={classes.DangerButton}
-                  disabled={busyCustomerId === customerToDisable.id}
-                >
-                  Disable
-                </button>
-              </div>
-            </form>
-          </section>
-        </Backdrop>
+            <div className={classes.DialogActions}>
+              <AdminButton
+                variant="secondary"
+                type="button"
+                disabled={busyCustomerId === customerToDisable.id}
+                onClick={closeDisableDialog}
+                fullWidthOnMobile
+              >
+                Cancel
+              </AdminButton>
+              <AdminButton
+                variant="danger"
+                disabled={busyCustomerId === customerToDisable.id}
+                fullWidthOnMobile
+              >
+                Disable
+              </AdminButton>
+            </div>
+          </form>
+        </AdminDialog>
       )}
 
-      <section className={classes.Card}>
+      <AdminCard>
         <div className={classes.SearchToolbar}>
           <div className={classes.AdminSearch}>
             <MenuSearch
@@ -142,20 +131,19 @@ const AdminCustomers = () => {
               <div>
                 <div className={classes.CustomerMetaLine}>
                   <strong className={classes.Name}>{customer.name}</strong>
-                  <span
-                    className={
-                      customer.status === 'disabled'
-                        ? `${classes.StatusBadge} ${classes.DisabledBadge}`
-                        : classes.StatusBadge
+                  <AdminStatusBadge
+                    variant={
+                      customer.status === 'disabled' ? 'danger' : 'success'
                     }
                   >
                     {customer.status}
-                  </span>
+                  </AdminStatusBadge>
                 </div>
                 <p className={classes.Meta}>{customer.email ?? 'No email'}</p>
                 <p className={classes.Meta}>
-                  Joined {formatDate(customer.createdAt)} · Email{' '}
-                  {customer.emailVerified ? 'verified' : 'unverified'}
+                  Joined{' '}
+                  {formatOptionalShortDateTime(customer.createdAt, 'Not set')} ·
+                  Email {customer.emailVerified ? 'verified' : 'unverified'}
                 </p>
                 {customer.disabledReason && (
                   <p className={classes.Reason}>
@@ -166,42 +154,37 @@ const AdminCustomers = () => {
 
               <div className={classes.RowActions}>
                 {customer.status === 'disabled' ? (
-                  <button
-                    className={classes.SecondaryButton}
+                  <AdminButton
+                    variant="secondary"
+                    size="compact"
                     type="button"
                     disabled={busyCustomerId === customer.id}
                     onClick={() => enableCustomer(customer)}
                   >
                     Enable
-                  </button>
+                  </AdminButton>
                 ) : (
-                  <button
-                    className={classes.DangerButton}
+                  <AdminButton
+                    variant="danger"
+                    size="compact"
                     type="button"
                     disabled={busyCustomerId === customer.id}
                     onClick={() => openDisableDialog(customer)}
                   >
                     Disable
-                  </button>
+                  </AdminButton>
                 )}
               </div>
             </article>
           ))}
         </div>
 
-        {hasMoreCustomers && (
-          <div className={classes.LoadMoreBar}>
-            <button
-              className={classes.LoadMoreButton}
-              type="button"
-              disabled={isLoadingMore}
-              onClick={loadMore}
-            >
-              {isLoadingMore ? 'Loading...' : 'Load more'}
-            </button>
-          </div>
-        )}
-      </section>
+        <AdminLoadMore
+          hasMore={hasMoreCustomers}
+          isLoading={isLoadingMore}
+          onLoadMore={loadMore}
+        />
+      </AdminCard>
     </AdminLayout>
   );
 };

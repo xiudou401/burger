@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, useEffect, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import classes from './CheckoutDialog.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -8,6 +8,7 @@ import PaymentBar from './PaymentBar/PaymentBar';
 import type { CartMenuItem } from '../../../types/cart';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import { formatCurrency } from '../../../utils/currency';
+import { useDialogA11y } from '../../../hooks/useDialogA11y';
 
 const CheckoutRoot = document.getElementById('checkout-root');
 
@@ -17,7 +18,6 @@ interface CheckoutDialogProps {
 }
 
 const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
-  const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
 
@@ -30,70 +30,11 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
   }, [menuItems, items]);
 
   const handleClose = () => onClose();
-
-  const getFocusableElements = () => {
-    if (!dialogRef.current) return [];
-
-    return Array.from(
-      dialogRef.current.querySelectorAll<HTMLElement>(
-        [
-          'a[href]',
-          'button:not([disabled])',
-          'input:not([disabled])',
-          'select:not([disabled])',
-          'textarea:not([disabled])',
-          '[tabindex]:not([tabindex="-1"])',
-        ].join(','),
-      ),
-    ).filter((element) => !element.hasAttribute('aria-hidden'));
-  };
-
-  const handleDialogKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      handleClose();
-      return;
-    }
-
-    if (event.key !== 'Tab') return;
-
-    const focusableElements = getFocusableElements();
-
-    if (focusableElements.length === 0) {
-      event.preventDefault();
-      return;
-    }
-
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
-
-    if (event.shiftKey && document.activeElement === firstElement) {
-      event.preventDefault();
-      lastElement.focus();
-      return;
-    }
-
-    if (!event.shiftKey && document.activeElement === lastElement) {
-      event.preventDefault();
-      firstElement.focus();
-    }
-  };
-
-  useEffect(() => {
-    const previouslyFocusedElement = document.activeElement;
-    const previousBodyOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = 'hidden';
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.body.style.overflow = previousBodyOverflow;
-
-      if (previouslyFocusedElement instanceof HTMLElement) {
-        previouslyFocusedElement.focus();
-      }
-    };
-  }, []);
+  const { dialogRef, handleDialogKeyDown } = useDialogA11y<HTMLDivElement>({
+    isOpen: true,
+    onClose: handleClose,
+    initialFocusRef: closeButtonRef,
+  });
 
   if (!CheckoutRoot) return null;
 
@@ -104,6 +45,7 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
       role="dialog"
       aria-modal="true"
       aria-labelledby="checkout-title"
+      tabIndex={-1}
       onKeyDown={handleDialogKeyDown}
     >
       <button

@@ -1,0 +1,11 @@
+.LoadMore {
+  display: flex;
+  justify-content: center;
+  margin-top: 20rem;
+}
+
+@media (max-width: 760px) {
+  .LoadMore {
+    margin-top: 12rem;
+  }
+}

@@ -1,30 +1,39 @@
 import { Link } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminButton from '../components/Admin/AdminButton';
+import AdminLoadMore from '../components/Admin/AdminLoadMore';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
+import AdminStatusBadge, {
+  type AdminStatusBadgeVariant,
+} from '../components/Admin/AdminStatusBadge';
 import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
 import { formatCurrency } from '../utils/currency';
+import { formatShortDateTime } from '../utils/date';
+import {
+  formatOrderShortId,
+  formatOrderStatus,
+  summarizeOrderItems,
+} from '../utils/order';
 import type { OrderStatus } from '../types/order';
 
-const formatDate = (value: string) => {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-};
-
-const summarizeItems = (items: { name: string; quantity: number }[]) => {
-  return items
-    .slice(0, 3)
-    .map((item) => `${item.quantity}x ${item.name}`)
-    .join(', ');
-};
-
-const getStatusClassName = (status: OrderStatus) => {
-  return `${classes.Status} ${classes[`Status-${status}`]}`;
+const getOrderStatusVariant = (
+  status: OrderStatus,
+): AdminStatusBadgeVariant => {
+  switch (status) {
+    case 'paid':
+      return 'success';
+    case 'cancelled':
+      return 'danger';
+    case 'completed':
+      return 'neutral';
+    case 'pending_payment':
+    case 'preparing':
+    case 'ready':
+    default:
+      return 'warning';
+  }
 };
 
 const ACTION_LABELS: Record<OrderStatus, string> = {
@@ -45,12 +54,6 @@ const getActionLabel = (
   }
 
   return ACTION_LABELS[nextStatus];
-};
-
-const getActionClassName = (nextStatus: OrderStatus) => {
-  return nextStatus === 'cancelled'
-    ? `${classes.ActionButton} ${classes.CancelActionButton}`
-    : classes.ActionButton;
 };
 
 const AdminOrders = () => {
@@ -89,19 +92,23 @@ const AdminOrders = () => {
                     className={classes.OrderId}
                     to={`/admin/orders/${order.id}`}
                   >
-                    #{order.id.slice(-6).toUpperCase()}
+                    #{formatOrderShortId(order.id)}
                   </Link>
-                  <span className={getStatusClassName(order.status)}>
-                    {order.status.replace('_', ' ')}
-                  </span>
+                  <AdminStatusBadge
+                    variant={getOrderStatusVariant(order.status)}
+                  >
+                    {formatOrderStatus(order.status)}
+                  </AdminStatusBadge>
                 </div>
                 <p className={classes.OrderDate}>
-                  {formatDate(order.createdAt)}
+                  {formatShortDateTime(order.createdAt)}
                 </p>
               </div>
             </div>
 
-            <p className={classes.Summary}>{summarizeItems(order.items)}</p>
+            <p className={classes.Summary}>
+              {summarizeOrderItems(order.items, { limit: 3 })}
+            </p>
 
             <div className={classes.OrderBottom}>
               <strong className={classes.Total}>
@@ -109,8 +116,9 @@ const AdminOrders = () => {
               </strong>
               <div className={classes.Actions}>
                 {nextStatuses[order.status].map((status) => (
-                  <button
-                    className={getActionClassName(status)}
+                  <AdminButton
+                    variant={status === 'cancelled' ? 'danger' : 'primary'}
+                    size="compact"
                     disabled={updatingOrderId === order.id}
                     key={status}
                     type="button"
@@ -119,7 +127,7 @@ const AdminOrders = () => {
                     }
                   >
                     {getActionLabel(order.status, status)}
-                  </button>
+                  </AdminButton>
                 ))}
               </div>
             </div>
@@ -127,18 +135,11 @@ const AdminOrders = () => {
         ))}
       </div>
 
-      {hasMoreOrders && (
-        <div className={classes.LoadMoreBar}>
-          <button
-            className={classes.LoadMoreButton}
-            type="button"
-            disabled={isLoadingMore}
-            onClick={loadMore}
-          >
-            {isLoadingMore ? 'Loading...' : 'Load more'}
-          </button>
-        </div>
-      )}
+      <AdminLoadMore
+        hasMore={hasMoreOrders}
+        isLoading={isLoadingMore}
+        onLoadMore={loadMore}
+      />
     </AdminLayout>
   );
 };

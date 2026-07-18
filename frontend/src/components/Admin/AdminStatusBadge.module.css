@@ -1,0 +1,30 @@
+.Badge {
+  min-height: 24rem;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999rem;
+  padding: 0 9rem;
+  font-size: 12rem;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+
+.Neutral {
+  background: #f1ece3;
+  color: #6b5a42;
+}
+
+.Success {
+  background: #e5f7e7;
+  color: #176b2c;
+}
+
+.Warning {
+  background: #fff3ce;
+  color: #654611;
+}
+
+.Danger {
+  background: #ffe2e2;
+  color: #bd0017;
+}
