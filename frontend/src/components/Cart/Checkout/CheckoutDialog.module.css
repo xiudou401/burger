@@ -1,3 +1,8 @@
+.CheckoutBackdrop.CheckoutBackdrop {
+  z-index: 9999;
+  background: transparent;
+}
+
 .Checkout {
   position: fixed;
   top: 0;

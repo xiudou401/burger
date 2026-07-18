@@ -1,0 +1,39 @@
+.Badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.Normal {
+  min-height: 36rem;
+  padding: 0 14rem;
+  font-size: 15rem;
+}
+
+.Compact {
+  min-height: 24rem;
+  padding: 0 8rem;
+  font-size: 14rem;
+}
+
+.Neutral {
+  background: #f1ece3;
+  color: #6b5a42;
+}
+
+.Success {
+  background: rgba(39, 134, 82, 0.12);
+  color: #1d7c49;
+}
+
+.Warning {
+  background: #fff3d1;
+  color: #8f0011;
+}
+
+.Danger {
+  background: #ffe2e2;
+  color: #bd0017;
+}

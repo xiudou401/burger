@@ -80,15 +80,6 @@
   font-size: 15rem;
 }
 
-.Status {
-  padding: 3rem 8rem;
-  border-radius: 6rem;
-  background: rgba(39, 134, 82, 0.12);
-  color: #1d7c49;
-  font-weight: 800;
-  text-transform: capitalize;
-}
-
 .OrderSummary {
   margin: 6rem 0 0;
   color: #292929;

@@ -16,6 +16,9 @@ import type { MenuItem } from '../types/menu-item';
 
 const AdminMenu = () => {
   const [isMenuItemDialogOpen, setIsMenuItemDialogOpen] = useState(false);
+  const [menuItemToDelete, setMenuItemToDelete] = useState<MenuItem | null>(
+    null,
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const {
     menuItems,
@@ -66,6 +69,17 @@ const AdminMenu = () => {
 
     resetForm();
     setIsMenuItemDialogOpen(false);
+  };
+
+  const closeDeleteDialog = () => {
+    setMenuItemToDelete(null);
+  };
+
+  const confirmDeleteMenuItem = () => {
+    if (!menuItemToDelete) return;
+
+    removeMenuItem(menuItemToDelete.id);
+    setMenuItemToDelete(null);
   };
 
   const submitMenuItemForm = async (event: FormEvent<HTMLFormElement>) => {
@@ -227,6 +241,38 @@ const AdminMenu = () => {
         </AdminDialog>
       )}
 
+      {menuItemToDelete && (
+        <AdminDialog
+          title="Delete menu item"
+          description={menuItemToDelete.name}
+          onClose={closeDeleteDialog}
+        >
+          <p className={classes.ConfirmText}>
+            This will remove the item from the menu. This action cannot be
+            undone.
+          </p>
+
+          <div className={classes.DialogActions}>
+            <AdminButton
+              variant="secondary"
+              type="button"
+              onClick={closeDeleteDialog}
+              fullWidthOnMobile
+            >
+              Cancel
+            </AdminButton>
+            <AdminButton
+              variant="danger"
+              type="button"
+              onClick={confirmDeleteMenuItem}
+              fullWidthOnMobile
+            >
+              Delete
+            </AdminButton>
+          </div>
+        </AdminDialog>
+      )}
+
       <AdminCard>
         {(message || (!isMenuItemDialogOpen && error)) && (
           <div className={classes.CardHeader}>
@@ -301,15 +347,7 @@ const AdminMenu = () => {
                   variant="danger"
                   size="compact"
                   type="button"
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        'Are you sure you want to delete this menu item?',
-                      )
-                    ) {
-                      removeMenuItem(menuItem.id);
-                    }
-                  }}
+                  onClick={() => setMenuItemToDelete(menuItem)}
                 >
                   Delete
                 </AdminButton>

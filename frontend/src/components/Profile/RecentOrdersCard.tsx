@@ -4,12 +4,29 @@ import type { Order } from '../../types/order';
 import { formatCurrency } from '../../utils/currency';
 import { formatShortDateTime } from '../../utils/date';
 import { formatOrderStatus, summarizeOrderItems } from '../../utils/order';
+import ProfileStatusBadge from './ProfileStatusBadge';
+import type { OrderStatus } from '../../types/order';
 
 interface RecentOrdersCardProps {
   orders: Order[];
   isLoading: boolean;
   error: string | null;
 }
+
+const getOrderStatusVariant = (status: OrderStatus) => {
+  switch (status) {
+    case 'paid':
+    case 'completed':
+      return 'success';
+    case 'cancelled':
+      return 'danger';
+    case 'pending_payment':
+    case 'preparing':
+    case 'ready':
+    default:
+      return 'warning';
+  }
+};
 
 const RecentOrdersCard = ({
   orders,
@@ -51,9 +68,12 @@ const RecentOrdersCard = ({
               <div>
                 <div className={classes.OrderMeta}>
                   <span>{formatShortDateTime(order.createdAt)}</span>
-                  <span className={classes.Status}>
+                  <ProfileStatusBadge
+                    variant={getOrderStatusVariant(order.status)}
+                    size="compact"
+                  >
                     {formatOrderStatus(order.status)}
-                  </span>
+                  </ProfileStatusBadge>
                 </div>
                 <p className={classes.OrderSummary}>
                   {summarizeOrderItems(order.items, { limit: 2 })}

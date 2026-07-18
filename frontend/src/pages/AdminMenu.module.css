@@ -110,6 +110,19 @@
   gap: 12rem;
 }
 
+.ConfirmText {
+  margin: 0 0 20rem;
+  color: #5b4a35;
+  font-size: 16rem;
+  line-height: 1.45;
+}
+
+.DialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rem;
+}
+
 .MenuItemList {
   display: grid;
   gap: 12rem;
@@ -228,6 +241,10 @@
 
   .FormActions {
     flex-direction: column;
+  }
+
+  .DialogActions {
+    flex-direction: column-reverse;
   }
 }
 

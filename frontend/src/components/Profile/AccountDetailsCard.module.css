@@ -22,19 +22,6 @@
   composes: SecondaryAction from './ProfileCard.module.css';
 }
 
-.Badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36rem;
-  padding: 0 14rem;
-  border-radius: 999rem;
-  background: #fff3d1;
-  color: #8f0011;
-  font-size: 15rem;
-  font-weight: 900;
-  white-space: nowrap;
-}
-
 .Rows {
   display: grid;
   gap: 16rem;

@@ -1,4 +1,5 @@
 import type { User } from '../../types/auth';
+import ProfileStatusBadge from './ProfileStatusBadge';
 import classes from './AccountDetailsCard.module.css';
 
 interface AccountDetailsCardProps {
@@ -22,9 +23,9 @@ const AccountDetailsCard = ({
     <section className={classes.Card}>
       <div className={classes.CardHeader}>
         <h2 className={classes.CardTitle}>Account details</h2>
-        <span className={classes.Badge}>
+        <ProfileStatusBadge variant={isEmailVerified ? 'success' : 'warning'}>
           {isEmailVerified ? 'Verified' : 'Needs verification'}
-        </span>
+        </ProfileStatusBadge>
       </div>
 
       <div className={classes.Rows}>
