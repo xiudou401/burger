@@ -32,6 +32,7 @@ import type {
   VerifySmsCodePayload,
 } from '../validation/auth.schema';
 import { userRepository } from '../repositories/user.repository';
+import { hasPermission } from '../types/permissions';
 
 interface AuthResult {
   accessToken: string;
@@ -69,6 +70,29 @@ const createAuthResult = async (
     ...authResult,
     ...extra,
   };
+};
+
+const authenticatePasswordUser = async ({
+  email,
+  password,
+}: LoginPayload): Promise<AuthenticatedUser> => {
+  const user = await userRepository.findByEmailWithPassword(email);
+
+  if (
+    !user?.passwordHash ||
+    !(await verifyPassword(password, user.passwordHash))
+  ) {
+    throw new ServiceError('Invalid email or password', 401);
+  }
+
+  assertUserIsActive(user);
+
+  if (passwordHashNeedsUpgrade(user.passwordHash)) {
+    user.passwordHash = await hashPassword(password);
+    await userRepository.save(user);
+  }
+
+  return toPublicUser(user);
 };
 
 const sendVerificationEmailSafely = async (email: string, token: string) => {
@@ -116,23 +140,19 @@ export const login = async ({
   email,
   password,
 }: LoginPayload): Promise<AuthResult> => {
-  const user = await userRepository.findByEmailWithPassword(email);
+  const publicUser = await authenticatePasswordUser({ email, password });
 
-  if (
-    !user?.passwordHash ||
-    !(await verifyPassword(password, user.passwordHash))
-  ) {
-    throw new ServiceError('Invalid email or password', 401);
+  return createAuthResult(publicUser);
+};
+
+export const adminLogin = async (
+  payload: LoginPayload,
+): Promise<AuthResult> => {
+  const publicUser = await authenticatePasswordUser(payload);
+
+  if (!hasPermission(publicUser, 'view_orders')) {
+    throw new ServiceError('Admin access required', 403);
   }
-
-  assertUserIsActive(user);
-
-  if (passwordHashNeedsUpgrade(user.passwordHash)) {
-    user.passwordHash = await hashPassword(password);
-    await userRepository.save(user);
-  }
-
-  const publicUser = toPublicUser(user);
 
   return createAuthResult(publicUser);
 };
@@ -321,7 +341,7 @@ export const loginWithOAuth = async ({
   email: string;
   name: string;
   emailVerified: boolean;
-  mode?: 'login' | 'signup';
+  mode?: 'admin' | 'login' | 'signup';
 }): Promise<AuthResult> => {
   const normalizedEmail = normalizeEmail(email ?? '');
   const normalizedName = name?.trim() || normalizedEmail.split('@')[0];
@@ -338,6 +358,10 @@ export const loginWithOAuth = async ({
   let isNewUser = false;
 
   if (!user) {
+    if (mode === 'admin') {
+      throw new ServiceError('Admin access required', 403);
+    }
+
     user = await userRepository.create({
       name: normalizedName,
       email: normalizedEmail,
@@ -358,6 +382,10 @@ export const loginWithOAuth = async ({
   }
 
   const publicUser = toPublicUser(user);
+
+  if (mode === 'admin' && !hasPermission(publicUser, 'view_orders')) {
+    throw new ServiceError('Admin access required', 403);
+  }
 
   if (isNewUser) {
     await sendWelcomeEmail({

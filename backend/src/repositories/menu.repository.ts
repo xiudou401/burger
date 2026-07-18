@@ -5,11 +5,19 @@ export const menuRepository = {
     return MenuModel.findById('main').select('version').lean();
   },
 
-  updateMainVersion(version: number) {
-    return MenuModel.updateOne(
+  async incrementMainVersion() {
+    const menu = await MenuModel.findOneAndUpdate(
       { _id: 'main' },
-      { $set: { version, updatedAt: new Date() } },
-      { upsert: true },
-    );
+      {
+        $inc: { version: 1 },
+        $set: { updatedAt: new Date() },
+        $setOnInsert: { _id: 'main' },
+      },
+      { new: true, upsert: true, projection: { version: 1 } },
+    )
+      .lean()
+      .exec();
+
+    return menu?.version ?? 0;
   },
 };

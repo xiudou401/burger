@@ -46,6 +46,20 @@ export const loginHandler = async (
   }
 };
 
+export const adminLoginHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const result = await authService.adminLogin(req.body as LoginPayload);
+
+    sendAuthResult(res, 200, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const refreshHandler = async (
   req: Request,
   res: Response,

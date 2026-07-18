@@ -1,8 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { login } from '../../api/auth';
+import { adminLogin } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
-import { hasPermission } from '../../types/permissions';
 import { useAuthSubmit } from './useAuthSubmit';
 
 interface LoginLocationState {
@@ -25,11 +24,7 @@ export const useAdminLoginPage = () => {
     event.preventDefault();
 
     runSubmit(async () => {
-      const res = await login(email, password);
-
-      if (!hasPermission(res.user, 'view_orders')) {
-        throw new Error('Admin access required');
-      }
+      const res = await adminLogin(email, password);
 
       loginFn(res.accessToken, res.user);
 

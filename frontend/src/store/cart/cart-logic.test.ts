@@ -1,4 +1,9 @@
-import { addItem, deleteItem, removeItem } from './cart-logic';
+import {
+  addItem,
+  deleteItem,
+  MAX_CART_ITEM_QUANTITY,
+  removeItem,
+} from './cart-logic';
 
 describe('addItem', () => {
   it('should add new item if it does not exist', () => {
@@ -23,6 +28,15 @@ describe('addItem', () => {
     const result = addItem([{ id: '1', quantity: 1 }], '1');
     const item = result.find((item) => item.id === '1');
     expect(item?.quantity).toBe(2);
+  });
+
+  it('should not increase quantity past the maximum cart item quantity', () => {
+    const result = addItem(
+      [{ id: '1', quantity: MAX_CART_ITEM_QUANTITY }],
+      '1',
+    );
+
+    expect(result).toEqual([{ id: '1', quantity: MAX_CART_ITEM_QUANTITY }]);
   });
 
   it('should not mutate original array', () => {

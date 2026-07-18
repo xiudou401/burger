@@ -14,6 +14,7 @@ const REFRESH_CONFLICT_RETRY_COUNT = 3;
 const REFRESH_CONFLICT_RETRY_DELAY_MS = 150;
 const CONCURRENT_REFRESH_ERROR_TYPE = 'ConcurrentRefreshError';
 const NO_AUTO_REFRESH_PATHS = new Set([
+  '/auth/admin/login',
   '/auth/login',
   '/auth/signup',
   '/auth/refresh',

@@ -6,6 +6,7 @@ import { createAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendVerificationEmail } from './email.service';
 import { hashPassword } from '../utils/password';
 import {
+  adminLogin,
   login,
   loginWithOAuth,
   resetPassword,
@@ -190,6 +191,58 @@ describe('auth service', () => {
     expect(result.refreshToken).toBe('refresh-token');
   });
 
+  test('logs in admins only after confirming admin access', async () => {
+    const passwordHash = await hashPassword('Burger#2026');
+    const adminUser = {
+      ...userDoc,
+      role: 'admin' as const,
+      permissions: getPermissionsForRole('admin'),
+      passwordHash,
+    };
+    const publicAdmin = {
+      ...publicUser,
+      role: 'admin' as const,
+      permissions: getPermissionsForRole('admin'),
+    };
+
+    jest
+      .mocked(userRepository.findByEmailWithPassword)
+      .mockResolvedValue(adminUser as never);
+    jest.mocked(createAuthSession).mockResolvedValue({
+      accessToken: 'admin-access-token',
+      refreshToken: 'admin-refresh-token',
+      user: publicAdmin,
+    });
+
+    const result = await adminLogin({
+      email: 'pat@example.com',
+      password: 'Burger#2026',
+    });
+
+    expect(createAuthSession).toHaveBeenCalledWith(publicAdmin);
+    expect(result.refreshToken).toBe('admin-refresh-token');
+  });
+
+  test('rejects customer admin login without creating a session', async () => {
+    const passwordHash = await hashPassword('Burger#2026');
+    jest.mocked(userRepository.findByEmailWithPassword).mockResolvedValue({
+      ...userDoc,
+      passwordHash,
+    } as never);
+
+    await expect(
+      adminLogin({
+        email: 'pat@example.com',
+        password: 'Burger#2026',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Admin access required',
+      statusCode: 403,
+    });
+
+    expect(createAuthSession).not.toHaveBeenCalled();
+  });
+
   test('upgrades legacy password hashes after successful login', async () => {
     const loginUser = {
       ...userDoc,
@@ -283,6 +336,43 @@ describe('auth service', () => {
     });
 
     expect(userRepository.findByEmail).not.toHaveBeenCalled();
+    expect(userRepository.create).not.toHaveBeenCalled();
+    expect(createAuthSession).not.toHaveBeenCalled();
+  });
+
+  test('rejects admin OAuth for customer accounts without creating a session', async () => {
+    jest.mocked(userRepository.findByEmail).mockResolvedValue(userDoc as never);
+
+    await expect(
+      loginWithOAuth({
+        email: 'pat@example.com',
+        name: 'Pat',
+        emailVerified: true,
+        mode: 'admin',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Admin access required',
+      statusCode: 403,
+    });
+
+    expect(createAuthSession).not.toHaveBeenCalled();
+  });
+
+  test('does not create customer accounts from admin OAuth login', async () => {
+    jest.mocked(userRepository.findByEmail).mockResolvedValue(null);
+
+    await expect(
+      loginWithOAuth({
+        email: 'new@example.com',
+        name: 'New Staff',
+        emailVerified: true,
+        mode: 'admin',
+      }),
+    ).rejects.toMatchObject({
+      message: 'Admin access required',
+      statusCode: 403,
+    });
+
     expect(userRepository.create).not.toHaveBeenCalled();
     expect(createAuthSession).not.toHaveBeenCalled();
   });

@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import QuantityCounter from './QuantityCounter';
 import { useCartActions } from '../../../store/cart/hooks/useCartActions';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
+import { MAX_CART_ITEM_QUANTITY } from '../../../store/cart/cart-logic';
 
 jest.mock('../../../store/cart/hooks/useCartActions', () => ({
   useCartActions: jest.fn(),
@@ -55,5 +56,20 @@ describe('QuantityCounter', () => {
 
     expect(removeItem).toHaveBeenCalledWith('meal-1');
     expect(addItem).toHaveBeenCalledWith('meal-1');
+  });
+
+  test('disables increase when quantity reaches the maximum', () => {
+    jest.mocked(useCartSelector).mockReturnValue(MAX_CART_ITEM_QUANTITY);
+
+    render(<QuantityCounter id="meal-1" />);
+
+    const buttons = screen.getAllByRole('button');
+    const increaseButton = buttons[1];
+
+    expect(increaseButton).toBeDisabled();
+
+    fireEvent.click(increaseButton);
+
+    expect(addItem).not.toHaveBeenCalled();
   });
 });

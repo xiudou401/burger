@@ -245,7 +245,8 @@ export const oauthCallbackHandler = async (
         email: googleUser.email,
         name: googleUser.name,
         emailVerified: googleUser.emailVerified,
-        mode: mode === 'signup' ? 'signup' : 'login',
+        mode:
+          mode === 'signup' ? 'signup' : mode === 'admin' ? 'admin' : 'login',
       });
 
       if (mode === 'admin' && !hasPermission(result.user, 'view_orders')) {

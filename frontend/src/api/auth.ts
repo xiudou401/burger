@@ -29,6 +29,16 @@ export const login = (email: string, password: string) => {
   });
 };
 
+export const adminLogin = (email: string, password: string) => {
+  return request<AuthResponse>('/auth/admin/login', {
+    method: 'POST',
+    body: JSON.stringify({
+      email,
+      password,
+    }),
+  });
+};
+
 export const refreshSession = () => {
   return refreshAuthSession();
 };

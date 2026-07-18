@@ -1,4 +1,5 @@
 import { initialCartState, loadCartState } from './cart-reducer';
+import { MAX_CART_ITEM_QUANTITY } from './cart-logic';
 
 const setCartStorage = () => {
   localStorage.setItem(
@@ -28,6 +29,7 @@ describe('loadCartState', () => {
       'CartItemsState',
       JSON.stringify([
         { id: 'meal-1', quantity: 2.9 },
+        { id: 'meal-4', quantity: MAX_CART_ITEM_QUANTITY + 5 },
         { id: 'meal-2', quantity: '3' },
         { id: 'meal-3', quantity: 0 },
         { id: 4, quantity: 1 },
@@ -36,8 +38,11 @@ describe('loadCartState', () => {
     );
 
     expect(loadCartState()).toEqual({
-      items: [{ id: 'meal-1', quantity: 2 }],
-      totalQuantity: 2,
+      items: [
+        { id: 'meal-1', quantity: 2 },
+        { id: 'meal-4', quantity: MAX_CART_ITEM_QUANTITY },
+      ],
+      totalQuantity: 2 + MAX_CART_ITEM_QUANTITY,
     });
   });
 

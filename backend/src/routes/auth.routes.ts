@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  adminLoginHandler,
   loginHandler,
   logoutHandler,
   meHandler,
@@ -39,6 +40,13 @@ router.post(
   authActionRateLimiter,
   validateBody(SignupSchema, 'Signup payload'),
   signupHandler,
+);
+router.post(
+  '/admin/login',
+  verifyTrustedOrigin,
+  authAttemptRateLimiter,
+  validateBody(LoginSchema, 'Admin login payload'),
+  adminLoginHandler,
 );
 router.post(
   '/login',

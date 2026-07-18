@@ -9,6 +9,7 @@ interface FetchCustomersParams {
   page?: number;
   limit?: number;
   search?: string;
+  signal?: AbortSignal;
   status?: CustomerStatus | '';
 }
 
@@ -28,6 +29,7 @@ export const fetchAdminCustomers = (params: FetchCustomersParams = {}) => {
 
   return request<PaginatedAdminCustomers>(
     `/admin/customers${query ? `?${query}` : ''}`,
+    { signal: params.signal },
   );
 };
 

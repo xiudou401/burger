@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
 import { HTTP_STATUS } from '../../api/http-status';
 import { ApiError } from '../../api/request';
@@ -16,55 +16,86 @@ export const useAdminOrdersPage = () => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const loadRequestIdRef = useRef(0);
+  const loadControllerRef = useRef<AbortController | null>(null);
 
-  const loadOrders = async ({
-    cursor,
-    append = false,
-  }: {
-    cursor?: string | null;
-    append?: boolean;
-  } = {}) => {
-    if (append) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-    }
+  const loadOrders = useCallback(
+    async ({
+      cursor,
+      append = false,
+    }: {
+      cursor?: string | null;
+      append?: boolean;
+    } = {}) => {
+      loadControllerRef.current?.abort();
 
-    setError(null);
+      const controller = new AbortController();
+      const requestId = loadRequestIdRef.current + 1;
+      loadRequestIdRef.current = requestId;
+      loadControllerRef.current = controller;
 
-    try {
-      const res = await fetchAdminOrders({
-        limit: ORDER_PAGE_LIMIT,
-        cursor,
-      });
-
-      setOrders((current) =>
-        append ? [...current, ...res.orders] : res.orders,
-      );
-      setNextCursor(res.nextCursor);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load orders');
-    } finally {
       if (append) {
-        setIsLoadingMore(false);
-      } else {
         setIsLoading(false);
+        setIsLoadingMore(true);
+      } else {
+        setIsLoading(true);
+        setIsLoadingMore(false);
       }
-    }
-  };
+
+      setError(null);
+
+      try {
+        const res = await fetchAdminOrders({
+          limit: ORDER_PAGE_LIMIT,
+          cursor,
+          signal: controller.signal,
+        });
+
+        if (requestId !== loadRequestIdRef.current) return;
+
+        setOrders((current) =>
+          append ? [...current, ...res.orders] : res.orders,
+        );
+        setNextCursor(res.nextCursor);
+      } catch (err) {
+        if (requestId !== loadRequestIdRef.current) return;
+
+        setError(err instanceof Error ? err.message : 'Could not load orders');
+      } finally {
+        if (loadControllerRef.current === controller) {
+          loadControllerRef.current = null;
+        }
+
+        if (requestId !== loadRequestIdRef.current) return;
+
+        if (append) {
+          setIsLoadingMore(false);
+        } else {
+          setIsLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    void loadOrders();
+
+    return () => {
+      loadRequestIdRef.current += 1;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
+  }, [loadOrders]);
 
   const loadMore = () => {
     if (!nextCursor || isLoadingMore) return;
 
-    loadOrders({ cursor: nextCursor, append: true });
+    void loadOrders({ cursor: nextCursor, append: true });
   };
 
   const refresh = () => {
-    loadOrders();
+    void loadOrders();
   };
 
   const changeStatus = async (

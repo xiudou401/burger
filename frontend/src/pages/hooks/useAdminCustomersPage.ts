@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   disableAdminCustomer,
   enableAdminCustomer,
@@ -18,6 +18,8 @@ export const useAdminCustomersPage = () => {
   const [busyCustomerId, setBusyCustomerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const loadRequestIdRef = useRef(0);
+  const loadControllerRef = useRef<AbortController | null>(null);
 
   const loadCustomers = useCallback(
     async ({
@@ -27,10 +29,19 @@ export const useAdminCustomersPage = () => {
       pageToLoad?: number;
       append?: boolean;
     } = {}) => {
+      loadControllerRef.current?.abort();
+
+      const controller = new AbortController();
+      const requestId = loadRequestIdRef.current + 1;
+      loadRequestIdRef.current = requestId;
+      loadControllerRef.current = controller;
+
       if (append) {
+        setIsLoading(false);
         setIsLoadingMore(true);
       } else {
         setIsLoading(true);
+        setIsLoadingMore(false);
       }
 
       setError(null);
@@ -40,17 +51,29 @@ export const useAdminCustomersPage = () => {
           page: pageToLoad,
           limit: PAGE_LIMIT,
           search,
+          signal: controller.signal,
         });
+
+        if (requestId !== loadRequestIdRef.current) return;
+
         setCustomers((current) =>
           append ? [...current, ...res.customers] : res.customers,
         );
         setPage(res.page);
         setTotalPages(Math.max(res.totalPages, 1));
       } catch (err) {
+        if (requestId !== loadRequestIdRef.current) return;
+
         setError(
           err instanceof Error ? err.message : 'Could not load customers',
         );
       } finally {
+        if (loadControllerRef.current === controller) {
+          loadControllerRef.current = null;
+        }
+
+        if (requestId !== loadRequestIdRef.current) return;
+
         if (append) {
           setIsLoadingMore(false);
         } else {
@@ -63,6 +86,12 @@ export const useAdminCustomersPage = () => {
 
   useEffect(() => {
     void loadCustomers();
+
+    return () => {
+      loadRequestIdRef.current += 1;
+      loadControllerRef.current?.abort();
+      loadControllerRef.current = null;
+    };
   }, [loadCustomers]);
 
   const refresh = () => {

@@ -28,11 +28,13 @@ export const fetchOrder = (orderId: string) => {
 interface FetchAdminOrdersParams {
   limit?: number;
   cursor?: string | null;
+  signal?: AbortSignal;
 }
 
 export const fetchAdminOrders = ({
   limit = 20,
   cursor,
+  signal,
 }: FetchAdminOrdersParams = {}) => {
   const query = new URLSearchParams({ limit: String(limit) });
 
@@ -40,6 +42,7 @@ export const fetchAdminOrders = ({
 
   return request<{ orders: Order[]; nextCursor: string | null }>(
     `/orders/admin/all?${query.toString()}`,
+    { signal },
   );
 };
 

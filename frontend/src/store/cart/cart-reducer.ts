@@ -4,7 +4,12 @@ import {
   CartAction,
   CART_ACTIONS,
 } from '../../types/cart';
-import { addItem, removeItem, deleteItem } from './cart-logic';
+import {
+  addItem,
+  removeItem,
+  deleteItem,
+  MAX_CART_ITEM_QUANTITY,
+} from './cart-logic';
 
 export const initialCartState: CartState = {
   items: [],
@@ -70,7 +75,10 @@ export const loadCartState = (): CartState => {
 
     const items: CartStoredItem[] = parsed
       .filter(isStoredCartItem)
-      .map(({ id, quantity }) => ({ id, quantity: Math.floor(quantity) }));
+      .map(({ id, quantity }) => ({
+        id,
+        quantity: Math.min(Math.floor(quantity), MAX_CART_ITEM_QUANTITY),
+      }));
 
     return createCartState(items);
   } catch {

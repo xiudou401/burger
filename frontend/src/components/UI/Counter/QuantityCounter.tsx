@@ -4,6 +4,7 @@ import { faMinus, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { useCartActions } from '../../../store/cart/hooks/useCartActions';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import { getCartItemQuantity } from '../../../store/cart/context-accessors';
+import { MAX_CART_ITEM_QUANTITY } from '../../../store/cart/cart-logic';
 
 interface QuantityCounterProps {
   id: string;
@@ -14,13 +15,14 @@ const QuantityCounter = ({ id, disabled = false }: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
 
   const quantity = useCartSelector((ctx) => getCartItemQuantity(ctx, id));
+  const hasReachedMaxQuantity = quantity >= MAX_CART_ITEM_QUANTITY;
 
   const onDecrease = () => {
     removeItem(id);
   };
 
   const onIncrease = () => {
-    if (disabled) return;
+    if (disabled || hasReachedMaxQuantity) return;
 
     addItem(id);
   };
@@ -39,7 +41,7 @@ const QuantityCounter = ({ id, disabled = false }: QuantityCounterProps) => {
 
       <button
         className={classes.Increase}
-        disabled={disabled}
+        disabled={disabled || hasReachedMaxQuantity}
         onClick={onIncrease}
       >
         <FontAwesomeIcon icon={faPlus} />
