@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { z, ZodError } from 'zod';
 
 // Load .env once and export all environment variables from this module.
-dotenv.config();
+dotenv.config({ quiet: process.env.NODE_ENV === 'test' });
 
 const optionalNonEmptyString = z
   .string()

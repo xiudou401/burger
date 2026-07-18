@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   disableAdminCustomer,
   enableAdminCustomer,
@@ -19,57 +19,60 @@ export const useAdminCustomersPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const loadCustomers = async ({
-    pageToLoad = 1,
-    append = false,
-  }: {
-    pageToLoad?: number;
-    append?: boolean;
-  } = {}) => {
-    if (append) {
-      setIsLoadingMore(true);
-    } else {
-      setIsLoading(true);
-    }
-
-    setError(null);
-
-    try {
-      const res = await fetchAdminCustomers({
-        page: pageToLoad,
-        limit: PAGE_LIMIT,
-        search,
-      });
-      setCustomers((current) =>
-        append ? [...current, ...res.customers] : res.customers,
-      );
-      setPage(res.page);
-      setTotalPages(Math.max(res.totalPages, 1));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load customers');
-    } finally {
+  const loadCustomers = useCallback(
+    async ({
+      pageToLoad = 1,
+      append = false,
+    }: {
+      pageToLoad?: number;
+      append?: boolean;
+    } = {}) => {
       if (append) {
-        setIsLoadingMore(false);
+        setIsLoadingMore(true);
       } else {
-        setIsLoading(false);
+        setIsLoading(true);
       }
-    }
-  };
+
+      setError(null);
+
+      try {
+        const res = await fetchAdminCustomers({
+          page: pageToLoad,
+          limit: PAGE_LIMIT,
+          search,
+        });
+        setCustomers((current) =>
+          append ? [...current, ...res.customers] : res.customers,
+        );
+        setPage(res.page);
+        setTotalPages(Math.max(res.totalPages, 1));
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : 'Could not load customers',
+        );
+      } finally {
+        if (append) {
+          setIsLoadingMore(false);
+        } else {
+          setIsLoading(false);
+        }
+      }
+    },
+    [search],
+  );
 
   useEffect(() => {
-    loadCustomers();
-    // Search is intentionally the query dependency.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+    void loadCustomers();
+  }, [loadCustomers]);
 
   const refresh = () => {
-    loadCustomers();
+    void loadCustomers();
   };
 
   const loadMore = () => {
     if (page >= totalPages || isLoadingMore) return;
 
-    loadCustomers({ pageToLoad: page + 1, append: true });
+    void loadCustomers({ pageToLoad: page + 1, append: true });
   };
 
   const replaceCustomer = (customer: AdminCustomer) => {

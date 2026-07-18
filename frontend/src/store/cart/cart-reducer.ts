@@ -21,6 +21,21 @@ const createCartState = (items: CartStoredItem[]): CartState => ({
   totalQuantity: calculateTotalQuantity(items),
 });
 
+const isStoredCartItem = (value: unknown): value is CartStoredItem => {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const item = value as Record<string, unknown>;
+
+  return (
+    typeof item.id === 'string' &&
+    typeof item.quantity === 'number' &&
+    Number.isFinite(item.quantity) &&
+    item.quantity > 0
+  );
+};
+
 const isSuccessfulPaymentReturn = () => {
   if (typeof window === 'undefined') return false;
 
@@ -54,14 +69,8 @@ export const loadCartState = (): CartState => {
     if (!Array.isArray(parsed)) return initialCartState;
 
     const items: CartStoredItem[] = parsed
-      .filter(
-        (x: any) =>
-          x &&
-          typeof x.id === 'string' &&
-          typeof x.quantity === 'number' &&
-          x.quantity > 0,
-      )
-      .map((x: any) => ({ id: x.id, quantity: Math.floor(x.quantity) }));
+      .filter(isStoredCartItem)
+      .map(({ id, quantity }) => ({ id, quantity: Math.floor(quantity) }));
 
     return createCartState(items);
   } catch {
