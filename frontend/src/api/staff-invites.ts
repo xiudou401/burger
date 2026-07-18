@@ -5,8 +5,8 @@ import type {
   StaffInviteRole,
 } from '../types/staff-invite';
 
-export const fetchStaffInvites = () => {
-  return request<{ invites: StaffInvite[] }>('/staff-invites');
+export const fetchStaffInvites = (signal?: AbortSignal) => {
+  return request<{ invites: StaffInvite[] }>('/staff-invites', { signal });
 };
 
 export const createStaffInvite = (email: string, role: StaffInviteRole) => {

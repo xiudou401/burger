@@ -3,9 +3,7 @@ import AdminLayout from '../components/Admin/AdminLayout';
 import AdminButton from '../components/Admin/AdminButton';
 import AdminLoadMore from '../components/Admin/AdminLoadMore';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
-import AdminStatusBadge, {
-  type AdminStatusBadgeVariant,
-} from '../components/Admin/AdminStatusBadge';
+import AdminStatusBadge from '../components/Admin/AdminStatusBadge';
 import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
@@ -14,47 +12,10 @@ import { formatShortDateTime } from '../utils/date';
 import {
   formatOrderShortId,
   formatOrderStatus,
+  getOrderActionLabel,
+  getOrderStatusVariant,
   summarizeOrderItems,
 } from '../utils/order';
-import type { OrderStatus } from '../types/order';
-
-const getOrderStatusVariant = (
-  status: OrderStatus,
-): AdminStatusBadgeVariant => {
-  switch (status) {
-    case 'paid':
-      return 'success';
-    case 'cancelled':
-      return 'danger';
-    case 'completed':
-      return 'neutral';
-    case 'pending_payment':
-    case 'preparing':
-    case 'ready':
-    default:
-      return 'warning';
-  }
-};
-
-const ACTION_LABELS: Record<OrderStatus, string> = {
-  pending_payment: 'Mark pending',
-  paid: 'Mark paid',
-  preparing: 'Start preparing',
-  ready: 'Mark ready',
-  completed: 'Complete order',
-  cancelled: 'Cancel order',
-};
-
-const getActionLabel = (
-  currentStatus: OrderStatus,
-  nextStatus: OrderStatus,
-) => {
-  if (currentStatus === 'pending_payment' && nextStatus === 'cancelled') {
-    return 'Cancel pending order';
-  }
-
-  return ACTION_LABELS[nextStatus];
-};
 
 const AdminOrders = () => {
   const {
@@ -95,7 +56,9 @@ const AdminOrders = () => {
                     #{formatOrderShortId(order.id)}
                   </Link>
                   <AdminStatusBadge
-                    variant={getOrderStatusVariant(order.status)}
+                    variant={getOrderStatusVariant(order.status, {
+                      completedVariant: 'neutral',
+                    })}
                   >
                     {formatOrderStatus(order.status)}
                   </AdminStatusBadge>
@@ -126,7 +89,7 @@ const AdminOrders = () => {
                       changeStatus(order.id, status, order.version)
                     }
                   >
-                    {getActionLabel(order.status, status)}
+                    {getOrderActionLabel(order.status, status)}
                   </AdminButton>
                 ))}
               </div>

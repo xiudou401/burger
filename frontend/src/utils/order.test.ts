@@ -1,6 +1,8 @@
 import {
   formatOrderShortId,
   formatOrderStatus,
+  getOrderActionLabel,
+  getOrderStatusVariant,
   summarizeOrderItems,
 } from './order';
 
@@ -13,6 +15,23 @@ describe('order utils', () => {
   test('formats order status labels', () => {
     expect(formatOrderStatus('pending_payment')).toBe('Pending payment');
     expect(formatOrderStatus('completed')).toBe('Completed');
+  });
+
+  test('maps order statuses to shared badge variants', () => {
+    expect(getOrderStatusVariant('paid')).toBe('success');
+    expect(getOrderStatusVariant('completed')).toBe('success');
+    expect(
+      getOrderStatusVariant('completed', { completedVariant: 'neutral' }),
+    ).toBe('neutral');
+    expect(getOrderStatusVariant('cancelled')).toBe('danger');
+    expect(getOrderStatusVariant('preparing')).toBe('warning');
+  });
+
+  test('formats admin order action labels', () => {
+    expect(getOrderActionLabel('paid', 'preparing')).toBe('Start preparing');
+    expect(getOrderActionLabel('pending_payment', 'cancelled')).toBe(
+      'Cancel pending order',
+    );
   });
 
   test('summarizes order items with an optional limit', () => {

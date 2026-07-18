@@ -1,34 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { fetchAdminDashboardSummary } from '../../api/admin-dashboard';
 import type { AdminDashboardSummary } from '../../types/admin-dashboard';
+import { useAdminResource } from './useAdminResource';
 
 export const useAdminDashboardPage = () => {
-  const [summary, setSummary] = useState<AdminDashboardSummary | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadSummary = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetchAdminDashboardSummary();
-      setSummary(res.summary);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load dashboard');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadSummary();
+  const loadSummary = useCallback(async (signal: AbortSignal) => {
+    const res = await fetchAdminDashboardSummary(signal);
+    return res.summary;
   }, []);
+
+  const {
+    data: summary,
+    isLoading,
+    error,
+    refresh,
+  } = useAdminResource<AdminDashboardSummary | null>({
+    initialData: null,
+    load: loadSummary,
+    errorMessage: 'Could not load dashboard',
+  });
 
   return {
     summary,
     isLoading,
     error,
-    refresh: loadSummary,
+    refresh,
   };
 };

@@ -1,39 +1,37 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useState } from 'react';
 import {
   createStaffInvite,
   fetchStaffInvites,
   revokeStaffInvite,
 } from '../../api/staff-invites';
 import type { StaffInvite } from '../../types/staff-invite';
+import { useAdminResource } from './useAdminResource';
 
 const STAFF_INVITE_ROLE = 'staff' as const;
 
 export const useAdminStaffPage = () => {
-  const [invites, setInvites] = useState<StaffInvite[]>([]);
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [devInviteUrl, setDevInviteUrl] = useState<string | null>(null);
 
-  const loadInvites = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetchStaffInvites();
-      setInvites(res.invites);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load invites');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadInvites();
+  const loadInvites = useCallback(async (signal: AbortSignal) => {
+    const res = await fetchStaffInvites(signal);
+    return res.invites;
   }, []);
+
+  const {
+    data: invites,
+    setData: setInvites,
+    isLoading,
+    error,
+    setError,
+    refresh,
+  } = useAdminResource<StaffInvite[]>({
+    initialData: [],
+    load: loadInvites,
+    errorMessage: 'Could not load invites',
+  });
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -88,6 +86,6 @@ export const useAdminStaffPage = () => {
     devInviteUrl,
     submit,
     revoke,
-    refresh: loadInvites,
+    refresh,
   };
 };

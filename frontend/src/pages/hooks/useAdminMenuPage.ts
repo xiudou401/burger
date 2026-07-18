@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useMemo, useState } from 'react';
 import {
   createMenuItem,
   deleteMenuItem,
@@ -14,38 +14,36 @@ import {
   type AdminMenuForm,
   type AdminMenuFormErrors,
 } from '../utils/admin-menu-form';
+import { useAdminResource } from './useAdminResource';
 
 export const useAdminMenuPage = () => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [form, setForm] = useState<AdminMenuForm>(emptyMenuForm);
   const [editingMenuItemId, setEditingMenuItemId] = useState<string | null>(
     null,
   );
-  const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<AdminMenuFormErrors>({});
 
   const isEditing = useMemo(() => !!editingMenuItemId, [editingMenuItemId]);
 
-  const loadMenuItems = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetchMenuItems({ page: 1, limit: 100 });
-      setMenuItems(res.items);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load menu');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadMenuItems();
+  const loadMenuItems = useCallback(async (signal: AbortSignal) => {
+    const res = await fetchMenuItems({ page: 1, limit: 100, signal });
+    return res.items;
   }, []);
+
+  const {
+    data: menuItems,
+    setData: setMenuItems,
+    isLoading,
+    error,
+    setError,
+    refresh,
+  } = useAdminResource<MenuItem[]>({
+    initialData: [],
+    load: loadMenuItems,
+    errorMessage: 'Could not load menu',
+  });
 
   const updateForm = (field: keyof AdminMenuForm, value: string | boolean) => {
     setForm((current) => ({
@@ -151,6 +149,6 @@ export const useAdminMenuPage = () => {
     editMenuItem,
     removeMenuItem,
     resetForm,
-    refresh: loadMenuItems,
+    refresh,
   };
 };
