@@ -146,3 +146,40 @@
     font-size: 20rem;
   }
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .CartIcon {
+    width: 50rem;
+    height: 50rem;
+    flex-basis: 50rem;
+    margin-left: 10rem;
+  }
+
+  .CartIconImg {
+    width: 42rem;
+  }
+
+  .TotalQuantity {
+    width: 23rem;
+    height: 23rem;
+    line-height: 23rem;
+    font-size: 13rem;
+  }
+
+  .Price,
+  .EmptyCartText {
+    margin: 0 10rem;
+    font-size: 18rem;
+  }
+
+  .Price span {
+    font-size: 11rem;
+  }
+
+  .BuyButton {
+    min-width: 118rem;
+    min-height: 44rem;
+    margin-right: 10rem;
+    font-size: 16rem;
+  }
+}

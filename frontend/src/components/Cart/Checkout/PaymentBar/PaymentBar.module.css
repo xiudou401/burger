@@ -134,3 +134,30 @@
     font-size: 20rem;
   }
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .TotalPrice {
+    font-size: 21rem;
+  }
+
+  .ItemCount {
+    font-size: 11rem;
+  }
+
+  .Actions {
+    gap: 8rem;
+  }
+
+  .Message,
+  .Error,
+  .HelperText {
+    max-width: 150rem;
+    font-size: 11rem;
+  }
+
+  .Button {
+    min-width: 164rem;
+    min-height: 44rem;
+    font-size: 16rem;
+  }
+}

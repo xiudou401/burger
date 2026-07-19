@@ -132,7 +132,57 @@
   }
 }
 
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .MenuSearch:not(.Compact) {
+    flex-basis: 420rem;
+    height: 52rem;
+  }
+
+  .MenuSearch:not(.Compact) .SearchInput {
+    height: 40rem;
+    padding-left: 46rem;
+    padding-right: 44rem;
+    font-size: 17rem;
+  }
+
+  .MenuSearch:not(.Compact) .SearchIcon {
+    left: 15rem;
+    font-size: 18rem;
+  }
+
+  .MenuSearch:not(.Compact) .ClearButton {
+    right: 6rem;
+    width: 34rem;
+    height: 34rem;
+    font-size: 18rem;
+  }
+}
+
 @media (max-width: 560px) {
+  .MenuSearch:not(.Compact) {
+    height: 72rem;
+    padding: 10rem 18rem 6rem;
+  }
+
+  .MenuSearch:not(.Compact) .SearchInput {
+    height: 48rem;
+    padding-left: 56rem;
+    padding-right: 50rem;
+    font-size: 19rem;
+  }
+
+  .MenuSearch:not(.Compact) .SearchIcon {
+    left: 18rem;
+    font-size: 21rem;
+  }
+
+  .MenuSearch:not(.Compact) .ClearButton {
+    right: 8rem;
+    width: 38rem;
+    height: 38rem;
+    font-size: 20rem;
+  }
+
   .Compact,
   .Compact .InputOuter {
     width: 100%;

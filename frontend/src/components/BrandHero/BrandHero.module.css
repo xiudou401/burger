@@ -48,18 +48,28 @@
 
 @media (max-width: 560px) {
   .Hero {
-    min-height: 316rem;
-    padding: 22rem 22rem 8rem;
+    min-height: 258rem;
+    padding: 14rem 18rem 6rem;
   }
 
   .Title {
-    font-size: 50rem;
+    font-size: 36rem;
+    line-height: 1.04;
   }
 
   .StoreStatus {
     align-items: flex-start;
+    margin-top: 6rem;
+    padding: 8rem 10rem;
     border-radius: 8rem;
+    font-size: 13rem;
     white-space: normal;
+  }
+
+  .StatusDot {
+    width: 9rem;
+    height: 9rem;
+    flex-basis: 9rem;
   }
 }
 
@@ -85,6 +95,33 @@
 @media (min-width: 900px) and (max-width: 1359px) {
   .Hero {
     padding-inline: 40rem;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .Hero {
+    min-height: 188rem;
+    padding: 10rem 28rem 6rem;
+  }
+
+  .Title {
+    max-width: 620rem;
+    font-size: 34rem;
+    line-height: 1.02;
+  }
+
+  .StoreStatus {
+    margin-top: 6rem;
+    margin-bottom: 10rem;
+    padding: 7rem 10rem;
+    font-size: 13rem;
+  }
+
+  .StatusDot {
+    width: 8rem;
+    height: 8rem;
+    flex-basis: 8rem;
+    box-shadow: 0 0 0 4rem rgba(34, 164, 93, 0.18);
   }
 }
 

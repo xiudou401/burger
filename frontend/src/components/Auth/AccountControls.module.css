@@ -177,3 +177,33 @@
     display: inline;
   }
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .AccountControls {
+    gap: 10rem;
+  }
+
+  .Logout,
+  .ConsoleLink,
+  .StorefrontLink,
+  .VerifyButton {
+    height: 42rem;
+    padding: 0 14rem;
+    font-size: 15rem;
+  }
+
+  .Avatar {
+    width: 42rem;
+    height: 42rem;
+    font-size: 18rem;
+  }
+
+  .Greeting {
+    max-width: 140rem;
+    font-size: 15rem;
+  }
+
+  .Member {
+    font-size: 12rem;
+  }
+}

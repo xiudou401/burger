@@ -57,19 +57,19 @@
 
 @media (max-width: 560px) {
   .MenuTools {
-    top: 316rem;
+    top: 258rem;
   }
 
   .CategoryRail {
-    padding-inline: 22rem;
-    padding-bottom: 18rem;
-    gap: 10rem;
+    padding-inline: 18rem;
+    padding-bottom: 14rem;
+    gap: 8rem;
   }
 
   .CategoryRail button {
-    height: 44rem;
-    padding: 0 18rem;
-    font-size: 16rem;
+    height: 40rem;
+    padding: 0 15rem;
+    font-size: 15rem;
   }
 
   .CategoryLabel {
@@ -100,6 +100,25 @@
     flex: 1;
     min-width: 0;
     padding: 0;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .MenuTools {
+    top: 188rem;
+    min-height: 60rem;
+    gap: 14rem;
+    padding: 0 28rem;
+  }
+
+  .CategoryRail {
+    gap: 8rem;
+  }
+
+  .CategoryRail button {
+    height: 38rem;
+    padding: 0 14rem;
+    font-size: 14rem;
   }
 }
 

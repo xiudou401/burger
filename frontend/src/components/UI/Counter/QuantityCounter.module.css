@@ -54,3 +54,21 @@
   font-weight: 900;
   text-align: center;
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .Counter {
+    gap: 6rem;
+  }
+
+  .Decrease,
+  .Increase {
+    width: 32rem;
+    height: 32rem;
+    font-size: 16rem;
+  }
+
+  .Quantity {
+    min-width: 22rem;
+    font-size: 19rem;
+  }
+}

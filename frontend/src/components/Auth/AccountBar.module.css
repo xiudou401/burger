@@ -127,3 +127,19 @@
     font-size: 16rem;
   }
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .HeroAccountBar {
+    height: 62rem;
+  }
+
+  .HeroAccountBar .Mark {
+    width: 44rem;
+    height: 44rem;
+    font-size: 28rem;
+  }
+
+  .HeroAccountBar .BrandText {
+    font-size: 20rem;
+  }
+}

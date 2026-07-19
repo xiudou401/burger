@@ -80,3 +80,20 @@
     justify-content: center;
   }
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .BottomActionBar {
+    width: min(600rem, calc(100vw - 32rem));
+    bottom: 10rem;
+  }
+
+  .cart {
+    min-height: 66rem;
+  }
+
+  .checkout {
+    min-height: 64rem;
+    gap: 8rem;
+    padding: 8rem 10rem;
+  }
+}

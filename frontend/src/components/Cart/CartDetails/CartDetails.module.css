@@ -80,3 +80,22 @@
     border-top-right-radius: 16rem;
   }
 }
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .CartDetails {
+    height: 72vh;
+    padding-bottom: 74rem;
+  }
+
+  .Header {
+    padding: 20rem 24rem;
+  }
+
+  .Title {
+    font-size: 24rem;
+  }
+
+  .Clear {
+    font-size: 20rem;
+  }
+}

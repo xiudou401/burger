@@ -15,7 +15,7 @@
 
 @media (max-width: 560px) {
   .MenuItemsList {
-    top: 470rem;
+    top: 386rem;
     padding-inline: 18rem;
   }
 }
@@ -30,6 +30,14 @@
   .MenuItemsList {
     top: 398rem;
     padding: 28rem 40rem 132rem;
+  }
+}
+
+@media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
+  .MenuItemsList {
+    top: 248rem;
+    bottom: 76rem;
+    padding: 16rem 28rem 84rem;
   }
 }
 
