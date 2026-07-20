@@ -77,13 +77,6 @@
   text-transform: uppercase;
 }
 
-.Price .Estimate {
-  margin: 5rem 0 0;
-  color: #bdb5aa;
-  font-size: 14rem;
-  text-transform: none;
-}
-
 .BuyButton {
   align-self: center;
   min-width: 178rem;

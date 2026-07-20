@@ -14,8 +14,6 @@ import { formatCurrency } from '../../utils/currency';
 import {
   getTotalQuantity,
   getQuote,
-  getQuoteStale,
-  getQuoteMismatch,
   getEstimatedTotalCents,
   getEnsureQuote,
   getClearQuote,
@@ -25,10 +23,6 @@ const CartBar = () => {
   const totalQuantity = useCartSelector(getTotalQuantity);
 
   const quote = useCartSelector(getQuote);
-
-  const quoteStale = useCartSelector(getQuoteStale);
-
-  const quoteMismatch = useCartSelector(getQuoteMismatch);
 
   const estimatedTotalCents = useCartSelector(getEstimatedTotalCents);
 
@@ -113,7 +107,6 @@ const CartBar = () => {
       ) : !quote ? (
         <span className={classes.Price}>
           {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
-          <span>Review cart</span>
         </span>
       ) : (
         <span className={classes.Price}>
@@ -121,9 +114,6 @@ const CartBar = () => {
             {totalQuantity} {totalQuantity === 1 ? 'item' : 'items'}
           </span>
           {formatCurrency(estimatedTotalCents)}
-          {(quoteStale || quoteMismatch) && (
-            <span className={classes.Estimate}>Estimate</span>
-          )}
         </span>
       )}
     </button>
