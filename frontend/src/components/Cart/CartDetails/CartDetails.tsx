@@ -18,8 +18,6 @@ const CartDetails = ({ open }: CartDetailsProps) => {
   const itemsLength = useCartSelector((ctx) => ctx.items.length);
   const quote = useCartSelector((ctx) => ctx.quote);
   const quoteError = useCartSelector((ctx) => ctx.quoteError);
-  const quoteStale = useCartSelector((ctx) => ctx.quoteStale);
-  const quoteMismatch = useCartSelector((ctx) => ctx.quoteMismatch);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -67,10 +65,6 @@ const CartDetails = ({ open }: CartDetailsProps) => {
         <div className={classes.MenuItemList}>
           {!quote && !quoteError && itemsLength > 0 && (
             <p className={classes.Status}>Loading...</p>
-          )}
-
-          {quote && !quoteError && (quoteStale || quoteMismatch) && (
-            <p className={classes.Status}>Updating estimated prices...</p>
           )}
 
           {quoteError && (
