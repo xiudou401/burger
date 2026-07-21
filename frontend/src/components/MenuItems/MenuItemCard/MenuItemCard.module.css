@@ -170,7 +170,7 @@
   }
 }
 
-@media (min-width: 900px) {
+@media (min-width: 900px) and (max-width: 1359px) {
   .MenuItemCard {
     gap: 28rem;
     min-height: 244rem;
@@ -193,6 +193,32 @@
 
   .Price {
     font-size: 32rem;
+  }
+}
+
+@media (min-width: 1360px) {
+  .MenuItemCard {
+    gap: 20rem;
+    min-height: 214rem;
+    padding: 18rem;
+  }
+
+  .ImageWrapper {
+    width: 230rem;
+    min-height: 178rem;
+    flex-basis: 230rem;
+  }
+
+  .Name {
+    font-size: 27rem;
+  }
+
+  .Description {
+    font-size: 18rem;
+  }
+
+  .Price {
+    font-size: 26rem;
   }
 }
 

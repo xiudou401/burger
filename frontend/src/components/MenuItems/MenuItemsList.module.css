@@ -1,5 +1,9 @@
 .MenuItemsList {
   position: absolute;
+  display: grid;
+  align-content: start;
+  grid-template-columns: 1fr;
+  gap: 18rem;
   top: 470rem;
   bottom: 0;
   left: 0;
@@ -10,7 +14,12 @@
 }
 
 .Sentinel {
+  grid-column: 1 / -1;
   height: 30rem;
+}
+
+.MenuItemsList > * {
+  margin-bottom: 0;
 }
 
 @media (max-width: 560px) {
@@ -43,6 +52,7 @@
 
 @media (min-width: 1360px) {
   .MenuItemsList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     top: 306rem;
     padding: 28rem 40rem 132rem;
   }
