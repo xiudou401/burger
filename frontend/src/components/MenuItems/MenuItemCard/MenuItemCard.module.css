@@ -103,6 +103,47 @@
   padding: 4rem 0;
 }
 
+.Compact {
+  gap: 16rem;
+  min-height: 142rem;
+  margin-bottom: 14rem;
+  padding: 14rem;
+}
+
+.Compact .ImageWrapper {
+  width: 168rem;
+  min-height: 114rem;
+  flex-basis: 168rem;
+}
+
+.Compact .Badges {
+  gap: 5rem;
+  margin-bottom: 6rem;
+}
+
+.Compact .CategoryBadge,
+.Compact .SoldOutBadge {
+  padding: 3rem 7rem;
+  font-size: 10rem;
+}
+
+.Compact .Name {
+  font-size: 22rem;
+  line-height: 1.12;
+}
+
+.Compact .PriceWrapper {
+  gap: 12rem;
+}
+
+.Compact .Price {
+  font-size: 22rem;
+}
+
+.Compact .DescBox {
+  padding: 2rem 0;
+}
+
 @media (max-width: 560px) {
   .MenuItemCard {
     gap: 16rem;

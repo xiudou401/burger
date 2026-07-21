@@ -7,9 +7,14 @@ import { formatCurrency } from '../../../utils/currency';
 interface MenuItemCardProps {
   menuItem: MenuItem;
   noDesc?: boolean;
+  variant?: 'default' | 'compact';
 }
 
-const MenuItemCard = ({ menuItem, noDesc }: MenuItemCardProps) => {
+const MenuItemCard = ({
+  menuItem,
+  noDesc,
+  variant = 'default',
+}: MenuItemCardProps) => {
   const categoryLabel =
     menuItem.category[0].toUpperCase() + menuItem.category.slice(1);
 
@@ -17,7 +22,7 @@ const MenuItemCard = ({ menuItem, noDesc }: MenuItemCardProps) => {
     <div
       className={`${classes.MenuItemCard} ${
         menuItem.isAvailable ? '' : classes.SoldOut
-      }`}
+      } ${variant === 'compact' ? classes.Compact : ''}`}
     >
       <div className={classes.ImageWrapper}>
         <img src={menuItem.image} alt={menuItem.name} />

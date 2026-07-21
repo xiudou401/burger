@@ -77,7 +77,12 @@ const CartDetails = ({ open }: CartDetailsProps) => {
           )}
 
           {menuItems.map((menuItem) => (
-            <MenuItemCard key={menuItem.id} menuItem={menuItem} noDesc />
+            <MenuItemCard
+              key={menuItem.id}
+              menuItem={menuItem}
+              noDesc
+              variant="compact"
+            />
           ))}
 
           {quote && menuItems.length === 0 && (

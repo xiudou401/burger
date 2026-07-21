@@ -1,7 +1,7 @@
 .MenuItemsList {
   position: absolute;
   top: 470rem;
-  bottom: 128rem;
+  bottom: 0;
   left: 0;
   right: 0;
   overflow-y: auto;
@@ -36,7 +36,7 @@
 @media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
   .MenuItemsList {
     top: 248rem;
-    bottom: 76rem;
+    bottom: 0;
     padding: 16rem 28rem 84rem;
   }
 }

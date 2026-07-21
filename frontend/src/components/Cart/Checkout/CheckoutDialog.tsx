@@ -62,7 +62,7 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
             </h2>
           </header>
 
-          <div>
+          <div className={classes.ItemList}>
             {visibleMenuItems.map((menuItem) => (
               <CheckoutItem key={menuItem.id} menuItem={menuItem} />
             ))}

@@ -66,6 +66,12 @@
   overflow: auto;
 }
 
+.ItemList {
+  display: grid;
+  gap: 12rem;
+  padding: 18rem 0;
+}
+
 .Footer {
   position: relative;
   min-height: 112rem;
