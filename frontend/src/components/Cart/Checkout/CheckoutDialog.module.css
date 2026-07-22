@@ -51,7 +51,7 @@
   display: flex;
   border-bottom: 1rem solid #eadfce;
   height: 90rem;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .Title {
@@ -77,10 +77,13 @@
   min-height: 112rem;
   border-top: 1rem #eadfce dashed;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: flex-end;
+  gap: 8rem;
   font-weight: bold;
   font-size: 28rem;
+  padding: 18rem 0;
 }
 
 .Footer::before,
@@ -101,8 +104,19 @@
 }
 
 .TotalPrice {
+  margin: 0;
   color: #202020;
   font-weight: bold;
+}
+
+.PriceNotice {
+  max-width: 100%;
+  margin: 0;
+  color: #8f1d14;
+  font-size: 15rem;
+  font-weight: 900;
+  line-height: 1.25;
+  text-align: right;
 }
 
 @media (max-width: 560px) {
@@ -144,5 +158,10 @@
   .Footer {
     min-height: 64rem;
     font-size: 20rem;
+    padding: 12rem 0;
+  }
+
+  .PriceNotice {
+    font-size: 12rem;
   }
 }

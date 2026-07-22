@@ -18,6 +18,7 @@ interface CheckoutDialogProps {
 const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
+  const quoteNotice = useCartSelector((ctx) => ctx.quoteNotice);
 
   const items = useCartSelector((ctx) => ctx.items);
 
@@ -69,6 +70,9 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
           </div>
 
           <footer className={classes.Footer}>
+            {quoteNotice && (
+              <p className={classes.PriceNotice}>{quoteNotice}</p>
+            )}
             <p className={classes.TotalPrice}>
               Total {formatCurrency(estimatedTotalCents)}
             </p>

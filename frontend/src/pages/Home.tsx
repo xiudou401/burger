@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import MenuItemsList from '../components/MenuItems/MenuItemsList';
 import CartBar from '../components/Cart/CartBar';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
@@ -47,13 +47,19 @@ const Home = () => {
   const { hasMenuUpdate, acknowledgeMenuUpdate } =
     useMenuRefreshPrompt(menuVersion);
 
-  const refreshMenu = async () => {
+  const refreshMenu = useCallback(async () => {
     const refreshed = await reload();
 
     if (refreshed) {
       acknowledgeMenuUpdate();
     }
-  };
+  }, [acknowledgeMenuUpdate, reload]);
+
+  useEffect(() => {
+    if (!hasMenuUpdate) return;
+
+    void refreshMenu();
+  }, [hasMenuUpdate, refreshMenu]);
 
   const searchMenu = (query: string) => {
     setActiveCategory(query.trim() ? '' : 'all');

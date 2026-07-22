@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export const useMenuRefreshPrompt = (menuVersion: number | null) => {
   const [hasMenuUpdate, setHasMenuUpdate] = useState(false);
@@ -15,10 +15,10 @@ export const useMenuRefreshPrompt = (menuVersion: number | null) => {
     }
   }, [menuVersion]);
 
-  const acknowledgeMenuUpdate = () => {
+  const acknowledgeMenuUpdate = useCallback(() => {
     setHasMenuUpdate(false);
     baselineVersionRef.current = menuVersion;
-  };
+  }, [menuVersion]);
 
   return {
     hasMenuUpdate,
