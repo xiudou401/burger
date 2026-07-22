@@ -1,5 +1,3 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBagShopping } from '@fortawesome/free-solid-svg-icons';
 import classes from './CartSummary.module.css';
 import { formatCurrency } from '../../../utils/currency';
 
@@ -15,18 +13,6 @@ const CartSummary = ({ totalQuantity, totalCents }: CartSummaryProps) => {
 
   return (
     <>
-      <span className={classes.CartIcon}>
-        <FontAwesomeIcon
-          className={classes.CartIconSymbol}
-          icon={faBagShopping}
-          aria-hidden="true"
-        />
-
-        {totalQuantity > 0 && (
-          <span className={classes.TotalQuantity}>{totalQuantity}</span>
-        )}
-      </span>
-
       {totalQuantity === 0 ? (
         <span className={classes.EmptyCartText}>Cart is empty</span>
       ) : totalCents === undefined ? (
