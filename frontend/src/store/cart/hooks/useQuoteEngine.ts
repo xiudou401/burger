@@ -4,7 +4,7 @@ import { cartSignature } from '../utils/cart-signature';
 import { getQuoteErrorMessage } from '../utils/quote-error';
 import {
   calculateEstimatedTotalCents,
-  hasQuoteUnitPriceChanged,
+  getQuoteUnitPriceChangeNames,
 } from '../utils/quote-utils';
 import {
   isExpectedBackgroundError,
@@ -17,7 +17,19 @@ import {
 } from './useQuoteValidationRequest';
 
 const VALIDATE_DEBOUNCE_MS = 300;
-const PRICE_UPDATED_NOTICE = 'Prices updated. Please review before paying.';
+
+const getPriceUpdatedNotice = (itemNames: string[]) => {
+  if (itemNames.length === 0) return null;
+
+  if (itemNames.length === 1) {
+    return `${itemNames[0]} price changed. Please review before paying.`;
+  }
+
+  const visibleNames = itemNames.slice(0, 2).join(', ');
+  const suffix = itemNames.length > 2 ? ', and more' : '';
+
+  return `${visibleNames}${suffix} prices changed. Please review before paying.`;
+};
 
 interface UseQuoteEngineParams {
   items: CartStoredItem[];
@@ -69,10 +81,15 @@ export const useQuoteEngine = ({
   }, []);
 
   const handleQuoteValidated = useCallback((validatedQuote: QuoteState) => {
-    if (
-      hasQuoteUnitPriceChanged(lastValidatedQuoteRef.current, validatedQuote)
-    ) {
-      setQuoteNotice(PRICE_UPDATED_NOTICE);
+    const priceChangeNotice = getPriceUpdatedNotice(
+      getQuoteUnitPriceChangeNames(
+        lastValidatedQuoteRef.current,
+        validatedQuote,
+      ),
+    );
+
+    if (priceChangeNotice) {
+      setQuoteNotice(priceChangeNotice);
     }
 
     lastValidatedQuoteRef.current = validatedQuote;

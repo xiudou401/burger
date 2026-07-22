@@ -14,11 +14,11 @@ export const calculateEstimatedTotalCents = (
   }, 0);
 };
 
-export const hasQuoteUnitPriceChanged = (
+export const getQuoteUnitPriceChangeNames = (
   previousQuote: Quote | null,
   nextQuote: Quote,
 ) => {
-  if (!previousQuote) return false;
+  if (!previousQuote) return [];
 
   const previousPriceById = new Map(
     previousQuote.menuItems.map((menuItem) => [
@@ -27,8 +27,10 @@ export const hasQuoteUnitPriceChanged = (
     ]),
   );
 
-  return nextQuote.menuItems.some((menuItem) => {
+  return nextQuote.menuItems.flatMap((menuItem) => {
     const previousPrice = previousPriceById.get(menuItem.id);
-    return previousPrice !== undefined && previousPrice !== menuItem.priceCents;
+    return previousPrice !== undefined && previousPrice !== menuItem.priceCents
+      ? [menuItem.name]
+      : [];
   });
 };

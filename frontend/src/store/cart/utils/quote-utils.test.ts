@@ -1,7 +1,7 @@
 import type { Quote } from '../../../types/cart';
 import {
   calculateEstimatedTotalCents,
-  hasQuoteUnitPriceChanged,
+  getQuoteUnitPriceChangeNames,
 } from './quote-utils';
 
 const quote: Quote = {
@@ -56,39 +56,39 @@ describe('calculateEstimatedTotalCents', () => {
   });
 });
 
-describe('hasQuoteUnitPriceChanged', () => {
-  it('returns false without a previous quote', () => {
-    expect(hasQuoteUnitPriceChanged(null, quote)).toBe(false);
+describe('getQuoteUnitPriceChangeNames', () => {
+  it('returns an empty list without a previous quote', () => {
+    expect(getQuoteUnitPriceChangeNames(null, quote)).toEqual([]);
   });
 
-  it('returns true when an existing quoted item changes price', () => {
+  it('returns changed item names when existing quoted items change price', () => {
     expect(
-      hasQuoteUnitPriceChanged(quote, {
+      getQuoteUnitPriceChangeNames(quote, {
         ...quote,
         menuItems: quote.menuItems.map((menuItem) =>
-          menuItem.id === 'burger'
-            ? { ...menuItem, priceCents: 1300 }
+          menuItem.id === 'burger' || menuItem.id === 'fries'
+            ? { ...menuItem, priceCents: menuItem.priceCents + 100 }
             : menuItem,
         ),
       }),
-    ).toBe(true);
+    ).toEqual(['Classic Burger', 'Fries']);
   });
 
-  it('returns false when only quantities change', () => {
+  it('returns an empty list when only quantities change', () => {
     expect(
-      hasQuoteUnitPriceChanged(quote, {
+      getQuoteUnitPriceChangeNames(quote, {
         ...quote,
         menuItems: quote.menuItems.map((menuItem) => ({
           ...menuItem,
           quantity: menuItem.quantity + 1,
         })),
       }),
-    ).toBe(false);
+    ).toEqual([]);
   });
 
   it('ignores new items that were not in the previous quote', () => {
     expect(
-      hasQuoteUnitPriceChanged(quote, {
+      getQuoteUnitPriceChangeNames(quote, {
         ...quote,
         menuItems: [
           ...quote.menuItems,
@@ -105,6 +105,6 @@ describe('hasQuoteUnitPriceChanged', () => {
           },
         ],
       }),
-    ).toBe(false);
+    ).toEqual([]);
   });
 });
