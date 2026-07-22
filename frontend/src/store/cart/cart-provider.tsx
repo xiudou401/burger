@@ -23,6 +23,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   const {
     quote,
     quoteError,
+    quoteNotice,
     quoteStale,
     quoteMismatch,
     estimatedTotalCents,
@@ -42,6 +43,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       menuVersion,
       quote,
       quoteError,
+      quoteNotice,
       quoteStale,
       quoteMismatch,
       estimatedTotalCents,
@@ -54,6 +56,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       menuVersion,
       quote,
       quoteError,
+      quoteNotice,
       quoteStale,
       quoteMismatch,
       estimatedTotalCents,

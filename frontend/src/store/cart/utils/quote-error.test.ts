@@ -27,4 +27,12 @@ describe('getQuoteErrorMessage', () => {
       'Some menu items have changed. Please review your cart before checkout.',
     );
   });
+
+  it('uses a cart review message for removed menu items', () => {
+    expect(
+      getQuoteErrorMessage(new ApiError(400, { message: 'Menu item removed' })),
+    ).toBe(
+      'An item in your cart is no longer available. Please review your cart.',
+    );
+  });
 });

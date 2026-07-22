@@ -13,3 +13,22 @@ export const calculateEstimatedTotalCents = (
     return total + menuItem.priceCents * quantity;
   }, 0);
 };
+
+export const hasQuoteUnitPriceChanged = (
+  previousQuote: Quote | null,
+  nextQuote: Quote,
+) => {
+  if (!previousQuote) return false;
+
+  const previousPriceById = new Map(
+    previousQuote.menuItems.map((menuItem) => [
+      menuItem.id,
+      menuItem.priceCents,
+    ]),
+  );
+
+  return nextQuote.menuItems.some((menuItem) => {
+    const previousPrice = previousPriceById.get(menuItem.id);
+    return previousPrice !== undefined && previousPrice !== menuItem.priceCents;
+  });
+};

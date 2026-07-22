@@ -6,6 +6,10 @@ export const getQuoteErrorMessage = (error: unknown) => {
     return 'Some menu items have changed. Please review your cart before checkout.';
   }
 
+  if (error instanceof ApiError && error.body.message === 'Menu item removed') {
+    return 'An item in your cart is no longer available. Please review your cart.';
+  }
+
   if (
     error instanceof ApiError &&
     (error.statusCode === HTTP_STATUS.NETWORK_ERROR ||

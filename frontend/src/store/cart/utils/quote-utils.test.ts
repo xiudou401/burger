@@ -1,5 +1,8 @@
 import type { Quote } from '../../../types/cart';
-import { calculateEstimatedTotalCents } from './quote-utils';
+import {
+  calculateEstimatedTotalCents,
+  hasQuoteUnitPriceChanged,
+} from './quote-utils';
 
 const quote: Quote = {
   menuVersion: 4,
@@ -50,5 +53,58 @@ describe('calculateEstimatedTotalCents', () => {
     expect(
       calculateEstimatedTotalCents(null, [{ id: 'burger', quantity: 2 }]),
     ).toBe(0);
+  });
+});
+
+describe('hasQuoteUnitPriceChanged', () => {
+  it('returns false without a previous quote', () => {
+    expect(hasQuoteUnitPriceChanged(null, quote)).toBe(false);
+  });
+
+  it('returns true when an existing quoted item changes price', () => {
+    expect(
+      hasQuoteUnitPriceChanged(quote, {
+        ...quote,
+        menuItems: quote.menuItems.map((menuItem) =>
+          menuItem.id === 'burger'
+            ? { ...menuItem, priceCents: 1300 }
+            : menuItem,
+        ),
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false when only quantities change', () => {
+    expect(
+      hasQuoteUnitPriceChanged(quote, {
+        ...quote,
+        menuItems: quote.menuItems.map((menuItem) => ({
+          ...menuItem,
+          quantity: menuItem.quantity + 1,
+        })),
+      }),
+    ).toBe(false);
+  });
+
+  it('ignores new items that were not in the previous quote', () => {
+    expect(
+      hasQuoteUnitPriceChanged(quote, {
+        ...quote,
+        menuItems: [
+          ...quote.menuItems,
+          {
+            id: 'shake',
+            name: 'Shake',
+            description: 'Vanilla shake',
+            priceCents: 800,
+            category: 'drink',
+            isAvailable: true,
+            quantity: 1,
+            subtotalCents: 800,
+            image: '/img/shake.png',
+          },
+        ],
+      }),
+    ).toBe(false);
   });
 });

@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CartStoredItem } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
 import { getQuoteErrorMessage } from '../utils/quote-error';
-import { calculateEstimatedTotalCents } from '../utils/quote-utils';
+import {
+  calculateEstimatedTotalCents,
+  hasQuoteUnitPriceChanged,
+} from '../utils/quote-utils';
 import {
   isExpectedBackgroundError,
   isRequestCancelled,
@@ -14,6 +17,7 @@ import {
 } from './useQuoteValidationRequest';
 
 const VALIDATE_DEBOUNCE_MS = 300;
+const PRICE_UPDATED_NOTICE = 'Prices updated. Please review before paying.';
 
 interface UseQuoteEngineParams {
   items: CartStoredItem[];
@@ -30,8 +34,10 @@ export const useQuoteEngine = ({
 }: UseQuoteEngineParams) => {
   const [quote, setQuote] = useState<QuoteState | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteNotice, setQuoteNotice] = useState<string | null>(null);
 
   const debounceTimerRef = useRef<number | null>(null);
+  const lastValidatedQuoteRef = useRef<QuoteState | null>(null);
 
   const itemsSig = useMemo(() => cartSignature(items), [items]);
 
@@ -63,6 +69,13 @@ export const useQuoteEngine = ({
   }, []);
 
   const handleQuoteValidated = useCallback((validatedQuote: QuoteState) => {
+    if (
+      hasQuoteUnitPriceChanged(lastValidatedQuoteRef.current, validatedQuote)
+    ) {
+      setQuoteNotice(PRICE_UPDATED_NOTICE);
+    }
+
+    lastValidatedQuoteRef.current = validatedQuote;
     setQuote(validatedQuote);
     setQuoteError(null);
   }, []);
@@ -109,6 +122,7 @@ export const useQuoteEngine = ({
 
   useEffect(() => {
     setQuoteError(null);
+    setQuoteNotice(null);
   }, [itemsSig]);
 
   useEffect(() => {
@@ -117,6 +131,8 @@ export const useQuoteEngine = ({
     cancelQuoteRequest();
     clearQuote();
     clearDebounceTimer();
+    lastValidatedQuoteRef.current = null;
+    setQuoteNotice(null);
   }, [totalQuantity, cancelQuoteRequest, clearDebounceTimer, clearQuote]);
 
   useEffect(() => {
@@ -153,6 +169,7 @@ export const useQuoteEngine = ({
   return {
     quote,
     quoteError,
+    quoteNotice,
     quoteStale,
     quoteMismatch,
     estimatedTotalCents,

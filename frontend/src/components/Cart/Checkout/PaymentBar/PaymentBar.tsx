@@ -11,6 +11,7 @@ import { ApiError } from '../../../../api/request';
 import { HTTP_STATUS } from '../../../../api/http-status';
 import { hasPermission } from '../../../../types/permissions';
 import { createCheckoutAttemptKey } from '../../../../utils/idempotency';
+import { getQuoteErrorMessage } from '../../../../store/cart/utils/quote-error';
 
 interface PaymentBarProps {
   totalCents: number;
@@ -26,6 +27,9 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const items = useCartSelector((ctx) => ctx.items);
   const totalQuantity = useCartSelector((ctx) => ctx.totalQuantity);
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
+  const quoteMismatch = useCartSelector((ctx) => ctx.quoteMismatch);
+  const quoteNotice = useCartSelector((ctx) => ctx.quoteNotice);
+  const quoteStale = useCartSelector((ctx) => ctx.quoteStale);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
   const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
@@ -48,6 +52,11 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   };
 
   const canCreateOrder = hasPermission(user, 'create_order');
+  const isConfirmingPrice = quoteMismatch || quoteStale;
+  const helperText =
+    isAuthenticated && !canCreateOrder
+      ? STAFF_CHECKOUT_MESSAGE
+      : (quoteNotice ?? 'Secure checkout powered by Stripe');
 
   const handlePayClick = async () => {
     if (items.length === 0 || isPaying || isAuthLoading) return;
@@ -103,9 +112,11 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
           : '';
       const errorMessage = isMenuConflict
         ? `Some menu items have changed. Please review your cart before checkout.${requestId}`
-        : err instanceof Error
-          ? `${err.message}${requestId}`
-          : 'Could not place order';
+        : err instanceof ApiError
+          ? `${getQuoteErrorMessage(err)}${requestId}`
+          : err instanceof Error
+            ? `${err.message}${requestId}`
+            : 'Could not place order';
 
       setError(errorMessage);
       showToast({ message: errorMessage, tone: 'error' });
@@ -127,13 +138,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
           {error ?? message}
         </p>
       )}
-      {!error && !message && (
-        <p className={classes.HelperText}>
-          {isAuthenticated && !canCreateOrder
-            ? STAFF_CHECKOUT_MESSAGE
-            : 'Secure checkout powered by Stripe'}
-        </p>
-      )}
+      {!error && !message && <p className={classes.HelperText}>{helperText}</p>}
       <button
         className={classes.Button}
         type="button"
@@ -146,7 +151,11 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
         onClick={handlePayClick}
       >
         <span className={classes.ButtonText}>
-          {isPaying ? 'Redirecting...' : 'Pay with Stripe'}
+          {isPaying
+            ? 'Redirecting...'
+            : isConfirmingPrice
+              ? 'Confirming price...'
+              : 'Pay with Stripe'}
         </span>
       </button>
     </div>
