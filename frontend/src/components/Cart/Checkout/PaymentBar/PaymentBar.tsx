@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import classes from './PaymentBar.module.css';
 import BottomActionBar from '../../BottomActionBar/BottomActionBar';
+import CartSummary from '../../CartSummary/CartSummary';
 import { createCheckoutOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
-import { formatCurrency } from '../../../../utils/currency';
 import { ApiError } from '../../../../api/request';
 import { HTTP_STATUS } from '../../../../api/http-status';
 import { hasPermission } from '../../../../types/permissions';
@@ -114,14 +114,9 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     }
   };
 
-  const itemCountText = `${totalQuantity} ${
-    totalQuantity === 1 ? 'item' : 'items'
-  }`;
-
   const summary = (
     <div className={classes.Summary}>
-      <div className={classes.TotalPrice}>{formatCurrency(totalCents)}</div>
-      <div className={classes.ItemCount}>{itemCountText}</div>
+      <CartSummary totalQuantity={totalQuantity} totalCents={totalCents} />
     </div>
   );
 

@@ -25,7 +25,9 @@ const CartDetails = ({ open }: CartDetailsProps) => {
   useEffect(() => {
     if (!open) return;
     if (itemsLength === 0) return;
-    ensureQuote().catch(() => {});
+    void ensureQuote().catch(() => {
+      // ensureQuote updates quoteError for user-visible failures.
+    });
   }, [open, itemsLength, ensureQuote]);
 
   const menuItems = useMemo(() => {
@@ -40,7 +42,9 @@ const CartDetails = ({ open }: CartDetailsProps) => {
   const onOk = () => clearCart();
   const onCancel = () => setShowConfirm(false);
   const retryQuote = () => {
-    ensureQuote().catch(() => {});
+    void ensureQuote().catch(() => {
+      // ensureQuote updates quoteError for user-visible failures.
+    });
   };
 
   return (
