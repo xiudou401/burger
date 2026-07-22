@@ -104,7 +104,6 @@ export const useQuoteEngine = ({
     needsQuoteValidation,
     refreshMenuVersion,
     onQuoteValidated: handleQuoteValidated,
-    onMenuVersionConflict: clearQuote,
   });
 
   const ensureQuote = useCallback(async () => {

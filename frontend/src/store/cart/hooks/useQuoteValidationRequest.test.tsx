@@ -18,14 +18,12 @@ interface HarnessProps {
   menuVersion: number | null;
   itemsSig?: string;
   refreshMenuVersion?: (signal?: AbortSignal) => Promise<number>;
-  onMenuVersionConflict?: () => void;
 }
 
 const Harness = ({
   menuVersion,
   itemsSig = 'meal-1:1',
   refreshMenuVersion = async () => 2,
-  onMenuVersionConflict = () => {},
 }: HarnessProps) => {
   const { validateQuote } = useQuoteValidationRequest({
     items: [{ id: 'meal-1', quantity: 1 }],
@@ -34,7 +32,6 @@ const Harness = ({
     needsQuoteValidation: true,
     refreshMenuVersion,
     onQuoteValidated: () => {},
-    onMenuVersionConflict,
   });
 
   const validate = async () => {
@@ -72,33 +69,40 @@ test('rejects when the menu version is not available', async () => {
   expect(validateCart).not.toHaveBeenCalled();
 });
 
-test('refreshes after a version conflict but rejects the current validation', async () => {
+test('refreshes and retries after a menu version conflict', async () => {
   const refreshMenuVersion = jest.fn().mockResolvedValue(2);
-  const onMenuVersionConflict = jest.fn();
 
   jest
     .mocked(validateCart)
-    .mockRejectedValue(
+    .mockRejectedValueOnce(
       new ApiError(HTTP_STATUS.CONFLICT, { message: 'Menu updated' }),
-    );
+    )
+    .mockResolvedValueOnce({
+      menuVersion: 2,
+      items: [],
+      totalCents: 0,
+    });
 
-  render(
-    <Harness
-      menuVersion={1}
-      refreshMenuVersion={refreshMenuVersion}
-      onMenuVersionConflict={onMenuVersionConflict}
-    />,
-  );
+  render(<Harness menuVersion={1} refreshMenuVersion={refreshMenuVersion} />);
 
   fireEvent.click(screen.getByRole('button', { name: 'Validate' }));
 
   await waitFor(() => {
-    expect(document.body.dataset.quoteResult).toBe(
-      'The menu changed. Please validate your cart again.',
-    );
+    expect(document.body.dataset.quoteResult).toBe('resolved');
   });
   expect(refreshMenuVersion).toHaveBeenCalled();
-  expect(onMenuVersionConflict).toHaveBeenCalled();
+  expect(validateCart).toHaveBeenNthCalledWith(
+    1,
+    [{ id: 'meal-1', quantity: 1 }],
+    1,
+    expect.any(AbortSignal),
+  );
+  expect(validateCart).toHaveBeenNthCalledWith(
+    2,
+    [{ id: 'meal-1', quantity: 1 }],
+    2,
+    expect.any(AbortSignal),
+  );
 });
 
 test('does not treat a local cart change as a menu version conflict', async () => {
@@ -115,16 +119,11 @@ test('does not treat a local cart change as a menu version conflict', async () =
     resolveValidation = resolve;
   });
   const refreshMenuVersion = jest.fn().mockResolvedValue(2);
-  const onMenuVersionConflict = jest.fn();
 
   jest.mocked(validateCart).mockReturnValue(validation);
 
   const { rerender } = render(
-    <Harness
-      menuVersion={1}
-      refreshMenuVersion={refreshMenuVersion}
-      onMenuVersionConflict={onMenuVersionConflict}
-    />,
+    <Harness menuVersion={1} refreshMenuVersion={refreshMenuVersion} />,
   );
 
   fireEvent.click(screen.getByRole('button', { name: 'Validate' }));
@@ -133,7 +132,6 @@ test('does not treat a local cart change as a menu version conflict', async () =
       menuVersion={1}
       itemsSig="meal-1:2"
       refreshMenuVersion={refreshMenuVersion}
-      onMenuVersionConflict={onMenuVersionConflict}
     />,
   );
 
@@ -148,5 +146,4 @@ test('does not treat a local cart change as a menu version conflict', async () =
     );
   });
   expect(refreshMenuVersion).not.toHaveBeenCalled();
-  expect(onMenuVersionConflict).not.toHaveBeenCalled();
 });

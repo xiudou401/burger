@@ -22,7 +22,6 @@ interface UseQuoteValidationRequestParams {
   needsQuoteValidation: boolean;
   refreshMenuVersion: (signal?: AbortSignal) => Promise<number>;
   onQuoteValidated: (quote: QuoteState) => void;
-  onMenuVersionConflict: () => void;
 }
 
 export const useQuoteValidationRequest = ({
@@ -32,7 +31,6 @@ export const useQuoteValidationRequest = ({
   needsQuoteValidation,
   refreshMenuVersion,
   onQuoteValidated,
-  onMenuVersionConflict,
 }: UseQuoteValidationRequestParams) => {
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<InFlightEntry | null>(null);
@@ -105,13 +103,9 @@ export const useQuoteValidationRequest = ({
       }
     };
 
-    const validateSnapshot = async () => {
+    const validateSnapshot = async (version: number) => {
       try {
-        return await validateCart(
-          snapshotItems,
-          snapshotVersion,
-          controller.signal,
-        );
+        return await validateCart(snapshotItems, version, controller.signal);
       } catch (err: unknown) {
         if (
           controller.signal.aborted ||
@@ -130,13 +124,10 @@ export const useQuoteValidationRequest = ({
           throw err;
         }
 
-        await refreshMenuVersion(controller.signal);
+        const refreshedVersion = await refreshMenuVersion(controller.signal);
         assertRequestActive();
 
-        onMenuVersionConflict();
-        throw new ApiError(HTTP_STATUS.CONFLICT, {
-          message: 'The menu changed. Please validate your cart again.',
-        });
+        return validateCart(snapshotItems, refreshedVersion, controller.signal);
       }
     };
 
@@ -144,7 +135,7 @@ export const useQuoteValidationRequest = ({
 
     promise = (async () => {
       try {
-        const res = await validateSnapshot();
+        const res = await validateSnapshot(snapshotVersion);
         assertRequestActive();
 
         if (snapshotSig !== latestRef.current.itemsSig) {
@@ -173,7 +164,7 @@ export const useQuoteValidationRequest = ({
     };
 
     return promise;
-  }, [onMenuVersionConflict, onQuoteValidated, refreshMenuVersion]);
+  }, [onQuoteValidated, refreshMenuVersion]);
 
   useEffect(() => {
     return cancelQuoteRequest;
