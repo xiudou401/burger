@@ -57,7 +57,7 @@ export const validateCart = async (
     const menuItem = menuItemMap.get(item.id);
 
     if (!menuItem) {
-      throw new ServiceError('Menu item removed', 400);
+      throw new ServiceError('Menu item removed', 400, { itemId: item.id });
     }
 
     if (menuItem.isAvailable === false) {

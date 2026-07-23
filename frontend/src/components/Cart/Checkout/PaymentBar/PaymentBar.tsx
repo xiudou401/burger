@@ -27,6 +27,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const items = useCartSelector((ctx) => ctx.items);
   const totalQuantity = useCartSelector((ctx) => ctx.totalQuantity);
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
+  const quote = useCartSelector((ctx) => ctx.quote);
   const quoteMismatch = useCartSelector((ctx) => ctx.quoteMismatch);
   const quoteNotice = useCartSelector((ctx) => ctx.quoteNotice);
   const quoteStale = useCartSelector((ctx) => ctx.quoteStale);
@@ -113,7 +114,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
       const errorMessage = isMenuConflict
         ? `Some menu items have changed. Please review your cart before checkout.${requestId}`
         : err instanceof ApiError
-          ? `${getQuoteErrorMessage(err)}${requestId}`
+          ? `${getQuoteErrorMessage(err, quote)}${requestId}`
           : err instanceof Error
             ? `${err.message}${requestId}`
             : 'Could not place order';

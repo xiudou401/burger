@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { errorHandler } from './errorHandler';
+import { ServiceError } from '../errors/ServiceError';
 
 const mockRequest = (overrides: Partial<Request> = {}) =>
   ({
@@ -78,5 +79,29 @@ test('maps Mongo duplicate phone errors to a stable 409 response', () => {
     statusCode: 409,
     type: 'DuplicateKeyError',
     requestId: 'req-test-123',
+  });
+});
+
+test('includes service error details in operational responses', () => {
+  const res = mockResponse();
+
+  errorHandler(
+    new ServiceError('Menu item removed', 400, {
+      itemId: '64f1b2c3d4e5f67890123456',
+    }),
+    mockRequest(),
+    res,
+    jest.fn() as NextFunction,
+  );
+
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(res.json).toHaveBeenCalledWith({
+    message: 'Menu item removed',
+    statusCode: 400,
+    type: 'ServiceError',
+    requestId: 'req-test-123',
+    details: {
+      itemId: '64f1b2c3d4e5f67890123456',
+    },
   });
 });

@@ -118,11 +118,13 @@ export const useQuoteEngine = ({
       await validateQuote();
     } catch (error) {
       if (!isRequestCancelled(error)) {
-        setQuoteError(getQuoteErrorMessage(error));
+        setQuoteError(
+          getQuoteErrorMessage(error, lastValidatedQuoteRef.current ?? quote),
+        );
       }
       throw error;
     }
-  }, [validateQuote]);
+  }, [quote, validateQuote]);
 
   const refreshQuoteSilently = useCallback(async () => {
     try {
@@ -132,7 +134,9 @@ export const useQuoteEngine = ({
         error instanceof ApiError &&
         error.body.message === REMOVED_MENU_ITEM_MESSAGE
       ) {
-        setQuoteError(getQuoteErrorMessage(error));
+        setQuoteError(
+          getQuoteErrorMessage(error, lastValidatedQuoteRef.current ?? quote),
+        );
         return;
       }
 
@@ -143,7 +147,7 @@ export const useQuoteEngine = ({
         });
       }
     }
-  }, [validateQuote]);
+  }, [quote, validateQuote]);
 
   useEffect(() => {
     return clearDebounceTimer;

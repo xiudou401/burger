@@ -31,6 +31,7 @@ interface ErrorResponse {
   statusCode?: number;
   type?: string;
   requestId?: string;
+  details?: Record<string, unknown>;
 }
 
 export class ApiError extends Error {

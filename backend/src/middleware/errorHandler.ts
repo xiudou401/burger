@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { BaseError } from '../errors/BaseError';
+import { ServiceError } from '../errors/ServiceError';
 import { ValidationError } from '../errors/ValidationError';
 import { appLogger } from '../utils/logger';
 
@@ -101,6 +102,7 @@ export const errorHandler = (
       type: string;
       requestId: string;
       issues?: ValidationError['issues'];
+      details?: Record<string, unknown>;
     } = {
       message: err.isOperational ? err.message : 'Internal server error',
       statusCode: err.statusCode,
@@ -110,6 +112,10 @@ export const errorHandler = (
 
     if (err instanceof ValidationError) {
       body.issues = err.issues;
+    }
+
+    if (err instanceof ServiceError && err.details) {
+      body.details = err.details;
     }
 
     logError(err.statusCode, err.constructor.name, body.message);

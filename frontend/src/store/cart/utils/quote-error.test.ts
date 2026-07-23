@@ -1,6 +1,25 @@
 import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 import { getQuoteErrorMessage } from './quote-error';
+import type { Quote } from '../../../types/cart';
+
+const quote: Quote = {
+  menuVersion: 1,
+  ts: 1,
+  menuItems: [
+    {
+      id: 'burger',
+      name: 'Sydney Club Burger',
+      description: 'Club burger',
+      priceCents: 1500,
+      category: 'burger',
+      isAvailable: true,
+      quantity: 1,
+      subtotalCents: 1500,
+      image: '/img/burger.png',
+    },
+  ],
+};
 
 describe('getQuoteErrorMessage', () => {
   it.each([
@@ -33,6 +52,20 @@ describe('getQuoteErrorMessage', () => {
       getQuoteErrorMessage(new ApiError(400, { message: 'Menu item removed' })),
     ).toBe(
       'An item in your cart is no longer available. Please review your cart.',
+    );
+  });
+
+  it('uses the removed item name when the API returns the missing item id', () => {
+    expect(
+      getQuoteErrorMessage(
+        new ApiError(400, {
+          message: 'Menu item removed',
+          details: { itemId: 'burger' },
+        }),
+        quote,
+      ),
+    ).toBe(
+      'Sydney Club Burger is no longer available. Please remove it from your cart.',
     );
   });
 });
