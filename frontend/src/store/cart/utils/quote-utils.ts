@@ -1,5 +1,10 @@
 import type { CartStoredItem, Quote } from '../../../types/cart';
 
+export interface QuoteUnitPriceChange {
+  name: string;
+  priceCents: number;
+}
+
 export const calculateEstimatedTotalCents = (
   quote: Quote | null,
   items: CartStoredItem[],
@@ -14,7 +19,7 @@ export const calculateEstimatedTotalCents = (
   }, 0);
 };
 
-export const getQuoteUnitPriceChangeNames = (
+export const getQuoteUnitPriceChanges = (
   previousQuote: Quote | null,
   nextQuote: Quote,
 ) => {
@@ -30,7 +35,7 @@ export const getQuoteUnitPriceChangeNames = (
   return nextQuote.menuItems.flatMap((menuItem) => {
     const previousPrice = previousPriceById.get(menuItem.id);
     return previousPrice !== undefined && previousPrice !== menuItem.priceCents
-      ? [menuItem.name]
+      ? [{ name: menuItem.name, priceCents: menuItem.priceCents }]
       : [];
   });
 };

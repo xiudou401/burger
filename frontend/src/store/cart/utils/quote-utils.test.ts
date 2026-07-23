@@ -1,7 +1,7 @@
 import type { Quote } from '../../../types/cart';
 import {
   calculateEstimatedTotalCents,
-  getQuoteUnitPriceChangeNames,
+  getQuoteUnitPriceChanges,
 } from './quote-utils';
 
 const quote: Quote = {
@@ -56,14 +56,14 @@ describe('calculateEstimatedTotalCents', () => {
   });
 });
 
-describe('getQuoteUnitPriceChangeNames', () => {
+describe('getQuoteUnitPriceChanges', () => {
   it('returns an empty list without a previous quote', () => {
-    expect(getQuoteUnitPriceChangeNames(null, quote)).toEqual([]);
+    expect(getQuoteUnitPriceChanges(null, quote)).toEqual([]);
   });
 
-  it('returns changed item names when existing quoted items change price', () => {
+  it('returns changed items with their new prices', () => {
     expect(
-      getQuoteUnitPriceChangeNames(quote, {
+      getQuoteUnitPriceChanges(quote, {
         ...quote,
         menuItems: quote.menuItems.map((menuItem) =>
           menuItem.id === 'burger' || menuItem.id === 'fries'
@@ -71,12 +71,15 @@ describe('getQuoteUnitPriceChangeNames', () => {
             : menuItem,
         ),
       }),
-    ).toEqual(['Classic Burger', 'Fries']);
+    ).toEqual([
+      { name: 'Classic Burger', priceCents: 1300 },
+      { name: 'Fries', priceCents: 600 },
+    ]);
   });
 
   it('returns an empty list when only quantities change', () => {
     expect(
-      getQuoteUnitPriceChangeNames(quote, {
+      getQuoteUnitPriceChanges(quote, {
         ...quote,
         menuItems: quote.menuItems.map((menuItem) => ({
           ...menuItem,
@@ -88,7 +91,7 @@ describe('getQuoteUnitPriceChangeNames', () => {
 
   it('ignores new items that were not in the previous quote', () => {
     expect(
-      getQuoteUnitPriceChangeNames(quote, {
+      getQuoteUnitPriceChanges(quote, {
         ...quote,
         menuItems: [
           ...quote.menuItems,
