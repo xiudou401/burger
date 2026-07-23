@@ -23,6 +23,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
   const {
     quote,
     quoteError,
+    quoteErrorAction,
     quoteNotice,
     quoteStale,
     quoteMismatch,
@@ -43,6 +44,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       menuVersion,
       quote,
       quoteError,
+      quoteErrorAction,
       quoteNotice,
       quoteStale,
       quoteMismatch,
@@ -56,6 +58,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       menuVersion,
       quote,
       quoteError,
+      quoteErrorAction,
       quoteNotice,
       quoteStale,
       quoteMismatch,

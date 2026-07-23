@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CartStoredItem } from '../../../types/cart';
+import type { CartStoredItem, QuoteErrorAction } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
-import { getQuoteErrorMessage } from '../utils/quote-error';
+import { getQuoteErrorMessage, getRemovedItemId } from '../utils/quote-error';
 import {
   calculateEstimatedTotalCents,
   getQuoteUnitPriceChanges,
@@ -54,6 +54,8 @@ export const useQuoteEngine = ({
 }: UseQuoteEngineParams) => {
   const [quote, setQuote] = useState<QuoteState | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteErrorAction, setQuoteErrorAction] =
+    useState<QuoteErrorAction | null>(null);
   const [quoteNotice, setQuoteNotice] = useState<string | null>(null);
 
   const debounceTimerRef = useRef<number | null>(null);
@@ -86,6 +88,7 @@ export const useQuoteEngine = ({
   const clearQuote = useCallback(() => {
     setQuote(null);
     setQuoteError(null);
+    setQuoteErrorAction(null);
   }, []);
 
   const handleQuoteValidated = useCallback((validatedQuote: QuoteState) => {
@@ -100,7 +103,27 @@ export const useQuoteEngine = ({
     lastValidatedQuoteRef.current = validatedQuote;
     setQuote(validatedQuote);
     setQuoteError(null);
+    setQuoteErrorAction(null);
   }, []);
+
+  const setQuoteValidationError = useCallback(
+    (error: unknown) => {
+      setQuoteError(
+        getQuoteErrorMessage(error, lastValidatedQuoteRef.current ?? quote),
+      );
+
+      const removedItemId = getRemovedItemId(error);
+      setQuoteErrorAction(
+        removedItemId
+          ? {
+              type: 'removeItem',
+              itemId: removedItemId,
+            }
+          : null,
+      );
+    },
+    [quote],
+  );
 
   const { validateQuote, cancelQuoteRequest } = useQuoteValidationRequest({
     items,
@@ -118,13 +141,11 @@ export const useQuoteEngine = ({
       await validateQuote();
     } catch (error) {
       if (!isRequestCancelled(error)) {
-        setQuoteError(
-          getQuoteErrorMessage(error, lastValidatedQuoteRef.current ?? quote),
-        );
+        setQuoteValidationError(error);
       }
       throw error;
     }
-  }, [quote, validateQuote]);
+  }, [setQuoteValidationError, validateQuote]);
 
   const refreshQuoteSilently = useCallback(async () => {
     try {
@@ -134,9 +155,7 @@ export const useQuoteEngine = ({
         error instanceof ApiError &&
         error.body.message === REMOVED_MENU_ITEM_MESSAGE
       ) {
-        setQuoteError(
-          getQuoteErrorMessage(error, lastValidatedQuoteRef.current ?? quote),
-        );
+        setQuoteValidationError(error);
         return;
       }
 
@@ -147,7 +166,7 @@ export const useQuoteEngine = ({
         });
       }
     }
-  }, [quote, validateQuote]);
+  }, [setQuoteValidationError, validateQuote]);
 
   useEffect(() => {
     return clearDebounceTimer;
@@ -165,6 +184,7 @@ export const useQuoteEngine = ({
     clearDebounceTimer();
     lastValidatedQuoteRef.current = null;
     setQuoteNotice(null);
+    setQuoteErrorAction(null);
   }, [totalQuantity, cancelQuoteRequest, clearDebounceTimer, clearQuote]);
 
   useEffect(() => {
@@ -201,6 +221,7 @@ export const useQuoteEngine = ({
   return {
     quote,
     quoteError,
+    quoteErrorAction,
     quoteNotice,
     quoteStale,
     quoteMismatch,

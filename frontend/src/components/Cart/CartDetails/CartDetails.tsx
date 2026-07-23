@@ -13,11 +13,12 @@ interface CartDetailsProps {
 }
 
 const CartDetails = ({ open }: CartDetailsProps) => {
-  const { clearCart } = useCartActions();
+  const { clearCart, deleteItem } = useCartActions();
 
   const itemsLength = useCartSelector((ctx) => ctx.items.length);
   const quote = useCartSelector((ctx) => ctx.quote);
   const quoteError = useCartSelector((ctx) => ctx.quoteError);
+  const quoteErrorAction = useCartSelector((ctx) => ctx.quoteErrorAction);
   const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
 
   const [showConfirm, setShowConfirm] = useState(false);
@@ -45,6 +46,14 @@ const CartDetails = ({ open }: CartDetailsProps) => {
     void ensureQuote().catch(() => {
       // ensureQuote updates quoteError for user-visible failures.
     });
+  };
+  const handleQuoteErrorAction = () => {
+    if (quoteErrorAction?.type === 'removeItem') {
+      deleteItem(quoteErrorAction.itemId);
+      return;
+    }
+
+    retryQuote();
   };
 
   return (
@@ -74,8 +83,10 @@ const CartDetails = ({ open }: CartDetailsProps) => {
           {quoteError && (
             <div className={classes.ErrorStatus} role="alert">
               <p>{quoteError}</p>
-              <button type="button" onClick={retryQuote}>
-                Retry
+              <button type="button" onClick={handleQuoteErrorAction}>
+                {quoteErrorAction?.type === 'removeItem'
+                  ? 'Remove item'
+                  : 'Retry'}
               </button>
             </div>
           )}

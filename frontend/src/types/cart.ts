@@ -22,6 +22,11 @@ export interface Quote {
   ts: number;
 }
 
+export type QuoteErrorAction = {
+  type: 'removeItem';
+  itemId: string;
+};
+
 export const CART_ACTIONS = {
   ADD_ITEM: 'ADD_ITEM',
   REMOVE_ITEM: 'REMOVE_ITEM',
@@ -41,6 +46,7 @@ export interface CartContextValue extends CartState {
   menuVersion: number | null;
   quote: Quote | null;
   quoteError: string | null;
+  quoteErrorAction: QuoteErrorAction | null;
   quoteNotice: string | null;
   quoteStale: boolean;
   quoteMismatch: boolean;

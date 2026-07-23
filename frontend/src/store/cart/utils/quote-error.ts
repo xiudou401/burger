@@ -2,10 +2,19 @@ import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 import type { Quote } from '../../../types/cart';
 
-const getRemovedItemName = (error: ApiError, quote?: Quote | null) => {
+export const getRemovedItemId = (error: unknown) => {
+  if (!(error instanceof ApiError)) return null;
+  if (error.body.message !== 'Menu item removed') return null;
+
   const itemId = error.body.details?.itemId;
 
-  if (typeof itemId !== 'string') return null;
+  return typeof itemId === 'string' ? itemId : null;
+};
+
+const getRemovedItemName = (error: ApiError, quote?: Quote | null) => {
+  const itemId = getRemovedItemId(error);
+
+  if (!itemId) return null;
 
   return quote?.menuItems.find((menuItem) => menuItem.id === itemId)?.name;
 };

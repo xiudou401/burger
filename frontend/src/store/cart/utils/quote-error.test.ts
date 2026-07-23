@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
-import { getQuoteErrorMessage } from './quote-error';
+import { getQuoteErrorMessage, getRemovedItemId } from './quote-error';
 import type { Quote } from '../../../types/cart';
 
 const quote: Quote = {
@@ -67,5 +67,24 @@ describe('getQuoteErrorMessage', () => {
     ).toBe(
       'Sydney Club Burger is no longer available. Please remove it from your cart.',
     );
+  });
+});
+
+describe('getRemovedItemId', () => {
+  it('returns the removed item id from structured API details', () => {
+    expect(
+      getRemovedItemId(
+        new ApiError(400, {
+          message: 'Menu item removed',
+          details: { itemId: 'burger' },
+        }),
+      ),
+    ).toBe('burger');
+  });
+
+  it('returns null for other errors', () => {
+    expect(
+      getRemovedItemId(new ApiError(400, { message: 'Invalid cart' })),
+    ).toBeNull();
   });
 });
