@@ -96,9 +96,7 @@ export const useQuoteEngine = ({
       getQuoteUnitPriceChanges(lastValidatedQuoteRef.current, validatedQuote),
     );
 
-    if (priceChangeNotice) {
-      setQuoteNotice(priceChangeNotice);
-    }
+    setQuoteNotice(priceChangeNotice);
 
     lastValidatedQuoteRef.current = validatedQuote;
     setQuote(validatedQuote);
