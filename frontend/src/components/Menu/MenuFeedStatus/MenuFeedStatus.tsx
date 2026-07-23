@@ -1,8 +1,6 @@
 import classes from './MenuFeedStatus.module.css';
 
 interface MenuFeedStatusProps {
-  hasMore: boolean;
-  hasMenuItems: boolean;
   isLoading: boolean;
   error: string | null;
   hasMenuUpdate: boolean;
@@ -11,8 +9,6 @@ interface MenuFeedStatusProps {
 }
 
 const MenuFeedStatus = ({
-  hasMore,
-  hasMenuItems,
   isLoading,
   error,
   hasMenuUpdate,
@@ -51,14 +47,6 @@ const MenuFeedStatus = ({
       >
         Menu changed. Refresh menu.
       </button>
-    );
-  }
-
-  if (!hasMore && hasMenuItems) {
-    return (
-      <div className={classes.EndStatus} role="status">
-        You have reached the end of today's menu.
-      </div>
     );
   }
 

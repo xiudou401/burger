@@ -8,6 +8,7 @@ import {
   type QuoteUnitPriceChange,
 } from '../utils/quote-utils';
 import { formatCurrency } from '../../../utils/currency';
+import { ApiError } from '../../../api/request';
 import {
   isExpectedBackgroundError,
   isRequestCancelled,
@@ -19,6 +20,7 @@ import {
 } from './useQuoteValidationRequest';
 
 const VALIDATE_DEBOUNCE_MS = 300;
+const REMOVED_MENU_ITEM_MESSAGE = 'Menu item removed';
 
 const getPriceUpdatedNotice = (priceChanges: QuoteUnitPriceChange[]) => {
   if (priceChanges.length === 0) return null;
@@ -126,6 +128,14 @@ export const useQuoteEngine = ({
     try {
       await validateQuote();
     } catch (error) {
+      if (
+        error instanceof ApiError &&
+        error.body.message === REMOVED_MENU_ITEM_MESSAGE
+      ) {
+        setQuoteError(getQuoteErrorMessage(error));
+        return;
+      }
+
       if (!isExpectedBackgroundError(error)) {
         reportError(error, {
           source: 'quote-engine',

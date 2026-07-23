@@ -35,7 +35,6 @@ const Home = () => {
     menuItems,
     isLoading,
     error,
-    hasMore,
     listRef,
     sentinelRef,
     onSearch,
@@ -131,8 +130,6 @@ const Home = () => {
       />
 
       <MenuFeedStatus
-        hasMore={hasMore}
-        hasMenuItems={menuItems.length > 0}
         isLoading={isLoading}
         error={error}
         hasMenuUpdate={showMenuRefreshFallback}
