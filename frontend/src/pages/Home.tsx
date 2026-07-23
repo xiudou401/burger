@@ -30,6 +30,7 @@ const CATEGORY_FILTERS = [
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [showMenuRefreshFallback, setShowMenuRefreshFallback] = useState(false);
   const {
     menuItems,
     isLoading,
@@ -52,14 +53,41 @@ const Home = () => {
 
     if (refreshed) {
       acknowledgeMenuUpdate();
+      setShowMenuRefreshFallback(false);
+    } else {
+      setShowMenuRefreshFallback(true);
     }
   }, [acknowledgeMenuUpdate, reload]);
 
   useEffect(() => {
-    if (!hasMenuUpdate) return;
+    if (!hasMenuUpdate) {
+      setShowMenuRefreshFallback(false);
+      return;
+    }
 
-    void refreshMenu();
-  }, [hasMenuUpdate, refreshMenu]);
+    let cancelled = false;
+
+    setShowMenuRefreshFallback(false);
+
+    const refreshChangedMenu = async () => {
+      const refreshed = await reload();
+
+      if (cancelled) return;
+
+      if (refreshed) {
+        acknowledgeMenuUpdate();
+        setShowMenuRefreshFallback(false);
+      } else {
+        setShowMenuRefreshFallback(true);
+      }
+    };
+
+    void refreshChangedMenu();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [acknowledgeMenuUpdate, hasMenuUpdate, reload]);
 
   const searchMenu = (query: string) => {
     setActiveCategory(query.trim() ? '' : 'all');
@@ -107,7 +135,7 @@ const Home = () => {
         hasMenuItems={menuItems.length > 0}
         isLoading={isLoading}
         error={error}
-        hasMenuUpdate={hasMenuUpdate}
+        hasMenuUpdate={showMenuRefreshFallback}
         onRefreshMenu={refreshMenu}
         onRetry={retry}
       />

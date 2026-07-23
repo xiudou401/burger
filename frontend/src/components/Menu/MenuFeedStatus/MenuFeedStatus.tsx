@@ -49,7 +49,7 @@ const MenuFeedStatus = ({
         onClick={onRefreshMenu}
         aria-live="polite"
       >
-        Menu updated. Refresh for the latest items.
+        Menu changed. Refresh menu.
       </button>
     );
   }
