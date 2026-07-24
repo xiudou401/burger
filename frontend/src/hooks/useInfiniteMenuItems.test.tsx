@@ -177,7 +177,7 @@ describe('useInfiniteMenuItems', () => {
       initialLoad.reject(new Error('Network down'));
     });
 
-    await screen.findByText('Could not load the menu. Tap to retry.');
+    await screen.findByText('Could not load the menu. Retry.');
 
     fireEvent.click(screen.getByText('Retry'));
 
@@ -224,7 +224,7 @@ describe('useInfiniteMenuItems', () => {
     });
 
     await expect(reloadPromise).resolves.toBe(false);
-    await screen.findByText('Could not load the menu. Tap to retry.');
+    await screen.findByText('Could not load the menu. Retry.');
     consoleErrorSpy.mockRestore();
   });
 

@@ -148,7 +148,7 @@ export const useInfiniteMenuItems = ({
           if (requestId !== requestIdRef.current) return false;
 
           console.error('Menu load failed', error);
-          setError('Could not load the menu. Tap to retry.');
+          setError('Could not load the menu. Retry.');
           settledLoadRef.current = { key, result: false };
           return false;
         } finally {
