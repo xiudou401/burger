@@ -2,13 +2,12 @@ import React, { useMemo, useRef } from 'react';
 import classes from './CheckoutDialog.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
-import CheckoutItem from './CheckoutItem/CheckoutItem';
 import PaymentBar from './PaymentBar/PaymentBar';
 import type { CartMenuItem } from '../../../types/cart';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
-import { formatCurrency } from '../../../utils/currency';
 import { useDialogA11y } from '../../../hooks/useDialogA11y';
 import Backdrop from '../../UI/Backdrop/Backdrop';
+import CartLineItem from '../CartLineItem/CartLineItem';
 
 interface CheckoutDialogProps {
   onClose: () => void;
@@ -65,18 +64,15 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
 
           <div className={classes.ItemList}>
             {visibleMenuItems.map((menuItem) => (
-              <CheckoutItem key={menuItem.id} menuItem={menuItem} />
+              <CartLineItem key={menuItem.id} menuItem={menuItem} />
             ))}
           </div>
 
-          <footer className={classes.Footer}>
-            {quoteNotice && (
+          {quoteNotice && (
+            <footer className={classes.Footer}>
               <p className={classes.PriceNotice}>{quoteNotice}</p>
-            )}
-            <p className={classes.TotalPrice}>
-              Total {formatCurrency(estimatedTotalCents)}
-            </p>
-          </footer>
+            </footer>
+          )}
         </div>
 
         <PaymentBar

@@ -133,6 +133,8 @@ export const useProfilePage = () => {
   );
 
   useEffect(() => {
+    mountedRef.current = true;
+
     return () => {
       mountedRef.current = false;
     };

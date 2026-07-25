@@ -1,12 +1,12 @@
 import React, { MouseEvent, useEffect, useMemo, useState } from 'react';
 import classes from './CartDetails.module.css';
 import Backdrop from '../../UI/Backdrop/Backdrop';
-import MenuItemCard from '../../MenuItems/MenuItemCard/MenuItemCard';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
 import { useCartActions } from '../../../store/cart/hooks/useCartActions';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
+import CartLineItem from '../CartLineItem/CartLineItem';
 
 interface CartDetailsProps {
   open: boolean;
@@ -92,12 +92,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
           )}
 
           {menuItems.map((menuItem) => (
-            <MenuItemCard
-              key={menuItem.id}
-              menuItem={menuItem}
-              noDesc
-              variant="compact"
-            />
+            <CartLineItem key={menuItem.id} menuItem={menuItem} />
           ))}
 
           {quote && menuItems.length === 0 && (

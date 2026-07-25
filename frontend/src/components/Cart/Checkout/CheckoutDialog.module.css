@@ -43,15 +43,15 @@
   overflow: auto;
   background-color: #fffaf1;
   border-radius: 8rem;
-  padding: 0 22rem;
+  padding: 0 22rem 20rem;
   box-shadow: 0 20rem 60rem rgba(0, 0, 0, 0.22);
 }
 
 .Header {
   display: flex;
   border-bottom: 1rem solid #eadfce;
-  height: 90rem;
-  align-items: flex-end;
+  align-items: center;
+  padding: 22rem 0 16rem;
 }
 
 .Title {
@@ -69,21 +69,18 @@
 .ItemList {
   display: grid;
   gap: 12rem;
-  padding: 18rem 0;
+  padding: 16rem 0 0;
 }
 
 .Footer {
   position: relative;
-  min-height: 112rem;
   border-top: 1rem #eadfce dashed;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8rem;
+  align-items: flex-end;
+  justify-content: center;
   font-weight: bold;
-  font-size: 28rem;
-  padding: 18rem 0;
+  padding: 14rem 0 18rem;
 }
 
 .Footer::before,
@@ -101,12 +98,6 @@
 .Footer::after {
   left: auto;
   right: -30rem;
-}
-
-.TotalPrice {
-  margin: 0;
-  color: #202020;
-  font-weight: bold;
 }
 
 .PriceNotice {
@@ -147,18 +138,8 @@
     margin: 8rem auto 78rem;
   }
 
-  .Header {
-    height: 64rem;
-  }
-
   .Title {
     font-size: 24rem;
-  }
-
-  .Footer {
-    min-height: 64rem;
-    font-size: 20rem;
-    padding: 12rem 0;
   }
 
   .PriceNotice {
