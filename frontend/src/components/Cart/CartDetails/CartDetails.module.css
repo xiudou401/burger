@@ -12,8 +12,8 @@
   padding-bottom: 120rem;
   border: 1rem solid #eadfce;
   border-bottom: 0;
-  border-top-left-radius: 20rem;
-  border-top-right-radius: 20rem;
+  border-top-left-radius: 8rem;
+  border-top-right-radius: 8rem;
   box-shadow: 0 -12rem 34rem rgba(58, 36, 10, 0.12);
 }
 
@@ -128,8 +128,6 @@
 @media (max-width: 560px) {
   .CartDetails {
     width: 100vw;
-    border-top-left-radius: 16rem;
-    border-top-right-radius: 16rem;
   }
 
   .MenuItemList {

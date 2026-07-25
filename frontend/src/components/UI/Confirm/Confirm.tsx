@@ -4,25 +4,43 @@ import Backdrop from '../Backdrop/Backdrop';
 
 interface ConfirmProps {
   confirmText: string;
+  cancelLabel?: string;
+  okLabel?: string;
   onCancel: () => void;
   onOk: () => void;
 }
 
-const Confirm = ({ confirmText, onCancel, onOk }: ConfirmProps) => {
+const Confirm = ({
+  confirmText,
+  cancelLabel = 'Cancel',
+  okLabel = 'Ok',
+  onCancel,
+  onOk,
+}: ConfirmProps) => {
   const cancelHandler = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onCancel();
   };
+
+  const okHandler = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onOk();
+  };
+
   return (
     <Backdrop className={classes.ConfirmOuter}>
       <div className={classes.Confirm}>
         <p className={classes.ConfirmText}>{confirmText}</p>
-        <div>
-          <button className={classes.Cancel} onClick={cancelHandler}>
-            Cancel
+        <div className={classes.Actions}>
+          <button
+            type="button"
+            className={classes.Cancel}
+            onClick={cancelHandler}
+          >
+            {cancelLabel}
           </button>
-          <button className={classes.Ok} onClick={onOk}>
-            Ok
+          <button type="button" className={classes.Ok} onClick={okHandler}>
+            {okLabel}
           </button>
         </div>
       </div>

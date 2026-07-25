@@ -60,7 +60,13 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
   return (
     <Backdrop>
       {showConfirm && (
-        <Confirm confirmText="Are you sure?" onCancel={onCancel} onOk={onOk} />
+        <Confirm
+          confirmText="Clear all items from your cart?"
+          cancelLabel="Keep cart"
+          okLabel="Clear cart"
+          onCancel={onCancel}
+          onOk={onOk}
+        />
       )}
 
       <div

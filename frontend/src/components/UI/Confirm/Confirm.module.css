@@ -1,40 +1,95 @@
-/* .ConfirmOuter {
-  z-index: 9999;
-} */
+.ConfirmOuter {
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24rem;
+  background-color: rgba(18, 18, 18, 0.42);
+}
 
 .Confirm {
-  position: absolute;
-  width: 700rem;
-  height: 300rem;
-  border-radius: 20px;
-  background-color: #fff;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  margin: auto;
+  width: min(520rem, 100%);
+  border: 1rem solid #eadfce;
+  border-radius: 8rem;
+  background-color: #fffaf1;
+  box-shadow: 0 20rem 60rem rgba(58, 36, 10, 0.22);
+  padding: 28rem;
   display: flex;
-  flex-flow: column;
-  justify-content: space-evenly;
-  align-items: center;
+  flex-direction: column;
+  gap: 24rem;
 }
 
 .ConfirmText {
-  font-size: 38rem;
+  margin: 0;
+  color: #202020;
+  font-size: 28rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.Actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12rem;
 }
 
 .Cancel,
 .Ok {
-  border: 1px solid #ccc;
+  min-height: 44rem;
+  border-radius: 8rem;
+  padding: 0 18rem;
+  font-size: 16rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.Cancel {
+  border: 1rem solid #eadfce;
   background-color: #fff;
-  width: 180rem;
-  height: 60rem;
-  border-radius: 20px;
-  font-size: 28rem;
+  color: #202020;
 }
 
 .Ok {
-  background-color: #fcbf49;
-  border: none;
-  margin-left: 50rem;
+  border: 0;
+  background-color: #bd0017;
+  color: #fff;
+}
+
+.Cancel:hover {
+  background-color: #fff6e3;
+}
+
+.Ok:hover {
+  background-color: #9f0014;
+}
+
+.Cancel:focus-visible,
+.Ok:focus-visible {
+  outline: 3rem solid #ffc72c;
+  outline-offset: 3rem;
+}
+
+@media (max-width: 560px) {
+  .ConfirmOuter {
+    align-items: end;
+    padding: 0;
+  }
+
+  .Confirm {
+    width: 100%;
+    border-radius: 16rem 16rem 0 0;
+    padding: 22rem;
+  }
+
+  .ConfirmText {
+    font-size: 24rem;
+  }
+
+  .Actions {
+    flex-direction: column-reverse;
+  }
+
+  .Cancel,
+  .Ok {
+    width: 100%;
+  }
 }
