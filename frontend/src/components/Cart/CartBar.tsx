@@ -66,6 +66,10 @@ const CartBar = () => {
     setShowCheckout(false);
   };
 
+  const closeCartDetails = () => {
+    setShowCartDetails(false);
+  };
+
   useEffect(() => {
     if (totalQuantity === 0) {
       setShowCheckout(false);
@@ -106,7 +110,9 @@ const CartBar = () => {
 
   return (
     <>
-      {showCartDetails && <CartDetails open={showCartDetails} />}
+      {showCartDetails && (
+        <CartDetails open={showCartDetails} onClose={closeCartDetails} />
+      )}
 
       {showCheckout && quote && (
         <CheckoutDialog onClose={closeCheckout} menuItems={quote.menuItems} />

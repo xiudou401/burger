@@ -45,21 +45,21 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
         tabIndex={-1}
         onKeyDown={handleDialogKeyDown}
       >
-        <button
-          ref={closeButtonRef}
-          type="button"
-          className={classes.Close}
-          aria-label="Close checkout"
-          onClick={handleClose}
-        >
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
-
         <div className={classes.OrderSummary}>
           <header className={classes.Header}>
             <h2 id="checkout-title" className={classes.Title}>
               Order Details
             </h2>
+
+            <button
+              ref={closeButtonRef}
+              type="button"
+              className={classes.Close}
+              aria-label="Close checkout"
+              onClick={handleClose}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
           </header>
 
           <div className={classes.ItemList}>

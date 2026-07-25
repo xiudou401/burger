@@ -2,7 +2,7 @@ import React, { MouseEvent, useEffect, useMemo, useState } from 'react';
 import classes from './CartDetails.module.css';
 import Backdrop from '../../UI/Backdrop/Backdrop';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
 import Confirm from '../../UI/Confirm/Confirm';
 import { useCartActions } from '../../../store/cart/hooks/useCartActions';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
@@ -10,9 +10,10 @@ import CartLineItem from '../CartLineItem/CartLineItem';
 
 interface CartDetailsProps {
   open: boolean;
+  onClose: () => void;
 }
 
-const CartDetails = ({ open }: CartDetailsProps) => {
+const CartDetails = ({ open, onClose }: CartDetailsProps) => {
   const { clearCart, deleteItem } = useCartActions();
 
   const itemsLength = useCartSelector((ctx) => ctx.items.length);
@@ -35,7 +36,7 @@ const CartDetails = ({ open }: CartDetailsProps) => {
     return quote?.menuItems ?? [];
   }, [quote]);
 
-  const handleClearCart = (e: MouseEvent<HTMLDivElement>) => {
+  const handleClearCart = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     setShowConfirm(true);
   };
@@ -69,9 +70,27 @@ const CartDetails = ({ open }: CartDetailsProps) => {
       >
         <header className={classes.Header}>
           <h2 className={classes.Title}>Cart details</h2>
-          <div className={classes.Clear} onClick={handleClearCart}>
-            <FontAwesomeIcon icon={faTrash} />
-            <span>Clear cart</span>
+
+          <div className={classes.HeaderActions}>
+            <button
+              type="button"
+              className={classes.Clear}
+              onClick={handleClearCart}
+            >
+              <FontAwesomeIcon icon={faTrash} />
+              <span>Clear cart</span>
+            </button>
+
+            <span className={classes.ActionDivider} aria-hidden="true" />
+
+            <button
+              type="button"
+              className={classes.Close}
+              aria-label="Close cart details"
+              onClick={onClose}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
           </div>
         </header>
 

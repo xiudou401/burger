@@ -19,7 +19,9 @@
 
 .Header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 18rem;
   padding: 30rem;
 }
 
@@ -29,13 +31,57 @@
   margin: 0;
 }
 
+.HeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 14rem;
+}
+
+.ActionDivider {
+  width: 1rem;
+  height: 28rem;
+  background: #eadfce;
+}
+
+.Clear,
+.Close {
+  border: 0;
+  cursor: pointer;
+}
+
 .Clear {
-  color: #aaa;
+  display: inline-flex;
+  align-items: center;
+  color: #8f1d14;
+  background: transparent;
   font-size: 24rem;
+  font-weight: 700;
+}
+
+.Clear:hover {
+  color: #bd0017;
 }
 
 .Clear span {
   margin-left: 12rem;
+}
+
+.Close {
+  width: 42rem;
+  height: 42rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #202020;
+  font-size: 22rem;
+  box-shadow: 0 8rem 18rem rgba(58, 36, 10, 0.12);
+}
+
+.Clear:focus-visible,
+.Close:focus-visible {
+  outline: 3rem solid #ffc72c;
+  outline-offset: 3rem;
 }
 
 .MenuItemList {
@@ -107,6 +153,12 @@
 
   .Clear {
     font-size: 20rem;
+  }
+
+  .Close {
+    width: 36rem;
+    height: 36rem;
+    font-size: 18rem;
   }
 
   .MenuItemList {
