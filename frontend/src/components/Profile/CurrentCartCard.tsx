@@ -34,7 +34,11 @@ const CurrentCartCard = ({
 
       {hasCartItems ? (
         <div className={classes.Actions}>
-          <Link className={classes.PrimaryAction} to="/">
+          <Link
+            className={classes.PrimaryAction}
+            to="/"
+            state={{ openCart: true }}
+          >
             Review cart
           </Link>
         </div>

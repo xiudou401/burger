@@ -1,4 +1,5 @@
 import React, { MouseEvent, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import classes from './CartBar.module.css';
 
@@ -19,6 +20,8 @@ import {
 } from '../../store/cart/context-accessors';
 
 const CartBar = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const totalQuantity = useCartSelector(getTotalQuantity);
 
   const quote = useCartSelector(getQuote);
@@ -79,6 +82,18 @@ const CartBar = () => {
       clearQuote();
     }
   }, [totalQuantity, clearQuote]);
+
+  useEffect(() => {
+    const state = location.state as { openCart?: boolean } | null;
+
+    if (!state?.openCart) return;
+
+    if (totalQuantity > 0) {
+      setShowCartDetails(true);
+    }
+
+    navigate(location.pathname, { replace: true });
+  }, [location.pathname, location.state, navigate, totalQuantity]);
 
   const cartSummary = (
     <button

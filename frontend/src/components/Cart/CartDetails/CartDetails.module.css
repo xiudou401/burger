@@ -22,6 +22,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 18rem;
+  border-bottom: 1rem solid #eadfce;
   padding: 30rem;
 }
 
@@ -108,7 +109,7 @@
 .ErrorStatus button {
   padding: 10rem 18rem;
   border: 0;
-  border-radius: 6rem;
+  border-radius: 8rem;
   background: #bd0017;
   color: #fff;
   font: inherit;
