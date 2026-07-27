@@ -106,6 +106,14 @@
   color: #202020;
 }
 
+.AdminAccountBar {
+  position: static;
+  box-sizing: border-box;
+  height: 124rem;
+  gap: 24rem;
+  padding: 24rem 28rem 8rem;
+}
+
 @media (max-width: 560px) {
   .AccountBar {
     padding: 0 18rem;
@@ -128,6 +136,14 @@
   }
 }
 
+@media (max-width: 760px) {
+  .AdminAccountBar {
+    height: 116rem;
+    gap: 12rem;
+    padding: 22rem 22rem 8rem;
+  }
+}
+
 @media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
   .HeroAccountBar {
     height: 62rem;
@@ -141,5 +157,18 @@
 
   .HeroAccountBar .BrandText {
     font-size: 20rem;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1359px) {
+  .AdminAccountBar {
+    padding-inline: 40rem;
+  }
+}
+
+@media (min-width: 1360px) {
+  .AdminAccountBar {
+    height: 120rem;
+    padding: 20rem 40rem 8rem;
   }
 }

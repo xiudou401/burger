@@ -81,13 +81,13 @@ export const useQuoteValidationRequest = ({
     }
 
     const key = buildQuoteKey(latestItemsSig, latestMenuVersion);
-    const currentInFlight = inFlightRef.current;
+    const activeRequest = inFlightRef.current;
 
-    if (currentInFlight?.key === key) {
-      return currentInFlight.promise;
+    if (activeRequest?.key === key) {
+      return activeRequest.promise;
     }
 
-    currentInFlight?.controller.abort();
+    activeRequest?.controller.abort();
 
     const controller = new AbortController();
     const requestId = ++requestIdRef.current;
@@ -103,9 +103,15 @@ export const useQuoteValidationRequest = ({
       }
     };
 
-    const validateSnapshot = async (version: number) => {
+    const validateCartSnapshotWithMenuRefresh = async (
+      menuVersionToValidate: number,
+    ) => {
       try {
-        return await validateCart(snapshotItems, version, controller.signal);
+        return await validateCart(
+          snapshotItems,
+          menuVersionToValidate,
+          controller.signal,
+        );
       } catch (err: unknown) {
         if (
           controller.signal.aborted ||
@@ -135,7 +141,7 @@ export const useQuoteValidationRequest = ({
 
     promise = (async () => {
       try {
-        const res = await validateSnapshot(snapshotVersion);
+        const res = await validateCartSnapshotWithMenuRefresh(snapshotVersion);
         assertRequestActive();
 
         if (snapshotSig !== latestRef.current.itemsSig) {

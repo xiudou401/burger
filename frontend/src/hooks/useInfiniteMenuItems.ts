@@ -90,18 +90,18 @@ export const useInfiniteMenuItems = ({
         limit,
         currentReloadKey,
       );
-      const currentInFlight = inFlightRef.current;
+      const activeRequest = inFlightRef.current;
 
-      if (currentInFlight && currentInFlight.key === key) {
-        return currentInFlight.promise;
+      if (activeRequest && activeRequest.key === key) {
+        return activeRequest.promise;
       }
 
       if (settledLoadRef.current?.key === key) {
         return Promise.resolve(settledLoadRef.current.result);
       }
 
-      if (currentInFlight) {
-        currentInFlight.controller.abort();
+      if (activeRequest) {
+        activeRequest.controller.abort();
         inFlightRef.current = null;
       }
 

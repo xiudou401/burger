@@ -5,46 +5,6 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
-.AppBar {
-  box-sizing: border-box;
-  height: 124rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24rem;
-  padding: 24rem 28rem 8rem;
-  background: #fff;
-  border-bottom: 1rem solid #f0e4d0;
-  box-shadow: 0 6rem 20rem rgba(68, 40, 0, 0.06);
-}
-
-.Brand {
-  display: flex;
-  align-items: center;
-  gap: 14rem;
-  min-width: 0;
-  color: #292929;
-  font-size: 24rem;
-  font-weight: 900;
-  line-height: 1;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.Mark {
-  width: 58rem;
-  height: 58rem;
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  border-radius: 8rem;
-  background: #ffc72c;
-  color: #bd0017;
-  font-size: 38rem;
-  font-weight: 900;
-  line-height: 1;
-}
-
 .NavRail {
   display: flex;
   gap: 28rem;
@@ -110,22 +70,6 @@
 }
 
 @media (max-width: 760px) {
-  .AppBar {
-    height: 116rem;
-    gap: 12rem;
-    padding: 22rem 22rem 8rem;
-  }
-
-  .Brand {
-    font-size: 24rem;
-  }
-
-  .Mark {
-    width: 58rem;
-    height: 58rem;
-    font-size: 38rem;
-  }
-
   .NavRail {
     gap: 22rem;
     padding: 0 18rem;
@@ -157,18 +101,5 @@
     width: auto;
     padding: 0 12rem;
     font-size: 14rem;
-  }
-}
-
-@media (min-width: 900px) and (max-width: 1359px) {
-  .AppBar {
-    padding-inline: 40rem;
-  }
-}
-
-@media (min-width: 1360px) {
-  .AppBar {
-    height: 120rem;
-    padding: 20rem 40rem 8rem;
   }
 }

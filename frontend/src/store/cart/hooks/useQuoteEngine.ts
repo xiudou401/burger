@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CartStoredItem, QuoteErrorAction } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
-import { getQuoteErrorMessage, getRemovedItemId } from '../utils/quote-error';
+import { getQuoteErrorState } from '../utils/quote-error';
 import {
   calculateEstimatedTotalCents,
   getQuoteUnitPriceChanges,
@@ -106,19 +106,13 @@ export const useQuoteEngine = ({
 
   const setQuoteValidationError = useCallback(
     (error: unknown) => {
-      setQuoteError(
-        getQuoteErrorMessage(error, lastValidatedQuoteRef.current ?? quote),
+      const quoteErrorState = getQuoteErrorState(
+        error,
+        lastValidatedQuoteRef.current ?? quote,
       );
 
-      const removedItemId = getRemovedItemId(error);
-      setQuoteErrorAction(
-        removedItemId
-          ? {
-              type: 'removeItem',
-              itemId: removedItemId,
-            }
-          : null,
-      );
+      setQuoteError(quoteErrorState.message);
+      setQuoteErrorAction(quoteErrorState.action);
     },
     [quote],
   );

@@ -1,6 +1,10 @@
 import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
-import { getQuoteErrorMessage, getRemovedItemId } from './quote-error';
+import {
+  getQuoteErrorMessage,
+  getQuoteErrorState,
+  getRemovedItemId,
+} from './quote-error';
 import type { Quote } from '../../../types/cart';
 
 const quote: Quote = {
@@ -86,5 +90,35 @@ describe('getRemovedItemId', () => {
     expect(
       getRemovedItemId(new ApiError(400, { message: 'Invalid cart' })),
     ).toBeNull();
+  });
+});
+
+describe('getQuoteErrorState', () => {
+  it('returns a message and remove action for removed menu items', () => {
+    expect(
+      getQuoteErrorState(
+        new ApiError(400, {
+          message: 'Menu item removed',
+          details: { itemId: 'burger' },
+        }),
+        quote,
+      ),
+    ).toEqual({
+      message:
+        'Sydney Club Burger is no longer available. Please remove it from your cart.',
+      action: {
+        type: 'removeItem',
+        itemId: 'burger',
+      },
+    });
+  });
+
+  it('returns no action for non-removal errors', () => {
+    expect(
+      getQuoteErrorState(new ApiError(400, { message: 'Invalid cart' })),
+    ).toEqual({
+      message: 'Could not validate your cart. Please try again.',
+      action: null,
+    });
   });
 });

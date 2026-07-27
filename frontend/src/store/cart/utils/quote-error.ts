@@ -1,6 +1,6 @@
 import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
-import type { Quote } from '../../../types/cart';
+import type { Quote, QuoteErrorAction } from '../../../types/cart';
 
 export const getRemovedItemId = (error: unknown) => {
   if (!(error instanceof ApiError)) return null;
@@ -11,12 +11,20 @@ export const getRemovedItemId = (error: unknown) => {
   return typeof itemId === 'string' ? itemId : null;
 };
 
-const getRemovedItemName = (error: ApiError, quote?: Quote | null) => {
-  const itemId = getRemovedItemId(error);
-
+const getRemovedItemName = (itemId: string | null, quote?: Quote | null) => {
   if (!itemId) return null;
 
   return quote?.menuItems.find((menuItem) => menuItem.id === itemId)?.name;
+};
+
+const getRemovedItemMessage = (itemId: string | null, quote?: Quote | null) => {
+  const itemName = getRemovedItemName(itemId, quote);
+
+  if (itemName) {
+    return `${itemName} is no longer available. Please remove it from your cart.`;
+  }
+
+  return 'An item in your cart is no longer available. Please review your cart.';
 };
 
 export const getQuoteErrorMessage = (error: unknown, quote?: Quote | null) => {
@@ -25,13 +33,7 @@ export const getQuoteErrorMessage = (error: unknown, quote?: Quote | null) => {
   }
 
   if (error instanceof ApiError && error.body.message === 'Menu item removed') {
-    const itemName = getRemovedItemName(error, quote);
-
-    if (itemName) {
-      return `${itemName} is no longer available. Please remove it from your cart.`;
-    }
-
-    return 'An item in your cart is no longer available. Please review your cart.';
+    return getRemovedItemMessage(getRemovedItemId(error), quote);
   }
 
   if (
@@ -44,4 +46,33 @@ export const getQuoteErrorMessage = (error: unknown, quote?: Quote | null) => {
   }
 
   return 'Could not validate your cart. Please try again.';
+};
+
+export const getQuoteErrorState = (
+  error: unknown,
+  quote?: Quote | null,
+): {
+  message: string;
+  action: QuoteErrorAction | null;
+} => {
+  const removedItemId = getRemovedItemId(error);
+  const isRemovedItemError =
+    error instanceof ApiError && error.body.message === 'Menu item removed';
+
+  if (isRemovedItemError) {
+    return {
+      message: getRemovedItemMessage(removedItemId, quote),
+      action: removedItemId
+        ? {
+            type: 'removeItem',
+            itemId: removedItemId,
+          }
+        : null,
+    };
+  }
+
+  return {
+    message: getQuoteErrorMessage(error, quote),
+    action: null,
+  };
 };

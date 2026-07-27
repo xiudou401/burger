@@ -1,8 +1,8 @@
-import { Link, NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { ReactNode } from 'react';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import { hasPermission } from '../../types/permissions';
-import AccountControls from '../Auth/AccountControls';
+import AccountBar from '../Auth/AccountBar';
 import classes from './AdminLayout.module.css';
 
 interface AdminLayoutProps {
@@ -33,14 +33,12 @@ const AdminLayout = ({ title, action, children }: AdminLayoutProps) => {
 
   return (
     <main className={classes.Page}>
-      <header className={classes.AppBar}>
-        <Link className={classes.Brand} to="/admin/dashboard">
-          <span className={classes.Mark}>S</span>
-          <span>Kitchen Console</span>
-        </Link>
-
-        <AccountControls variant="admin" showVerifyButton={false} />
-      </header>
+      <AccountBar
+        variant="admin"
+        title="Kitchen Console"
+        to="/admin/dashboard"
+        showVerifyButton={false}
+      />
 
       <nav className={classes.NavRail} aria-label="Admin">
         {navItems.map((item) => (

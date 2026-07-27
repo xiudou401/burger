@@ -4,28 +4,42 @@ import AccountControls from './AccountControls';
 import classes from './AccountBar.module.css';
 
 interface AccountBarProps {
-  variant?: 'default' | 'hero';
+  variant?: 'default' | 'hero' | 'admin';
+  title?: string;
+  to?: string;
+  showVerifyButton?: boolean;
 }
 
-const AccountBar = ({ variant = 'default' }: AccountBarProps) => {
+const AccountBar = ({
+  variant = 'default',
+  title = 'Sydney Burger',
+  to = '/',
+  showVerifyButton = true,
+}: AccountBarProps) => {
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
 
-  const accountBarClass =
-    variant === 'hero'
-      ? `${classes.AccountBar} ${classes.HeroAccountBar}`
-      : classes.AccountBar;
+  const variantClass =
+    {
+      default: '',
+      hero: ` ${classes.HeroAccountBar}`,
+      admin: ` ${classes.AdminAccountBar}`,
+    }[variant] ?? '';
+  const accountBarClass = `${classes.AccountBar}${variantClass}`;
 
   return (
     <header className={accountBarClass}>
-      <Link className={classes.Brand} to="/">
+      <Link className={classes.Brand} to={to}>
         <span className={classes.Mark}>S</span>
         <span className={classes.BrandCopy}>
-          <span className={classes.BrandText}>Sydney Burger</span>
+          <span className={classes.BrandText}>{title}</span>
         </span>
       </Link>
 
       {isAuthenticated ? (
-        <AccountControls variant={variant} />
+        <AccountControls
+          variant={variant}
+          showVerifyButton={showVerifyButton}
+        />
       ) : (
         <nav className={classes.AuthLinks} aria-label="Account">
           <Link className={classes.LoginLink} to="/login">
