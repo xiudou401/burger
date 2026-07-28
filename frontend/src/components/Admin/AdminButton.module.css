@@ -1,11 +1,11 @@
 .Button {
-  min-height: 44rem;
+  min-height: var(--control-height-md);
   border: 0;
-  border-radius: 8rem;
+  border-radius: var(--radius-md);
   padding: 0 16rem;
   font-family: inherit;
-  font-size: 16rem;
-  font-weight: 900;
+  font-size: var(--font-action);
+  font-weight: var(--weight-black);
   cursor: pointer;
 }
 
@@ -15,24 +15,24 @@
 }
 
 .primary {
-  background: #ffc72c;
-  color: #292929;
+  background: var(--brand-yellow);
+  color: var(--text-primary);
 }
 
 .secondary {
-  background: #292929;
-  color: #fff;
+  background: var(--surface-inverse);
+  color: var(--text-inverse);
 }
 
 .danger {
-  background: #bd0017;
-  color: #fff;
+  background: var(--brand-red);
+  color: var(--text-inverse);
 }
 
 .compact {
-  min-height: 38rem;
+  min-height: var(--control-height-sm);
   padding: 0 12rem;
-  font-size: 14rem;
+  font-size: var(--font-meta);
 }
 
 @media (max-width: 760px) {

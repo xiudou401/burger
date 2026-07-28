@@ -5,16 +5,22 @@ interface BrandHeroProps {
   labelledBy?: string;
   className?: string;
   as?: 'header' | 'section';
+  density?: 'marketing' | 'compact';
 }
 
 const BrandHero = ({
   labelledBy,
   className,
   as: Component = 'section',
+  density = 'marketing',
 }: BrandHeroProps) => {
-  const heroClassName = className
-    ? `${classes.Hero} ${className}`
-    : classes.Hero;
+  const heroClassName = [
+    classes.Hero,
+    density === 'compact' ? classes.Compact : '',
+    className ?? '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <Component className={heroClassName} aria-labelledby={labelledBy}>

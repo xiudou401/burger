@@ -1,4 +1,5 @@
 import type { User } from '../../types/auth';
+import { hasPermission } from '../../types/permissions';
 import ProfileStatusBadge from './ProfileStatusBadge';
 import classes from './AccountDetailsCard.module.css';
 
@@ -9,6 +10,28 @@ interface AccountDetailsCardProps {
   isSendingVerification: boolean;
   onResendVerification: () => void;
 }
+
+const formatRoleLabel = (role: User['role'] | undefined) => {
+  if (!role) return 'Customer';
+
+  return role.charAt(0).toUpperCase() + role.slice(1);
+};
+
+const getAccountStatusLabel = (user: User | null) => {
+  if (!user) return 'Not available';
+
+  if (user.status === 'disabled') return 'Disabled';
+
+  if (hasPermission(user, 'view_orders')) {
+    return `${formatRoleLabel(user.role)} account`;
+  }
+
+  if (user.email && !user.emailVerified) {
+    return 'Email verification required';
+  }
+
+  return 'Ready to order';
+};
 
 const AccountDetailsCard = ({
   user,
@@ -36,6 +59,14 @@ const AccountDetailsCard = ({
         <div className={classes.Row}>
           <span className={classes.Label}>Email</span>
           <span className={classes.Value}>{user?.email ?? 'Not linked'}</span>
+        </div>
+        <div className={classes.Row}>
+          <span className={classes.Label}>Role</span>
+          <span className={classes.Value}>{formatRoleLabel(user?.role)}</span>
+        </div>
+        <div className={classes.Row}>
+          <span className={classes.Label}>Account status</span>
+          <span className={classes.Value}>{getAccountStatusLabel(user)}</span>
         </div>
         <div className={classes.Row}>
           <span className={classes.Label}>Email status</span>

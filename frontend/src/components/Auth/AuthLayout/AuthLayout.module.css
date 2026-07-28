@@ -10,7 +10,7 @@
 .BrandPanel {
   position: relative;
   overflow: hidden;
-  padding: 64rem;
+  padding: 60rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -24,10 +24,10 @@
 .BrandPanel::after {
   content: '';
   position: absolute;
-  width: 420rem;
-  height: 420rem;
-  right: 96rem;
-  top: 108rem;
+  width: 360rem;
+  height: 360rem;
+  right: 56rem;
+  top: 124rem;
   border-radius: 50%;
   background: rgba(255, 199, 44, 0.7);
   opacity: 0.16;
@@ -51,7 +51,7 @@
 .BrandCopy {
   position: relative;
   z-index: 1;
-  max-width: 540rem;
+  max-width: min(540rem, calc(100% - 56rem));
 }
 
 .Eyebrow {
@@ -64,9 +64,10 @@
 
 .Title {
   margin: 0;
-  font-size: 74rem;
-  line-height: 0.95;
-  font-weight: 900;
+  max-width: 620rem;
+  font-size: 62rem;
+  line-height: 1;
+  font-weight: var(--weight-black);
 }
 
 .Subtitle {
@@ -116,11 +117,11 @@
   }
 
   .BrandPanel {
-    padding: 48rem;
+    padding: 46rem;
   }
 
   .Title {
-    font-size: 62rem;
+    font-size: 54rem;
   }
 }
 
@@ -134,8 +135,13 @@
     padding: 34rem 28rem;
   }
 
+  .BrandCopy {
+    max-width: 100%;
+  }
+
   .Title {
     font-size: 48rem;
+    max-width: 680rem;
   }
 
   .Subtitle {

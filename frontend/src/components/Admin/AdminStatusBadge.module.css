@@ -2,29 +2,29 @@
   min-height: 24rem;
   display: inline-flex;
   align-items: center;
-  border-radius: 999rem;
+  border-radius: var(--radius-pill);
   padding: 0 9rem;
-  font-size: 12rem;
-  font-weight: 900;
+  font-size: var(--font-label);
+  font-weight: var(--weight-black);
   text-transform: capitalize;
 }
 
 .Neutral {
-  background: #f1ece3;
-  color: #6b5a42;
+  background: var(--status-neutral-bg);
+  color: var(--status-neutral-text);
 }
 
 .Success {
-  background: #e5f7e7;
-  color: #176b2c;
+  background: var(--status-success-bg);
+  color: var(--status-success-text);
 }
 
 .Warning {
-  background: #fff3ce;
-  color: #654611;
+  background: var(--status-warning-bg);
+  color: var(--status-warning-text);
 }
 
 .Danger {
-  background: #ffe2e2;
-  color: #bd0017;
+  background: var(--status-danger-bg);
+  color: var(--status-danger-text);
 }

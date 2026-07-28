@@ -11,6 +11,75 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+:root {
+  --surface-page: #fffaf1;
+  --surface-card: #ffffff;
+  --surface-muted: #f6f2ea;
+  --surface-warm: #fff7e0;
+  --surface-inverse: #292929;
+
+  --text-primary: #292929;
+  --text-muted: #7a6954;
+  --text-soft: #5b4a35;
+  --text-inverse: #ffffff;
+
+  --brand-yellow: #ffc72c;
+  --brand-red: #bd0017;
+
+  --border-soft: #eadfce;
+  --border-warm: #ead8b5;
+
+  --radius-sm: 6rem;
+  --radius-md: 8rem;
+  --radius-lg: 14rem;
+  --radius-pill: 999rem;
+
+  --shadow-card: 0 10rem 24rem rgba(58, 36, 10, 0.07);
+  --shadow-popover: 0 20rem 60rem rgba(0, 0, 0, 0.22);
+  --shadow-dialog: 0 24rem 70rem rgba(68, 40, 0, 0.24);
+  --shadow-bottom-bar: 0 14rem 32rem rgba(0, 0, 0, 0.22);
+
+  --control-height-sm: 38rem;
+  --control-height-md: 44rem;
+  --control-height-lg: 52rem;
+
+  --status-neutral-bg: #f1ece3;
+  --status-neutral-text: #6b5a42;
+  --status-success-bg: rgba(39, 134, 82, 0.12);
+  --status-success-text: #1d7c49;
+  --status-warning-bg: #fff4d6;
+  --status-warning-text: #7a4a00;
+  --status-danger-bg: #ffe8e8;
+  --status-danger-text: #9f0014;
+
+  --font-display: 54rem;
+  --font-display-compact: 36rem;
+  --font-display-wide: 50rem;
+  --font-page-title: 40rem;
+  --font-page-title-compact: 34rem;
+  --font-section-title: 28rem;
+  --font-section-title-compact: 24rem;
+  --font-card-title: 23rem;
+  --font-card-title-compact: 20rem;
+  --font-body: 16rem;
+  --font-body-lg: 18rem;
+  --font-meta: 13rem;
+  --font-label: 12rem;
+  --font-label-compact: 10rem;
+  --font-micro: 11rem;
+  --font-action: 16rem;
+  --font-action-lg: 24rem;
+  --font-action-compact: 20rem;
+  --font-price: 24rem;
+  --font-price-lg: 28rem;
+  --font-price-compact: 21rem;
+
+  --weight-regular: 400;
+  --weight-semibold: 700;
+  --weight-bold: 800;
+  --weight-black: 900;
+}
+
 img {
   vertical-align: middle;
 }

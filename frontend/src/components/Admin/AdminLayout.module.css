@@ -1,17 +1,17 @@
 .Page {
   min-height: 100vh;
-  background: #f6f2ea;
-  color: #292929;
+  background: var(--surface-muted);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
 }
 
 .NavRail {
   display: flex;
-  gap: 28rem;
+  gap: 24rem;
   overflow-x: auto;
-  padding: 0 38rem;
-  background: #fff;
-  border-bottom: 1rem solid #eadfce;
+  padding: 0 34rem;
+  background: var(--surface-card);
+  border-bottom: 1rem solid var(--border-soft);
   box-shadow: 0 8rem 18rem rgba(58, 36, 10, 0.05);
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -23,30 +23,30 @@
 }
 
 .NavLink {
-  min-height: 56rem;
+  min-height: 50rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
   border-bottom: 3rem solid transparent;
-  color: #6b5a42;
+  color: var(--status-neutral-text);
   padding: 3rem 2rem 0;
-  font-size: 16rem;
-  font-weight: 900;
+  font-size: var(--font-action);
+  font-weight: var(--weight-black);
   text-decoration: none;
   white-space: nowrap;
 }
 
 .NavLinkActive {
-  border-bottom-color: #ffc72c;
-  color: #292929;
+  border-bottom-color: var(--brand-yellow);
+  color: var(--text-primary);
 }
 
 .Content {
   min-width: 0;
   max-width: 1240rem;
   margin: 0 auto;
-  padding: 38rem;
+  padding: 30rem 34rem 38rem;
 }
 
 .Topbar {
@@ -54,7 +54,7 @@
   align-items: flex-end;
   justify-content: space-between;
   gap: 20rem;
-  margin-bottom: 24rem;
+  margin-bottom: 20rem;
 }
 
 .ActionBar {
@@ -65,7 +65,7 @@
 
 .Title {
   margin: 0;
-  font-size: 40rem;
+  font-size: var(--font-page-title);
   line-height: 1.05;
 }
 
@@ -76,13 +76,13 @@
   }
 
   .NavLink {
-    min-height: 50rem;
+    min-height: 46rem;
     padding-top: 3rem;
-    font-size: 15rem;
+    font-size: var(--font-meta);
   }
 
   .Content {
-    padding: 24rem 18rem 42rem;
+    padding: 22rem 18rem 38rem;
   }
 
   .Topbar {

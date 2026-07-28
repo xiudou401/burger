@@ -1,19 +1,19 @@
 .StatusText {
   margin: 0 0 18rem;
-  color: #5b4a35;
-  font-size: 16rem;
-  font-weight: 800;
+  color: var(--text-soft);
+  font-size: var(--font-body);
+  font-weight: var(--weight-bold);
   line-height: 1.4;
 }
 
 .neutral {
-  color: #5b4a35;
+  color: var(--text-soft);
 }
 
 .success {
-  color: #176b2c;
+  color: var(--status-success-text);
 }
 
 .error {
-  color: #bd0017;
+  color: var(--brand-red);
 }

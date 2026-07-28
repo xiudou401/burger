@@ -15,7 +15,7 @@
   width: 38rem;
   height: 38rem;
   border-radius: 50%;
-  font-size: 20rem;
+  font-size: var(--font-card-title-compact);
   padding: 0;
   cursor: pointer;
   transition:
@@ -50,8 +50,8 @@
 .Quantity {
   min-width: 28rem;
   color: #202020;
-  font-size: 24rem;
-  font-weight: 900;
+  font-size: var(--font-price);
+  font-weight: var(--weight-black);
   text-align: center;
 }
 
@@ -64,11 +64,11 @@
   .Increase {
     width: 32rem;
     height: 32rem;
-    font-size: 16rem;
+    font-size: var(--font-action);
   }
 
   .Quantity {
     min-width: 22rem;
-    font-size: 19rem;
+    font-size: var(--font-body-lg);
   }
 }

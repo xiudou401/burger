@@ -23,15 +23,15 @@
   place-items: center;
   border-radius: 50%;
   border: none;
-  background: #fff;
+  background: var(--surface-card);
   color: #202020;
-  font-size: 22rem;
+  font-size: var(--font-card-title-compact);
   box-shadow: 0 8rem 18rem rgba(58, 36, 10, 0.12);
   cursor: pointer;
 }
 
 .Close:focus-visible {
-  outline: 3rem solid #ffc72c;
+  outline: 3rem solid var(--brand-yellow);
   outline-offset: 4rem;
 }
 
@@ -40,17 +40,17 @@
   max-height: calc(100vh - 160rem);
   margin: 20rem auto 144rem;
   overflow: auto;
-  background-color: #fffaf1;
-  border-radius: 8rem;
+  background-color: var(--surface-page);
+  border-radius: var(--radius-md);
   padding: 0 22rem 20rem;
-  box-shadow: 0 20rem 60rem rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow-popover);
 }
 
 .Header {
   display: flex;
   justify-content: space-between;
   gap: 18rem;
-  border-bottom: 1rem solid #eadfce;
+  border-bottom: 1rem solid var(--border-soft);
   align-items: center;
   padding: 22rem 0 16rem;
 }
@@ -58,8 +58,8 @@
 .Title {
   margin: 0;
   color: #202020;
-  font-size: 30rem;
-  font-weight: 900;
+  font-size: var(--font-section-title);
+  font-weight: var(--weight-black);
 }
 
 .OrderItems {
@@ -75,12 +75,12 @@
 
 .Footer {
   position: relative;
-  border-top: 1rem #eadfce dashed;
+  border-top: 1rem var(--border-soft) dashed;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  font-weight: bold;
+  font-weight: var(--weight-bold);
   padding: 14rem 0 18rem;
 }
 
@@ -90,7 +90,7 @@
   position: absolute;
   width: 20rem;
   height: 20rem;
-  background-color: #fffaf1;
+  background-color: var(--surface-page);
   border-radius: 50%;
   top: -10rem;
   left: -30rem;
@@ -105,8 +105,8 @@
   max-width: 100%;
   margin: 0;
   color: #8f1d14;
-  font-size: 15rem;
-  font-weight: 900;
+  font-size: var(--font-meta);
+  font-weight: var(--weight-black);
   line-height: 1.25;
   text-align: right;
 }
@@ -134,10 +134,10 @@
   }
 
   .Title {
-    font-size: 24rem;
+    font-size: var(--font-section-title-compact);
   }
 
   .PriceNotice {
-    font-size: 12rem;
+    font-size: var(--font-label);
   }
 }

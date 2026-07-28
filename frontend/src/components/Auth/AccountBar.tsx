@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth/hooks/useAuth';
+import { BRAND_INITIAL, BRAND_NAME } from '../../constants/brand';
 import AccountControls from './AccountControls';
 import classes from './AccountBar.module.css';
 
@@ -12,7 +13,7 @@ interface AccountBarProps {
 
 const AccountBar = ({
   variant = 'default',
-  title = 'Sydney Burger',
+  title = BRAND_NAME,
   to = '/',
   showVerifyButton = true,
 }: AccountBarProps) => {
@@ -29,7 +30,7 @@ const AccountBar = ({
   return (
     <header className={accountBarClass}>
       <Link className={classes.Brand} to={to}>
-        <span className={classes.Mark}>S</span>
+        <span className={classes.Mark}>{BRAND_INITIAL}</span>
         <span className={classes.BrandCopy}>
           <span className={classes.BrandText}>{title}</span>
         </span>

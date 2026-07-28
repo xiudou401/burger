@@ -5,43 +5,53 @@
   justify-content: center;
   align-items: center;
   min-width: 0;
-  color: #fff;
-  font-weight: bold;
-  font-size: 28rem;
+  color: var(--text-inverse);
+  font-weight: var(--weight-bold);
+  font-size: var(--font-price-lg);
   line-height: 1.1;
   white-space: nowrap;
 }
 
 .EmptyCartText {
   color: #bdb5aa;
+  font-size: var(--font-body-lg);
+  font-weight: var(--weight-bold);
 }
 
 .Price span {
   margin-bottom: 4rem;
-  color: #ffc72c;
-  font-size: 16rem;
-  font-weight: 900;
+  color: var(--brand-yellow);
+  font-size: var(--font-action);
+  font-weight: var(--weight-black);
   text-transform: uppercase;
 }
 
 @media (max-width: 560px) {
   .Price,
   .EmptyCartText {
-    font-size: 24rem;
+    font-size: var(--font-price);
+  }
+
+  .EmptyCartText {
+    font-size: var(--font-action);
   }
 
   .Price span {
-    font-size: 14rem;
+    font-size: var(--font-meta);
   }
 }
 
 @media (min-width: 700px) and (max-width: 1359px) and (max-height: 700px) {
   .Price,
   .EmptyCartText {
-    font-size: 18rem;
+    font-size: var(--font-body-lg);
+  }
+
+  .EmptyCartText {
+    font-size: var(--font-action);
   }
 
   .Price span {
-    font-size: 11rem;
+    font-size: var(--font-micro);
   }
 }

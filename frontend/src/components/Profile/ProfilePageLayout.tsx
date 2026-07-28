@@ -14,7 +14,7 @@ const ProfilePageLayout = ({ main, side }: ProfilePageLayoutProps) => {
 
   return (
     <div className={classes.ProfilePage}>
-      <BrandHero as="header" labelledBy="profile-title" />
+      <BrandHero as="header" labelledBy="profile-title" density="compact" />
 
       <main className={classes.Shell}>
         <div className={gridClassName}>

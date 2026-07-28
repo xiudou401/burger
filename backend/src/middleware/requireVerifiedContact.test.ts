@@ -28,7 +28,7 @@ test('allows users with a verified email', () => {
   expect(next).toHaveBeenCalledWith();
 });
 
-test('allows users with a verified phone', () => {
+test('blocks users with only a verified phone', () => {
   const next = jest.fn() as NextFunction;
 
   requireVerifiedContact(
@@ -37,17 +37,17 @@ test('allows users with a verified phone', () => {
     next,
   );
 
-  expect(next).toHaveBeenCalledWith();
+  expect(next).toHaveBeenCalledWith(expect.any(ServiceError));
 });
 
-test('blocks users without a verified contact method', () => {
+test('blocks users without a verified email', () => {
   const next = jest.fn() as NextFunction;
 
   requireVerifiedContact(makeRequest(), {} as Response, next);
 
   expect(next).toHaveBeenCalledWith(expect.any(ServiceError));
   expect(jest.mocked(next).mock.calls[0][0]).toMatchObject({
-    message: 'Please verify your email or phone before placing an order',
+    message: 'Please verify your email before placing an order',
     statusCode: 403,
   });
 });

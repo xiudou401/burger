@@ -17,8 +17,8 @@
   min-height: 44rem;
   margin-bottom: 18rem;
   color: #bd0017;
-  font-size: 17rem;
-  font-weight: 900;
+  font-size: var(--font-action);
+  font-weight: var(--weight-black);
   text-decoration: none;
 }
 
@@ -33,22 +33,22 @@
 .ConfirmationEyebrow {
   margin: 0 0 8rem;
   color: #1d7c49;
-  font-size: 15rem;
-  font-weight: 900;
+  font-size: var(--font-meta);
+  font-weight: var(--weight-black);
   text-transform: uppercase;
 }
 
 .ConfirmationTitle {
   margin: 0;
   color: #184d31;
-  font-size: 34rem;
+  font-size: var(--font-page-title-compact);
   line-height: 1.08;
 }
 
 .ConfirmationText {
   margin: 10rem 0 0;
   color: #2f6045;
-  font-size: 18rem;
+  font-size: var(--font-body-lg);
   line-height: 1.45;
 }
 
@@ -63,15 +63,15 @@
 .Eyebrow {
   margin: 0 0 8rem;
   color: #7a6954;
-  font-size: 16rem;
-  font-weight: 900;
+  font-size: var(--font-body);
+  font-weight: var(--weight-black);
   text-transform: uppercase;
 }
 
 .Title {
   margin: 0;
   color: #292929;
-  font-size: 42rem;
+  font-size: var(--font-page-title);
   line-height: 1.05;
 }
 
@@ -79,7 +79,7 @@
 .StateText {
   margin: 10rem 0 0;
   color: #5b4a35;
-  font-size: 18rem;
+  font-size: var(--font-body-lg);
   line-height: 1.45;
 }
 
@@ -88,8 +88,8 @@
   border-radius: 8rem;
   background: rgba(39, 134, 82, 0.12);
   color: #1d7c49;
-  font-size: 16rem;
-  font-weight: 900;
+  font-size: var(--font-body);
+  font-weight: var(--weight-black);
   text-transform: capitalize;
 }
 
@@ -112,14 +112,14 @@
 .CardTitle {
   margin: 0;
   color: #292929;
-  font-size: 26rem;
+  font-size: var(--font-section-title);
   line-height: 1.15;
-  font-weight: 900;
+  font-weight: var(--weight-black);
 }
 
 .Total {
   color: #bd0017;
-  font-size: 28rem;
+  font-size: var(--font-price-lg);
 }
 
 .ItemList {
@@ -155,19 +155,19 @@
 .ItemName {
   margin: 0;
   color: #292929;
-  font-size: 21rem;
+  font-size: var(--font-card-title-compact);
   line-height: 1.2;
 }
 
 .ItemMeta {
   margin: 6rem 0 0;
   color: #7a6954;
-  font-size: 16rem;
+  font-size: var(--font-body);
 }
 
 .Subtotal {
   color: #292929;
-  font-size: 20rem;
+  font-size: var(--font-price-compact);
 }
 
 @media (max-width: 560px) {
@@ -191,7 +191,7 @@
   }
 
   .Title {
-    font-size: 34rem;
+    font-size: var(--font-page-title-compact);
   }
 
   .ItemImage {

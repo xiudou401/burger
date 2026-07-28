@@ -1,7 +1,7 @@
 .ProfilePage {
   min-height: 100vh;
-  background: #fffaf1;
-  color: #292929;
+  background: var(--surface-page);
+  color: var(--text-primary);
 }
 
 .Shell {

@@ -21,40 +21,40 @@
 .CartSummary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14rem;
-  margin-bottom: 20rem;
+  gap: 12rem;
+  margin-bottom: 18rem;
 }
 
 .Metric {
-  padding: 18rem;
-  border-radius: 8rem;
-  background: #fffaf1;
-  border: 1rem solid #eadfce;
+  padding: 16rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-page);
+  border: 1rem solid var(--border-soft);
 }
 
 .MetricValue {
   display: block;
-  color: #bd0017;
-  font-size: 32rem;
+  color: var(--brand-red);
+  font-size: var(--font-section-title);
   line-height: 1;
-  font-weight: 900;
+  font-weight: var(--weight-black);
 }
 
 .MetricLabel {
   display: block;
   margin-top: 8rem;
-  color: #8b7350;
-  font-size: 15rem;
-  font-weight: 800;
+  color: var(--text-muted);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-bold);
 }
 
 .EmptyState {
   padding: 24rem;
-  border-radius: 8rem;
-  background: #fffaf1;
-  border: 1rem solid #eadfce;
-  color: #5b4a35;
-  font-size: 18rem;
+  border-radius: var(--radius-md);
+  background: var(--surface-page);
+  border: 1rem solid var(--border-soft);
+  color: var(--text-soft);
+  font-size: var(--font-body);
   line-height: 1.45;
 }
 

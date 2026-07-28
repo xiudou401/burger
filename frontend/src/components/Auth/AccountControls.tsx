@@ -35,13 +35,13 @@ const AccountControls = ({
     ? user.emailVerified
       ? 'Ready to order'
       : 'Email not verified'
-    : user.phoneVerified
-      ? 'Phone verified'
-      : 'Phone login';
+    : 'Email not linked';
   const hasAdminAccess = hasPermission(user, 'view_orders');
   const displayedMemberStatus =
     memberStatusLabel ??
     (hasAdminAccess ? formatRoleLabel(user.role) : memberStatus);
+  const shouldShowMemberStatus =
+    showMemberStatus && (hasAdminAccess || Boolean(memberStatusLabel));
   const showConsoleLink = variant !== 'admin' && hasAdminAccess;
   const showStorefrontLink = variant === 'admin';
   const accountControlsClass =
@@ -68,7 +68,7 @@ const AccountControls = ({
       </Link>
       <div className={classes.UserText}>
         <span className={classes.Greeting}>Hi, {user.name}</span>
-        {showMemberStatus && (
+        {shouldShowMemberStatus && (
           <span className={classes.Member}>{displayedMemberStatus}</span>
         )}
       </div>

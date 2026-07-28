@@ -133,7 +133,11 @@ const CartBar = () => {
         <CheckoutDialog onClose={closeCheckout} menuItems={quote.menuItems} />
       )}
 
-      <BottomActionBar summary={cartSummary} action={checkoutAction} />
+      <BottomActionBar
+        summary={cartSummary}
+        action={checkoutAction}
+        isEmpty={totalQuantity === 0}
+      />
     </>
   );
 };

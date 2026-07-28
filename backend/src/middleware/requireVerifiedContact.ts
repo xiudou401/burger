@@ -6,12 +6,9 @@ export const requireVerifiedContact = (
   _res: Response,
   next: NextFunction,
 ) => {
-  if (!req.user?.emailVerified && !req.user?.phoneVerified) {
+  if (!req.user?.emailVerified) {
     return next(
-      new ServiceError(
-        'Please verify your email or phone before placing an order',
-        403,
-      ),
+      new ServiceError('Please verify your email before placing an order', 403),
     );
   }
 

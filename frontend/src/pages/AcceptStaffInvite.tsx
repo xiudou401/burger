@@ -10,6 +10,7 @@ import {
   AuthSwitch,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
+import { BRAND_NAME } from '../constants/brand';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 import { useAcceptStaffInvitePage } from './hooks/useAcceptStaffInvitePage';
 
@@ -44,7 +45,7 @@ const AcceptStaffInvite = () => {
   return (
     <AuthSplitPage
       title="Join the kitchen console."
-      subtitle="Accept your Sydney Burger staff invitation with the email address that received it."
+      subtitle={`Accept your ${BRAND_NAME} staff invitation with the email address that received it.`}
     >
       <AuthCard>
         <AuthHeader

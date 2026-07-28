@@ -1,4 +1,5 @@
 import { ReactNode } from 'react';
+import { BRAND_INITIAL, BRAND_NAME } from '../../../constants/brand';
 import classes from './AuthLayout.module.css';
 
 interface AuthSplitPageProps {
@@ -12,7 +13,7 @@ interface AuthCenteredPageProps {
 }
 
 export const AuthLogo = () => {
-  return <div className={classes.Logo}>S</div>;
+  return <div className={classes.Logo}>{BRAND_INITIAL}</div>;
 };
 
 export const AuthSplitPage = ({
@@ -25,7 +26,7 @@ export const AuthSplitPage = ({
       <section className={classes.BrandPanel}>
         <AuthLogo />
         <div className={classes.BrandCopy}>
-          <p className={classes.Eyebrow}>Sydney Burger</p>
+          <p className={classes.Eyebrow}>{BRAND_NAME}</p>
           <h1 className={classes.Title}>{title}</h1>
           <p className={classes.Subtitle}>{subtitle}</p>
         </div>

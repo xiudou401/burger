@@ -10,6 +10,7 @@ import {
   AuthSwitch,
 } from '../components/Auth/AuthForm/AuthForm';
 import { AuthSplitPage } from '../components/Auth/AuthLayout/AuthLayout';
+import { BRAND_NAME } from '../constants/brand';
 import { useAdminLoginPage } from './hooks/useAdminLoginPage';
 import { useOAuthLogin } from './hooks/useOAuthLogin';
 
@@ -29,7 +30,7 @@ const AdminLogin = () => {
   return (
     <AuthSplitPage
       title="Kitchen console."
-      subtitle="Sign in with a staff account to manage live Sydney Burger orders."
+      subtitle={`Sign in with a staff account to manage live ${BRAND_NAME} orders.`}
     >
       <AuthCard>
         <AuthHeader
