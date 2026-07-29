@@ -7,11 +7,9 @@ import { createCheckoutOrder } from '../../../../api/orders';
 import { useCartSelector } from '../../../../store/cart/hooks/useCartSelector';
 import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
-import { ApiError } from '../../../../api/request';
-import { HTTP_STATUS } from '../../../../api/http-status';
 import { hasPermission } from '../../../../types/permissions';
 import { createCheckoutAttemptKey } from '../../../../utils/idempotency';
-import { getQuoteErrorMessage } from '../../../../store/cart/utils/quote-error';
+import { getCheckoutErrorMessage } from '../checkout-utils';
 
 interface PaymentBarProps {
   totalCents: number;
@@ -105,19 +103,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
       onOrderComplete();
       window.location.assign(checkoutUrl);
     } catch (err) {
-      const isMenuConflict =
-        err instanceof ApiError && err.statusCode === HTTP_STATUS.CONFLICT;
-      const requestId =
-        err instanceof ApiError && err.requestId
-          ? ` Reference: ${err.requestId}`
-          : '';
-      const errorMessage = isMenuConflict
-        ? `Some menu items have changed. Please review your cart before checkout.${requestId}`
-        : err instanceof ApiError
-          ? `${getQuoteErrorMessage(err, quote)}${requestId}`
-          : err instanceof Error
-            ? `${err.message}${requestId}`
-            : 'Could not place order';
+      const errorMessage = getCheckoutErrorMessage(err, quote);
 
       setError(errorMessage);
       showToast({ message: errorMessage, tone: 'error' });

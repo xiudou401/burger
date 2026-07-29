@@ -9,9 +9,14 @@ import { MAX_CART_ITEM_QUANTITY } from '../../../store/cart/cart-logic';
 interface QuantityCounterProps {
   id: string;
   disabled?: boolean;
+  size?: 'normal' | 'compact';
 }
 
-const QuantityCounter = ({ id, disabled = false }: QuantityCounterProps) => {
+const QuantityCounter = ({
+  id,
+  disabled = false,
+  size = 'normal',
+}: QuantityCounterProps) => {
   const { addItem, removeItem } = useCartActions();
 
   const quantity = useCartSelector((ctx) => getCartItemQuantity(ctx, id));
@@ -28,7 +33,11 @@ const QuantityCounter = ({ id, disabled = false }: QuantityCounterProps) => {
   };
 
   return (
-    <div className={classes.Counter}>
+    <div
+      className={`${classes.Counter} ${
+        size === 'compact' ? classes.Compact : ''
+      }`}
+    >
       {quantity > 0 && (
         <>
           <button className={classes.Decrease} onClick={onDecrease}>

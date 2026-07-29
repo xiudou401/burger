@@ -72,4 +72,14 @@ describe('QuantityCounter', () => {
 
     expect(addItem).not.toHaveBeenCalled();
   });
+
+  test('supports compact sizing', () => {
+    jest.mocked(useCartSelector).mockReturnValue(1);
+
+    const { container } = render(
+      <QuantityCounter id="meal-1" size="compact" />,
+    );
+
+    expect(container.firstChild).toHaveClass('Compact');
+  });
 });

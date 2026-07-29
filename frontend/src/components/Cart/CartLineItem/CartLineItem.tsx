@@ -27,7 +27,7 @@ const CartLineItem = ({ menuItem }: CartLineItemProps) => {
         <h2 className={classes.Name}>{menuItem.name}</h2>
 
         <div className={classes.Footer}>
-          <QuantityCounter id={menuItem.id} />
+          <QuantityCounter id={menuItem.id} size="compact" />
 
           <strong className={classes.Price}>
             {formatCurrency(menuItem.priceCents * quantity)}
