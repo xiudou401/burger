@@ -192,7 +192,9 @@
   }
 
   .Title {
-    font-size: var(--font-display-wide);
+    min-width: 0;
+    font-size: clamp(42rem, 2.4vw, var(--font-display-wide));
+    white-space: nowrap;
   }
 
   .Compact {
