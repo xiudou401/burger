@@ -37,6 +37,8 @@ const QuantityCounter = ({
       className={`${classes.Counter} ${
         size === 'compact' ? classes.Compact : ''
       }`}
+      role="group"
+      aria-label="Quantity controls"
     >
       {quantity > 0 && (
         <>

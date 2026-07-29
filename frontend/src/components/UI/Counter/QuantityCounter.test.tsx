@@ -76,10 +76,10 @@ describe('QuantityCounter', () => {
   test('supports compact sizing', () => {
     jest.mocked(useCartSelector).mockReturnValue(1);
 
-    const { container } = render(
-      <QuantityCounter id="meal-1" size="compact" />,
-    );
+    render(<QuantityCounter id="meal-1" size="compact" />);
 
-    expect(container.firstChild).toHaveClass('Compact');
+    expect(
+      screen.getByRole('group', { name: 'Quantity controls' }),
+    ).toHaveClass('Compact');
   });
 });
