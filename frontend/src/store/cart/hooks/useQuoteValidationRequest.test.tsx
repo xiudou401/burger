@@ -63,7 +63,7 @@ test('rejects when the menu version is not available', async () => {
 
   await waitFor(() => {
     expect(document.body.dataset.quoteResult).toBe(
-      'The menu is still loading. Please try again.',
+      'Menu is still loading. Please wait a moment.',
     );
   });
   expect(validateCart).not.toHaveBeenCalled();

@@ -2,9 +2,18 @@ import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 import type { Quote, QuoteErrorAction } from '../../../types/cart';
 
+const VALIDATION_ERROR_TYPE = 'ValidationError';
+const MENU_ITEM_REMOVED_CODE = 'MENU_ITEM_REMOVED';
+
+const isValidationError = (error: unknown) =>
+  error instanceof ApiError && error.body.type === VALIDATION_ERROR_TYPE;
+
+export const isRemovedItemError = (error: unknown): error is ApiError =>
+  error instanceof ApiError &&
+  error.body.details?.code === MENU_ITEM_REMOVED_CODE;
+
 export const getRemovedItemId = (error: unknown) => {
-  if (!(error instanceof ApiError)) return null;
-  if (error.body.message !== 'Menu item removed') return null;
+  if (!isRemovedItemError(error)) return null;
 
   const itemId = error.body.details?.itemId;
 
@@ -32,8 +41,19 @@ export const getQuoteErrorMessage = (error: unknown, quote?: Quote | null) => {
     return 'Some menu items have changed. Please review your cart before checkout.';
   }
 
-  if (error instanceof ApiError && error.body.message === 'Menu item removed') {
+  if (
+    error instanceof ApiError &&
+    error.statusCode === HTTP_STATUS.PRECONDITION_REQUIRED
+  ) {
+    return 'Menu is still loading. Please wait a moment.';
+  }
+
+  if (isRemovedItemError(error)) {
     return getRemovedItemMessage(getRemovedItemId(error), quote);
+  }
+
+  if (isValidationError(error)) {
+    return 'Your cart data looks invalid. Please clear your cart and add the items again.';
   }
 
   if (
@@ -56,10 +76,17 @@ export const getQuoteErrorState = (
   action: QuoteErrorAction | null;
 } => {
   const removedItemId = getRemovedItemId(error);
-  const isRemovedItemError =
-    error instanceof ApiError && error.body.message === 'Menu item removed';
 
-  if (isRemovedItemError) {
+  if (isValidationError(error)) {
+    return {
+      message: getQuoteErrorMessage(error, quote),
+      action: {
+        type: 'clearCart',
+      },
+    };
+  }
+
+  if (isRemovedItemError(error)) {
     return {
       message: getRemovedItemMessage(removedItemId, quote),
       action: removedItemId

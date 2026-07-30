@@ -54,6 +54,11 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
       return;
     }
 
+    if (quoteErrorAction?.type === 'clearCart') {
+      clearCart();
+      return;
+    }
+
     retryQuote();
   };
 
@@ -109,9 +114,11 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
             <div className={classes.ErrorStatus} role="alert">
               <p>{quoteError}</p>
               <button type="button" onClick={handleQuoteErrorAction}>
-                {quoteErrorAction?.type === 'removeItem'
-                  ? 'Remove item'
-                  : 'Retry'}
+                {quoteErrorAction?.type === 'clearCart'
+                  ? 'Clear cart'
+                  : quoteErrorAction?.type === 'removeItem'
+                    ? 'Remove item'
+                    : 'Retry'}
               </button>
             </div>
           )}

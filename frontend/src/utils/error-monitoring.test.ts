@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from '../api/http-status';
 import { ApiError } from '../api/request';
+import { QuoteRequestInactiveError } from '../store/cart/utils/quote-request-error';
 import {
   isExpectedBackgroundError,
   isRequestCancelled,
@@ -52,5 +53,12 @@ describe('error monitoring', () => {
         new ApiError(HTTP_STATUS.CONFLICT, { message: 'Conflict' }),
       ),
     ).toBe(false);
+  });
+
+  it('treats inactive quote requests as expected cancellation flow', () => {
+    const error = new QuoteRequestInactiveError();
+
+    expect(isRequestCancelled(error)).toBe(true);
+    expect(isExpectedBackgroundError(error)).toBe(true);
   });
 });

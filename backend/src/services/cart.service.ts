@@ -1,12 +1,9 @@
 import { getMenuVersion } from './menu.service';
 import { ServiceError } from '../errors/ServiceError';
 import { menuItemRepository } from '../repositories/menu-item.repository';
-import { CartPayloadSchema } from '../validation/cart.schema';
+import type { CartPayload } from '../validation/cart.schema';
 
-export interface CartStoredItem {
-  id: string;
-  quantity: number;
-}
+export type CartStoredItem = CartPayload['items'][number];
 
 export interface ValidatedCartMenuItem {
   id: string;
@@ -27,23 +24,15 @@ export interface ValidateCartResult {
 
 export const validateCart = async (
   items: CartStoredItem[],
-  menuVersion: number,
+  menuVersion: CartPayload['menuVersion'],
 ): Promise<ValidateCartResult> => {
-  const parsedCart = CartPayloadSchema.safeParse({ items, menuVersion });
-
-  if (!parsedCart.success) {
-    throw new ServiceError('Invalid cart payload', 400);
-  }
-
-  const validItems = parsedCart.data.items;
-  const validMenuVersion = parsedCart.data.menuVersion;
   const currentVersion = await getMenuVersion();
 
-  if (validMenuVersion !== currentVersion) {
+  if (menuVersion !== currentVersion) {
     throw new ServiceError('Menu updated', 409);
   }
 
-  const ids = validItems.map((item) => item.id);
+  const ids = items.map((item) => item.id);
 
   const menuItems = await menuItemRepository.findByIds(ids);
 
@@ -53,11 +42,14 @@ export const validateCart = async (
 
   let totalCents = 0;
 
-  const result: ValidatedCartMenuItem[] = validItems.map((item) => {
+  const result: ValidatedCartMenuItem[] = items.map((item) => {
     const menuItem = menuItemMap.get(item.id);
 
     if (!menuItem) {
-      throw new ServiceError('Menu item removed', 400, { itemId: item.id });
+      throw new ServiceError('Item is no longer available', 400, {
+        code: 'MENU_ITEM_REMOVED',
+        itemId: item.id,
+      });
     }
 
     if (menuItem.isAvailable === false) {

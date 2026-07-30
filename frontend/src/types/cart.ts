@@ -22,10 +22,14 @@ export interface Quote {
   ts: number;
 }
 
-export type QuoteErrorAction = {
-  type: 'removeItem';
-  itemId: string;
-};
+export type QuoteErrorAction =
+  | {
+      type: 'removeItem';
+      itemId: string;
+    }
+  | {
+      type: 'clearCart';
+    };
 
 export const CART_ACTIONS = {
   ADD_ITEM: 'ADD_ITEM',

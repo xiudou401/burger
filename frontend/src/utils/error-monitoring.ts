@@ -1,5 +1,6 @@
 import { HTTP_STATUS } from '../api/http-status';
 import { ApiError } from '../api/request';
+import { QuoteRequestInactiveError } from '../store/cart/utils/quote-request-error';
 
 interface ErrorContext {
   source: string;
@@ -7,13 +8,15 @@ interface ErrorContext {
 }
 
 export const isExpectedBackgroundError = (error: unknown) =>
-  error instanceof ApiError &&
-  (error.statusCode === HTTP_STATUS.CONFLICT ||
-    error.statusCode === HTTP_STATUS.REQUEST_CANCELLED);
+  error instanceof QuoteRequestInactiveError ||
+  (error instanceof ApiError &&
+    (error.statusCode === HTTP_STATUS.CONFLICT ||
+      error.statusCode === HTTP_STATUS.REQUEST_CANCELLED));
 
 export const isRequestCancelled = (error: unknown) =>
-  error instanceof ApiError &&
-  error.statusCode === HTTP_STATUS.REQUEST_CANCELLED;
+  error instanceof QuoteRequestInactiveError ||
+  (error instanceof ApiError &&
+    error.statusCode === HTTP_STATUS.REQUEST_CANCELLED);
 
 export const reportError = (error: unknown, context: ErrorContext) => {
   const details =

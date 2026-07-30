@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CartStoredItem, QuoteErrorAction } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
-import { getQuoteErrorState } from '../utils/quote-error';
+import { getQuoteErrorState, isRemovedItemError } from '../utils/quote-error';
 import {
   calculateEstimatedTotalCents,
   getQuoteUnitPriceChanges,
   type QuoteUnitPriceChange,
 } from '../utils/quote-utils';
 import { formatCurrency } from '../../../utils/currency';
-import { ApiError } from '../../../api/request';
 import {
   isExpectedBackgroundError,
   isRequestCancelled,
@@ -20,7 +19,6 @@ import {
 } from './useQuoteValidationRequest';
 
 const VALIDATE_DEBOUNCE_MS = 300;
-const REMOVED_MENU_ITEM_MESSAGE = 'Menu item removed';
 
 const getPriceUpdatedNotice = (priceChanges: QuoteUnitPriceChange[]) => {
   if (priceChanges.length === 0) return null;
@@ -143,10 +141,7 @@ export const useQuoteEngine = ({
     try {
       await validateQuote();
     } catch (error) {
-      if (
-        error instanceof ApiError &&
-        error.body.message === REMOVED_MENU_ITEM_MESSAGE
-      ) {
+      if (isRemovedItemError(error)) {
         setQuoteValidationError(error);
         return;
       }

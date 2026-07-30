@@ -4,6 +4,7 @@ import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
 import type { CartStoredItem, Quote } from '../../../types/cart';
 import { buildQuoteKey } from '../utils/quote-key';
+import { QuoteRequestInactiveError } from '../utils/quote-request-error';
 
 type InFlightEntry = {
   key: string;
@@ -70,8 +71,8 @@ export const useQuoteValidationRequest = ({
 
     if (latestMenuVersion === null) {
       return Promise.reject(
-        new ApiError(HTTP_STATUS.CONFLICT, {
-          message: 'The menu is still loading. Please try again.',
+        new ApiError(HTTP_STATUS.PRECONDITION_REQUIRED, {
+          message: 'Menu is still loading. Please wait a moment.',
         }),
       );
     }
@@ -97,9 +98,7 @@ export const useQuoteValidationRequest = ({
 
     const assertRequestActive = () => {
       if (controller.signal.aborted || requestId !== requestIdRef.current) {
-        throw new ApiError(HTTP_STATUS.REQUEST_CANCELLED, {
-          message: 'Quote request was cancelled or replaced',
-        });
+        throw new QuoteRequestInactiveError();
       }
     };
 

@@ -51,9 +51,27 @@ describe('getQuoteErrorMessage', () => {
     );
   });
 
+  it('uses a recoverable cart data message for API validation errors', () => {
+    expect(
+      getQuoteErrorMessage(
+        new ApiError(400, {
+          message: 'Validation failed',
+          type: 'ValidationError',
+        }),
+      ),
+    ).toBe(
+      'Your cart data looks invalid. Please clear your cart and add the items again.',
+    );
+  });
+
   it('uses a cart review message for removed menu items', () => {
     expect(
-      getQuoteErrorMessage(new ApiError(400, { message: 'Menu item removed' })),
+      getQuoteErrorMessage(
+        new ApiError(400, {
+          message: 'Item is no longer available',
+          details: { code: 'MENU_ITEM_REMOVED' },
+        }),
+      ),
     ).toBe(
       'An item in your cart is no longer available. Please review your cart.',
     );
@@ -63,8 +81,8 @@ describe('getQuoteErrorMessage', () => {
     expect(
       getQuoteErrorMessage(
         new ApiError(400, {
-          message: 'Menu item removed',
-          details: { itemId: 'burger' },
+          message: 'Item is no longer available',
+          details: { code: 'MENU_ITEM_REMOVED', itemId: 'burger' },
         }),
         quote,
       ),
@@ -79,8 +97,8 @@ describe('getRemovedItemId', () => {
     expect(
       getRemovedItemId(
         new ApiError(400, {
-          message: 'Menu item removed',
-          details: { itemId: 'burger' },
+          message: 'Item is no longer available',
+          details: { code: 'MENU_ITEM_REMOVED', itemId: 'burger' },
         }),
       ),
     ).toBe('burger');
@@ -98,8 +116,8 @@ describe('getQuoteErrorState', () => {
     expect(
       getQuoteErrorState(
         new ApiError(400, {
-          message: 'Menu item removed',
-          details: { itemId: 'burger' },
+          message: 'Item is no longer available',
+          details: { code: 'MENU_ITEM_REMOVED', itemId: 'burger' },
         }),
         quote,
       ),
@@ -119,6 +137,23 @@ describe('getQuoteErrorState', () => {
     ).toEqual({
       message: 'Could not validate your cart. Please try again.',
       action: null,
+    });
+  });
+
+  it('returns a clear cart action for API validation errors', () => {
+    expect(
+      getQuoteErrorState(
+        new ApiError(400, {
+          message: 'Validation failed',
+          type: 'ValidationError',
+        }),
+      ),
+    ).toEqual({
+      message:
+        'Your cart data looks invalid. Please clear your cart and add the items again.',
+      action: {
+        type: 'clearCart',
+      },
     });
   });
 });
