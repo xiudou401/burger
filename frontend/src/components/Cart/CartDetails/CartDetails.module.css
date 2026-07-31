@@ -126,6 +126,13 @@
   outline-offset: 3rem;
 }
 
+.EmptyState {
+  margin: 0;
+  padding: 12rem;
+  color: var(--text-muted);
+  font-size: var(--font-body);
+}
+
 @media (max-width: 560px) {
   .CartDetails {
     width: 100vw;

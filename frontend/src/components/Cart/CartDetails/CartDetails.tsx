@@ -128,7 +128,7 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
           ))}
 
           {quote && menuItems.length === 0 && (
-            <p style={{ padding: 12, color: '#999' }}>Your cart is empty.</p>
+            <p className={classes.EmptyState}>Your cart is empty.</p>
           )}
         </div>
       </div>
