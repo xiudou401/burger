@@ -18,6 +18,7 @@ import {
 } from './auth-channel';
 import type { User } from '../../types/auth';
 import { getPermissionsForRole } from '../../types/permissions';
+import { reportError } from '../../utils/error-monitoring';
 
 interface Props {
   children: ReactNode;
@@ -61,7 +62,10 @@ export const AuthProvider = ({ children }: Props) => {
             error.statusCode === HTTP_STATUS.UNAUTHORIZED
           )
         ) {
-          console.error('Failed to restore auth session:', error);
+          reportError(error, {
+            source: 'auth',
+            operation: 'restore-session',
+          });
         }
 
         if (!isMounted) return;
@@ -124,7 +128,10 @@ export const AuthProvider = ({ children }: Props) => {
       await logoutRequest();
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
-        console.error('Logout request failed:', error);
+        reportError(error, {
+          source: 'auth',
+          operation: 'logout',
+        });
       }
     } finally {
       clearAuthState();

@@ -9,6 +9,7 @@ import {
   mergeUniqueMenuItems,
 } from './infinite-menu-items-utils';
 import { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';
+import { reportError } from '../utils/error-monitoring';
 
 type FetchMenuItemsFn = (params: {
   keyword?: string;
@@ -147,7 +148,10 @@ export const useInfiniteMenuItems = ({
           if (controller.signal.aborted) return false;
           if (requestId !== requestIdRef.current) return false;
 
-          console.error('Menu load failed', error);
+          reportError(error, {
+            source: 'menu',
+            operation: 'load-items',
+          });
           setError('Could not load the menu. Retry.');
           settledLoadRef.current = { key, result: false };
           return false;

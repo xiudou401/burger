@@ -12,6 +12,7 @@ import { useAuth } from '../../store/auth/hooks/useAuth';
 import { useToast } from '../../components/UI/Toast/ToastContext';
 import { hasPermission } from '../../types/permissions';
 import type { Order } from '../../types/order';
+import { reportError } from '../../utils/error-monitoring';
 
 const ORDER_CONFIRMATION_POLL_ATTEMPTS = 5;
 const ORDER_CONFIRMATION_POLL_DELAY_MS = 1500;
@@ -118,7 +119,10 @@ export const useProfilePage = () => {
           }
         } catch (err) {
           if (!mountedRef.current) return;
-          console.error('Order confirmation poll failed', err);
+          reportError(err, {
+            source: 'profile',
+            operation: 'confirm-redirected-order',
+          });
         }
       }
 
