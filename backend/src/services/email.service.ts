@@ -1,5 +1,6 @@
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
+import { appLogger } from '../utils/logger';
 
 interface AuthEmailParams {
   email: string;
@@ -51,8 +52,11 @@ const sendEmail = async ({
   html: string;
 }) => {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
-    console.log(`[dev email] ${subject} -> ${to}`);
-    console.log(html.replace(/<[^>]+>/g, ' '));
+    appLogger.info('dev_email_skipped', {
+      to,
+      subject,
+      preview: html.replace(/<[^>]+>/g, ' ').trim(),
+    });
     return;
   }
 

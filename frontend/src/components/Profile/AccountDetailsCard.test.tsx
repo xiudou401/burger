@@ -8,7 +8,6 @@ const user: User = {
   email: 'pat@example.com',
   role: 'customer',
   emailVerified: true,
-  phoneVerified: false,
 };
 
 const baseProps = {
@@ -24,7 +23,7 @@ describe('AccountDetailsCard', () => {
     jest.clearAllMocks();
   });
 
-  test('shows email verification details without phone rows', () => {
+  test('shows account and email verification details', () => {
     render(<AccountDetailsCard {...baseProps} />);
 
     expect(screen.getByText('Role')).toBeInTheDocument();
@@ -32,9 +31,5 @@ describe('AccountDetailsCard', () => {
     expect(screen.getByText('Account status')).toBeInTheDocument();
     expect(screen.getByText('Ready to order')).toBeInTheDocument();
     expect(screen.getByText('Email status')).toBeInTheDocument();
-    expect(screen.queryByText('Phone')).not.toBeInTheDocument();
-    expect(screen.queryByText('Phone status')).not.toBeInTheDocument();
-    expect(screen.queryByText('Link phone number')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /verify phone/i })).toBeNull();
   });
 });

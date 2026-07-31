@@ -1,7 +1,7 @@
 import type { SortOrder } from 'mongoose';
 import { MenuItemModel, type MenuItem } from '../models/menu-item.model';
 
-type MenuItemQuery = Record<string, unknown>;
+export type MenuItemQuery = Record<string, unknown>;
 
 export const menuItemRepository = {
   findPage({

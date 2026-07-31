@@ -15,14 +15,12 @@ test('signs and verifies access tokens', async () => {
   const token = await signAuthToken({
     sub: 'user-123',
     email: 'pat@example.com',
-    phone: '+61412345678',
   });
 
   const payload = await verifyAuthToken(token);
 
   expect(payload.sub).toBe('user-123');
   expect(payload.email).toBe('pat@example.com');
-  expect(payload.phone).toBe('+61412345678');
   expect(typeof payload.iat).toBe('number');
   expect(typeof payload.exp).toBe('number');
   expect(payload.exp).toBeGreaterThan(payload.iat);

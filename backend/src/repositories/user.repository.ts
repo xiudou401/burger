@@ -26,10 +26,6 @@ export const userRepository = {
     return UserModel.findOne({ email }).select('+passwordHash').exec();
   },
 
-  findByPhone(phone: string) {
-    return UserModel.findOne({ phone }).exec();
-  },
-
   findByValidEmailVerificationToken(tokenHash: string, now = new Date()) {
     return UserModel.findOne({
       emailVerificationTokenHash: tokenHash,
@@ -88,39 +84,6 @@ export const userRepository = {
         $unset: {
           passwordResetTokenHash: 1,
           passwordResetExpiresAt: 1,
-        },
-      },
-      {
-        new: true,
-      },
-    ).exec();
-  },
-
-  findByValidSmsCode(phone: string, codeHash: string, now = new Date()) {
-    return UserModel.findOne({
-      phone,
-      smsVerificationCodeHash: codeHash,
-      smsVerificationExpiresAt: { $gt: now },
-    })
-      .select('+smsVerificationCodeHash +smsVerificationExpiresAt')
-      .exec();
-  },
-
-  consumeSmsCode(phone: string, codeHash: string, now = new Date()) {
-    return UserModel.findOneAndUpdate(
-      {
-        phone,
-        smsVerificationCodeHash: codeHash,
-        smsVerificationExpiresAt: { $gt: now },
-        status: 'active',
-      },
-      {
-        $set: {
-          phoneVerified: true,
-        },
-        $unset: {
-          smsVerificationCodeHash: 1,
-          smsVerificationExpiresAt: 1,
         },
       },
       {

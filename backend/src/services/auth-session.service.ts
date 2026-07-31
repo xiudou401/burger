@@ -41,7 +41,6 @@ const createSession = async (
       accessToken: await signAuthToken({
         sub: user.id,
         email: user.email,
-        phone: user.phone,
       }),
       refreshToken,
       user,

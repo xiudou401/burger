@@ -7,7 +7,6 @@ test('maps a user document to its public authenticated shape', () => {
       email: 'pat@example.com',
       name: 'Pat',
       emailVerified: true,
-      phoneVerified: false,
     }),
   ).toEqual({
     id: 'user-123',
@@ -17,7 +16,5 @@ test('maps a user document to its public authenticated shape', () => {
     permissions: ['create_order', 'view_own_orders'],
     status: 'active',
     emailVerified: true,
-    phone: undefined,
-    phoneVerified: false,
   });
 });

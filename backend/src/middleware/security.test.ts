@@ -92,7 +92,6 @@ test('keys verification resend limits by user and email', () => {
       permissions: ['create_order', 'view_own_orders'],
       email: 'PAT@example.com',
       emailVerified: false,
-      phoneVerified: false,
     },
   } as Request;
 

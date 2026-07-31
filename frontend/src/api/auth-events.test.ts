@@ -30,7 +30,6 @@ describe('auth session events', () => {
         email: 'pat@example.com',
         role: 'customer' as const,
         emailVerified: true,
-        phoneVerified: false,
       },
     };
     const unsubscribe = subscribeToAuthSessionRefreshed(listener);

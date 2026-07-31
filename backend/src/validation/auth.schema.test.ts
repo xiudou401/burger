@@ -1,4 +1,4 @@
-import { LoginSchema, SendSmsCodeSchema, SignupSchema } from './auth.schema';
+import { LoginSchema, SignupSchema } from './auth.schema';
 
 describe('auth schemas', () => {
   test('normalizes signup names and emails at the request boundary', () => {
@@ -24,16 +24,6 @@ describe('auth schemas', () => {
     ).toEqual({
       email: 'pat@example.com',
       password: 'Burger#2026',
-    });
-  });
-
-  test('normalizes phone numbers to E.164 format', () => {
-    expect(
-      SendSmsCodeSchema.parse({
-        phone: '+61 412 345 678',
-      }),
-    ).toEqual({
-      phone: '+61412345678',
     });
   });
 });

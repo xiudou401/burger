@@ -8,8 +8,6 @@ export interface User {
   permissions?: Permission[];
   status?: 'active' | 'disabled';
   emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
 }
 
 export interface AuthResponse {

@@ -44,7 +44,6 @@ describe('auth session service', () => {
     role: 'customer' as const,
     permissions: getPermissionsForRole('customer'),
     emailVerified: true,
-    phoneVerified: false,
   };
 
   beforeEach(() => {
@@ -89,7 +88,6 @@ describe('auth session service', () => {
       name: user.name,
       role: user.role,
       emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
     };
 
     jest
@@ -137,7 +135,6 @@ describe('auth session service', () => {
       name: user.name,
       role: user.role,
       emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
     };
 
     jest
@@ -174,7 +171,6 @@ describe('auth session service', () => {
       name: user.name,
       role: user.role,
       emailVerified: user.emailVerified,
-      phoneVerified: user.phoneVerified,
     };
 
     jest

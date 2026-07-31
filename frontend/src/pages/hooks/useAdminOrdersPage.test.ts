@@ -9,7 +9,6 @@ describe('admin order status permissions', () => {
       role: 'admin',
       permissions: getPermissionsForRole('admin'),
       emailVerified: true,
-      phoneVerified: false,
     });
 
     expect(nextStatuses.paid).toEqual(['preparing', 'cancelled']);
@@ -25,7 +24,6 @@ describe('admin order status permissions', () => {
       role: 'staff',
       permissions: getPermissionsForRole('staff'),
       emailVerified: true,
-      phoneVerified: false,
     });
 
     expect(nextStatuses.paid).toEqual(['preparing']);

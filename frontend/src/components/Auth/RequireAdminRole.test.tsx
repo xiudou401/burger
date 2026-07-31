@@ -24,7 +24,6 @@ const user = (role: User['role']): User => ({
   email: 'pat@example.com',
   role,
   emailVerified: true,
-  phoneVerified: false,
 });
 
 const baseAuth: AuthContextValue = {

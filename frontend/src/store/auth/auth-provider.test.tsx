@@ -46,7 +46,6 @@ const customerUser = {
   email: 'pat@example.com',
   role: 'customer' as const,
   emailVerified: true,
-  phoneVerified: false,
 };
 
 const adminUser = {
@@ -55,7 +54,6 @@ const adminUser = {
   email: 'admin@example.com',
   role: 'admin' as const,
   emailVerified: true,
-  phoneVerified: false,
 };
 
 const AuthState = () => {

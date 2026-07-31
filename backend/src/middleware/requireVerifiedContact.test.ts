@@ -11,7 +11,6 @@ const makeRequest = (overrides: Partial<NonNullable<Request['user']>> = {}) =>
       role: 'customer',
       permissions: getPermissionsForRole('customer'),
       emailVerified: false,
-      phoneVerified: false,
       ...overrides,
     },
   }) as Request;
@@ -26,18 +25,6 @@ test('allows users with a verified email', () => {
   );
 
   expect(next).toHaveBeenCalledWith();
-});
-
-test('blocks users with only a verified phone', () => {
-  const next = jest.fn() as NextFunction;
-
-  requireVerifiedContact(
-    makeRequest({ phoneVerified: true }),
-    {} as Response,
-    next,
-  );
-
-  expect(next).toHaveBeenCalledWith(expect.any(ServiceError));
 });
 
 test('blocks users without a verified email', () => {

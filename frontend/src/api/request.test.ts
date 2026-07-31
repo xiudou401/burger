@@ -81,7 +81,6 @@ describe('authenticated request refresh', () => {
         email: 'pat@example.com',
         role: 'customer',
         emailVerified: true,
-        phoneVerified: false,
       },
     };
 
@@ -138,7 +137,6 @@ describe('authenticated request refresh', () => {
         email: 'pat@example.com',
         role: 'customer',
         emailVerified: true,
-        phoneVerified: false,
       },
     };
 
@@ -171,7 +169,6 @@ describe('authenticated request refresh', () => {
         email: 'pat@example.com',
         role: 'customer',
         emailVerified: true,
-        phoneVerified: false,
       },
     };
 
@@ -205,7 +202,6 @@ describe('authenticated request refresh', () => {
         email: 'pat@example.com',
         role: 'customer',
         emailVerified: true,
-        phoneVerified: false,
       },
     };
     let refreshCalls = 0;

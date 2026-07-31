@@ -63,30 +63,12 @@ test('maps Mongo duplicate email errors to a generic 409 response', () => {
   });
 });
 
-test('maps Mongo duplicate phone errors to a stable 409 response', () => {
-  const res = mockResponse();
-
-  errorHandler(
-    { code: 11000, keyPattern: { phone: 1 } },
-    mockRequest(),
-    res,
-    jest.fn() as NextFunction,
-  );
-
-  expect(res.status).toHaveBeenCalledWith(409);
-  expect(res.json).toHaveBeenCalledWith({
-    message: 'Phone is already linked to another account',
-    statusCode: 409,
-    type: 'DuplicateKeyError',
-    requestId: 'req-test-123',
-  });
-});
-
 test('includes service error details in operational responses', () => {
   const res = mockResponse();
 
   errorHandler(
-    new ServiceError('Menu item removed', 400, {
+    new ServiceError('Item is no longer available', 400, {
+      code: 'MENU_ITEM_REMOVED',
       itemId: '64f1b2c3d4e5f67890123456',
     }),
     mockRequest(),
@@ -96,11 +78,12 @@ test('includes service error details in operational responses', () => {
 
   expect(res.status).toHaveBeenCalledWith(400);
   expect(res.json).toHaveBeenCalledWith({
-    message: 'Menu item removed',
+    message: 'Item is no longer available',
     statusCode: 400,
     type: 'ServiceError',
     requestId: 'req-test-123',
     details: {
+      code: 'MENU_ITEM_REMOVED',
       itemId: '64f1b2c3d4e5f67890123456',
     },
   });

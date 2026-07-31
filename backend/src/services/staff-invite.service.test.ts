@@ -34,7 +34,6 @@ describe('staff invite service', () => {
     role: 'customer' as const,
     status: 'active' as const,
     emailVerified: false,
-    phoneVerified: false,
   };
   const acceptedInvite = {
     _id: inviteId,
@@ -71,7 +70,6 @@ describe('staff invite service', () => {
         permissions: ['view_orders', 'update_order_status'],
         status: 'active',
         emailVerified: true,
-        phoneVerified: false,
       },
     });
   });

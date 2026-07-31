@@ -14,11 +14,6 @@ import {
   sendVerificationEmail,
   sendWelcomeEmail,
 } from './email.service';
-import {
-  createSmsCode,
-  isDevSmsMode,
-  sendSmsVerificationCode,
-} from './sms.service';
 import { env } from '../config/env';
 import { TTL_MS } from '../config/ttl';
 import { appLogger } from '../utils/logger';
@@ -26,10 +21,8 @@ import type {
   ForgotPasswordPayload,
   LoginPayload,
   ResetPasswordPayload,
-  SendSmsCodePayload,
   SignupPayload,
   VerifyEmailPayload,
-  VerifySmsCodePayload,
 } from '../validation/auth.schema';
 import { userRepository } from '../repositories/user.repository';
 import { hasPermission } from '../types/permissions';
@@ -47,7 +40,6 @@ interface MessageResult {
   user?: AuthenticatedUser;
   resetToken?: string;
   emailVerificationToken?: string;
-  devSmsCode?: string;
 }
 
 const SIGNUP_DUPLICATE_MESSAGE = 'Could not create account with these details';
@@ -266,70 +258,6 @@ export const resetPassword = async ({
   await revokeUserSessions(String(user._id));
 
   return { message: 'Password reset successfully' };
-};
-
-export const sendSmsCode = async (
-  { phone }: SendSmsCodePayload,
-  userId?: string,
-): Promise<MessageResult> => {
-  const existingUser = await userRepository.findByPhone(phone);
-
-  if (userId && existingUser && String(existingUser._id) !== userId) {
-    throw new ServiceError('Phone is already linked to another account', 409);
-  }
-
-  let user = existingUser;
-
-  if (userId && !user) {
-    user = await userRepository.findById(userId);
-
-    if (!user) {
-      throw new ServiceError('User not found', 404);
-    }
-
-    user.phone = phone;
-    user.phoneVerified = false;
-  }
-
-  if (!user) {
-    user = await userRepository.create({
-      name: `Burger fan ${phone.slice(-4)}`,
-      phone,
-      phoneVerified: false,
-    });
-  }
-
-  const code = createSmsCode();
-  user.smsVerificationCodeHash = hashToken(code);
-  user.smsVerificationExpiresAt = new Date(Date.now() + TTL_MS.SMS_CODE);
-  await userRepository.save(user);
-
-  await sendSmsVerificationCode({
-    phone,
-    code,
-  });
-
-  return {
-    message: 'SMS verification code sent',
-    ...(isDevSmsMode() ? { devSmsCode: code } : {}),
-  };
-};
-
-export const verifySmsCode = async ({
-  phone,
-  code,
-}: VerifySmsCodePayload): Promise<AuthResult> => {
-  const user = await userRepository.consumeSmsCode(phone, hashToken(code));
-
-  if (!user) {
-    throw new ServiceError('SMS code is invalid or expired', 400);
-  }
-
-  assertUserIsActive(user);
-
-  const publicUser = toPublicUser(user);
-
-  return createAuthResult(publicUser);
 };
 
 export const loginWithOAuth = async ({

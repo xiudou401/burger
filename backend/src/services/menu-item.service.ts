@@ -3,7 +3,10 @@ import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
 import { bumpMenuVersion, getMenuVersion } from './menu.service';
-import { menuItemRepository } from '../repositories/menu-item.repository';
+import {
+  menuItemRepository,
+  type MenuItemQuery as MenuItemMongoQuery,
+} from '../repositories/menu-item.repository';
 import type { MenuItemPayload } from '../validation/menu-item.schema';
 import type { AuthenticatedUser } from '../types/auth';
 import { recordAuditLog } from './audit-log.service';
@@ -34,6 +37,11 @@ const SORT_MAP: Record<SortOption, Record<string, SortOrder>> = {
 
 const escapeRegex = (value: string) =>
   value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+type PriceRangeQuery = {
+  $gte?: number;
+  $lte?: number;
+};
 
 const toPublicMenuItem = (menuItem: {
   _id: unknown;
@@ -69,7 +77,7 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
       ? SORT_MAP[sort]
       : { createdAt: -1 };
 
-    const mongoQuery: Record<string, any> = {};
+    const mongoQuery: MenuItemMongoQuery = {};
 
     if (category) {
       mongoQuery.category = category;
@@ -85,13 +93,16 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
     }
 
     if (minPriceCents !== undefined || maxPriceCents !== undefined) {
-      mongoQuery.priceCents = {};
+      const priceCents: PriceRangeQuery = {};
+
       if (minPriceCents !== undefined) {
-        mongoQuery.priceCents.$gte = minPriceCents;
+        priceCents.$gte = minPriceCents;
       }
       if (maxPriceCents !== undefined) {
-        mongoQuery.priceCents.$lte = maxPriceCents;
+        priceCents.$lte = maxPriceCents;
       }
+
+      mongoQuery.priceCents = priceCents;
     }
 
     const skip = (page - 1) * limit;

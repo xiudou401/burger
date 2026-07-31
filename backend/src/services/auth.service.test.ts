@@ -25,7 +25,6 @@ jest.mock('../repositories/user.repository', () => ({
     findByValidPasswordResetToken: jest.fn(),
     consumeEmailVerificationToken: jest.fn(),
     consumePasswordResetToken: jest.fn(),
-    consumeSmsCode: jest.fn(),
     save: jest.fn(),
     setEmailVerificationToken: jest.fn(),
   },
@@ -62,8 +61,6 @@ describe('auth service', () => {
     permissions: getPermissionsForRole('customer'),
     status: 'active' as const,
     emailVerified: false,
-    phone: undefined,
-    phoneVerified: false,
   };
   const userDoc = {
     _id: userId,
@@ -72,8 +69,6 @@ describe('auth service', () => {
     role: publicUser.role,
     status: publicUser.status,
     emailVerified: publicUser.emailVerified,
-    phone: publicUser.phone,
-    phoneVerified: publicUser.phoneVerified,
   };
 
   beforeEach(() => {

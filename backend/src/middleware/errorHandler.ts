@@ -36,10 +36,6 @@ const getDuplicateKeyMessage = (error: {
     return 'Could not create account with these details';
   }
 
-  if (error.keyPattern?.phone) {
-    return 'Phone is already linked to another account';
-  }
-
   return 'Duplicate value already exists';
 };
 

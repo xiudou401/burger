@@ -9,12 +9,8 @@ export interface User {
   disabledAt?: Date;
   disabledReason?: string;
   emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
   emailVerificationTokenHash?: string;
   emailVerificationExpiresAt?: Date;
-  smsVerificationCodeHash?: string;
-  smsVerificationExpiresAt?: Date;
   passwordResetTokenHash?: string;
   passwordResetExpiresAt?: Date;
   createdAt: Date;
@@ -66,31 +62,11 @@ const userSchema = new Schema<User>(
       required: true,
       default: false,
     },
-    phone: {
-      type: String,
-      trim: true,
-      unique: true,
-      sparse: true,
-      index: true,
-    },
-    phoneVerified: {
-      type: Boolean,
-      required: true,
-      default: false,
-    },
     emailVerificationTokenHash: {
       type: String,
       select: false,
     },
     emailVerificationExpiresAt: {
-      type: Date,
-      select: false,
-    },
-    smsVerificationCodeHash: {
-      type: String,
-      select: false,
-    },
-    smsVerificationExpiresAt: {
       type: Date,
       select: false,
     },

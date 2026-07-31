@@ -12,10 +12,8 @@ import type {
   ForgotPasswordPayload,
   LoginPayload,
   ResetPasswordPayload,
-  SendSmsCodePayload,
   SignupPayload,
   VerifyEmailPayload,
-  VerifySmsCodePayload,
 } from '../validation/auth.schema';
 
 export const signupHandler = async (
@@ -165,39 +163,6 @@ export const resetPasswordHandler = async (
     );
 
     res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const sendSmsCodeHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const result = await authService.sendSmsCode(
-      req.body as SendSmsCodePayload,
-      req.user?.id,
-    );
-
-    res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const verifySmsCodeHandler = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    const result = await authService.verifySmsCode(
-      req.body as VerifySmsCodePayload,
-    );
-
-    sendAuthResult(res, 200, result);
   } catch (error) {
     next(error);
   }

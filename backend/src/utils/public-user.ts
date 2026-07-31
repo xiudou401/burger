@@ -8,8 +8,6 @@ export interface PublicUserSource {
   role?: AuthenticatedUser['role'];
   status?: AuthenticatedUser['status'];
   emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
 }
 
 export const toPublicUser = (user: PublicUserSource): AuthenticatedUser => ({
@@ -20,6 +18,4 @@ export const toPublicUser = (user: PublicUserSource): AuthenticatedUser => ({
   permissions: getPermissionsForRole(user.role ?? 'customer'),
   status: user.status ?? 'active',
   emailVerified: user.emailVerified,
-  phone: user.phone,
-  phoneVerified: user.phoneVerified,
 });

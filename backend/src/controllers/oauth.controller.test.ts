@@ -75,7 +75,6 @@ describe('oauth controller', () => {
         permissions: ['create_order', 'view_own_orders'],
         status: 'active',
         emailVerified: true,
-        phoneVerified: false,
       },
     });
   });

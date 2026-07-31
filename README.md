@@ -82,8 +82,7 @@ recent orders while staff manage orders and menu changes.
 
 - Stripe runs in test mode and does not create real charges.
 - Google sign-in is available in the deployed app.
-- SMS codes are printed locally in development; the production SMS entry point
-  is hidden until a provider is configured.
+- Email/password and Google sign-in are available in the current auth surface.
 - Apple sign-in is planned but not implemented yet.
 
 ## Screenshots
@@ -246,8 +245,8 @@ the original request body.
 The backend applies Helmet security headers, limits JSON request bodies to
 100 KB, and rate-limits the general API. Login and verification attempts use a
 stricter limiter, while higher-cost actions such as signup, password recovery,
-and SMS delivery use the strictest limiter. Stripe webhooks remain outside the
-general limiter so valid provider retries are not blocked.
+and email verification use the strictest limiter. Stripe webhooks remain outside
+the general limiter so valid provider retries are not blocked.
 
 Payment truth comes from Stripe webhooks, not the frontend success redirect. The
 frontend only improves the return experience by showing payment state and

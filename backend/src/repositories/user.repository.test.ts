@@ -156,35 +156,4 @@ describe('userRepository', () => {
     );
     expect(exec).toHaveBeenCalled();
   });
-
-  test('atomically consumes SMS codes', async () => {
-    const exec = jest.fn().mockResolvedValue(null);
-    const now = new Date('2026-01-01T00:00:00.000Z');
-
-    jest.mocked(UserModel.findOneAndUpdate).mockReturnValue({ exec } as never);
-
-    await userRepository.consumeSmsCode('+61400000000', 'code-hash', now);
-
-    expect(UserModel.findOneAndUpdate).toHaveBeenCalledWith(
-      {
-        phone: '+61400000000',
-        smsVerificationCodeHash: 'code-hash',
-        smsVerificationExpiresAt: { $gt: now },
-        status: 'active',
-      },
-      {
-        $set: {
-          phoneVerified: true,
-        },
-        $unset: {
-          smsVerificationCodeHash: 1,
-          smsVerificationExpiresAt: 1,
-        },
-      },
-      {
-        new: true,
-      },
-    );
-    expect(exec).toHaveBeenCalled();
-  });
 });

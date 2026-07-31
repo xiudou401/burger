@@ -19,15 +19,13 @@ const isTokenPayload = (payload: unknown): payload is AuthTokenPayload => {
     exp?: unknown;
     iat?: unknown;
     email?: unknown;
-    phone?: unknown;
   };
 
   return (
     typeof candidate.sub === 'string' &&
     typeof candidate.exp === 'number' &&
     typeof candidate.iat === 'number' &&
-    (candidate.email === undefined || typeof candidate.email === 'string') &&
-    (candidate.phone === undefined || typeof candidate.phone === 'string')
+    (candidate.email === undefined || typeof candidate.email === 'string')
   );
 };
 

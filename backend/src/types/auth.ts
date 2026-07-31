@@ -8,14 +8,11 @@ export interface AuthenticatedUser {
   permissions: Permission[];
   status?: 'active' | 'disabled';
   emailVerified: boolean;
-  phone?: string;
-  phoneVerified: boolean;
 }
 
 export interface AuthTokenPayload {
   sub: string;
   email?: string;
-  phone?: string;
   iat: number;
   exp: number;
 }

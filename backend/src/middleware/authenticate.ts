@@ -38,8 +38,6 @@ export const authenticate = async (
       permissions: getPermissionsForRole(user.role ?? 'customer'),
       status: user.status ?? 'active',
       emailVerified: user.emailVerified,
-      phone: user.phone,
-      phoneVerified: user.phoneVerified,
     };
 
     next();
