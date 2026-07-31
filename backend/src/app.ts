@@ -9,7 +9,6 @@ import adminCustomerRoutes from './routes/admin-customer.routes';
 import auditLogRoutes from './routes/audit-log.routes';
 import adminDashboardRoutes from './routes/admin-dashboard.routes';
 import stripeRoutes from './routes/stripe.routes';
-import path from 'path';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -39,8 +38,6 @@ app.use('/api/stripe', express.raw({ type: 'application/json' }), stripeRoutes);
 app.use('/api', apiRateLimiter);
 app.use(express.json({ limit: '100kb' }));
 app.use(cookieParser());
-
-app.use('/img', express.static(path.join(process.cwd(), 'public/img')));
 
 // routes
 app.get('/api/health', (_req: Request, res: Response) => {
