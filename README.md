@@ -252,6 +252,11 @@ Payment truth comes from Stripe webhooks, not the frontend success redirect. The
 frontend only improves the return experience by showing payment state and
 clearing the cart after a successful return.
 
+Menu images are stored as paths or URLs on each menu item. Demo assets live in
+`frontend/public/img/meals` and are served by the frontend deployment; production
+image uploads would normally use object storage or a hosted image service rather
+than the Vercel or Render filesystem.
+
 All monetary values are stored and transferred as integer AUD cents
 (`priceCents`, `subtotalCents`, `totalCents`, and `amountCents`). Stripe receives
 the validated integer `priceCents` value directly as its minor-unit amount.

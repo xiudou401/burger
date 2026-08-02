@@ -6,6 +6,7 @@ import { useAdminOrderDetailsPage } from './hooks/useAdminOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
 import { formatMediumDateTime } from '../utils/date';
 import { formatOrderShortId, formatOrderStatus } from '../utils/order';
+import MenuImage from '../components/UI/MenuImage/MenuImage';
 
 const AdminOrderDetails = () => {
   const { orderId = '' } = useParams();
@@ -54,13 +55,11 @@ const AdminOrderDetails = () => {
             <div className={classes.ItemList}>
               {order.items.map((item) => (
                 <article className={classes.Item} key={item.mealId}>
-                  {item.image && (
-                    <img
-                      className={classes.ItemImage}
-                      src={item.image}
-                      alt={item.name}
-                    />
-                  )}
+                  <MenuImage
+                    className={classes.ItemImage}
+                    src={item.image}
+                    alt={item.name}
+                  />
                   <div className={classes.ItemInfo}>
                     <h3 className={classes.ItemName}>{item.name}</h3>
                     <p className={classes.ItemMeta}>

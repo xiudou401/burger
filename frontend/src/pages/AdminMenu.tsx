@@ -13,6 +13,7 @@ import { formatCurrency } from '../utils/currency';
 import { MENU_CATEGORIES } from '../constants/menu-categories';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import type { MenuItem } from '../types/menu-item';
+import MenuImage from '../components/UI/MenuImage/MenuImage';
 
 const AdminMenu = () => {
   const [isMenuItemDialogOpen, setIsMenuItemDialogOpen] = useState(false);
@@ -189,6 +190,7 @@ const AdminMenu = () => {
               htmlFor="menu-item-image"
               className={classes.ImageField}
               error={fieldErrors.image}
+              hint="Use an existing app image path or a hosted image URL."
             >
               <input
                 id="menu-item-image"
@@ -196,7 +198,7 @@ const AdminMenu = () => {
                   fieldErrors.image ? formControls.Invalid : ''
                 }`}
                 aria-invalid={fieldErrors.image ? 'true' : undefined}
-                placeholder="/img/meals/1.png"
+                placeholder="/img/meals/1.png or https://..."
                 value={form.image}
                 onChange={(event) => updateForm('image', event.target.value)}
               />
@@ -309,13 +311,11 @@ const AdminMenu = () => {
           {filteredMenuItems.map((menuItem) => (
             <article className={classes.MenuItemRow} key={menuItem.id}>
               <div className={classes.MenuItemInfo}>
-                {menuItem.image && (
-                  <img
-                    className={classes.MenuItemImage}
-                    src={menuItem.image}
-                    alt=""
-                  />
-                )}
+                <MenuImage
+                  className={classes.MenuItemImage}
+                  src={menuItem.image}
+                  alt=""
+                />
                 <div>
                   <h3 className={classes.MenuItemName}>{menuItem.name}</h3>
                   <div className={classes.Badges}>

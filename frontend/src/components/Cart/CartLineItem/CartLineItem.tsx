@@ -5,6 +5,7 @@ import { getCartItemQuantity } from '../../../store/cart/context-accessors';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import type { CartMenuItem } from '../../../types/cart';
 import { formatCurrency } from '../../../utils/currency';
+import MenuImage from '../../UI/MenuImage/MenuImage';
 
 interface CartLineItemProps {
   menuItem: CartMenuItem;
@@ -20,7 +21,7 @@ const CartLineItem = ({ menuItem }: CartLineItemProps) => {
   return (
     <div className={classes.CartLineItem}>
       <div className={classes.Image}>
-        <img src={menuItem.image} alt={menuItem.name} />
+        <MenuImage src={menuItem.image} alt={menuItem.name} />
       </div>
 
       <div className={classes.Content}>

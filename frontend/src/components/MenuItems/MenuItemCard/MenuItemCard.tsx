@@ -3,6 +3,7 @@ import classes from './MenuItemCard.module.css';
 import QuantityCounter from '../../UI/Counter/QuantityCounter';
 import type { MenuItem } from '../../../types/menu-item';
 import { formatCurrency } from '../../../utils/currency';
+import MenuImage from '../../UI/MenuImage/MenuImage';
 
 interface MenuItemCardProps {
   menuItem: MenuItem;
@@ -25,7 +26,7 @@ const MenuItemCard = ({
       } ${variant === 'compact' ? classes.Compact : ''}`}
     >
       <div className={classes.ImageWrapper}>
-        <img src={menuItem.image} alt={menuItem.name} />
+        <MenuImage src={menuItem.image} alt={menuItem.name} />
       </div>
 
       <div className={classes.DescBox}>
