@@ -6,6 +6,7 @@ import {
 } from './auth-events';
 import type { AuthResponse } from '../types/auth';
 import { API_BASE } from './api-base';
+import { reportDiagnostic } from '../utils/diagnostics';
 
 const REQUEST_TIMEOUT_MS = 10_000;
 const RETRY_COUNT = 1;
@@ -208,7 +209,15 @@ export const request = async <T>(
         retriesRemaining > 0 &&
         isRetryableRequest(options)
       ) {
-        console.warn('Retry (server error):', path);
+        reportDiagnostic({
+          source: 'api-request',
+          operation: 'retry-server-error',
+          details: {
+            path,
+            statusCode: err.statusCode,
+            retriesRemaining,
+          },
+        });
         await waitForRetry(externalSignal);
         return request<T>(path, options, retriesRemaining - 1, didRefresh);
       }
@@ -217,7 +226,15 @@ export const request = async <T>(
     }
 
     if (retriesRemaining > 0 && isRetryableRequest(options)) {
-      console.warn('Retry (network error):', path);
+      reportDiagnostic({
+        source: 'api-request',
+        operation: 'retry-network-error',
+        details: {
+          path,
+          message: err instanceof Error ? err.message : String(err),
+          retriesRemaining,
+        },
+      });
       await waitForRetry(externalSignal);
       return request<T>(path, options, retriesRemaining - 1, didRefresh);
     }
