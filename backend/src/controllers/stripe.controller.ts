@@ -30,6 +30,10 @@ const getStripe = () => {
   return new Stripe(env.STRIPE_SECRET_KEY);
 };
 
+type StripeWebhookEvent = ReturnType<
+  ReturnType<typeof getStripe>['webhooks']['constructEvent']
+>;
+
 export const stripeWebhookHandler = async (
   req: Request,
   res: Response,
@@ -48,11 +52,7 @@ export const stripeWebhookHandler = async (
   }
 
   try {
-    let event: {
-      id: string;
-      type: string;
-      data: { object: any };
-    };
+    let event: StripeWebhookEvent;
 
     try {
       event = getStripe().webhooks.constructEvent(
