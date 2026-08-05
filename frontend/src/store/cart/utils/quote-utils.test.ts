@@ -1,11 +1,13 @@
 import type { Quote } from '../../../types/cart';
 import {
   calculateEstimatedTotalCents,
+  getDisplayTotalCents,
   getQuoteUnitPriceChanges,
 } from './quote-utils';
 
 const quote: Quote = {
   menuVersion: 4,
+  totalCents: 1700,
   menuItems: [
     {
       id: 'burger',
@@ -32,6 +34,58 @@ const quote: Quote = {
   ],
   ts: 1,
 };
+
+describe('getDisplayTotalCents', () => {
+  it('uses the backend quote total when the quote matches the current cart', () => {
+    expect(
+      getDisplayTotalCents({
+        quote,
+        items: [
+          { id: 'burger', quantity: 99 },
+          { id: 'fries', quantity: 99 },
+        ],
+        quoteMismatch: false,
+        quoteStale: false,
+      }),
+    ).toBe(1700);
+  });
+
+  it('uses validated prices with current quantities when the quote is mismatched', () => {
+    expect(
+      getDisplayTotalCents({
+        quote,
+        items: [
+          { id: 'burger', quantity: 2 },
+          { id: 'fries', quantity: 3 },
+        ],
+        quoteMismatch: true,
+        quoteStale: false,
+      }),
+    ).toBe(3900);
+  });
+
+  it('uses validated prices with current quantities when the quote is stale', () => {
+    expect(
+      getDisplayTotalCents({
+        quote,
+        items: [{ id: 'burger', quantity: 2 }],
+        quoteMismatch: false,
+        quoteStale: true,
+      }),
+    ).toBe(2400);
+  });
+
+  it('returns zero without a quote', () => {
+    expect(
+      getDisplayTotalCents({
+        quote: null,
+        items: [{ id: 'burger', quantity: 2 }],
+        quoteMismatch: false,
+        quoteStale: false,
+      }),
+    ).toBe(0);
+  });
+});
 
 describe('calculateEstimatedTotalCents', () => {
   it('uses current cart quantities with validated prices', () => {

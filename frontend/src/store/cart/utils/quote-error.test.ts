@@ -9,6 +9,7 @@ import type { Quote } from '../../../types/cart';
 
 const quote: Quote = {
   menuVersion: 1,
+  totalCents: 1500,
   ts: 1,
   menuItems: [
     {

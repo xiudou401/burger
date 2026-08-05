@@ -19,6 +19,26 @@ export const calculateEstimatedTotalCents = (
   }, 0);
 };
 
+export const getDisplayTotalCents = ({
+  quote,
+  items,
+  quoteMismatch,
+  quoteStale,
+}: {
+  quote: Quote | null;
+  items: CartStoredItem[];
+  quoteMismatch: boolean;
+  quoteStale: boolean;
+}) => {
+  if (!quote) return 0;
+
+  if (!quoteMismatch && !quoteStale) {
+    return quote.totalCents;
+  }
+
+  return calculateEstimatedTotalCents(quote, items);
+};
+
 export const getQuoteUnitPriceChanges = (
   previousQuote: Quote | null,
   nextQuote: Quote,

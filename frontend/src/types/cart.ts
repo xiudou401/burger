@@ -19,6 +19,7 @@ export interface CartState {
 export interface Quote {
   menuVersion: number;
   menuItems: CartMenuItem[];
+  totalCents: number;
   ts: number;
 }
 

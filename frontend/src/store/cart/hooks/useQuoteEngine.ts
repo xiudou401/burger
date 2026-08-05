@@ -3,7 +3,7 @@ import type { CartStoredItem, QuoteErrorAction } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
 import { getQuoteErrorState, isRemovedItemError } from '../utils/quote-error';
 import {
-  calculateEstimatedTotalCents,
+  getDisplayTotalCents,
   getQuoteUnitPriceChanges,
   type QuoteUnitPriceChange,
 } from '../utils/quote-utils';
@@ -201,8 +201,14 @@ export const useQuoteEngine = ({
   }, [quoteStale, refreshQuoteSilently, clearDebounceTimer]);
 
   const estimatedTotalCents = useMemo(
-    () => calculateEstimatedTotalCents(quote, items),
-    [quote, items],
+    () =>
+      getDisplayTotalCents({
+        quote,
+        items,
+        quoteMismatch,
+        quoteStale,
+      }),
+    [items, quote, quoteMismatch, quoteStale],
   );
 
   return {
