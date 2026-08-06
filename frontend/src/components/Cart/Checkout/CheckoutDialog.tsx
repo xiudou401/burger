@@ -48,7 +48,7 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
         <div className={classes.OrderSummary}>
           <header className={classes.Header}>
             <h2 id="checkout-title" className={classes.Title}>
-              Order Details
+              Review your order
             </h2>
 
             <button
