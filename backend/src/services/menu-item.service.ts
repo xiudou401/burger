@@ -1,4 +1,5 @@
 import { AppError } from '../errors/AppError';
+import { BaseError } from '../errors/BaseError';
 import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
@@ -127,6 +128,10 @@ export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
       totalPages: Math.ceil(total / limit),
     };
   } catch (error) {
+    if (error instanceof BaseError && error.isOperational) {
+      throw error;
+    }
+
     appLogger.error('menu_item_pagination_failed', { error });
     throw new AppError(
       'Could not load menu items. Please try again later.',

@@ -1,4 +1,6 @@
 import { menuItemRepository } from '../repositories/menu-item.repository';
+import { ServiceError } from '../errors/ServiceError';
+import { appLogger } from '../utils/logger';
 import { bumpMenuVersion, getMenuVersion } from './menu.service';
 import { recordAuditLog } from './audit-log.service';
 import {
@@ -15,6 +17,12 @@ jest.mock('./menu.service', () => ({
 
 jest.mock('./audit-log.service', () => ({
   recordAuditLog: jest.fn(),
+}));
+
+jest.mock('../utils/logger', () => ({
+  appLogger: {
+    error: jest.fn(),
+  },
 }));
 
 jest.mock('../repositories/menu-item.repository', () => ({
@@ -56,6 +64,35 @@ describe('menu item service', () => {
       expect.objectContaining({ query: expectedQuery }),
     );
     expect(menuItemRepository.count).toHaveBeenCalledWith(expectedQuery);
+  });
+
+  test('preserves operational errors while listing menu items', async () => {
+    jest
+      .mocked(getMenuVersion)
+      .mockRejectedValue(new ServiceError('Menu version unavailable', 503));
+
+    await expect(findAllMenuItems()).rejects.toMatchObject({
+      message: 'Menu version unavailable',
+      statusCode: 503,
+    });
+    expect(appLogger.error).not.toHaveBeenCalled();
+  });
+
+  test('wraps unexpected menu listing errors', async () => {
+    jest
+      .mocked(menuItemRepository.findPage)
+      .mockRejectedValue(new Error('Database failed'));
+
+    await expect(findAllMenuItems()).rejects.toMatchObject({
+      message: 'Could not load menu items. Please try again later.',
+      statusCode: 500,
+    });
+    expect(appLogger.error).toHaveBeenCalledWith(
+      'menu_item_pagination_failed',
+      expect.objectContaining({
+        error: expect.any(Error),
+      }),
+    );
   });
 
   test('bumps menu version after creating a menu item', async () => {
