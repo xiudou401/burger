@@ -1,8 +1,8 @@
 import { z } from 'zod';
+import { MAX_CART_ITEMS, MAX_CART_ITEM_QUANTITY } from '@burger/shared';
 import { ObjectIdSchema } from './common.schema';
 
-export const MAX_CART_ITEMS = 50;
-export const MAX_CART_ITEM_QUANTITY = 20;
+export { MAX_CART_ITEMS, MAX_CART_ITEM_QUANTITY };
 
 export const CartItemSchema = z
   .object({

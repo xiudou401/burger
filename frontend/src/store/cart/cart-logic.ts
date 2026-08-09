@@ -1,6 +1,7 @@
+import { MAX_CART_ITEM_QUANTITY } from '@burger/shared';
 import { CartStoredItem } from '../../types/cart';
 
-export const MAX_CART_ITEM_QUANTITY = 20;
+export { MAX_CART_ITEM_QUANTITY };
 
 export const addItem = (items: CartStoredItem[], id: string) => {
   const existing = items.find((i) => i.id === id);
