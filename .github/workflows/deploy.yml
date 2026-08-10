@@ -1,13 +1,6 @@
 name: Deploy AWS
 
 on:
-  workflow_run:
-    workflows:
-      - CI
-    branches:
-      - main
-    types:
-      - completed
   workflow_dispatch:
 
 permissions:
@@ -29,12 +22,11 @@ env:
   ECS_TASK_DEFINITION: burger-club-api
   ECR_REPOSITORY: burger-club-api
   FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
-  IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+  IMAGE_TAG: ${{ github.sha }}
 
 jobs:
   deploy:
     name: Deploy frontend and backend
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     environment: production
 
