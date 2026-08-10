@@ -2,10 +2,11 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY shared /shared
+COPY backend/package*.json ./
 RUN npm ci
 
-COPY . .
+COPY backend/ .
 RUN npm run build
 RUN npm prune --omit=dev
 
@@ -18,6 +19,7 @@ ENV PORT=5001
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /shared /shared
 
 EXPOSE 5001
 

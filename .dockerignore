@@ -1,0 +1,12 @@
+.git
+.github
+docs
+frontend/build
+frontend/node_modules
+backend/dist
+backend/coverage
+backend/node_modules
+node_modules
+.env
+npm-debug.log
+*.log
