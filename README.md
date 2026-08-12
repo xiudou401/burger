@@ -177,7 +177,9 @@ to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
 Load Balancer.
 
 The repository also includes an optional GitHub Actions workflow for deploying
-the AWS stack.
+the AWS stack. The workflow is manual-only so paid resources such as an
+Application Load Balancer or running ECS tasks are only created or updated when
+intentionally practising the AWS deployment path.
 
 ## Technical Design Docs
 

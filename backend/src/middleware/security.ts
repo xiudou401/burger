@@ -9,11 +9,13 @@ const HOUR_MS = 60 * 60 * 1000;
 const CSRF_PROTECTION_HEADER = 'X-CSRF-Protection';
 const CSRF_PROTECTION_VALUE = '1';
 const trustedOrigins = new Set(env.TRUSTED_ORIGINS);
+const isProduction = process.env.NODE_ENV === 'production';
 
 export const securityHeaders = helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  strictTransportSecurity:
-    process.env.NODE_ENV === 'production' ? undefined : false,
+  crossOriginResourcePolicy: false,
+  strictTransportSecurity: isProduction
+    ? { maxAge: 31536000, includeSubDomains: true }
+    : false,
 });
 
 export const apiRateLimiter = rateLimit({
