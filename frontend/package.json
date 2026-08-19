@@ -23,9 +23,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "preinstall": "npm --prefix ../shared ci",
     "start": "react-scripts start",
-    "prebuild": "npm --prefix ../shared run build",
+    "prebuild": "npm --prefix ../shared ci --include=dev && npm --prefix ../shared run build",
     "build": "react-scripts build",
     "lint": "eslint src --ext .ts,.tsx --max-warnings=0",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"*.json\"",
