@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "preinstall": "npm --prefix ../shared ci",
     "dev": "tsx watch src/server.ts",
+    "prebuild": "npm --prefix ../shared run build",
     "build": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\" && tsc",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write \"{src,scripts}/**/*.ts\" \"*.{json,mjs}\" \"../README.md\"",

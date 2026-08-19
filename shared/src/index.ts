@@ -1,7 +1,9 @@
-const MAX_CART_ITEMS = 50;
-const MAX_CART_ITEM_QUANTITY = 20;
+export const MAX_CART_ITEMS = 50;
+export const MAX_CART_ITEM_QUANTITY = 20;
 
-const PERMISSIONS = [
+export type UserRole = 'customer' | 'admin' | 'staff';
+
+export const PERMISSIONS = [
   'create_order',
   'view_own_orders',
   'view_orders',
@@ -11,9 +13,11 @@ const PERMISSIONS = [
   'manage_staff',
   'manage_customers',
   'view_audit_logs',
-];
+] as const;
 
-const ROLE_PERMISSIONS = {
+export type Permission = (typeof PERMISSIONS)[number];
+
+export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   customer: ['create_order', 'view_own_orders'],
   staff: ['view_orders', 'update_order_status'],
   admin: [
@@ -27,23 +31,23 @@ const ROLE_PERMISSIONS = {
   ],
 };
 
-const getPermissionsForRole = (role = 'customer') => [
+export const getPermissionsForRole = (role: UserRole = 'customer') => [
   ...ROLE_PERMISSIONS[role],
 ];
 
-const hasPermission = (user, permission) => {
+export const hasPermission = (
+  user:
+    | {
+        role?: UserRole;
+        permissions?: readonly Permission[];
+      }
+    | null
+    | undefined,
+  permission: Permission,
+): boolean => {
   if (!user) return false;
 
   return (
     user.permissions ?? ROLE_PERMISSIONS[user.role ?? 'customer']
   ).includes(permission);
-};
-
-module.exports = {
-  MAX_CART_ITEMS,
-  MAX_CART_ITEM_QUANTITY,
-  PERMISSIONS,
-  ROLE_PERMISSIONS,
-  getPermissionsForRole,
-  hasPermission,
 };
