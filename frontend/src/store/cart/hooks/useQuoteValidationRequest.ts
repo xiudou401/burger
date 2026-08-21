@@ -59,17 +59,17 @@ export const useQuoteValidationRequest = ({
 
   const validateQuote = useCallback((): Promise<void> => {
     const {
-      items: latestItems,
-      itemsSig: latestItemsSig,
-      menuVersion: latestMenuVersion,
-      needsQuoteValidation: latestNeedsQuoteValidation,
+      items: snapshotItems,
+      itemsSig: snapshotSig,
+      menuVersion: snapshotVersion,
+      needsQuoteValidation: snapshotNeedsQuoteValidation,
     } = latestRef.current;
 
-    if (latestItems.length === 0) {
+    if (snapshotItems.length === 0) {
       return Promise.resolve();
     }
 
-    if (latestMenuVersion === null) {
+    if (snapshotVersion === null) {
       return Promise.reject(
         new ApiError(HTTP_STATUS.PRECONDITION_REQUIRED, {
           message: 'Menu is still loading. Please wait a moment.',
@@ -77,11 +77,11 @@ export const useQuoteValidationRequest = ({
       );
     }
 
-    if (!latestNeedsQuoteValidation) {
+    if (!snapshotNeedsQuoteValidation) {
       return Promise.resolve();
     }
 
-    const key = buildQuoteKey(latestItemsSig, latestMenuVersion);
+    const key = buildQuoteKey(snapshotSig, snapshotVersion);
     const activeRequest = inFlightRef.current;
 
     if (activeRequest?.key === key) {
@@ -92,9 +92,6 @@ export const useQuoteValidationRequest = ({
 
     const controller = new AbortController();
     const requestId = ++requestIdRef.current;
-    const snapshotItems = latestItems;
-    const snapshotSig = latestItemsSig;
-    const snapshotVersion = latestMenuVersion;
 
     const assertRequestActive = () => {
       if (controller.signal.aborted || requestId !== requestIdRef.current) {
