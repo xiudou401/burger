@@ -4,7 +4,7 @@ import { resendVerificationEmail } from '../../api/auth';
 import { fetchMyOrders, fetchOrder } from '../../api/orders';
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
 import {
-  getEstimatedTotalCents,
+  getDisplayTotalCents,
   getTotalQuantity,
 } from '../../store/cart/context-accessors';
 import { useCartActions } from '../../store/cart/hooks/useCartActions';
@@ -29,7 +29,7 @@ export const useProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const user = useAuth((ctx) => ctx.user);
   const totalQuantity = useCartSelector(getTotalQuantity);
-  const estimatedTotalCents = useCartSelector(getEstimatedTotalCents);
+  const displayTotalCents = useCartSelector(getDisplayTotalCents);
   const { clearCart } = useCartActions();
   const { showToast } = useToast();
   const [verificationMessage, setVerificationMessage] = useState<string | null>(
@@ -215,7 +215,7 @@ export const useProfilePage = () => {
     canCreateOrder,
     canViewOwnOrders,
     totalQuantity,
-    estimatedTotalCents,
+    displayTotalCents,
     hasCartItems,
     orders,
     isLoadingOrders,

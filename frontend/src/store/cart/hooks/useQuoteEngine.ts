@@ -200,7 +200,7 @@ export const useQuoteEngine = ({
     refreshQuoteSilently();
   }, [quoteStale, refreshQuoteSilently, clearDebounceTimer]);
 
-  const estimatedTotalCents = useMemo(
+  const displayTotalCents = useMemo(
     () =>
       getDisplayTotalCents({
         quote,
@@ -218,7 +218,7 @@ export const useQuoteEngine = ({
     quoteNotice,
     quoteStale,
     quoteMismatch,
-    estimatedTotalCents,
+    displayTotalCents,
     ensureQuote,
     clearQuote,
   };

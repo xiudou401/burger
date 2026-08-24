@@ -16,7 +16,7 @@ interface CheckoutDialogProps {
 
 const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const estimatedTotalCents = useCartSelector((ctx) => ctx.estimatedTotalCents);
+  const displayTotalCents = useCartSelector((ctx) => ctx.displayTotalCents);
   const quoteNotice = useCartSelector((ctx) => ctx.quoteNotice);
 
   const items = useCartSelector((ctx) => ctx.items);
@@ -75,10 +75,7 @@ const CheckoutDialog = ({ onClose, menuItems }: CheckoutDialogProps) => {
           )}
         </div>
 
-        <PaymentBar
-          totalCents={estimatedTotalCents}
-          onOrderComplete={onClose}
-        />
+        <PaymentBar totalCents={displayTotalCents} onOrderComplete={onClose} />
       </div>
     </Backdrop>
   );

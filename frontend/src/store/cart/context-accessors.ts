@@ -21,8 +21,8 @@ export const getQuoteStale = (ctx: CartContextValue) => ctx.quoteStale;
 
 export const getQuoteMismatch = (ctx: CartContextValue) => ctx.quoteMismatch;
 
-export const getEstimatedTotalCents = (ctx: CartContextValue) =>
-  ctx.estimatedTotalCents;
+export const getDisplayTotalCents = (ctx: CartContextValue) =>
+  ctx.displayTotalCents;
 
 export const getEnsureQuote = (ctx: CartContextValue) => ctx.ensureQuote;
 

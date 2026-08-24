@@ -1,6 +1,6 @@
 import type { Quote } from '../../../types/cart';
 import {
-  calculateEstimatedTotalCents,
+  calculateQuantityAdjustedTotalCents,
   getDisplayTotalCents,
   getQuoteUnitPriceChanges,
 } from './quote-utils';
@@ -87,10 +87,10 @@ describe('getDisplayTotalCents', () => {
   });
 });
 
-describe('calculateEstimatedTotalCents', () => {
+describe('calculateQuantityAdjustedTotalCents', () => {
   it('uses current cart quantities with validated prices', () => {
     expect(
-      calculateEstimatedTotalCents(quote, [
+      calculateQuantityAdjustedTotalCents(quote, [
         { id: 'burger', quantity: 2 },
         { id: 'fries', quantity: 3 },
       ]),
@@ -99,13 +99,17 @@ describe('calculateEstimatedTotalCents', () => {
 
   it('ignores quoted menu items that are no longer in the cart', () => {
     expect(
-      calculateEstimatedTotalCents(quote, [{ id: 'burger', quantity: 1 }]),
+      calculateQuantityAdjustedTotalCents(quote, [
+        { id: 'burger', quantity: 1 },
+      ]),
     ).toBe(1200);
   });
 
   it('returns zero without a quote', () => {
     expect(
-      calculateEstimatedTotalCents(null, [{ id: 'burger', quantity: 2 }]),
+      calculateQuantityAdjustedTotalCents(null, [
+        { id: 'burger', quantity: 2 },
+      ]),
     ).toBe(0);
   });
 });

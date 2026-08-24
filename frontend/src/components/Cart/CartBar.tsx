@@ -14,7 +14,7 @@ import { useToast } from '../UI/Toast/ToastContext';
 import {
   getTotalQuantity,
   getQuote,
-  getEstimatedTotalCents,
+  getDisplayTotalCents,
   getEnsureQuote,
   getClearQuote,
 } from '../../store/cart/context-accessors';
@@ -26,7 +26,7 @@ const CartBar = () => {
 
   const quote = useCartSelector(getQuote);
 
-  const estimatedTotalCents = useCartSelector(getEstimatedTotalCents);
+  const displayTotalCents = useCartSelector(getDisplayTotalCents);
 
   const ensureQuote = useCartSelector(getEnsureQuote);
 
@@ -106,7 +106,7 @@ const CartBar = () => {
     >
       <CartSummary
         totalQuantity={totalQuantity}
-        totalCents={quote ? estimatedTotalCents : undefined}
+        totalCents={quote ? displayTotalCents : undefined}
       />
     </button>
   );

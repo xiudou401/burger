@@ -8,7 +8,7 @@ const Profile = () => {
   const {
     user,
     totalQuantity,
-    estimatedTotalCents,
+    displayTotalCents,
     hasCartItems,
     canCreateOrder,
     orders,
@@ -45,7 +45,7 @@ const Profile = () => {
         canCreateOrder ? (
           <CurrentCartCard
             totalQuantity={totalQuantity}
-            estimatedTotalCents={estimatedTotalCents}
+            displayTotalCents={displayTotalCents}
             hasCartItems={hasCartItems}
           />
         ) : undefined

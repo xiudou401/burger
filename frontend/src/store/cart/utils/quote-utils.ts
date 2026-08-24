@@ -5,7 +5,7 @@ export interface QuoteUnitPriceChange {
   priceCents: number;
 }
 
-export const calculateEstimatedTotalCents = (
+export const calculateQuantityAdjustedTotalCents = (
   quote: Quote | null,
   items: CartStoredItem[],
 ) => {
@@ -36,7 +36,7 @@ export const getDisplayTotalCents = ({
     return quote.totalCents;
   }
 
-  return calculateEstimatedTotalCents(quote, items);
+  return calculateQuantityAdjustedTotalCents(quote, items);
 };
 
 export const getQuoteUnitPriceChanges = (

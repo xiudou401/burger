@@ -55,7 +55,7 @@ export interface CartContextValue extends CartState {
   quoteNotice: string | null;
   quoteStale: boolean;
   quoteMismatch: boolean;
-  estimatedTotalCents: number;
+  displayTotalCents: number;
 
   ensureQuote: () => Promise<void>;
   clearQuote: () => void;
