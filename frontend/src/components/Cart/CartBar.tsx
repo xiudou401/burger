@@ -40,12 +40,7 @@ const CartBar = () => {
   const handleCartDetailsToggle = () => {
     if (totalQuantity === 0) return;
 
-    if (!showCartDetails) {
-      setShowCartDetails(true);
-      return;
-    }
-
-    setShowCartDetails(false);
+    setShowCartDetails((prev) => !prev);
   };
 
   const handleCheckoutClick = async (e: MouseEvent<HTMLButtonElement>) => {

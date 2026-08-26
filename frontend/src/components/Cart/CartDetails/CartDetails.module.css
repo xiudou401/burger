@@ -88,7 +88,7 @@
 .MenuItemList {
   display: grid;
   gap: 12rem;
-  padding: 0 30rem 30rem;
+  padding: 16rem 30rem 30rem;
   overflow: auto;
 }
 
@@ -139,7 +139,7 @@
   }
 
   .MenuItemList {
-    padding: 0 22rem 26rem;
+    padding: 16rem 22rem 26rem;
   }
 }
 
@@ -168,6 +168,6 @@
   }
 
   .MenuItemList {
-    padding: 0 24rem 24rem;
+    padding: 14rem 24rem 24rem;
   }
 }
