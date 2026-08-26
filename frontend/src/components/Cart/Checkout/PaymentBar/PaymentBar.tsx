@@ -112,13 +112,13 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     }
   };
 
-  const summary = (
+  const paymentSummary = (
     <div className={classes.Summary}>
       <CartSummary totalQuantity={totalQuantity} totalCents={totalCents} />
     </div>
   );
 
-  const action = (
+  const paymentAction = (
     <div className={classes.Actions}>
       {(error || message) && (
         <p className={error ? classes.Error : classes.Message}>
@@ -149,7 +149,11 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   );
 
   return (
-    <BottomActionBar summary={summary} action={action} variant="checkout" />
+    <BottomActionBar
+      summary={paymentSummary}
+      action={paymentAction}
+      variant="checkout"
+    />
   );
 };
 
