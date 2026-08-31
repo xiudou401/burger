@@ -65,6 +65,9 @@ describe('authenticated request refresh', () => {
       '/api/auth/refresh',
       expect.objectContaining({
         method: 'POST',
+        headers: expect.not.objectContaining({
+          Authorization: expect.any(String),
+        }),
       }),
     );
     window.removeEventListener('auth:session-expired', sessionExpired);
@@ -108,6 +111,9 @@ describe('authenticated request refresh', () => {
       '/api/auth/refresh',
       expect.objectContaining({
         method: 'POST',
+        headers: expect.not.objectContaining({
+          Authorization: expect.any(String),
+        }),
       }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -189,6 +195,9 @@ describe('authenticated request refresh', () => {
       '/api/auth/refresh',
       expect.objectContaining({
         method: 'POST',
+        headers: expect.not.objectContaining({
+          Authorization: expect.any(String),
+        }),
       }),
     );
   });
@@ -246,6 +255,9 @@ describe('authenticated request refresh', () => {
       '/api/auth/refresh',
       expect.objectContaining({
         method: 'POST',
+        headers: expect.not.objectContaining({
+          Authorization: expect.any(String),
+        }),
       }),
     );
   });

@@ -124,25 +124,29 @@ export const rotateAuthSession = async (
   }
 
   const refreshTokenHash = hashToken(refreshToken);
-  const session =
+  const consumedSession =
     await authSessionRepository.consumeActiveByRefreshTokenHash(
       refreshTokenHash,
     );
 
-  if (!session) {
-    const consumedSession =
+  if (!consumedSession) {
+    const previousSession =
       await authSessionRepository.findByRefreshTokenHash(refreshTokenHash);
-    const familyId = consumedSession?.familyId;
+    const previousFamilyId = previousSession?.familyId;
 
-    if (consumedSession && isConcurrentRefresh(consumedSession)) {
+    if (previousSession && isConcurrentRefresh(previousSession)) {
       throw new ConcurrentRefreshError();
     }
 
-    if (consumedSession && familyId && isRefreshTokenReuse(consumedSession)) {
-      await authSessionRepository.revokeActiveByFamilyId(familyId);
+    if (
+      previousSession &&
+      previousFamilyId &&
+      isRefreshTokenReuse(previousSession)
+    ) {
+      await authSessionRepository.revokeActiveByFamilyId(previousFamilyId);
       appLogger.warn('refresh_token_reuse_detected', {
-        familyId,
-        userId: String(consumedSession.userId),
+        familyId: previousFamilyId,
+        userId: String(previousSession.userId),
       });
       throw new ServiceError('Session reuse detected', 401);
     }
@@ -150,46 +154,46 @@ export const rotateAuthSession = async (
     throw new ServiceError('Session expired', 401);
   }
 
-  const user = await userRepository.findById(String(session.userId));
+  const user = await userRepository.findById(String(consumedSession.userId));
 
   if (!user) {
-    session.revokedAt = new Date();
-    await authSessionRepository.save(session);
+    consumedSession.revokedAt = new Date();
+    await authSessionRepository.save(consumedSession);
     throw new ServiceError('User no longer exists', 401);
   }
 
   if (user.status === 'disabled') {
-    session.revokedAt = new Date();
-    await authSessionRepository.save(session);
+    consumedSession.revokedAt = new Date();
+    await authSessionRepository.save(consumedSession);
     throw new ServiceError('Account disabled', 403);
   }
 
-  const replacementFamilyId = session.familyId ?? randomUUID();
-  let replacementSession: { _id: unknown };
+  const refreshFamilyId = consumedSession.familyId ?? randomUUID();
+  let createdReplacementSession: { _id: unknown };
   let result: SessionAuthResult;
 
   try {
     const replacement = await createSession(toPublicUser(user), {
-      familyId: replacementFamilyId,
-      parentSessionId: String(session._id),
+      familyId: refreshFamilyId,
+      parentSessionId: String(consumedSession._id),
     });
 
-    replacementSession = replacement.session;
+    createdReplacementSession = replacement.session;
     result = replacement.result;
   } catch (error) {
-    await restoreConsumedSession(String(session._id));
+    await restoreConsumedSession(String(consumedSession._id));
     throw error;
   }
 
   try {
     await authSessionRepository.linkReplacement(
-      String(session._id),
-      replacementFamilyId,
-      String(replacementSession._id),
+      String(consumedSession._id),
+      refreshFamilyId,
+      String(createdReplacementSession._id),
     );
   } catch (error) {
-    await revokeReplacementSession(String(replacementSession._id));
-    await restoreConsumedSession(String(session._id));
+    await revokeReplacementSession(String(createdReplacementSession._id));
+    await restoreConsumedSession(String(consumedSession._id));
     throw error;
   }
 

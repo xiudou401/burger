@@ -61,6 +61,7 @@ class RefreshRequestError extends Error {
 
 interface RequestOptions extends RequestInit {
   signal?: AbortSignal;
+  skipAuth?: boolean;
 }
 
 const getRequestMethod = (options: RequestOptions) => {
@@ -107,7 +108,7 @@ export const request = async <T>(
   didRefresh = false,
 ): Promise<T> => {
   const timeoutController = new AbortController();
-  const externalSignal = options.signal;
+  const { signal: externalSignal, skipAuth = false, ...fetchOptions } = options;
 
   let didTimeout = false;
 
@@ -129,14 +130,14 @@ export const request = async <T>(
       }
     }
 
-    const accessToken = getAccessToken();
+    const accessToken = skipAuth ? null : getAccessToken();
     const res = await fetch(`${API_BASE}${path}`, {
-      ...options,
+      ...fetchOptions,
       credentials: 'include',
       signal: timeoutController.signal,
       headers: {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...fetchOptions.headers,
         ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         'X-CSRF-Protection': '1',
       },
@@ -264,7 +265,7 @@ export const refreshAuthSession = async () => {
       try {
         return await request<AuthRefreshResponse>(
           '/auth/refresh',
-          { method: 'POST' },
+          { method: 'POST', skipAuth: true },
           0,
           true,
         );
