@@ -14,12 +14,14 @@ const validate =
     setValue: (req: Request, value: unknown) => void,
     defaultName: string,
   ) =>
-  (schema: ZodTypeAny, _schemaName = defaultName) =>
+  (schema: ZodTypeAny, schemaName = defaultName) =>
   (req: Request, _res: Response, next: NextFunction) => {
     const result = schema.safeParse(getValue(req));
 
     if (!result.success) {
-      return next(new ValidationError(toValidationIssues(result.error)));
+      return next(
+        new ValidationError(toValidationIssues(result.error), schemaName),
+      );
     }
 
     setValue(req, result.data);

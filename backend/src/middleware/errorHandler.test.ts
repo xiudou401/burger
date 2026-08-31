@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { errorHandler } from './errorHandler';
 import { ServiceError } from '../errors/ServiceError';
+import { ValidationError } from '../errors/ValidationError';
 
 const mockRequest = (overrides: Partial<Request> = {}) =>
   ({
@@ -86,5 +87,34 @@ test('includes service error details in operational responses', () => {
       code: 'MENU_ITEM_REMOVED',
       itemId: '64f1b2c3d4e5f67890123456',
     },
+  });
+});
+
+test('includes validation target and issues in validation responses', () => {
+  const res = mockResponse();
+
+  errorHandler(
+    new ValidationError(
+      [{ path: 'idempotencyKey', message: 'Invalid checkout attempt' }],
+      'Checkout order payload',
+    ),
+    mockRequest(),
+    res,
+    jest.fn() as NextFunction,
+  );
+
+  expect(res.status).toHaveBeenCalledWith(400);
+  expect(res.json).toHaveBeenCalledWith({
+    message: 'Validation failed',
+    statusCode: 400,
+    type: 'ValidationError',
+    requestId: 'req-test-123',
+    issues: [
+      {
+        path: 'idempotencyKey',
+        message: 'Invalid checkout attempt',
+      },
+    ],
+    validationTarget: 'Checkout order payload',
   });
 });

@@ -98,6 +98,7 @@ export const errorHandler = (
       type: string;
       requestId: string;
       issues?: ValidationError['issues'];
+      validationTarget?: string;
       details?: Record<string, unknown>;
     } = {
       message: err.isOperational ? err.message : 'Internal server error',
@@ -108,6 +109,7 @@ export const errorHandler = (
 
     if (err instanceof ValidationError) {
       body.issues = err.issues;
+      body.validationTarget = err.target;
     }
 
     if (err instanceof ServiceError && err.details) {
