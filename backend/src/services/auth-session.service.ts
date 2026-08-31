@@ -164,13 +164,13 @@ export const rotateAuthSession = async (
     throw new ServiceError('Account disabled', 403);
   }
 
-  const familyId = session.familyId ?? randomUUID();
+  const replacementFamilyId = session.familyId ?? randomUUID();
   let replacementSession: { _id: unknown };
   let result: SessionAuthResult;
 
   try {
     const replacement = await createSession(toPublicUser(user), {
-      familyId,
+      familyId: replacementFamilyId,
       parentSessionId: String(session._id),
     });
 
@@ -184,7 +184,7 @@ export const rotateAuthSession = async (
   try {
     await authSessionRepository.linkReplacement(
       String(session._id),
-      familyId,
+      replacementFamilyId,
       String(replacementSession._id),
     );
   } catch (error) {
