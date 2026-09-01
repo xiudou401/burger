@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
-import { UserModel } from '../models/user.model';
 import { ServiceError } from '../errors/ServiceError';
 import { verifyAuthToken } from '../utils/token';
 import { getPermissionsForRole } from '../types/permissions';
+import { userRepository } from '../repositories/user.repository';
 
 export const authenticate = async (
   req: Request,
@@ -20,7 +20,7 @@ export const authenticate = async (
     }
 
     const payload = await verifyAuthToken(token);
-    const user = await UserModel.findById(payload.sub).lean();
+    const user = await userRepository.findLeanById(payload.sub);
 
     if (!user) {
       throw new ServiceError('User no longer exists', 401);
