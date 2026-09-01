@@ -36,8 +36,10 @@ const Harness = ({
 
   const validate = async () => {
     try {
-      await validateQuote();
-      document.body.dataset.quoteResult = 'resolved';
+      const quote = await validateQuote();
+      document.body.dataset.quoteResult = quote
+        ? `resolved:${quote.menuVersion}`
+        : 'resolved';
     } catch (error) {
       document.body.dataset.quoteResult =
         error instanceof Error ? error.message : 'rejected';
@@ -88,7 +90,7 @@ test('refreshes and retries after a menu version conflict', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Validate' }));
 
   await waitFor(() => {
-    expect(document.body.dataset.quoteResult).toBe('resolved');
+    expect(document.body.dataset.quoteResult).toBe('resolved:2');
   });
   expect(refreshMenuVersion).toHaveBeenCalled();
   expect(validateCart).toHaveBeenNthCalledWith(

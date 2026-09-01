@@ -127,15 +127,25 @@ export const useQuoteEngine = ({
   const ensureQuote = useCallback(async () => {
     setQuoteError(null);
 
+    if (!needsQuoteValidation && quote) {
+      return quote;
+    }
+
     try {
-      await validateQuote();
+      const validatedQuote = await validateQuote();
+
+      if (validatedQuote) {
+        return validatedQuote;
+      }
+
+      throw new Error('Cart is empty');
     } catch (error) {
       if (!isRequestCancelled(error)) {
         setQuoteValidationError(error);
       }
       throw error;
     }
-  }, [setQuoteValidationError, validateQuote]);
+  }, [needsQuoteValidation, quote, setQuoteValidationError, validateQuote]);
 
   const refreshQuoteSilently = useCallback(async () => {
     try {

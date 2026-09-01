@@ -27,13 +27,14 @@ exports.ROLE_PERMISSIONS = {
         'view_audit_logs',
     ],
 };
+const getRolePermissions = (role = 'customer') => exports.ROLE_PERMISSIONS[role] ?? exports.ROLE_PERMISSIONS.customer;
 const getPermissionsForRole = (role = 'customer') => [
-    ...exports.ROLE_PERMISSIONS[role],
+    ...getRolePermissions(role),
 ];
 exports.getPermissionsForRole = getPermissionsForRole;
 const hasPermission = (user, permission) => {
     if (!user)
         return false;
-    return (user.permissions ?? exports.ROLE_PERMISSIONS[user.role ?? 'customer']).includes(permission);
+    return (user.permissions ?? getRolePermissions(user.role)).includes(permission);
 };
 exports.hasPermission = hasPermission;

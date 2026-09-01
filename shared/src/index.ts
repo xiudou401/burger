@@ -31,8 +31,11 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
   ],
 };
 
+const getRolePermissions = (role: UserRole = 'customer') =>
+  ROLE_PERMISSIONS[role] ?? ROLE_PERMISSIONS.customer;
+
 export const getPermissionsForRole = (role: UserRole = 'customer') => [
-  ...ROLE_PERMISSIONS[role],
+  ...getRolePermissions(role),
 ];
 
 export const hasPermission = (
@@ -47,7 +50,7 @@ export const hasPermission = (
 ): boolean => {
   if (!user) return false;
 
-  return (
-    user.permissions ?? ROLE_PERMISSIONS[user.role ?? 'customer']
-  ).includes(permission);
+  return (user.permissions ?? getRolePermissions(user.role)).includes(
+    permission,
+  );
 };

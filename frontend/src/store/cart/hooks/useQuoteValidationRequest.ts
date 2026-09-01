@@ -8,7 +8,7 @@ import { QuoteRequestInactiveError } from '../utils/quote-request-error';
 
 type InFlightEntry = {
   key: string;
-  promise: Promise<void>;
+  promise: Promise<QuoteState | null>;
   controller: AbortController;
 };
 
@@ -57,7 +57,7 @@ export const useQuoteValidationRequest = ({
     inFlightRef.current = null;
   }, []);
 
-  const validateQuote = useCallback((): Promise<void> => {
+  const validateQuote = useCallback((): Promise<QuoteState | null> => {
     const {
       items: snapshotItems,
       itemsSig: snapshotSig,
@@ -66,7 +66,7 @@ export const useQuoteValidationRequest = ({
     } = latestRef.current;
 
     if (snapshotItems.length === 0) {
-      return Promise.resolve();
+      return Promise.resolve(null);
     }
 
     if (snapshotVersion === null) {
@@ -78,7 +78,7 @@ export const useQuoteValidationRequest = ({
     }
 
     if (!snapshotNeedsQuoteValidation) {
-      return Promise.resolve();
+      return Promise.resolve(null);
     }
 
     const key = buildQuoteKey(snapshotSig, snapshotVersion);
@@ -133,7 +133,7 @@ export const useQuoteValidationRequest = ({
       }
     };
 
-    let promise!: Promise<void>;
+    let promise!: Promise<QuoteState | null>;
 
     promise = (async () => {
       try {
@@ -146,13 +146,16 @@ export const useQuoteValidationRequest = ({
           });
         }
 
-        onQuoteValidated({
+        const validatedQuote = {
           menuVersion: res.menuVersion,
           menuItems: res.items,
           totalCents: res.totalCents,
           itemsSig: snapshotSig,
           ts: Date.now(),
-        });
+        };
+
+        onQuoteValidated(validatedQuote);
+        return validatedQuote;
       } finally {
         if (inFlightRef.current?.promise === promise) {
           inFlightRef.current = null;

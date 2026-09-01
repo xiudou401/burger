@@ -88,15 +88,11 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     setIsPaying(true);
 
     try {
-      await ensureQuote();
-
-      if (menuVersion === null) {
-        throw new Error('Menu is still loading');
-      }
+      const validatedQuote = await ensureQuote();
 
       const { checkoutUrl } = await createCheckoutOrder(
         items,
-        menuVersion,
+        validatedQuote.menuVersion,
         getCheckoutAttemptKey(),
       );
       setMessage('Redirecting to secure payment');
