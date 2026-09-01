@@ -83,12 +83,12 @@ describe('PaymentBar', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     ensureQuote.mockResolvedValue(validatedQuote);
-    jest.mocked(useCartSelector).mockImplementation((selector) =>
-      selector(cartContext),
-    );
-    jest.mocked(useAuth).mockImplementation((selector) =>
-      selector(authContext),
-    );
+    jest
+      .mocked(useCartSelector)
+      .mockImplementation((selector) => selector(cartContext));
+    jest
+      .mocked(useAuth)
+      .mockImplementation((selector) => selector(authContext));
     jest.mocked(useToast).mockReturnValue({ showToast: jest.fn() });
     jest.mocked(createCheckoutOrder).mockResolvedValue({
       checkoutUrl: 'https://checkout.stripe.test/session',
