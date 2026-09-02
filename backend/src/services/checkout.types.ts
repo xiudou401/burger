@@ -23,6 +23,7 @@ export type CheckoutOrderDocument = {
     nameAtPurchase?: string;
     imageAtPurchase?: string;
     priceCentsAtPurchase?: number;
+    // Legacy fallback for checkout orders created before menuItemId became the public name.
     mealId?: unknown;
     name?: string;
     image?: string;

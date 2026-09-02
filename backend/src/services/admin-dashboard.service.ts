@@ -3,6 +3,7 @@ import { orderRepository } from '../repositories/order.repository';
 
 interface DashboardOrderItem {
   menuItemId?: unknown;
+  // Legacy fallback for orders created before menuItemId became the public name.
   mealId?: unknown;
   nameAtPurchase?: string;
   name?: string;

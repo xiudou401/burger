@@ -1,9 +1,5 @@
 export interface OrderItem {
   menuItemId: string;
-  nameAtPurchase: string;
-  imageAtPurchase?: string;
-  priceCentsAtPurchase: number;
-  mealId: string;
   name: string;
   image?: string;
   priceCents: number;

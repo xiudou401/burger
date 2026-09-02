@@ -54,7 +54,7 @@ const AdminOrderDetails = () => {
 
             <div className={classes.ItemList}>
               {order.items.map((item) => (
-                <article className={classes.Item} key={item.mealId}>
+                <article className={classes.Item} key={item.menuItemId}>
                   <MenuImage
                     className={classes.ItemImage}
                     src={item.image}

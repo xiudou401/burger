@@ -11,10 +11,6 @@ import { appLogger } from '../utils/logger';
 
 export interface PublicOrderItem {
   menuItemId: string;
-  nameAtPurchase: string;
-  imageAtPurchase?: string;
-  priceCentsAtPurchase: number;
-  mealId: string;
   name: string;
   image?: string;
   priceCents: number;
@@ -46,20 +42,23 @@ export interface PaginatedPublicOrders {
   nextCursor: string | null;
 }
 
+interface OrderItemSnapshotInput {
+  menuItemId?: unknown;
+  nameAtPurchase?: string;
+  imageAtPurchase?: string;
+  priceCentsAtPurchase?: number;
+  // Legacy fallback for orders created before menuItemId became the public name.
+  mealId?: unknown;
+  name?: string;
+  image?: string;
+  priceCents?: number;
+  quantity: number;
+  subtotalCents: number;
+}
+
 export const toPublicOrder = (order: {
   _id: unknown;
-  items: Array<{
-    menuItemId?: unknown;
-    nameAtPurchase?: string;
-    imageAtPurchase?: string;
-    priceCentsAtPurchase?: number;
-    mealId?: unknown;
-    name?: string;
-    image?: string;
-    priceCents?: number;
-    quantity: number;
-    subtotalCents: number;
-  }>;
+  items: OrderItemSnapshotInput[];
   totalCents: number;
   menuVersion: number;
   status: OrderStatus;
@@ -78,20 +77,15 @@ export const toPublicOrder = (order: {
   id: String(order._id),
   items: order.items.map((item) => {
     const menuItemId = String(item.menuItemId ?? item.mealId);
-    const nameAtPurchase = item.nameAtPurchase ?? item.name ?? '';
-    const imageAtPurchase = item.imageAtPurchase ?? item.image;
-    const priceCentsAtPurchase =
-      item.priceCentsAtPurchase ?? item.priceCents ?? 0;
+    const name = item.nameAtPurchase ?? item.name ?? '';
+    const image = item.imageAtPurchase ?? item.image;
+    const priceCents = item.priceCentsAtPurchase ?? item.priceCents ?? 0;
 
     return {
       menuItemId,
-      nameAtPurchase,
-      imageAtPurchase,
-      priceCentsAtPurchase,
-      mealId: menuItemId,
-      name: nameAtPurchase,
-      image: imageAtPurchase,
-      priceCents: priceCentsAtPurchase,
+      name,
+      image,
+      priceCents,
       quantity: item.quantity,
       subtotalCents: item.subtotalCents,
     };

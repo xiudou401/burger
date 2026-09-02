@@ -58,7 +58,7 @@ jest.mock('../repositories/user.repository', () => ({
 describe('order service', () => {
   const userId = '507f1f77bcf86cd799439011';
   const orderId = '507f1f77bcf86cd799439012';
-  const mealId = '507f1f77bcf86cd799439013';
+  const menuItemId = '507f1f77bcf86cd799439013';
   const idempotencyKey = '11111111-1111-4111-8111-111111111111';
   const now = new Date('2026-01-01T00:00:00.000Z');
   const adminActor = {
@@ -72,7 +72,7 @@ describe('order service', () => {
     permissions: getPermissionsForRole('staff'),
   };
   const validatedMeal = {
-    id: mealId,
+    id: menuItemId,
     name: 'Classic Burger',
     image: '/img/burger.png',
     priceCents: 1200,
@@ -112,7 +112,7 @@ describe('order service', () => {
       _id: orderId,
       items: [
         {
-          menuItemId: mealId,
+          menuItemId,
           nameAtPurchase: 'Classic Burger',
           priceCentsAtPurchase: 1200,
           quantity: 1,
@@ -172,7 +172,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          mealId,
+          menuItemId,
           name: 'Classic Burger',
           image: '/img/burger.png',
           priceCents: 1200,
@@ -205,7 +205,7 @@ describe('order service', () => {
 
     const checkout = await createCheckoutOrder(
       userId,
-      [{ id: mealId, quantity: 2 }],
+      [{ id: menuItemId, quantity: 2 }],
       7,
       idempotencyKey,
     );
@@ -219,7 +219,7 @@ describe('order service', () => {
         checkoutIdempotencyKey: idempotencyKey,
         items: [
           {
-            menuItemId: mealId,
+            menuItemId,
             nameAtPurchase: 'Classic Burger',
             imageAtPurchase: '/img/burger.png',
             priceCentsAtPurchase: 1200,
@@ -272,7 +272,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          menuItemId: mealId,
+          menuItemId,
           nameAtPurchase: 'Classic Burger',
           imageAtPurchase: '/img/burger.png',
           priceCentsAtPurchase: 1200,
@@ -302,7 +302,7 @@ describe('order service', () => {
 
     const checkout = await createCheckoutOrder(
       userId,
-      [{ id: mealId, quantity: 2 }],
+      [{ id: menuItemId, quantity: 2 }],
       7,
       idempotencyKey,
     );
@@ -320,7 +320,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          menuItemId: mealId,
+          menuItemId,
           nameAtPurchase: 'Classic Burger',
           imageAtPurchase: '/img/burger.png',
           priceCentsAtPurchase: 1200,
@@ -354,7 +354,7 @@ describe('order service', () => {
 
     const checkout = await createCheckoutOrder(
       userId,
-      [{ id: mealId, quantity: 2 }],
+      [{ id: menuItemId, quantity: 2 }],
       7,
       idempotencyKey,
     );
@@ -389,7 +389,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          menuItemId: mealId,
+          menuItemId,
           nameAtPurchase: 'Classic Burger',
           imageAtPurchase: '/img/burger.png',
           priceCentsAtPurchase: 1200,
@@ -421,7 +421,7 @@ describe('order service', () => {
 
     const checkout = await createCheckoutOrder(
       userId,
-      [{ id: mealId, quantity: 2 }],
+      [{ id: menuItemId, quantity: 2 }],
       7,
       idempotencyKey,
     );
@@ -441,7 +441,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          menuItemId: mealId,
+          menuItemId,
           nameAtPurchase: 'Classic Burger',
           imageAtPurchase: '/img/burger.png',
           priceCentsAtPurchase: 1200,
@@ -484,7 +484,7 @@ describe('order service', () => {
 
     const checkout = await createCheckoutOrder(
       userId,
-      [{ id: mealId, quantity: 2 }],
+      [{ id: menuItemId, quantity: 2 }],
       7,
       idempotencyKey,
     );
@@ -531,7 +531,7 @@ describe('order service', () => {
     await expect(
       createCheckoutOrder(
         userId,
-        [{ id: mealId, quantity: 2 }],
+        [{ id: menuItemId, quantity: 2 }],
         7,
         idempotencyKey,
       ),
@@ -576,7 +576,7 @@ describe('order service', () => {
     await expect(
       createCheckoutOrder(
         userId,
-        [{ id: mealId, quantity: 2 }],
+        [{ id: menuItemId, quantity: 2 }],
         7,
         idempotencyKey,
       ),
@@ -593,7 +593,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          mealId,
+          menuItemId,
           name: 'Classic Burger',
           priceCents: 1200,
           quantity: 2,
@@ -649,7 +649,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          mealId,
+          menuItemId,
           name: 'Classic Burger',
           priceCents: 1200,
           quantity: 2,
@@ -704,7 +704,7 @@ describe('order service', () => {
       userId,
       items: [
         {
-          mealId,
+          menuItemId,
           name: 'Classic Burger',
           priceCents: 1200,
           quantity: 2,
