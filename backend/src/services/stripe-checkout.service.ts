@@ -1,7 +1,6 @@
 import Stripe from 'stripe';
 import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
-import type { ValidatedCartMenuItem } from './cart.service';
 import type { CheckoutOrderDocument } from './checkout.types';
 
 let stripeClient: ReturnType<typeof getStripeClientInstance> | null = null;
@@ -39,9 +38,28 @@ const buildStripeReturnUrl = (
 const buildStripeIdempotencyKey = (userId: string, idempotencyKey: string) =>
   `checkout:${userId}:${idempotencyKey}`;
 
+const toStripeLineItem = (item: CheckoutOrderDocument['items'][number]) => {
+  const name = item.nameAtPurchase ?? item.name;
+  const priceCents = item.priceCentsAtPurchase ?? item.priceCents;
+
+  if (!name || priceCents === undefined) {
+    throw new ServiceError('Checkout order snapshot is incomplete', 500);
+  }
+
+  return {
+    price_data: {
+      currency: 'aud',
+      product_data: {
+        name,
+      },
+      unit_amount: priceCents,
+    },
+    quantity: item.quantity,
+  };
+};
+
 export const createStripeCheckoutSession = async (
   order: CheckoutOrderDocument,
-  items: ValidatedCartMenuItem[],
   idempotencyKey: string,
 ) => {
   const orderId = String(order._id);
@@ -61,16 +79,7 @@ export const createStripeCheckoutSession = async (
     {
       mode: 'payment',
       client_reference_id: orderId,
-      line_items: items.map((item) => ({
-        price_data: {
-          currency: 'aud',
-          product_data: {
-            name: item.name,
-          },
-          unit_amount: item.priceCents,
-        },
-        quantity: item.quantity,
-      })),
+      line_items: order.items.map(toStripeLineItem),
       metadata: {
         orderId,
         userId,

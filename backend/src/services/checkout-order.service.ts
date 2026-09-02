@@ -44,30 +44,6 @@ const isMongoDuplicateKeyError = (error: unknown) => {
   return (error as { code?: unknown }).code === 11000;
 };
 
-const toExistingCheckoutItems = (
-  order: CheckoutOrderDocument,
-): ValidatedCartMenuItem[] =>
-  order.items.map((item) => {
-    const menuItemId = item.menuItemId ?? item.mealId;
-    const name = item.nameAtPurchase ?? item.name;
-    const priceCents = item.priceCentsAtPurchase ?? item.priceCents;
-
-    if (!menuItemId || !name || priceCents === undefined) {
-      throw new ServiceError('Checkout order snapshot is incomplete', 500);
-    }
-
-    return {
-      id: String(menuItemId),
-      name,
-      image: item.imageAtPurchase ?? item.image,
-      priceCents,
-      category: 'burger',
-      isAvailable: true,
-      quantity: item.quantity,
-      subtotalCents: item.subtotalCents,
-    };
-  });
-
 const resetCheckoutPaymentState = (order: CheckoutOrderDocument) => {
   order.status = 'pending_payment';
   order.payment.provider = 'stripe';
@@ -78,7 +54,6 @@ const resetCheckoutPaymentState = (order: CheckoutOrderDocument) => {
 
 const completeCheckoutOrder = async (
   order: CheckoutOrderDocument,
-  items: ValidatedCartMenuItem[],
   idempotencyKey: string,
 ): Promise<CheckoutOrder> => {
   if (order.checkoutUrl) {
@@ -91,11 +66,7 @@ const completeCheckoutOrder = async (
   resetCheckoutPaymentState(order);
 
   try {
-    const session = await createStripeCheckoutSession(
-      order,
-      items,
-      idempotencyKey,
-    );
+    const session = await createStripeCheckoutSession(order, idempotencyKey);
 
     if (!session.url) {
       await markCheckoutOrderFailed(order);
@@ -126,11 +97,7 @@ const completeExistingCheckoutOrder = (
   existingOrder: CheckoutOrderDocument,
   idempotencyKey: string,
 ) => {
-  return completeCheckoutOrder(
-    existingOrder,
-    toExistingCheckoutItems(existingOrder),
-    idempotencyKey,
-  );
+  return completeCheckoutOrder(existingOrder, idempotencyKey);
 };
 
 export const createCheckoutOrder = async (
@@ -188,5 +155,5 @@ export const createCheckoutOrder = async (
     return completeExistingCheckoutOrder(racedOrder, idempotencyKey);
   }
 
-  return completeCheckoutOrder(order, validatedCart.items, idempotencyKey);
+  return completeCheckoutOrder(order, idempotencyKey);
 };
