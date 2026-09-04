@@ -218,7 +218,7 @@ export const requestPasswordReset = async ({
 }: ForgotPasswordPayload): Promise<MessageResult> => {
   const user = await userRepository.findByEmail(email);
 
-  if (!user) {
+  if (!user || !user.email) {
     return { message: 'If the email exists, a reset link has been sent' };
   }
 
@@ -228,10 +228,6 @@ export const requestPasswordReset = async ({
   user.passwordResetTokenHash = hashToken(resetToken);
   user.passwordResetExpiresAt = new Date(Date.now() + TTL_MS.PASSWORD_RESET);
   await userRepository.save(user);
-
-  if (!user.email) {
-    return { message: 'If the email exists, a reset link has been sent' };
-  }
 
   await sendPasswordResetEmail({ email: user.email, token: resetToken });
 

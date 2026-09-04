@@ -3,12 +3,13 @@ import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { pbkdf2Sync } from 'crypto';
 import { userRepository } from '../repositories/user.repository';
 import { createAuthSession, revokeUserSessions } from './auth-session.service';
-import { sendVerificationEmail } from './email.service';
+import { sendPasswordResetEmail, sendVerificationEmail } from './email.service';
 import { hashPassword } from '../utils/password';
 import {
   adminLogin,
   login,
   loginWithOAuth,
+  requestPasswordReset,
   resetPassword,
   signup,
   verifyEmail,
@@ -316,6 +317,24 @@ describe('auth service', () => {
     expect(userRepository.save).not.toHaveBeenCalled();
     expect(revokeUserSessions).toHaveBeenCalledWith(userId);
     expect(result.message).toBe('Password reset successfully');
+  });
+
+  test('does not create a password reset token when the matched user has no email', async () => {
+    const userWithoutEmail = {
+      ...userDoc,
+      email: undefined,
+    };
+    jest
+      .mocked(userRepository.findByEmail)
+      .mockResolvedValue(userWithoutEmail as never);
+
+    const result = await requestPasswordReset({ email: 'pat@example.com' });
+
+    expect(result).toEqual({
+      message: 'If the email exists, a reset link has been sent',
+    });
+    expect(userRepository.save).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
   });
 
   test('rejects OAuth users when the provider email is not verified', async () => {
