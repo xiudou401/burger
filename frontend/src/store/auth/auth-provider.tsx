@@ -24,6 +24,8 @@ interface Props {
   children: ReactNode;
 }
 
+const AUTH_RESTORE_TIMEOUT_MS = 12_000;
+
 const normalizeUser = (user: User): User => ({
   ...user,
   role: user.role ?? 'customer',
@@ -44,12 +46,25 @@ export const AuthProvider = ({ children }: Props) => {
 
   useEffect(() => {
     let isMounted = true;
+    let isRestoreActive = true;
+
+    const timeoutId = window.setTimeout(() => {
+      if (!isMounted || !isRestoreActive) {
+        return;
+      }
+
+      isRestoreActive = false;
+      clearAuthState();
+      setIsAuthLoading(false);
+    }, AUTH_RESTORE_TIMEOUT_MS);
 
     const restoreSession = async () => {
       try {
         const res = await refreshSession();
 
-        if (!isMounted) return;
+        if (!isMounted || !isRestoreActive) return;
+
+        window.clearTimeout(timeoutId);
 
         setApiAccessToken(res.accessToken);
         setAccessToken(res.accessToken);
@@ -68,11 +83,15 @@ export const AuthProvider = ({ children }: Props) => {
           });
         }
 
-        if (!isMounted) return;
+        if (!isMounted || !isRestoreActive) return;
+
+        window.clearTimeout(timeoutId);
 
         clearAuthState();
       } finally {
-        if (isMounted) {
+        if (isMounted && isRestoreActive) {
+          isRestoreActive = false;
+          window.clearTimeout(timeoutId);
           setIsAuthLoading(false);
         }
       }
@@ -82,6 +101,8 @@ export const AuthProvider = ({ children }: Props) => {
 
     return () => {
       isMounted = false;
+      isRestoreActive = false;
+      window.clearTimeout(timeoutId);
     };
   }, [clearAuthState]);
 

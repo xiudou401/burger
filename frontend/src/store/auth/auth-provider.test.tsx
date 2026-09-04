@@ -99,6 +99,10 @@ describe('AuthProvider lifecycle', () => {
     jest.mocked(logout).mockResolvedValue(undefined);
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   test('restores an authenticated session on startup', async () => {
     jest.mocked(refreshSession).mockResolvedValue({
       accessToken: 'restored-access-token',
@@ -138,6 +142,25 @@ describe('AuthProvider lifecycle', () => {
     expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
     expect(screen.getByTestId('token')).toHaveTextContent('none');
     expect(screen.getByTestId('user')).toHaveTextContent('guest');
+    expect(clearAccessToken).toHaveBeenCalled();
+  });
+
+  test('stops auth loading if startup refresh does not settle', () => {
+    jest.useFakeTimers();
+    jest
+      .mocked(refreshSession)
+      .mockReturnValue(new Promise(() => undefined) as never);
+
+    renderAuthProvider();
+
+    expect(screen.getByTestId('loading')).toHaveTextContent('true');
+
+    act(() => {
+      jest.advanceTimersByTime(12_000);
+    });
+
+    expect(screen.getByTestId('loading')).toHaveTextContent('false');
+    expect(screen.getByTestId('authenticated')).toHaveTextContent('false');
     expect(clearAccessToken).toHaveBeenCalled();
   });
 
