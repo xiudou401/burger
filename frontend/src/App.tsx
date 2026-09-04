@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, ReactElement, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Home from './pages/Home';
 import Signup from './pages/Signup';
@@ -23,56 +23,64 @@ const AdminMenu = lazy(() => import('./pages/AdminMenu'));
 const AdminCustomers = lazy(() => import('./pages/AdminCustomers'));
 const AcceptStaffInvite = lazy(() => import('./pages/AcceptStaffInvite'));
 
+const lazyPage = (page: ReactElement) => (
+  <Suspense fallback={<AuthLoadingFallback />}>{page}</Suspense>
+);
+
 const App = () => {
   return (
     <BrowserRouter>
-      <Suspense fallback={<AuthLoadingFallback />}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/oauth/callback" element={<OAuthCallback />} />
-          <Route path="/payment/return" element={<PaymentReturn />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/oauth/callback" element={lazyPage(<OAuthCallback />)} />
+        <Route path="/payment/return" element={lazyPage(<PaymentReturn />)} />
+        <Route path="/reset-password" element={lazyPage(<ResetPassword />)} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route
+          path="/admin/invitations/accept"
+          element={lazyPage(<AcceptStaffInvite />)}
+        />
+
+        <Route element={<RequireAuth />}>
+          <Route path="/profile" element={lazyPage(<Profile />)} />
+          <Route path="/orders/:orderId" element={lazyPage(<OrderDetails />)} />
+        </Route>
+
+        <Route element={<RequirePermission permission="view_orders" />}>
           <Route
-            path="/admin/invitations/accept"
-            element={<AcceptStaffInvite />}
+            path="/admin"
+            element={<Navigate to="/admin/dashboard" replace />}
           />
+          <Route
+            path="/admin/dashboard"
+            element={lazyPage(<AdminDashboard />)}
+          />
+          <Route path="/admin/orders" element={lazyPage(<AdminOrders />)} />
+          <Route
+            path="/admin/orders/:orderId"
+            element={lazyPage(<AdminOrderDetails />)}
+          />
+        </Route>
 
-          <Route element={<RequireAuth />}>
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/orders/:orderId" element={<OrderDetails />} />
-          </Route>
+        <Route element={<RequirePermission permission="manage_menu" />}>
+          <Route path="/admin/menu" element={lazyPage(<AdminMenu />)} />
+        </Route>
 
-          <Route element={<RequirePermission permission="view_orders" />}>
-            <Route
-              path="/admin"
-              element={<Navigate to="/admin/dashboard" replace />}
-            />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/orders" element={<AdminOrders />} />
-            <Route
-              path="/admin/orders/:orderId"
-              element={<AdminOrderDetails />}
-            />
-          </Route>
+        <Route element={<RequirePermission permission="manage_staff" />}>
+          <Route path="/admin/staff" element={lazyPage(<AdminStaff />)} />
+        </Route>
 
-          <Route element={<RequirePermission permission="manage_menu" />}>
-            <Route path="/admin/menu" element={<AdminMenu />} />
-          </Route>
-
-          <Route element={<RequirePermission permission="manage_staff" />}>
-            <Route path="/admin/staff" element={<AdminStaff />} />
-          </Route>
-
-          <Route element={<RequirePermission permission="manage_customers" />}>
-            <Route path="/admin/customers" element={<AdminCustomers />} />
-          </Route>
-        </Routes>
-      </Suspense>
+        <Route element={<RequirePermission permission="manage_customers" />}>
+          <Route
+            path="/admin/customers"
+            element={lazyPage(<AdminCustomers />)}
+          />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 };

@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLoadingFallback from '../components/Auth/AuthLoadingFallback';
 import { useToast } from '../components/UI/Toast/ToastContext';
 import { useAuth } from '../store/auth/hooks/useAuth';
-import { useCartActions } from '../store/cart/hooks/useCartActions';
-import { clearPersistedCart } from '../store/cart/cart-reducer';
 
 const buildOrderPath = (orderId: string | null) =>
   orderId ? `/orders/${orderId}` : '/profile';
@@ -19,7 +17,6 @@ const PaymentReturn = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { showToast } = useToast();
-  const { clearCart } = useCartActions();
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
   const handledRef = useRef(false);
@@ -33,15 +30,6 @@ const PaymentReturn = () => {
     const orderId = searchParams.get('orderId');
 
     if (payment === 'success') {
-      clearPersistedCart();
-      clearCart();
-      showToast({
-        message: orderId
-          ? 'Payment received. Confirming your order...'
-          : 'Payment successful. Your order is being confirmed.',
-        tone: 'success',
-      });
-
       if (!isAuthenticated) {
         navigate('/login', {
           replace: true,
@@ -65,14 +53,7 @@ const PaymentReturn = () => {
     }
 
     navigate(isAuthenticated ? '/profile' : '/', { replace: true });
-  }, [
-    clearCart,
-    isAuthLoading,
-    isAuthenticated,
-    navigate,
-    searchParams,
-    showToast,
-  ]);
+  }, [isAuthLoading, isAuthenticated, navigate, searchParams, showToast]);
 
   return <AuthLoadingFallback />;
 };

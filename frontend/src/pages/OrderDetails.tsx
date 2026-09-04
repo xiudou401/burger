@@ -1,19 +1,42 @@
+import { useEffect, useRef } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import classes from './OrderDetails.module.css';
 import AccountBar from '../components/Auth/AccountBar';
-import { useOrderDetailsPage } from './hooks/useOrderDetailsPage';
+import {
+  isConfirmedStripeOrder,
+  useOrderDetailsPage,
+} from './hooks/useOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
 import { formatMediumDateTime } from '../utils/date';
 import { formatOrderShortId, formatOrderStatus } from '../utils/order';
 import MenuImage from '../components/UI/MenuImage/MenuImage';
+import { useCartActions } from '../store/cart/hooks/useCartActions';
+import { clearPersistedCart } from '../store/cart/cart-reducer';
 
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
   const location = useLocation();
-  const { order, isLoading, error } = useOrderDetailsPage(orderId);
   const paymentConfirmed =
     (location.state as { paymentConfirmed?: boolean } | null)
       ?.paymentConfirmed === true;
+  const { order, isLoading, error } = useOrderDetailsPage(orderId, {
+    confirmPayment: paymentConfirmed,
+  });
+  const { clearCart } = useCartActions();
+  const hasClearedConfirmedCartRef = useRef(false);
+  const hasConfirmedPayment = Boolean(
+    order && paymentConfirmed && isConfirmedStripeOrder(order),
+  );
+
+  useEffect(() => {
+    if (!hasConfirmedPayment || hasClearedConfirmedCartRef.current) {
+      return;
+    }
+
+    hasClearedConfirmedCartRef.current = true;
+    clearPersistedCart();
+    clearCart();
+  }, [clearCart, hasConfirmedPayment]);
 
   return (
     <main className={classes.Page}>
@@ -35,16 +58,34 @@ const OrderDetails = () => {
 
         {!isLoading && !error && order && (
           <>
-            {paymentConfirmed && (
-              <section className={classes.Confirmation} role="status">
-                <p className={classes.ConfirmationEyebrow}>Order confirmed</p>
-                <h1 className={classes.ConfirmationTitle}>Payment received</h1>
-                <p className={classes.ConfirmationText}>
-                  We have received your payment and your order is being
-                  confirmed by the kitchen.
-                </p>
-              </section>
-            )}
+            {paymentConfirmed &&
+              (hasConfirmedPayment ? (
+                <section className={classes.Confirmation} role="status">
+                  <p className={classes.ConfirmationEyebrow}>Order confirmed</p>
+                  <h1 className={classes.ConfirmationTitle}>
+                    Payment received
+                  </h1>
+                  <p className={classes.ConfirmationText}>
+                    We have received your payment and your order is being
+                    confirmed by the kitchen.
+                  </p>
+                </section>
+              ) : (
+                <section
+                  className={`${classes.Confirmation} ${classes.PendingConfirmation}`}
+                  role="status"
+                >
+                  <p className={classes.ConfirmationEyebrow}>
+                    Confirming payment
+                  </p>
+                  <h1 className={classes.ConfirmationTitle}>
+                    Checking your order
+                  </h1>
+                  <p className={classes.ConfirmationText}>
+                    We are confirming your payment with the server.
+                  </p>
+                </section>
+              ))}
 
             <header className={classes.Hero}>
               <div>

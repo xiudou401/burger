@@ -30,6 +30,11 @@
   background: #f0fff6;
 }
 
+.PendingConfirmation {
+  border-color: #eadfce;
+  background: #fffaf1;
+}
+
 .ConfirmationEyebrow {
   margin: 0 0 8rem;
   color: #1d7c49;

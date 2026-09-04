@@ -11,6 +11,7 @@ interface MessageResponse {
 export const signup = (name: string, email: string, password: string) => {
   return request<AuthResponse>('/auth/signup', {
     method: 'POST',
+    skipAuth: true,
     body: JSON.stringify({
       name,
       email,
@@ -22,6 +23,7 @@ export const signup = (name: string, email: string, password: string) => {
 export const login = (email: string, password: string) => {
   return request<AuthResponse>('/auth/login', {
     method: 'POST',
+    skipAuth: true,
     body: JSON.stringify({
       email,
       password,
@@ -32,6 +34,7 @@ export const login = (email: string, password: string) => {
 export const adminLogin = (email: string, password: string) => {
   return request<AuthResponse>('/auth/admin/login', {
     method: 'POST',
+    skipAuth: true,
     body: JSON.stringify({
       email,
       password,
@@ -52,6 +55,7 @@ export const logout = () => {
 export const verifyEmail = (token: string) => {
   return request<MessageResponse>('/auth/verify-email', {
     method: 'POST',
+    skipAuth: true,
     body: JSON.stringify({ token }),
   });
 };
@@ -65,6 +69,7 @@ export const resendVerificationEmail = () => {
 export const forgotPassword = (email: string) => {
   return request<MessageResponse>('/auth/forgot-password', {
     method: 'POST',
+    skipAuth: true,
     body: JSON.stringify({ email }),
   });
 };
@@ -72,6 +77,7 @@ export const forgotPassword = (email: string) => {
 export const resetPassword = (token: string, password: string) => {
   return request<MessageResponse>('/auth/reset-password', {
     method: 'POST',
+    skipAuth: true,
     body: JSON.stringify({ token, password }),
   });
 };

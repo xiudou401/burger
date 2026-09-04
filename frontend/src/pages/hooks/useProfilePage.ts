@@ -8,6 +8,7 @@ import {
   getTotalQuantity,
 } from '../../store/cart/context-accessors';
 import { useCartActions } from '../../store/cart/hooks/useCartActions';
+import { clearPersistedCart } from '../../store/cart/cart-reducer';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import { useToast } from '../../components/UI/Toast/ToastContext';
 import { hasPermission } from '../../types/permissions';
@@ -110,6 +111,8 @@ export const useProfilePage = () => {
           upsertRecentOrder(res.order);
 
           if (isConfirmedStripeOrder(res.order)) {
+            clearPersistedCart();
+            clearCart();
             showToast({
               message: 'Order confirmed.',
               tone: 'success',
@@ -133,7 +136,7 @@ export const useProfilePage = () => {
         });
       }
     },
-    [loadOrders, showToast, upsertRecentOrder],
+    [clearCart, loadOrders, showToast, upsertRecentOrder],
   );
 
   useEffect(() => {
@@ -153,16 +156,14 @@ export const useProfilePage = () => {
 
     if (payment === 'success') {
       processedPaymentRef.current = paymentKey;
-      clearCart();
-      showToast({
-        message: orderId
-          ? 'Payment received. Confirming your order...'
-          : 'Payment successful. Your order is being confirmed.',
-        tone: 'success',
-      });
 
       if (orderId && canViewOwnOrders) {
         void confirmRedirectedOrder(orderId);
+      } else {
+        showToast({
+          message: 'Confirming your payment...',
+          tone: 'info',
+        });
       }
     }
 
@@ -181,7 +182,6 @@ export const useProfilePage = () => {
       setSearchParams(nextParams, { replace: true });
     }
   }, [
-    clearCart,
     canViewOwnOrders,
     confirmRedirectedOrder,
     searchParams,
