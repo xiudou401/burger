@@ -16,16 +16,19 @@ import { clearPersistedCart } from '../store/cart/cart-reducer';
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
   const location = useLocation();
-  const paymentConfirmed =
-    (location.state as { paymentConfirmed?: boolean } | null)
-      ?.paymentConfirmed === true;
+  const returnedFromSuccessfulPayment =
+    (
+      location.state as {
+        returnedFromSuccessfulPayment?: boolean;
+      } | null
+    )?.returnedFromSuccessfulPayment === true;
   const { order, isLoading, error } = useOrderDetailsPage(orderId, {
-    confirmPayment: paymentConfirmed,
+    confirmPayment: returnedFromSuccessfulPayment,
   });
   const { clearCart } = useCartActions();
   const hasClearedConfirmedCartRef = useRef(false);
   const hasConfirmedPayment = Boolean(
-    order && paymentConfirmed && isConfirmedStripeOrder(order),
+    order && returnedFromSuccessfulPayment && isConfirmedStripeOrder(order),
   );
 
   useEffect(() => {
@@ -58,7 +61,7 @@ const OrderDetails = () => {
 
         {!isLoading && !error && order && (
           <>
-            {paymentConfirmed &&
+            {returnedFromSuccessfulPayment &&
               (hasConfirmedPayment ? (
                 <section className={classes.Confirmation} role="status">
                   <p className={classes.ConfirmationEyebrow}>Order confirmed</p>

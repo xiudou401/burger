@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchOrder } from '../../api/orders';
 import type { Order } from '../../types/order';
+import { isObjectId } from '../../utils/object-id';
 
 const PAYMENT_CONFIRMATION_POLL_ATTEMPTS = 5;
 const PAYMENT_CONFIRMATION_POLL_DELAY_MS = 1500;
@@ -22,7 +23,7 @@ export const useOrderDetailsPage = (
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!orderId) {
+    if (!isObjectId(orderId)) {
       setError('Order not found');
       return;
     }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { resendVerificationEmail } from '../../api/auth';
 import { fetchMyOrders, fetchOrder } from '../../api/orders';
 import { useCartSelector } from '../../store/cart/hooks/useCartSelector';
@@ -14,6 +14,7 @@ import { useToast } from '../../components/UI/Toast/ToastContext';
 import { hasPermission } from '../../types/permissions';
 import type { Order } from '../../types/order';
 import { reportError } from '../../utils/error-monitoring';
+import { getObjectIdOrNull } from '../../utils/object-id';
 
 const ORDER_CONFIRMATION_POLL_ATTEMPTS = 5;
 const ORDER_CONFIRMATION_POLL_DELAY_MS = 1500;
@@ -28,6 +29,7 @@ const isConfirmedStripeOrder = (order: Order) =>
 
 export const useProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const user = useAuth((ctx) => ctx.user);
   const totalQuantity = useCartSelector(getTotalQuantity);
   const displayTotalCents = useCartSelector(getDisplayTotalCents);
@@ -49,6 +51,8 @@ export const useProfilePage = () => {
   const hasCartItems = totalQuantity > 0;
   const canCreateOrder = hasPermission(user, 'create_order');
   const canViewOwnOrders = hasPermission(user, 'view_own_orders');
+  const payment = searchParams.get('payment');
+  const orderId = getObjectIdOrNull(searchParams.get('orderId'));
 
   const upsertRecentOrder = useCallback((order: Order) => {
     setOrders((current) => {
@@ -148,8 +152,6 @@ export const useProfilePage = () => {
   }, []);
 
   useEffect(() => {
-    const payment = searchParams.get('payment');
-    const orderId = searchParams.get('orderId');
     const paymentKey = `${payment ?? ''}:${orderId ?? ''}`;
 
     if (processedPaymentRef.current === paymentKey) return;
@@ -176,7 +178,7 @@ export const useProfilePage = () => {
     }
 
     if (payment === 'success' || payment === 'cancelled') {
-      const nextParams = new URLSearchParams(searchParams);
+      const nextParams = new URLSearchParams(location.search);
       nextParams.delete('payment');
       nextParams.delete('orderId');
       setSearchParams(nextParams, { replace: true });
@@ -184,7 +186,9 @@ export const useProfilePage = () => {
   }, [
     canViewOwnOrders,
     confirmRedirectedOrder,
-    searchParams,
+    location.search,
+    orderId,
+    payment,
     setSearchParams,
     showToast,
   ]);

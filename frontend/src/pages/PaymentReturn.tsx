@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLoadingFallback from '../components/Auth/AuthLoadingFallback';
 import { useToast } from '../components/UI/Toast/ToastContext';
 import { useAuth } from '../store/auth/hooks/useAuth';
+import { getObjectIdOrNull } from '../utils/object-id';
 
 const buildOrderPath = (orderId: string | null) =>
   orderId ? `/orders/${orderId}` : '/profile';
@@ -20,14 +21,13 @@ const PaymentReturn = () => {
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
   const handledRef = useRef(false);
+  const payment = searchParams.get('payment');
+  const orderId = getObjectIdOrNull(searchParams.get('orderId'));
 
   useEffect(() => {
     if (handledRef.current || isAuthLoading) return;
 
     handledRef.current = true;
-
-    const payment = searchParams.get('payment');
-    const orderId = searchParams.get('orderId');
 
     if (payment === 'success') {
       if (!isAuthenticated) {
@@ -40,7 +40,7 @@ const PaymentReturn = () => {
 
       navigate(buildOrderPath(orderId), {
         replace: true,
-        state: { paymentConfirmed: true },
+        state: { returnedFromSuccessfulPayment: true },
       });
       return;
     }
@@ -53,7 +53,7 @@ const PaymentReturn = () => {
     }
 
     navigate(isAuthenticated ? '/profile' : '/', { replace: true });
-  }, [isAuthLoading, isAuthenticated, navigate, searchParams, showToast]);
+  }, [isAuthLoading, isAuthenticated, navigate, orderId, payment, showToast]);
 
   return <AuthLoadingFallback />;
 };

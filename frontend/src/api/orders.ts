@@ -22,7 +22,7 @@ export const fetchMyOrders = (limit = 5) => {
 };
 
 export const fetchOrder = (orderId: string) => {
-  return request<{ order: Order }>(`/orders/${orderId}`);
+  return request<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}`);
 };
 
 interface FetchAdminOrdersParams {
@@ -47,7 +47,9 @@ export const fetchAdminOrders = ({
 };
 
 export const fetchAdminOrder = (orderId: string) => {
-  return request<{ order: Order }>(`/orders/admin/${orderId}`);
+  return request<{ order: Order }>(
+    `/orders/admin/${encodeURIComponent(orderId)}`,
+  );
 };
 
 export const updateOrderStatus = (
@@ -55,8 +57,11 @@ export const updateOrderStatus = (
   status: OrderStatus,
   version: number,
 ) => {
-  return request<{ order: Order }>(`/orders/${orderId}/status`, {
-    method: 'PATCH',
-    body: JSON.stringify({ status, version }),
-  });
+  return request<{ order: Order }>(
+    `/orders/${encodeURIComponent(orderId)}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status, version }),
+    },
+  );
 };
