@@ -32,8 +32,7 @@ export const useAdminCustomersPage = () => {
       loadControllerRef.current?.abort();
 
       const controller = new AbortController();
-      const requestId = loadRequestIdRef.current + 1;
-      loadRequestIdRef.current = requestId;
+      const requestId = ++loadRequestIdRef.current;
       loadControllerRef.current = controller;
 
       if (append) {
