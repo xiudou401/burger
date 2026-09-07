@@ -18,8 +18,8 @@ export const useAdminCustomersPage = () => {
   const [busyCustomerId, setBusyCustomerId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const loadRequestIdRef = useRef(0);
-  const loadControllerRef = useRef<AbortController | null>(null);
+  const latestLoadRequestIdRef = useRef(0);
+  const activeLoadControllerRef = useRef<AbortController | null>(null);
 
   const loadCustomers = useCallback(
     async ({
@@ -29,11 +29,11 @@ export const useAdminCustomersPage = () => {
       pageToLoad?: number;
       append?: boolean;
     } = {}) => {
-      loadControllerRef.current?.abort();
+      activeLoadControllerRef.current?.abort();
 
       const controller = new AbortController();
-      const requestId = ++loadRequestIdRef.current;
-      loadControllerRef.current = controller;
+      const requestId = ++latestLoadRequestIdRef.current;
+      activeLoadControllerRef.current = controller;
 
       if (append) {
         setIsLoading(false);
@@ -53,7 +53,7 @@ export const useAdminCustomersPage = () => {
           signal: controller.signal,
         });
 
-        if (requestId !== loadRequestIdRef.current) return;
+        if (requestId !== latestLoadRequestIdRef.current) return;
 
         setCustomers((current) =>
           append ? [...current, ...res.customers] : res.customers,
@@ -61,17 +61,17 @@ export const useAdminCustomersPage = () => {
         setPage(res.page);
         setTotalPages(Math.max(res.totalPages, 1));
       } catch (err) {
-        if (requestId !== loadRequestIdRef.current) return;
+        if (requestId !== latestLoadRequestIdRef.current) return;
 
         setError(
           err instanceof Error ? err.message : 'Could not load customers',
         );
       } finally {
-        if (loadControllerRef.current === controller) {
-          loadControllerRef.current = null;
+        if (activeLoadControllerRef.current === controller) {
+          activeLoadControllerRef.current = null;
         }
 
-        if (requestId !== loadRequestIdRef.current) return;
+        if (requestId !== latestLoadRequestIdRef.current) return;
 
         if (append) {
           setIsLoadingMore(false);
@@ -87,9 +87,9 @@ export const useAdminCustomersPage = () => {
     void loadCustomers();
 
     return () => {
-      loadRequestIdRef.current += 1;
-      loadControllerRef.current?.abort();
-      loadControllerRef.current = null;
+      latestLoadRequestIdRef.current += 1;
+      activeLoadControllerRef.current?.abort();
+      activeLoadControllerRef.current = null;
     };
   }, [loadCustomers]);
 
