@@ -93,7 +93,7 @@ export const useInfiniteMenuItems = ({
       );
       const activeRequest = inFlightRef.current;
 
-      if (activeRequest && activeRequest.key === key) {
+      if (activeRequest?.key === key) {
         return activeRequest.promise;
       }
 
@@ -101,10 +101,7 @@ export const useInfiniteMenuItems = ({
         return Promise.resolve(settledLoadRef.current.result);
       }
 
-      if (activeRequest) {
-        activeRequest.controller.abort();
-        inFlightRef.current = null;
-      }
+      activeRequest?.controller.abort();
 
       setIsLoading(true);
       setError(null);
