@@ -219,11 +219,11 @@ export const useInfiniteMenuItems = ({
       debounceTimerRef.current = window.setTimeout(() => {
         const k = value.trim();
 
+        debounceTimerRef.current = null;
         resetAndInvalidate();
         setKeyword(k);
         setCategory(undefined);
         setReloadKey((prev) => prev + 1);
-        debounceTimerRef.current = null;
       }, SEARCH_DEBOUNCE_MS);
     },
     [clearDebounceTimer, resetAndInvalidate],
