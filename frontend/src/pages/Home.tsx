@@ -37,7 +37,7 @@ const Home = () => {
     error,
     listRef,
     sentinelRef,
-    onSearch,
+    onSearch: searchMenuItems,
     onCategoryChange,
     reload,
     retry,
@@ -88,9 +88,9 @@ const Home = () => {
     };
   }, [acknowledgeMenuUpdate, hasMenuUpdate, reload]);
 
-  const searchMenu = (query: string) => {
+  const handleMenuSearch = (query: string) => {
     setActiveCategory(query.trim() ? '' : 'all');
-    onSearch(query);
+    searchMenuItems(query);
   };
 
   const selectCategory = (category: (typeof CATEGORY_FILTERS)[number]) => {
@@ -103,7 +103,7 @@ const Home = () => {
       <BrandHero labelledBy="menu-title" className={classes.FixedHero} />
 
       <div className={classes.MenuTools}>
-        <MenuSearch onSearch={searchMenu} />
+        <MenuSearch onSearch={handleMenuSearch} />
         <nav className={classes.CategoryRail} aria-label="Menu categories">
           {CATEGORY_FILTERS.map((category) => (
             <button
