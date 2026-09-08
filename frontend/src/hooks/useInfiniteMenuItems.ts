@@ -116,7 +116,7 @@ export const useInfiniteMenuItems = ({
 
       promise = (async () => {
         try {
-          const data = await fetchMenuItems({
+          const menuItemsPage = await fetchMenuItems({
             page: pageToLoad,
             keyword: snapshotKeyword || undefined,
             category: snapshotCategory,
@@ -131,14 +131,14 @@ export const useInfiniteMenuItems = ({
 
           setMenuItems((prev) => {
             if (pageToLoad === 1) {
-              return data.items;
+              return menuItemsPage.items;
             }
 
-            return mergeUniqueMenuItems(prev, data.items);
+            return mergeUniqueMenuItems(prev, menuItemsPage.items);
           });
 
           loadedPageRef.current = Math.max(loadedPageRef.current, pageToLoad);
-          setHasMore(data.page < data.totalPages);
+          setHasMore(menuItemsPage.page < menuItemsPage.totalPages);
           settledLoadRef.current = { key, result: true };
           return true;
         } catch (error) {
