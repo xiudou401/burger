@@ -223,7 +223,7 @@ describe('useInfiniteMenuItems', () => {
       reloadLoad.reject(new Error('Network down'));
     });
 
-    await expect(reloadPromise).resolves.toBe(false);
+    await expect(reloadPromise).resolves.toBe('failed');
     await screen.findByText('Could not load the menu. Retry.');
     consoleErrorSpy.mockRestore();
   });

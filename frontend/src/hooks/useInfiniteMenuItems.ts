@@ -26,14 +26,16 @@ interface UseInfiniteMenuItemsOptions {
 
 type InFlightEntry = {
   key: string;
-  promise: Promise<boolean>;
+  promise: Promise<MenuLoadResult>;
   controller: AbortController;
 };
 
 type SettledLoadEntry = {
   key: string;
-  result: boolean;
+  result: MenuLoadResult;
 };
+
+export type MenuLoadResult = 'success' | 'skipped' | 'failed';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -112,7 +114,7 @@ export const useInfiniteMenuItems = ({
       const snapshotCategory = categoryToLoad;
       const snapshotReloadKey = currentReloadKey;
 
-      let promise!: Promise<boolean>;
+      let promise!: Promise<MenuLoadResult>;
 
       promise = (async () => {
         try {
@@ -124,10 +126,12 @@ export const useInfiniteMenuItems = ({
             signal: controller.signal,
           });
 
-          if (requestId !== requestIdRef.current) return false;
-          if (snapshotKeyword !== latestRef.current.keyword) return false;
-          if (snapshotCategory !== latestRef.current.category) return false;
-          if (snapshotReloadKey !== latestRef.current.reloadKey) return false;
+          if (requestId !== requestIdRef.current) return 'skipped';
+          if (snapshotKeyword !== latestRef.current.keyword) return 'skipped';
+          if (snapshotCategory !== latestRef.current.category) return 'skipped';
+          if (snapshotReloadKey !== latestRef.current.reloadKey) {
+            return 'skipped';
+          }
 
           setMenuItems((prev) => {
             if (pageToLoad === 1) {
@@ -139,19 +143,19 @@ export const useInfiniteMenuItems = ({
 
           loadedPageRef.current = Math.max(loadedPageRef.current, pageToLoad);
           setHasMore(menuItemsPage.page < menuItemsPage.totalPages);
-          settledLoadRef.current = { key, result: true };
-          return true;
+          settledLoadRef.current = { key, result: 'success' };
+          return 'success';
         } catch (error) {
-          if (controller.signal.aborted) return false;
-          if (requestId !== requestIdRef.current) return false;
+          if (controller.signal.aborted) return 'skipped';
+          if (requestId !== requestIdRef.current) return 'skipped';
 
           reportError(error, {
             source: 'menu',
             operation: 'load-items',
           });
           setError('Could not load the menu. Retry.');
-          settledLoadRef.current = { key, result: false };
-          return false;
+          settledLoadRef.current = { key, result: 'failed' };
+          return 'failed';
         } finally {
           if (inFlightRef.current?.promise === promise) {
             inFlightRef.current = null;

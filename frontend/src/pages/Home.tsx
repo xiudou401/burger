@@ -48,12 +48,12 @@ const Home = () => {
     useMenuRefreshPrompt(menuVersion);
 
   const refreshMenu = useCallback(async () => {
-    const refreshed = await reload();
+    const result = await reload();
 
-    if (refreshed) {
+    if (result === 'success') {
       acknowledgeMenuUpdate();
       setShowMenuRefreshFallback(false);
-    } else {
+    } else if (result === 'failed') {
       setShowMenuRefreshFallback(true);
     }
   }, [acknowledgeMenuUpdate, reload]);
@@ -69,14 +69,14 @@ const Home = () => {
     setShowMenuRefreshFallback(false);
 
     const refreshChangedMenu = async () => {
-      const refreshed = await reload();
+      const result = await reload();
 
       if (cancelled) return;
 
-      if (refreshed) {
+      if (result === 'success') {
         acknowledgeMenuUpdate();
         setShowMenuRefreshFallback(false);
-      } else {
+      } else if (result === 'failed') {
         setShowMenuRefreshFallback(true);
       }
     };
