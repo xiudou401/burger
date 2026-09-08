@@ -254,13 +254,12 @@ export const useInfiniteMenuItems = ({
 
   const onCategoryChange = useCallback(
     (nextCategory?: MenuItemCategory) => {
-      clearDebounceTimer();
       resetAndInvalidate();
       setKeyword('');
       setCategory(nextCategory);
       setReloadKey((prev) => prev + 1);
     },
-    [clearDebounceTimer, resetAndInvalidate],
+    [resetAndInvalidate],
   );
 
   return {
