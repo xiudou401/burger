@@ -20,9 +20,9 @@ export const getMenuItems = async (
   try {
     const query = req.query as unknown as MenuItemQueryPayload;
 
-    const menuItems = await findAllMenuItems(query);
+    const menuItemsResponse = await findAllMenuItems(query);
 
-    res.status(200).json(menuItems);
+    res.status(200).json(menuItemsResponse);
   } catch (error) {
     next(error);
   }
