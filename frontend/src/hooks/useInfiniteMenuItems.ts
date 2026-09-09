@@ -198,7 +198,7 @@ export const useInfiniteMenuItems = ({
     canLoadMore: !error && hasMore,
     isLoading,
     loadedPage: loadedPageRef.current,
-    page,
+    requestedPage: page,
     onLoadMore: loadNextPage,
   });
 

@@ -4,7 +4,7 @@ interface UseInfiniteScrollTriggerOptions {
   canLoadMore: boolean;
   isLoading: boolean;
   loadedPage: number;
-  page: number;
+  requestedPage: number;
   onLoadMore: () => void;
 }
 
@@ -12,7 +12,7 @@ export const useInfiniteScrollTrigger = ({
   canLoadMore,
   isLoading,
   loadedPage,
-  page,
+  requestedPage,
   onLoadMore,
 }: UseInfiniteScrollTriggerOptions) => {
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -32,7 +32,7 @@ export const useInfiniteScrollTrigger = ({
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0].isIntersecting) return;
-        if (loadedPage < page) return;
+        if (loadedPage < requestedPage) return;
         if (loadLockedRef.current) return;
 
         loadLockedRef.current = true;
@@ -48,7 +48,7 @@ export const useInfiniteScrollTrigger = ({
     observer.observe(sentinelRef.current);
 
     return () => observer.disconnect();
-  }, [canLoadMore, isLoading, loadedPage, onLoadMore, page]);
+  }, [canLoadMore, isLoading, loadedPage, onLoadMore, requestedPage]);
 
   return {
     listRef,

@@ -48,7 +48,7 @@ const renderHookHarness = (overrideProps: Partial<HookProps> = {}) => {
     canLoadMore: true,
     isLoading: false,
     loadedPage: 1,
-    page: 1,
+    requestedPage: 1,
     onLoadMore: jest.fn(),
     ...overrideProps,
   };
@@ -88,7 +88,7 @@ describe('useInfiniteScrollTrigger', () => {
   it('does not load when the requested page has not finished loading', () => {
     const onLoadMore = jest.fn();
 
-    renderHookHarness({ loadedPage: 1, page: 2, onLoadMore });
+    renderHookHarness({ loadedPage: 1, requestedPage: 2, onLoadMore });
 
     act(() => {
       triggerIntersection();
@@ -135,7 +135,7 @@ describe('useInfiniteScrollTrigger', () => {
         canLoadMore
         isLoading
         loadedPage={1}
-        page={1}
+        requestedPage={1}
         onLoadMore={onLoadMore}
       />,
     );
@@ -144,7 +144,7 @@ describe('useInfiniteScrollTrigger', () => {
         canLoadMore
         isLoading={false}
         loadedPage={2}
-        page={2}
+        requestedPage={2}
         onLoadMore={onLoadMore}
       />,
     );
