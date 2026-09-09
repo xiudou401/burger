@@ -3,6 +3,9 @@ import MenuItemsList from '../components/MenuItems/MenuItemsList';
 import CartBar from '../components/Cart/CartBar';
 import MenuSearch from '../components/Menu/MenuSearch/MenuSearch';
 import BrandHero from '../components/BrandHero/BrandHero';
+import MenuCategoryRail, {
+  type MenuCategoryFilter,
+} from '../components/Menu/MenuCategoryRail/MenuCategoryRail';
 import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
 import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
 import { fetchMenuItems } from '../api/menu-items';
@@ -10,7 +13,6 @@ import { useInfiniteMenuItems } from '../hooks/useInfiniteMenuItems';
 import { useMenuRefreshPrompt } from './hooks/useMenuRefreshPrompt';
 import { useCartSelector } from '../store/cart/hooks/useCartSelector';
 import { MENU_CATEGORIES } from '../constants/menu-categories';
-import type { MenuItemCategory } from '../types/menu-item';
 import classes from './Home.module.css';
 
 const CATEGORY_FILTERS = [
@@ -21,12 +23,7 @@ const CATEGORY_FILTERS = [
     shortLabel: category.shortPluralLabel,
     category: category.value,
   })),
-] satisfies Array<{
-  id: string;
-  label: string;
-  shortLabel: string;
-  category?: MenuItemCategory;
-}>;
+] satisfies MenuCategoryFilter[];
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState('all');
@@ -93,7 +90,7 @@ const Home = () => {
     searchMenuItems(query);
   };
 
-  const selectCategory = (category: (typeof CATEGORY_FILTERS)[number]) => {
+  const selectCategory = (category: MenuCategoryFilter) => {
     setActiveCategory(category.id);
     onCategoryChange(category.category);
   };
@@ -104,23 +101,11 @@ const Home = () => {
 
       <div className={classes.MenuTools}>
         <MenuSearch onSearch={handleMenuSearch} />
-        <nav className={classes.CategoryRail} aria-label="Menu categories">
-          {CATEGORY_FILTERS.map((category) => (
-            <button
-              key={category.id}
-              type="button"
-              className={
-                activeCategory === category.id ? classes.ActiveCategory : ''
-              }
-              onClick={() => selectCategory(category)}
-            >
-              <span className={classes.CategoryLabel}>{category.label}</span>
-              <span className={classes.CategoryShortLabel}>
-                {category.shortLabel}
-              </span>
-            </button>
-          ))}
-        </nav>
+        <MenuCategoryRail
+          categories={CATEGORY_FILTERS}
+          activeCategory={activeCategory}
+          onSelectCategory={selectCategory}
+        />
       </div>
 
       <MenuItemsList
