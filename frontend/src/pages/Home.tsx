@@ -9,7 +9,10 @@ import MenuCategoryRail, {
 import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
 import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
 import { fetchMenuItems } from '../api/menu-items';
-import { useInfiniteMenuItems } from '../hooks/useInfiniteMenuItems';
+import {
+  type MenuLoadResult,
+  useInfiniteMenuItems,
+} from '../hooks/useInfiniteMenuItems';
 import { useMenuRefreshPrompt } from './hooks/useMenuRefreshPrompt';
 import { useCartSelector } from '../store/cart/hooks/useCartSelector';
 import { MENU_CATEGORIES } from '../constants/menu-categories';
@@ -44,16 +47,21 @@ const Home = () => {
   const { hasMenuUpdate, acknowledgeMenuUpdate } =
     useMenuRefreshPrompt(menuVersion);
 
-  const refreshMenu = useCallback(async () => {
-    const result = await reload();
+  const applyMenuReloadResult = useCallback(
+    (result: MenuLoadResult) => {
+      if (result === 'success') {
+        acknowledgeMenuUpdate();
+        setShowMenuRefreshFallback(false);
+      } else if (result === 'failed') {
+        setShowMenuRefreshFallback(true);
+      }
+    },
+    [acknowledgeMenuUpdate],
+  );
 
-    if (result === 'success') {
-      acknowledgeMenuUpdate();
-      setShowMenuRefreshFallback(false);
-    } else if (result === 'failed') {
-      setShowMenuRefreshFallback(true);
-    }
-  }, [acknowledgeMenuUpdate, reload]);
+  const refreshMenu = useCallback(async () => {
+    applyMenuReloadResult(await reload());
+  }, [applyMenuReloadResult, reload]);
 
   useEffect(() => {
     if (!hasMenuUpdate) {
@@ -70,12 +78,7 @@ const Home = () => {
 
       if (cancelled) return;
 
-      if (result === 'success') {
-        acknowledgeMenuUpdate();
-        setShowMenuRefreshFallback(false);
-      } else if (result === 'failed') {
-        setShowMenuRefreshFallback(true);
-      }
+      applyMenuReloadResult(result);
     };
 
     void refreshChangedMenu();
@@ -83,7 +86,7 @@ const Home = () => {
     return () => {
       cancelled = true;
     };
-  }, [acknowledgeMenuUpdate, hasMenuUpdate, reload]);
+  }, [applyMenuReloadResult, hasMenuUpdate, reload]);
 
   const handleMenuSearch = (query: string) => {
     setActiveCategory(query.trim() ? '' : 'all');
