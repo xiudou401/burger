@@ -171,6 +171,7 @@ export const useQuoteEngine = ({
 
   useEffect(() => {
     setQuoteError(null);
+    setQuoteErrorAction(null);
   }, [itemsSig]);
 
   useEffect(() => {
