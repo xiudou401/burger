@@ -11,6 +11,7 @@ export const isExpectedBackgroundError = (error: unknown) =>
   error instanceof QuoteRequestInactiveError ||
   (error instanceof ApiError &&
     (error.statusCode === HTTP_STATUS.CONFLICT ||
+      error.statusCode === HTTP_STATUS.PRECONDITION_REQUIRED ||
       error.statusCode === HTTP_STATUS.REQUEST_CANCELLED));
 
 export const isRequestCancelled = (error: unknown) =>

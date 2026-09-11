@@ -8,14 +8,15 @@ import {
 } from './error-monitoring';
 
 describe('error monitoring', () => {
-  it.each([HTTP_STATUS.CONFLICT, HTTP_STATUS.REQUEST_CANCELLED])(
-    'treats status %s as expected background control flow',
-    (statusCode) => {
-      expect(
-        isExpectedBackgroundError(new ApiError(statusCode, { message: 'x' })),
-      ).toBe(true);
-    },
-  );
+  it.each([
+    HTTP_STATUS.CONFLICT,
+    HTTP_STATUS.PRECONDITION_REQUIRED,
+    HTTP_STATUS.REQUEST_CANCELLED,
+  ])('treats status %s as expected background control flow', (statusCode) => {
+    expect(
+      isExpectedBackgroundError(new ApiError(statusCode, { message: 'x' })),
+    ).toBe(true);
+  });
 
   it('reports structured error details without the response body', () => {
     const consoleError = jest
