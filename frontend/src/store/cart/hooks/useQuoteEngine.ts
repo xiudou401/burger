@@ -181,7 +181,6 @@ export const useQuoteEngine = ({
     clearDebounceTimer();
     lastValidatedQuoteRef.current = null;
     setQuoteNotice(null);
-    setQuoteErrorAction(null);
   }, [totalQuantity, cancelQuoteRequest, clearDebounceTimer, clearQuote]);
 
   useEffect(() => {
