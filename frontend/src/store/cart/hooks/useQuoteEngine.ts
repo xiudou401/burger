@@ -5,9 +5,8 @@ import { getQuoteErrorState, isRemovedItemError } from '../utils/quote-error';
 import {
   getDisplayTotalCents,
   getQuoteUnitPriceChanges,
-  type QuoteUnitPriceChange,
 } from '../utils/quote-utils';
-import { formatCurrency } from '../../../utils/currency';
+import { getPriceUpdatedNotice } from '../utils/quote-notice';
 import {
   isExpectedBackgroundError,
   isRequestCancelled,
@@ -19,23 +18,6 @@ import {
 } from './useQuoteValidationRequest';
 
 const VALIDATE_DEBOUNCE_MS = 300;
-
-const getPriceUpdatedNotice = (priceChanges: QuoteUnitPriceChange[]) => {
-  if (priceChanges.length === 0) return null;
-
-  if (priceChanges.length === 1) {
-    const [priceChange] = priceChanges;
-    return `${priceChange.name} price updated to ${formatCurrency(
-      priceChange.priceCents,
-    )}. Please review before paying.`;
-  }
-
-  const itemNames = priceChanges.map((priceChange) => priceChange.name);
-  const visibleNames = itemNames.slice(0, 2).join(', ');
-  const suffix = itemNames.length > 2 ? ', and more' : '';
-
-  return `${visibleNames}${suffix} prices changed. Please review before paying.`;
-};
 
 interface UseQuoteEngineParams {
   items: CartStoredItem[];
