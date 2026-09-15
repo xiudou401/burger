@@ -24,6 +24,7 @@ export const getQuoteMismatch = (ctx: CartContextValue) => ctx.quoteMismatch;
 export const getDisplayTotalCents = (ctx: CartContextValue) =>
   ctx.displayTotalCents;
 
-export const getEnsureQuote = (ctx: CartContextValue) => ctx.ensureQuote;
+export const getValidateQuoteForUserAction = (ctx: CartContextValue) =>
+  ctx.validateQuoteForUserAction;
 
 export const getClearQuote = (ctx: CartContextValue) => ctx.clearQuote;

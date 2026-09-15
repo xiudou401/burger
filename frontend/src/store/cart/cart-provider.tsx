@@ -28,7 +28,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
     quoteStale,
     quoteMismatch,
     displayTotalCents,
-    ensureQuote,
+    validateQuoteForUserAction,
     clearQuote,
   } = useQuoteEngine({
     items: state.items,
@@ -49,7 +49,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       quoteStale,
       quoteMismatch,
       displayTotalCents,
-      ensureQuote,
+      validateQuoteForUserAction,
       clearQuote,
     }),
     [
@@ -63,7 +63,7 @@ export const CartProvider = ({ children }: CartContextProviderProps) => {
       quoteStale,
       quoteMismatch,
       displayTotalCents,
-      ensureQuote,
+      validateQuoteForUserAction,
       clearQuote,
     ],
   );

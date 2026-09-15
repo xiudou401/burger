@@ -106,7 +106,7 @@ export const useQuoteEngine = ({
     onQuoteValidated: handleQuoteValidated,
   });
 
-  const ensureQuote = useCallback(async () => {
+  const validateQuoteForUserAction = useCallback(async () => {
     setQuoteError(null);
 
     if (!needsQuoteValidation && quote) {
@@ -211,7 +211,7 @@ export const useQuoteEngine = ({
     quoteStale,
     quoteMismatch,
     displayTotalCents,
-    ensureQuote,
+    validateQuoteForUserAction,
     clearQuote,
   };
 };

@@ -29,7 +29,9 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const quoteMismatch = useCartSelector((ctx) => ctx.quoteMismatch);
   const quoteNotice = useCartSelector((ctx) => ctx.quoteNotice);
   const quoteStale = useCartSelector((ctx) => ctx.quoteStale);
-  const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
+  const validateQuoteForUserAction = useCartSelector(
+    (ctx) => ctx.validateQuoteForUserAction,
+  );
   const user = useAuth((ctx) => ctx.user);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
@@ -88,7 +90,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
     setIsPaying(true);
 
     try {
-      const validatedQuote = await ensureQuote();
+      const validatedQuote = await validateQuoteForUserAction();
 
       const { checkoutUrl } = await createCheckoutOrder(
         items,

@@ -20,17 +20,19 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
   const quote = useCartSelector((ctx) => ctx.quote);
   const quoteError = useCartSelector((ctx) => ctx.quoteError);
   const quoteErrorAction = useCartSelector((ctx) => ctx.quoteErrorAction);
-  const ensureQuote = useCartSelector((ctx) => ctx.ensureQuote);
+  const validateQuoteForUserAction = useCartSelector(
+    (ctx) => ctx.validateQuoteForUserAction,
+  );
 
   const [showConfirm, setShowConfirm] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     if (itemsLength === 0) return;
-    void ensureQuote().catch(() => {
-      // ensureQuote updates quoteError for user-visible failures.
+    void validateQuoteForUserAction().catch(() => {
+      // validateQuoteForUserAction updates quoteError for user-visible failures.
     });
-  }, [open, itemsLength, ensureQuote]);
+  }, [open, itemsLength, validateQuoteForUserAction]);
 
   const menuItems = useMemo(() => {
     return quote?.menuItems ?? [];
@@ -44,8 +46,8 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
   const onOk = () => clearCart();
   const onCancel = () => setShowConfirm(false);
   const retryQuote = () => {
-    void ensureQuote().catch(() => {
-      // ensureQuote updates quoteError for user-visible failures.
+    void validateQuoteForUserAction().catch(() => {
+      // validateQuoteForUserAction updates quoteError for user-visible failures.
     });
   };
   const handleQuoteErrorAction = () => {

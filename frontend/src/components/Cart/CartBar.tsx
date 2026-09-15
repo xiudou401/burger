@@ -15,7 +15,7 @@ import {
   getTotalQuantity,
   getQuote,
   getDisplayTotalCents,
-  getEnsureQuote,
+  getValidateQuoteForUserAction,
   getClearQuote,
 } from '../../store/cart/context-accessors';
 
@@ -28,7 +28,9 @@ const CartBar = () => {
 
   const displayTotalCents = useCartSelector(getDisplayTotalCents);
 
-  const ensureQuote = useCartSelector(getEnsureQuote);
+  const validateQuoteForUserAction = useCartSelector(
+    getValidateQuoteForUserAction,
+  );
 
   const clearQuote = useCartSelector(getClearQuote);
   const { showToast } = useToast();
@@ -49,7 +51,7 @@ const CartBar = () => {
     if (totalQuantity === 0) return;
 
     try {
-      await ensureQuote();
+      await validateQuoteForUserAction();
 
       setShowCheckout(true);
     } catch {

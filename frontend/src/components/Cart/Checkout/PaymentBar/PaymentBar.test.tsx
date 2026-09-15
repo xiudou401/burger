@@ -44,7 +44,7 @@ const validatedQuote = {
   ts: Date.now(),
 };
 
-const ensureQuote = jest.fn();
+const validateQuoteForUserAction = jest.fn();
 
 const cartContext: CartContextValue = {
   items: [cartItem],
@@ -58,7 +58,7 @@ const cartContext: CartContextValue = {
   quoteStale: false,
   quoteMismatch: false,
   displayTotalCents: 1200,
-  ensureQuote,
+  validateQuoteForUserAction,
   clearQuote: jest.fn(),
 };
 
@@ -82,7 +82,7 @@ const authContext = {
 describe('PaymentBar', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    ensureQuote.mockResolvedValue(validatedQuote);
+    validateQuoteForUserAction.mockResolvedValue(validatedQuote);
     jest
       .mocked(useCartSelector)
       .mockImplementation((selector) => selector(cartContext));
