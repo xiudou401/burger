@@ -57,6 +57,8 @@ recent orders while staff manage orders and menu changes.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
+- AI Menu Assistant that recommends only from current available MongoDB menu
+  records, with structured validation and a dedicated abuse limiter.
 - Staff/admin order console and menu management, including category and
   availability updates.
 - Staff invitation flow with token validation.
@@ -80,6 +82,25 @@ recent orders while staff manage orders and menu changes.
   basket.
 - Role-aware customer/admin routing and auth state managed through a dedicated
   auth provider.
+
+## AI Menu Assistant Design
+
+The assistant is intentionally small and controlled. `POST /api/assistant/chat`
+reads the current available menu from MongoDB, passes only `name`, `category`,
+`priceCents`, `isAvailable`, and `description` into the model, and returns a
+structured response to the menu chat panel.
+
+MongoDB remains the source of truth. The model can suggest menu item ids and
+short recommendation reasons, but the backend maps those ids back to live DB
+records before returning names or prices. Unknown, hallucinated, or sold-out
+item ids are dropped. Requests for orders, accounts, payments, private customer
+data, admin features, or secrets are refused before the model is called.
+
+The MVP deliberately avoids LangChain, vector databases, long-term memory,
+automatic ordering, and complex agents. Safety comes from Zod request/response
+validation, a dedicated assistant rate limiter, a controlled menu context, and
+tests for budgets, sold-out or hallucinated items, prompt-injection style
+private-data requests, and DB-backed pricing.
 
 ## Live Demo Notes
 

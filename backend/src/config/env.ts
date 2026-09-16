@@ -34,6 +34,8 @@ const EnvSchema = z
     STRIPE_WEBHOOK_SECRET: optionalNonEmptyString,
     STRIPE_SUCCESS_URL: optionalNonEmptyString,
     STRIPE_CANCEL_URL: optionalNonEmptyString,
+    OPENAI_API_KEY: optionalNonEmptyString,
+    OPENAI_MODEL: z.string().trim().min(1).default('gpt-4o-mini'),
   })
   .passthrough()
   .superRefine((parsed, ctx) => {

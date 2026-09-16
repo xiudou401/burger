@@ -9,6 +9,7 @@ import adminCustomerRoutes from './routes/admin-customer.routes';
 import auditLogRoutes from './routes/audit-log.routes';
 import adminDashboardRoutes from './routes/admin-dashboard.routes';
 import stripeRoutes from './routes/stripe.routes';
+import assistantRoutes from './routes/assistant.routes';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -44,6 +45,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 app.use('/api/auth', authRoutes);
+app.use('/api/assistant', assistantRoutes);
 app.use('/api/menu-items', menuItemRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
