@@ -18,12 +18,12 @@ recent orders while staff manage orders and menu changes.
   live demo.
 - Implemented Stripe Checkout with webhook signature verification and
   idempotent order payment updates so payment state is controlled by trusted
-  backend events.
+  backend events instead of frontend return URLs.
 - Designed an authentication flow with JWT access tokens, HttpOnly refresh
   cookies, refresh-token rotation, CSRF origin/header checks, password hashing,
   email verification, Google OAuth, and rate-limited auth routes.
-- Added backend cart quote validation and menu-version checks to prevent stale
-  client prices from being used during checkout.
+- Added backend cart quote validation, menu-version checks, and order snapshots
+  so Stripe line items are created from server-validated checkout data.
 - Deployed the live app with Vercel, Render, MongoDB Atlas, Resend, and Stripe,
   with an optional AWS deployment path documented for S3, CloudFront, ECR, ECS
   Fargate, and an Application Load Balancer.
@@ -47,10 +47,13 @@ recent orders while staff manage orders and menu changes.
   version polling.
 - Realistic restaurant menu coverage across burgers, sides, drinks, desserts,
   and combos, including featured and sold-out availability states.
-- Backend cart validation so checkout totals are calculated server-side.
-- Stripe Checkout flow with signed webhook handling.
+- Backend cart validation so checkout totals are calculated server-side before
+  order creation.
+- Stripe Checkout flow with signed webhook handling and order-snapshot line
+  items.
 - Payment lifecycle updates for success, failed, cancelled, and repeated webhook events.
-- Order history and profile page payment-return handling.
+- Order history and payment-return handling that treats Stripe webhooks as the
+  source of payment truth.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
@@ -69,10 +72,10 @@ recent orders while staff manage orders and menu changes.
   responses.
 - Single-flight refresh logic so concurrent expired requests share one refresh
   request instead of racing the rotated refresh token.
-- Debounced cart quote validation that keeps checkout totals aligned with
-  backend-calculated AUD cents.
-- Menu-version conflict handling to detect stale cart prices and refresh quotes
-  before checkout.
+- Debounced background cart quote refreshes that keep displayed totals aligned
+  with backend-calculated AUD cents.
+- Explicit user-action quote validation before checkout, with menu-version
+  conflict handling and price-change notices.
 - Local cart persistence so customers can leave and return without losing their
   basket.
 - Role-aware customer/admin routing and auth state managed through a dedicated
@@ -177,9 +180,9 @@ to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
 Load Balancer.
 
 The repository also includes an optional GitHub Actions workflow for deploying
-the AWS stack. The workflow is manual-only so paid resources such as an
-Application Load Balancer or running ECS tasks are only created or updated when
-intentionally practising the AWS deployment path.
+the AWS stack. The workflow is manual-only and intended for learning or
+practising AWS deployment, so paid resources such as an Application Load
+Balancer or running ECS tasks are only created or updated intentionally.
 
 ## Technical Design Docs
 
@@ -233,10 +236,10 @@ flowchart TD
 ```
 
 The frontend is split around pages, domain stores, API clients, and reusable UI
-components. Cart state lives in a dedicated cart provider, while quote validation
-and menu-version polling are handled through cart-specific hooks. Profile and
-auth pages keep request orchestration inside page hooks so UI components stay
-focused on rendering.
+components. Cart state lives in a dedicated cart provider, while silent quote
+refreshes, user-triggered quote validation, and menu-version polling are handled
+through cart-specific hooks. Profile and auth pages keep request orchestration
+inside page hooks so UI components stay focused on rendering.
 
 The backend follows a route-controller-service-repository shape. Controllers
 handle HTTP input and status codes, services own business rules, repositories
@@ -251,8 +254,9 @@ and email verification use the strictest limiter. Stripe webhooks remain outside
 the general limiter so valid provider retries are not blocked.
 
 Payment truth comes from Stripe webhooks, not the frontend success redirect. The
-frontend only improves the return experience by showing payment state and
-clearing the cart after a successful return.
+frontend payment-return page validates the returned order id format and only
+routes the user to the relevant order page; order status is read back from the
+backend.
 
 Menu images are stored as paths or URLs on each menu item. Demo assets live in
 `frontend/public/img/meals` and are served by the frontend deployment; production

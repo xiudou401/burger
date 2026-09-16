@@ -35,8 +35,11 @@ npm run build
   stay in HttpOnly cookies managed by the backend.
 - The API wrapper handles request timeouts, CSRF headers, refresh retries, and
   auth-session events.
-- Cart quote validation is debounced and always uses backend-calculated AUD
-  cents before checkout.
+- Cart quote validation separates silent background refreshes from explicit
+  user-action validation before checkout, and always uses backend-calculated AUD
+  cents.
+- Payment-return routing treats URL payment parameters as navigation hints only;
+  persisted order state is read from the backend after Stripe webhooks update it.
 - Admin, profile, order details, OAuth callback, reset password, and staff
   invite routes are lazy-loaded at route boundaries.
 - Production routing and API rewrites are configured in `vercel.json`.
