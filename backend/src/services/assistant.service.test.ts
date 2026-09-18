@@ -34,6 +34,14 @@ const availableMenu = [
     isAvailable: true,
     description: 'Crispy potato fries',
   },
+  {
+    _id: 'combo-1',
+    name: 'Classic Combo',
+    category: 'combo',
+    priceCents: 1990,
+    isAvailable: true,
+    description: 'Burger, fries, and a drink',
+  },
 ];
 
 describe('assistant service', () => {
@@ -62,7 +70,7 @@ describe('assistant service', () => {
 
     expect(modelClient).toHaveBeenCalledWith({
       message: 'What should I order?',
-      menuItems: [
+      menuItems: expect.arrayContaining([
         expect.objectContaining({
           id: 'burger-1',
           name: 'Classic Burger',
@@ -75,7 +83,7 @@ describe('assistant service', () => {
           priceCents: 490,
           isAvailable: true,
         }),
-      ],
+      ]),
     });
     expect(response.recommendations).toEqual([
       expect.objectContaining({
@@ -137,6 +145,19 @@ describe('assistant service', () => {
         id: 'side-1',
         name: 'Fries',
         priceCents: 490,
+      }),
+    ]);
+  });
+
+  test('fallback returns combo items for combo requests', async () => {
+    const response = await chatWithMenuAssistant('Recommend a burger combo');
+
+    expect(response.recommendations).toEqual([
+      expect.objectContaining({
+        id: 'combo-1',
+        name: 'Classic Combo',
+        category: 'combo',
+        priceCents: 1990,
       }),
     ]);
   });

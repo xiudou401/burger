@@ -34,14 +34,6 @@ const DENIED_TOPIC_PATTERNS = [
   /password/i,
   /admin/i,
   /token/i,
-  /别人的订单/,
-  /订单(状态|记录|详情|收据|退款)/,
-  /付款/,
-  /地址/,
-  /手机号/,
-  /邮箱/,
-  /账户/,
-  /密码/,
 ];
 
 const DIETARY_KEYWORDS = [
@@ -56,12 +48,6 @@ const DIETARY_KEYWORDS = [
   'cheap',
   'under',
   'less than',
-  '忌口',
-  '素',
-  '不吃',
-  '辣',
-  '预算',
-  '便宜',
 ];
 
 const toMenuContextItem = (item: {
@@ -91,7 +77,7 @@ const formatPrice = (priceCents: number) => `$${(priceCents / 100).toFixed(2)}`;
 const extractBudgetCents = (message: string) => {
   const match =
     message.match(
-      /(?:under|below|less than|budget|预算|低于|不超过)\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
+      /(?:under|below|less than|budget)\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
     ) ?? message.match(/\$\s*(\d+(?:\.\d{1,2})?)/);
 
   return match ? Math.round(Number(match[1]) * 100) : undefined;
@@ -130,13 +116,16 @@ const buildFallbackResponse = (
       budgetCents === undefined ? true : item.priceCents <= budgetCents,
     )
     .filter((item) => {
-      if (normalized.includes('drink') || normalized.includes('饮料')) {
+      if (normalized.includes('combo')) {
+        return item.category === 'combo';
+      }
+      if (normalized.includes('drink')) {
         return item.category === 'drink';
       }
-      if (normalized.includes('dessert') || normalized.includes('甜')) {
+      if (normalized.includes('dessert')) {
         return item.category === 'dessert';
       }
-      if (normalized.includes('side') || normalized.includes('薯')) {
+      if (normalized.includes('side')) {
         return item.category === 'side';
       }
       return true;
