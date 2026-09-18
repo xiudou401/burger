@@ -83,11 +83,27 @@ const menuItems = [
     isAvailable: true,
   },
   {
+    image: '/img/meals/15.png',
+    name: 'Crispy Fries',
+    description: 'Golden shoestring fries cooked crisp and lightly salted.',
+    priceCents: 700,
+    category: 'side',
+    isAvailable: true,
+  },
+  {
     image: '/img/meals/10.png',
     name: 'House Lemonade',
     description:
       'Cold sparkling lemonade with fresh lemon, ice, and a bright citrus finish.',
     priceCents: 600,
+    category: 'drink',
+    isAvailable: true,
+  },
+  {
+    image: '/img/meals/16.png',
+    name: 'Cold Soft Drink',
+    description: 'Classic chilled cola-style soft drink served over ice.',
+    priceCents: 500,
     category: 'drink',
     isAvailable: true,
   },
@@ -122,7 +138,7 @@ const menuItems = [
     image: '/img/meals/14.png',
     name: 'Classic Burger Combo',
     description:
-      'Harbour Classic Burger with crispy fries and a cold drink for one.',
+      'Harbour Classic Burger with Crispy Fries and a Cold Soft Drink for one.',
     priceCents: 1990,
     category: 'combo',
     isAvailable: true,

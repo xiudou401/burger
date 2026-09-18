@@ -87,11 +87,27 @@ const menuItems = [
     isAvailable: true,
   },
   {
+    name: 'Crispy Fries',
+    description: 'Golden shoestring fries cooked crisp and lightly salted.',
+    priceCents: 790,
+    image: '/img/meals/15.png',
+    category: 'side',
+    isAvailable: true,
+  },
+  {
     name: 'House Lemonade',
     description:
       'Cold sparkling lemonade with fresh lemon, ice and a bright citrus finish.',
     priceCents: 650,
     image: '/img/meals/10.png',
+    category: 'drink',
+    isAvailable: true,
+  },
+  {
+    name: 'Cold Soft Drink',
+    description: 'Classic chilled cola-style soft drink served over ice.',
+    priceCents: 550,
+    image: '/img/meals/16.png',
     category: 'drink',
     isAvailable: true,
   },
@@ -125,7 +141,7 @@ const menuItems = [
   {
     name: 'Old School Combo',
     description:
-      'Old School Cheese Burger with famous chips and a cold soft drink.',
+      'Old School Cheese Burger with Crispy Fries and a Cold Soft Drink.',
     priceCents: 2490,
     image: '/img/meals/14.png',
     category: 'combo',
