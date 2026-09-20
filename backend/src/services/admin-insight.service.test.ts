@@ -95,6 +95,7 @@ describe('admin insight service', () => {
         inputTokens: 1000,
         outputTokens: 200,
       },
+      modelUsed: 'gpt-4o-mini',
     });
     setAdminInsightModelClientForTest(modelClient);
 

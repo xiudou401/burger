@@ -25,6 +25,7 @@ interface ModelUsage {
 interface InsightModelResult {
   content: AdminInsightResponsePayload;
   usage?: ModelUsage;
+  modelUsed: string;
 }
 
 type AdminInsightModelClient = (input: {
@@ -206,6 +207,7 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
   if (!env.OPENAI_API_KEY) {
     return {
       content: buildFallbackInsights(input.analytics),
+      modelUsed: FALLBACK_MODEL,
     };
   }
 
@@ -227,7 +229,14 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI request failed with ${response.status}`);
+    appLogger.warn('admin_insight_openai_unavailable_fallback', {
+      status: response.status,
+    });
+
+    return {
+      content: buildFallbackInsights(input.analytics),
+      modelUsed: FALLBACK_MODEL,
+    };
   }
 
   const body = (await response.json()) as {
@@ -245,6 +254,7 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
 
   return {
     content: AdminInsightResponseSchema.parse(JSON.parse(content)),
+    modelUsed: env.OPENAI_MODEL,
     usage: {
       inputTokens: body.usage?.prompt_tokens,
       outputTokens: body.usage?.completion_tokens,
@@ -291,7 +301,7 @@ export const generateAdminInsights = async (
       agentName: ADMIN_INSIGHT_AGENT,
       actorId: actor.id,
       prompt: question,
-      model: env.OPENAI_API_KEY ? env.OPENAI_MODEL : FALLBACK_MODEL,
+      model: modelResult.modelUsed,
       toolsUsed: [ADMIN_INSIGHT_TOOL],
       toolCalls: [
         {
@@ -311,7 +321,7 @@ export const generateAdminInsights = async (
       run: {
         id: String(agentRun._id),
         agentName: ADMIN_INSIGHT_AGENT,
-        model: env.OPENAI_API_KEY ? env.OPENAI_MODEL : FALLBACK_MODEL,
+        model: modelResult.modelUsed,
         toolsUsed: [ADMIN_INSIGHT_TOOL],
         latencyMs,
         estimatedCostCents: agentRun.estimatedCostCents,
