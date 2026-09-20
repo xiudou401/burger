@@ -15,6 +15,7 @@
     "seed:meals": "npm run seed:menu-items",
     "seed:menu-items": "ts-node scripts/seedMenuItems.ts",
     "seed:demo-users": "ts-node scripts/seedDemoUsers.ts",
+    "seed:demo-orders": "ts-node scripts/seedDemoOrders.ts",
     "benchmark:password": "ts-node scripts/benchmarkPassword.ts",
     "migrate:money-cents": "ts-node scripts/migrateMoneyToCents.ts",
     "localize:meals": "npm run localize:menu-items",

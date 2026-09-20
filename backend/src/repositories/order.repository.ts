@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import {
   OrderModel,
   type Order,
+  type PaymentStatus,
   type OrderStatus,
 } from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
@@ -16,6 +17,36 @@ const isObjectId = (id: string) => Types.ObjectId.isValid(id);
 interface OrderCursor {
   createdAt: Date;
   id: string;
+}
+
+interface AnalyticsRange {
+  start: Date;
+  end: Date;
+}
+
+export interface OrderAnalyticsTotals {
+  orderCount: number;
+  paidOrderCount: number;
+  revenueCents: number;
+  averageOrderValueCents: number;
+}
+
+export interface OrderAnalyticsCategorySale {
+  category: string;
+  quantitySold: number;
+  revenueCents: number;
+}
+
+export interface OrderAnalyticsItemSale {
+  menuItemId: string;
+  name: string;
+  quantitySold: number;
+  revenueCents: number;
+}
+
+export interface OrderAnalyticsPaymentStatusCount {
+  status: PaymentStatus;
+  count: number;
 }
 
 export const orderRepository = {
@@ -92,6 +123,163 @@ export const orderRepository = {
         $in: ['paid', 'preparing', 'ready'],
       },
     });
+  },
+
+  async getAnalyticsTotals({ start, end }: AnalyticsRange) {
+    const [totals] = await OrderModel.aggregate<OrderAnalyticsTotals>([
+      {
+        $match: {
+          createdAt: { $gte: start, $lt: end },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          orderCount: { $sum: 1 },
+          paidOrderCount: {
+            $sum: {
+              $cond: [{ $eq: ['$payment.status', 'paid'] }, 1, 0],
+            },
+          },
+          revenueCents: {
+            $sum: {
+              $cond: [{ $eq: ['$payment.status', 'paid'] }, '$totalCents', 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          orderCount: 1,
+          paidOrderCount: 1,
+          revenueCents: 1,
+          averageOrderValueCents: {
+            $cond: [
+              { $gt: ['$paidOrderCount', 0] },
+              {
+                $round: [{ $divide: ['$revenueCents', '$paidOrderCount'] }, 0],
+              },
+              0,
+            ],
+          },
+        },
+      },
+    ]).exec();
+
+    return (
+      totals ?? {
+        orderCount: 0,
+        paidOrderCount: 0,
+        revenueCents: 0,
+        averageOrderValueCents: 0,
+      }
+    );
+  },
+
+  getAnalyticsPaymentStatusCounts({ start, end }: AnalyticsRange) {
+    return OrderModel.aggregate<OrderAnalyticsPaymentStatusCount>([
+      {
+        $match: {
+          createdAt: { $gte: start, $lt: end },
+        },
+      },
+      {
+        $group: {
+          _id: '$payment.status',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          status: '$_id',
+          count: 1,
+        },
+      },
+      { $sort: { status: 1 } },
+    ]).exec();
+  },
+
+  getAnalyticsCategorySales({ start, end }: AnalyticsRange) {
+    return OrderModel.aggregate<OrderAnalyticsCategorySale>([
+      {
+        $match: {
+          createdAt: { $gte: start, $lt: end },
+          'payment.status': 'paid',
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $lookup: {
+          from: 'meals',
+          localField: 'items.menuItemId',
+          foreignField: '_id',
+          as: 'menuItem',
+        },
+      },
+      {
+        $unwind: {
+          path: '$menuItem',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: { $ifNull: ['$menuItem.category', 'unknown'] },
+          quantitySold: { $sum: '$items.quantity' },
+          revenueCents: { $sum: '$items.subtotalCents' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          category: '$_id',
+          quantitySold: 1,
+          revenueCents: 1,
+        },
+      },
+      { $sort: { revenueCents: -1, quantitySold: -1 } },
+    ]).exec();
+  },
+
+  getAnalyticsItemSales({
+    start,
+    end,
+    sort,
+    limit,
+  }: AnalyticsRange & {
+    sort: Record<string, 1 | -1>;
+    limit: number;
+  }) {
+    return OrderModel.aggregate<OrderAnalyticsItemSale>([
+      {
+        $match: {
+          createdAt: { $gte: start, $lt: end },
+          'payment.status': 'paid',
+        },
+      },
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.menuItemId',
+          name: { $last: '$items.nameAtPurchase' },
+          quantitySold: { $sum: '$items.quantity' },
+          revenueCents: { $sum: '$items.subtotalCents' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          menuItemId: { $toString: '$_id' },
+          name: 1,
+          quantitySold: 1,
+          revenueCents: 1,
+        },
+      },
+      { $sort: sort },
+      { $limit: limit },
+    ]).exec();
   },
 
   findForUser(userId: string, orderId: string) {

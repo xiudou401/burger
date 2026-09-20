@@ -15,3 +15,30 @@ export interface AdminDashboardSummary {
   averagePreparationMinutes: number | null;
   topItems: DashboardTopItem[];
 }
+
+export type AnalyticsRange = '7d' | '30d';
+
+export interface DashboardCategorySale {
+  category: string;
+  quantitySold: number;
+  revenueCents: number;
+}
+
+export interface DashboardPaymentStatusCount {
+  status: string;
+  count: number;
+}
+
+export interface AdminAnalyticsSummary {
+  range: AnalyticsRange;
+  startAt: string;
+  endAt: string;
+  revenueCents: number;
+  orderCount: number;
+  paidOrderCount: number;
+  averageOrderValueCents: number;
+  categorySales: DashboardCategorySale[];
+  topItems: DashboardTopItem[];
+  underperformingItems: DashboardTopItem[];
+  paymentStatusCounts: DashboardPaymentStatusCount[];
+}

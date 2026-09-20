@@ -1,9 +1,27 @@
 import { request } from './request';
-import type { AdminDashboardSummary } from '../types/admin-dashboard';
+import type {
+  AdminAnalyticsSummary,
+  AdminDashboardSummary,
+  AnalyticsRange,
+} from '../types/admin-dashboard';
 
 export const fetchAdminDashboardSummary = (signal?: AbortSignal) => {
   return request<{ summary: AdminDashboardSummary }>(
     '/admin/dashboard/summary',
+    {
+      signal,
+    },
+  );
+};
+
+export const fetchAdminAnalyticsSummary = (
+  range: AnalyticsRange,
+  signal?: AbortSignal,
+) => {
+  const query = new URLSearchParams({ range });
+
+  return request<{ analytics: AdminAnalyticsSummary }>(
+    `/admin/dashboard/analytics?${query.toString()}`,
     {
       signal,
     },

@@ -1,10 +1,17 @@
 import { orderRepository } from '../repositories/order.repository';
-import { getAdminDashboardSummary } from './admin-dashboard.service';
+import {
+  getAdminAnalyticsSummary,
+  getAdminDashboardSummary,
+} from './admin-dashboard.service';
 
 jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
     listCreatedBetween: jest.fn(),
     countActive: jest.fn(),
+    getAnalyticsTotals: jest.fn(),
+    getAnalyticsCategorySales: jest.fn(),
+    getAnalyticsItemSales: jest.fn(),
+    getAnalyticsPaymentStatusCounts: jest.fn(),
   },
 }));
 
@@ -103,6 +110,113 @@ describe('admin dashboard service', () => {
     expect(orderRepository.listCreatedBetween).toHaveBeenCalledWith(
       new Date(2026, 6, 10),
       new Date(2026, 6, 11),
+    );
+  });
+
+  test('summarizes analytics from MongoDB aggregation results', async () => {
+    const now = new Date('2026-09-20T12:00:00.000Z');
+
+    jest.mocked(orderRepository.getAnalyticsTotals).mockResolvedValue({
+      orderCount: 12,
+      paidOrderCount: 9,
+      revenueCents: 18250,
+      averageOrderValueCents: 2028,
+    });
+    jest.mocked(orderRepository.getAnalyticsCategorySales).mockResolvedValue([
+      {
+        category: 'burger',
+        quantitySold: 18,
+        revenueCents: 12600,
+      },
+      {
+        category: 'dessert',
+        quantitySold: 2,
+        revenueCents: 1800,
+      },
+    ]);
+    jest
+      .mocked(orderRepository.getAnalyticsItemSales)
+      .mockResolvedValueOnce([
+        {
+          menuItemId: 'menu-1',
+          name: 'Classic Burger',
+          quantitySold: 8,
+          revenueCents: 9600,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          menuItemId: 'menu-2',
+          name: 'Chocolate Brownie',
+          quantitySold: 1,
+          revenueCents: 900,
+        },
+      ]);
+    jest
+      .mocked(orderRepository.getAnalyticsPaymentStatusCounts)
+      .mockResolvedValue([
+        { status: 'paid', count: 9 },
+        { status: 'cancelled', count: 2 },
+      ]);
+
+    await expect(getAdminAnalyticsSummary('7d', now)).resolves.toEqual({
+      range: '7d',
+      startAt: new Date('2026-09-13T12:00:00.000Z'),
+      endAt: now,
+      revenueCents: 18250,
+      orderCount: 12,
+      paidOrderCount: 9,
+      averageOrderValueCents: 2028,
+      categorySales: [
+        { category: 'burger', quantitySold: 18, revenueCents: 12600 },
+        { category: 'side', quantitySold: 0, revenueCents: 0 },
+        { category: 'drink', quantitySold: 0, revenueCents: 0 },
+        { category: 'dessert', quantitySold: 2, revenueCents: 1800 },
+        { category: 'combo', quantitySold: 0, revenueCents: 0 },
+      ],
+      topItems: [
+        {
+          menuItemId: 'menu-1',
+          name: 'Classic Burger',
+          quantitySold: 8,
+          revenueCents: 9600,
+        },
+      ],
+      underperformingItems: [
+        {
+          menuItemId: 'menu-2',
+          name: 'Chocolate Brownie',
+          quantitySold: 1,
+          revenueCents: 900,
+        },
+      ],
+      paymentStatusCounts: [
+        { status: 'unpaid', count: 0 },
+        { status: 'requires_payment', count: 0 },
+        { status: 'paid', count: 9 },
+        { status: 'failed', count: 0 },
+        { status: 'cancelled', count: 2 },
+        { status: 'refunded', count: 0 },
+      ],
+    });
+
+    expect(orderRepository.getAnalyticsTotals).toHaveBeenCalledWith({
+      start: new Date('2026-09-13T12:00:00.000Z'),
+      end: now,
+    });
+    expect(orderRepository.getAnalyticsItemSales).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        sort: { quantitySold: -1, revenueCents: -1 },
+        limit: 5,
+      }),
+    );
+    expect(orderRepository.getAnalyticsItemSales).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        sort: { quantitySold: 1, revenueCents: 1 },
+        limit: 5,
+      }),
     );
   });
 });

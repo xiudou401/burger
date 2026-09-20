@@ -102,6 +102,18 @@ validation, a dedicated assistant rate limiter, a controlled menu context, and
 tests for budgets, sold-out or hallucinated items, prompt-injection style
 private-data requests, and DB-backed pricing.
 
+## Admin Analytics Foundation
+
+The admin dashboard includes deterministic analytics over saved order records.
+`GET /api/admin/dashboard/analytics?range=7d` uses MongoDB aggregation to
+calculate revenue, order counts, average order value, category sales, top
+items, lower-selling items, and payment status counts. These metrics are
+computed by the backend rather than the AI layer, giving future admin AI
+insights a verified data foundation to explain.
+
+Local demos can run `npm run seed:demo-orders` after seeding users and menu
+items to create realistic 30-day order history for the analytics dashboard.
+
 ## Live Demo Notes
 
 - Stripe runs in test mode and does not create real charges.
@@ -151,6 +163,7 @@ the backend.
 cd backend
 npm run seed:meals
 npm run seed:demo-users
+npm run seed:demo-orders
 ```
 
 For an existing database created before integer money fields were introduced:

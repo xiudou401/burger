@@ -1,5 +1,6 @@
 import type { OrderStatus } from '../models/order.model';
 import { orderRepository } from '../repositories/order.repository';
+import { MENU_ITEM_CATEGORIES } from '../models/menu-item.model';
 
 interface DashboardOrderItem {
   menuItemId?: unknown;
@@ -36,6 +37,33 @@ export interface AdminDashboardSummary {
   ordersByStatus: Record<OrderStatus, number>;
   averagePreparationMinutes: number | null;
   topItems: DashboardTopItem[];
+}
+
+export type AnalyticsRange = '7d' | '30d';
+
+export interface DashboardCategorySale {
+  category: string;
+  quantitySold: number;
+  revenueCents: number;
+}
+
+export interface DashboardPaymentStatusCount {
+  status: string;
+  count: number;
+}
+
+export interface AdminAnalyticsSummary {
+  range: AnalyticsRange;
+  startAt: Date;
+  endAt: Date;
+  revenueCents: number;
+  orderCount: number;
+  paidOrderCount: number;
+  averageOrderValueCents: number;
+  categorySales: DashboardCategorySale[];
+  topItems: DashboardTopItem[];
+  underperformingItems: DashboardTopItem[];
+  paymentStatusCounts: DashboardPaymentStatusCount[];
 }
 
 const ORDER_STATUSES: OrderStatus[] = [
@@ -152,5 +180,92 @@ export const getAdminDashboardSummary = async (
           )
         : null,
     topItems: summarizeTopItems(dashboardOrders),
+  };
+};
+
+const RANGE_DAYS: Record<AnalyticsRange, number> = {
+  '7d': 7,
+  '30d': 30,
+};
+
+const PAYMENT_STATUSES = [
+  'unpaid',
+  'requires_payment',
+  'paid',
+  'failed',
+  'cancelled',
+  'refunded',
+];
+
+const getRangeStart = (range: AnalyticsRange, now: Date) => {
+  const start = new Date(now);
+  start.setDate(start.getDate() - RANGE_DAYS[range]);
+  return start;
+};
+
+const normalizeCategorySales = (sales: DashboardCategorySale[]) => {
+  const salesByCategory = new Map(sales.map((sale) => [sale.category, sale]));
+
+  return MENU_ITEM_CATEGORIES.map((category) => ({
+    category,
+    quantitySold: salesByCategory.get(category)?.quantitySold ?? 0,
+    revenueCents: salesByCategory.get(category)?.revenueCents ?? 0,
+  }));
+};
+
+const normalizePaymentStatusCounts = (
+  counts: DashboardPaymentStatusCount[],
+) => {
+  const countByStatus = new Map(counts.map((entry) => [entry.status, entry]));
+
+  return PAYMENT_STATUSES.map((status) => ({
+    status,
+    count: countByStatus.get(status)?.count ?? 0,
+  }));
+};
+
+export const getAdminAnalyticsSummary = async (
+  range: AnalyticsRange = '7d',
+  now = new Date(),
+): Promise<AdminAnalyticsSummary> => {
+  const end = now;
+  const start = getRangeStart(range, now);
+
+  const [
+    totals,
+    categorySales,
+    topItems,
+    underperformingItems,
+    paymentStatusCounts,
+  ] = await Promise.all([
+    orderRepository.getAnalyticsTotals({ start, end }),
+    orderRepository.getAnalyticsCategorySales({ start, end }),
+    orderRepository.getAnalyticsItemSales({
+      start,
+      end,
+      sort: { quantitySold: -1, revenueCents: -1 },
+      limit: 5,
+    }),
+    orderRepository.getAnalyticsItemSales({
+      start,
+      end,
+      sort: { quantitySold: 1, revenueCents: 1 },
+      limit: 5,
+    }),
+    orderRepository.getAnalyticsPaymentStatusCounts({ start, end }),
+  ]);
+
+  return {
+    range,
+    startAt: start,
+    endAt: end,
+    revenueCents: totals.revenueCents,
+    orderCount: totals.orderCount,
+    paidOrderCount: totals.paidOrderCount,
+    averageOrderValueCents: totals.averageOrderValueCents,
+    categorySales: normalizeCategorySales(categorySales),
+    topItems,
+    underperformingItems,
+    paymentStatusCounts: normalizePaymentStatusCounts(paymentStatusCounts),
   };
 };
