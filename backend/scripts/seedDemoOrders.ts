@@ -1,7 +1,11 @@
 import '../src/config/env';
 import mongoose from 'mongoose';
 import { connectDB } from '../src/config/db';
-import { MenuItemModel, type MenuItem } from '../src/models/menu-item.model';
+import {
+  MenuItemModel,
+  type MenuItem,
+  type MenuItemCategory,
+} from '../src/models/menu-item.model';
 import {
   OrderModel,
   type OrderStatus,
@@ -14,11 +18,32 @@ type DemoMenuItem = MenuItem & { _id: mongoose.Types.ObjectId };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const pickMenuItem = (items: DemoMenuItem[], name: string) => {
-  const item = items.find((menuItem) => menuItem.name === name);
+const groupMenuItemsByCategory = (items: DemoMenuItem[]) => {
+  return items.reduce(
+    (groups, item) => {
+      groups[item.category] = [...groups[item.category], item];
+      return groups;
+    },
+    {
+      burger: [],
+      side: [],
+      drink: [],
+      dessert: [],
+      combo: [],
+    } as Record<MenuItemCategory, DemoMenuItem[]>,
+  );
+};
+
+const pickMenuItem = (
+  groups: Record<MenuItemCategory, DemoMenuItem[]>,
+  category: MenuItemCategory,
+  index: number,
+) => {
+  const candidates = groups[category];
+  const item = candidates[index % candidates.length];
 
   if (!item) {
-    throw new Error(`Menu item not found: ${name}`);
+    throw new Error(`Menu item category not found: ${category}`);
   }
 
   return item;
@@ -39,7 +64,7 @@ const createDemoOrder = ({
   menuVersion,
   index,
   daysAgo,
-  itemNames,
+  itemCategories,
   status,
   paymentStatus,
 }: {
@@ -48,15 +73,16 @@ const createDemoOrder = ({
   menuVersion: number;
   index: number;
   daysAgo: number;
-  itemNames: string[];
+  itemCategories: MenuItemCategory[];
   status: OrderStatus;
   paymentStatus: PaymentStatus;
 }) => {
   const createdAt = new Date(Date.now() - daysAgo * DAY_MS);
   createdAt.setHours(11 + (index % 10), (index * 7) % 60, 0, 0);
 
-  const items = itemNames.map((name) =>
-    buildOrderItem(pickMenuItem(menuItems, name), 1),
+  const menuGroups = groupMenuItemsByCategory(menuItems);
+  const items = itemCategories.map((category, itemIndex) =>
+    buildOrderItem(pickMenuItem(menuGroups, category, index + itemIndex), 1),
   );
   const totalCents = items.reduce((sum, item) => sum + item.subtotalCents, 0);
   const isPaid = paymentStatus === 'paid';
@@ -83,18 +109,18 @@ const createDemoOrder = ({
 };
 
 const orderPatterns = [
-  ['Old School Cheese Burger', 'Crispy Fries', 'Cold Soft Drink'],
-  ['Old School Cheese Burger', 'Crispy Fries'],
-  ['Old School Combo'],
-  ['Southern Crispy Chicken Burger', 'House Lemonade'],
-  ['Double Smash Royale', 'Golden Onion Rings', 'Cold Soft Drink'],
-  ['Smoky Bacon & Cheese', 'Crispy Fries'],
-  ['Lemon & Herb Chicken Burger', 'House Lemonade'],
-  ['Aussie Burger', 'Cheesy Loaded Chips'],
-  ['Mushroom Halloumi Burger', 'Golden Onion Rings'],
-  ['Warm Chocolate Brownie'],
-  ['Vanilla Malt Thickshake'],
-];
+  ['burger', 'side', 'drink'],
+  ['burger', 'side'],
+  ['combo'],
+  ['burger', 'drink'],
+  ['burger', 'side', 'drink'],
+  ['burger', 'side'],
+  ['burger', 'drink'],
+  ['burger', 'side'],
+  ['burger', 'side'],
+  ['dessert'],
+  ['drink'],
+] satisfies MenuItemCategory[][];
 
 const getDemoStatus = (index: number) => {
   if (index % 17 === 0) {
@@ -159,7 +185,7 @@ const getDemoStatus = (index: number) => {
       menuVersion,
       index,
       daysAgo: index % 30,
-      itemNames: pattern,
+      itemCategories: pattern,
       status,
       paymentStatus,
     });
