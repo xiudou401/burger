@@ -114,6 +114,20 @@ insights a verified data foundation to explain.
 Local demos can run `npm run seed:demo-orders` after seeding users and menu
 items to create realistic 30-day order history for the analytics dashboard.
 
+## AI Admin Insight Agent
+
+The admin dashboard can generate AI insight cards from the verified analytics
+summary. The backend first computes metrics with MongoDB aggregation, then
+passes the structured summary to the insight agent. The model explains trends,
+risks, and opportunities, while the backend keeps revenue, order counts, item
+sales, and payment status as deterministic facts.
+
+Each insight run is recorded in an `AgentRun` document with the agent name,
+prompt, model, backend tool used, latency, status, and optional cost estimate.
+If `OPENAI_API_KEY` is not configured, the agent returns deterministic fallback
+insights and still logs the run, so the demo remains usable without external AI
+spend.
+
 ## Live Demo Notes
 
 - Stripe runs in test mode and does not create real charges.

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import AdminLayout from '../components/Admin/AdminLayout';
+import AdminButton from '../components/Admin/AdminButton';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminDashboard.module.css';
@@ -6,6 +8,8 @@ import { useAdminDashboardPage } from './hooks/useAdminDashboardPage';
 import { formatCurrency } from '../utils/currency';
 import { formatOrderStatus } from '../utils/order';
 import type { OrderStatus } from '../types/order';
+import { generateAdminInsights } from '../api/admin-insights';
+import type { AdminInsightResponse } from '../types/admin-insight';
 
 const ORDER_STATUSES: OrderStatus[] = [
   'pending_payment',
@@ -22,6 +26,29 @@ const formatMinutes = (value: number | null) =>
 const AdminDashboard = () => {
   const { summary, analytics, isLoading, error, refresh } =
     useAdminDashboardPage();
+  const [insightResult, setInsightResult] =
+    useState<AdminInsightResponse | null>(null);
+  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
+  const [insightError, setInsightError] = useState<string | null>(null);
+
+  const generateInsights = async () => {
+    setIsGeneratingInsights(true);
+    setInsightError(null);
+
+    try {
+      const result = await generateAdminInsights({
+        range: '7d',
+        question: 'What should we improve this week?',
+      });
+      setInsightResult(result);
+    } catch (err) {
+      setInsightError(
+        err instanceof Error ? err.message : 'Could not generate insights',
+      );
+    } finally {
+      setIsGeneratingInsights(false);
+    }
+  };
 
   return (
     <AdminLayout
@@ -188,6 +215,81 @@ const AdminDashboard = () => {
                 ))}
               </div>
             </article>
+          </section>
+
+          <section className={classes.InsightSection}>
+            <div className={classes.InsightHeader}>
+              <div>
+                <p className={classes.MetricLabel}>AI Admin Insight Agent</p>
+                <h2>Operational insights</h2>
+              </div>
+              <AdminButton
+                type="button"
+                onClick={() => {
+                  void generateInsights();
+                }}
+                disabled={isGeneratingInsights}
+              >
+                {isGeneratingInsights ? 'Generating...' : 'Generate insights'}
+              </AdminButton>
+            </div>
+
+            {insightError && (
+              <AdminStatusText tone="error">{insightError}</AdminStatusText>
+            )}
+
+            {!insightResult && !insightError && (
+              <AdminStatusText>
+                Generate AI insights from verified 7-day analytics.
+              </AdminStatusText>
+            )}
+
+            {insightResult && (
+              <>
+                <article className={classes.InsightSummary}>
+                  <p>{insightResult.summary}</p>
+                  <dl>
+                    <div>
+                      <dt>Model</dt>
+                      <dd>{insightResult.run.model}</dd>
+                    </div>
+                    <div>
+                      <dt>Tool</dt>
+                      <dd>{insightResult.run.toolsUsed.join(', ')}</dd>
+                    </div>
+                    <div>
+                      <dt>Latency</dt>
+                      <dd>{insightResult.run.latencyMs}ms</dd>
+                    </div>
+                    <div>
+                      <dt>Trace</dt>
+                      <dd>{insightResult.run.id}</dd>
+                    </div>
+                  </dl>
+                </article>
+
+                <div className={classes.InsightGrid}>
+                  {insightResult.insights.map((insight) => (
+                    <article
+                      className={classes.InsightCard}
+                      key={`${insight.type}-${insight.title}`}
+                    >
+                      <div className={classes.InsightMeta}>
+                        <span>{insight.type}</span>
+                        <b>{insight.severity}</b>
+                      </div>
+                      <h3>{insight.title}</h3>
+                      <ul>
+                        {insight.evidence.map((evidence) => (
+                          <li key={evidence}>{evidence}</li>
+                        ))}
+                      </ul>
+                      <p>{insight.suggestedAction}</p>
+                    </article>
+                  ))}
+                </div>
+              </>
+            )}
           </section>
         </>
       )}

@@ -10,6 +10,7 @@ import auditLogRoutes from './routes/audit-log.routes';
 import adminDashboardRoutes from './routes/admin-dashboard.routes';
 import stripeRoutes from './routes/stripe.routes';
 import assistantRoutes from './routes/assistant.routes';
+import adminInsightRoutes from './routes/admin-insight.routes';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -50,6 +51,7 @@ app.use('/api/menu-items', menuItemRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/insights', adminInsightRoutes);
 app.use('/api/staff-invites', staffInviteRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
