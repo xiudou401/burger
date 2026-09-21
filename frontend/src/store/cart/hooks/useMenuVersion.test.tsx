@@ -16,6 +16,7 @@ const mockSocket = () =>
   ({ disconnect }) as unknown as ReturnType<typeof connectMenuRealtime>;
 
 beforeEach(() => {
+  jest.useRealTimers();
   disconnect.mockClear();
   jest.mocked(connectMenuRealtime).mockReturnValue(mockSocket());
 });
@@ -106,25 +107,75 @@ test('keeps an earlier successful result when a later request fails', async () =
 
 test('updates menu version from realtime menu events', async () => {
   const initialRequest = deferred<number>();
-  let onMenuUpdated: Parameters<typeof connectMenuRealtime>[0] | null = null;
+  let handlers: Parameters<typeof connectMenuRealtime>[0] | null = null;
 
   jest.mocked(fetchMenuVersion).mockReturnValueOnce(initialRequest.promise);
-  jest.mocked(connectMenuRealtime).mockImplementation((handler) => {
-    onMenuUpdated = handler;
+  jest.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
+    handlers = nextHandlers;
     return mockSocket();
   });
 
   render(<Harness />);
 
   act(() => {
-    onMenuUpdated?.({ menuVersion: 15 });
+    handlers?.onMenuUpdated({ menuVersion: 15 });
   });
 
   expect(screen.getByText('15')).toBeInTheDocument();
 
   act(() => {
-    onMenuUpdated?.({ menuVersion: 14 });
+    handlers?.onMenuUpdated({ menuVersion: 14 });
   });
 
   expect(screen.getByText('15')).toBeInTheDocument();
+});
+
+test('only starts fallback polling when realtime disconnects', async () => {
+  jest.useFakeTimers();
+
+  let handlers: Parameters<typeof connectMenuRealtime>[0] | null = null;
+  jest.mocked(fetchMenuVersion).mockResolvedValue(21);
+  jest.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
+    handlers = nextHandlers;
+    return mockSocket();
+  });
+
+  render(<Harness />);
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(1);
+
+  await act(async () => {
+    jest.advanceTimersByTime(30_000);
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(1);
+
+  await act(async () => {
+    handlers?.onDisconnected?.();
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(2);
+
+  await act(async () => {
+    jest.advanceTimersByTime(30_000);
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(3);
+
+  await act(async () => {
+    handlers?.onConnected?.();
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(4);
+
+  await act(async () => {
+    jest.advanceTimersByTime(30_000);
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(4);
 });

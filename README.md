@@ -125,7 +125,8 @@ payloads such as `order:paid`, `order:updated`, and `menu:updated`. The frontend
 treats these events as invalidation signals, then reloads the latest orders or
 dashboard analytics through the REST API so MongoDB remains the source of truth.
 Public menu clients can also subscribe to `menu:updated`, while the existing
-30-second menu-version polling remains as a fallback for missed realtime events.
+30-second menu-version polling starts only when the realtime connection is
+unavailable.
 
 ## AI Admin Insight Agent
 

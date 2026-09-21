@@ -20,6 +20,12 @@ export interface MenuUpdatedEvent {
   menuVersion: number;
 }
 
+interface MenuRealtimeHandlers {
+  onMenuUpdated: (payload: MenuUpdatedEvent) => void;
+  onConnected?: () => void;
+  onDisconnected?: () => void;
+}
+
 interface AdminRealtimeHandlers {
   onOrderEvent?: (
     eventName: AdminRealtimeOrderEventName,
@@ -66,15 +72,26 @@ export const connectAdminRealtime = ({
   return socket;
 };
 
-export const connectMenuRealtime = (
-  onMenuUpdated: (payload: MenuUpdatedEvent) => void,
-): Socket => {
+export const connectMenuRealtime = ({
+  onMenuUpdated,
+  onConnected,
+  onDisconnected,
+}: MenuRealtimeHandlers): Socket => {
   const socket = io(getRealtimeOrigin(), {
     transports: ['websocket'],
     withCredentials: true,
   });
 
   socket.on('menu:updated', onMenuUpdated);
+  socket.on('connect', () => {
+    onConnected?.();
+  });
+  socket.on('disconnect', () => {
+    onDisconnected?.();
+  });
+  socket.on('connect_error', () => {
+    onDisconnected?.();
+  });
 
   return socket;
 };
