@@ -23,6 +23,17 @@ export const AdminAlertInvestigationRequestSchema = z
   })
   .strict();
 
+export const AdminInsightChatRequestSchema = z
+  .object({
+    range: z.enum(['7d', '30d']).default('7d'),
+    question: z
+      .string()
+      .trim()
+      .min(1, 'Admin chat question is required')
+      .max(240, 'Admin chat question cannot exceed 240 characters'),
+  })
+  .strict();
+
 export const AdminInsightCardSchema = z
   .object({
     type: z.enum(['opportunity', 'risk', 'trend']),
@@ -60,6 +71,9 @@ export type AdminInsightRequestPayload = z.infer<
 >;
 export type AdminAlertInvestigationRequestPayload = z.infer<
   typeof AdminAlertInvestigationRequestSchema
+>;
+export type AdminInsightChatRequestPayload = z.infer<
+  typeof AdminInsightChatRequestSchema
 >;
 export type AdminInsightResponsePayload = z.infer<
   typeof AdminInsightResponseSchema

@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  chatWithAdminInsightAgentHandler,
   generateAdminInsightsHandler,
   investigateAdminAlertHandler,
 } from '../controllers/admin-insight.controller';
@@ -8,6 +9,7 @@ import { requirePermission } from '../middleware/requirePermission';
 import { validateBody } from '../middleware/validate';
 import {
   AdminAlertInvestigationRequestSchema,
+  AdminInsightChatRequestSchema,
   AdminInsightRequestSchema,
 } from '../validation/admin-insight.schema';
 
@@ -27,6 +29,11 @@ router.post(
     'Admin alert investigation request',
   ),
   investigateAdminAlertHandler,
+);
+router.post(
+  '/chat',
+  validateBody(AdminInsightChatRequestSchema, 'Admin insight chat request'),
+  chatWithAdminInsightAgentHandler,
 );
 
 export default router;

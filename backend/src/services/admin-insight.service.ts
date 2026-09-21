@@ -10,6 +10,7 @@ import {
 import {
   AdminInsightResponseSchema,
   type AdminAlertInvestigationRequestPayload,
+  type AdminInsightChatRequestPayload,
   type AdminInsightRequestPayload,
   type AdminInsightResponsePayload,
 } from '../validation/admin-insight.schema';
@@ -24,6 +25,10 @@ import { ServiceError } from '../errors/ServiceError';
 const ADMIN_INSIGHT_AGENT = 'admin_insight_agent';
 const ADMIN_INSIGHT_TOOL = 'getAdminAnalyticsSummary';
 const ADMIN_ALERT_TOOL = 'detectAnalyticsAlerts';
+const ADMIN_SALES_SUMMARY_TOOL = 'getSalesSummary';
+const ADMIN_CATEGORY_PERFORMANCE_TOOL = 'getCategoryPerformance';
+const ADMIN_ITEM_PERFORMANCE_TOOL = 'getItemPerformance';
+const ADMIN_PAYMENT_STATS_TOOL = 'getPaymentStats';
 const ADMIN_ORDER_STATUS_TOOL = 'getOrdersByStatus';
 const FALLBACK_MODEL = 'deterministic-fallback';
 
@@ -42,7 +47,9 @@ type AdminInsightModelClient = (input: {
   question: string;
   analytics: AdminAnalyticsSummary;
   alert?: AnalyticsAlert;
+  activeAlerts?: AnalyticsAlert[];
   orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
+  selectedTools?: string[];
 }) => Promise<InsightModelResult>;
 
 const nowMs = () => Date.now();
@@ -91,6 +98,102 @@ const getPaymentCount = (analytics: AdminAnalyticsSummary, status: string) => {
       ?.count ?? 0
   );
 };
+
+const includesAny = (value: string, patterns: RegExp[]) =>
+  patterns.some((pattern) => pattern.test(value));
+
+const selectAdminChatTools = (question: string) => {
+  const normalized = question.toLowerCase();
+  const tools = new Set<string>();
+
+  if (
+    includesAny(normalized, [
+      /\brevenue\b/,
+      /\bsales?\b/,
+      /\baov\b/,
+      /\baverage order\b/,
+      /\bperformance\b/,
+      /\bdrop\b/,
+      /\btrend\b/,
+      /\bweek\b/,
+    ])
+  ) {
+    tools.add(ADMIN_SALES_SUMMARY_TOOL);
+  }
+
+  if (includesAny(normalized, [/\bcategory\b/, /\bcategories\b/])) {
+    tools.add(ADMIN_CATEGORY_PERFORMANCE_TOOL);
+  }
+
+  if (
+    includesAny(normalized, [
+      /\bitem\b/,
+      /\bitems\b/,
+      /\bmenu\b/,
+      /\bburger\b/,
+      /\bworst\b/,
+      /\bbest\b/,
+      /\btop\b/,
+      /\blower\b/,
+      /\bunderperform/,
+    ])
+  ) {
+    tools.add(ADMIN_ITEM_PERFORMANCE_TOOL);
+  }
+
+  if (
+    includesAny(normalized, [
+      /\bpayment\b/,
+      /\bpayments\b/,
+      /\bpaid\b/,
+      /\bunpaid\b/,
+      /\bfailed\b/,
+      /\brefund/,
+      /\bcancell?ed\b/,
+      /\bcancell?ations?\b/,
+    ])
+  ) {
+    tools.add(ADMIN_PAYMENT_STATS_TOOL);
+  }
+
+  if (
+    getRequestedOrderStatus(question) ||
+    includesAny(normalized, [/\border\b/, /\borders\b/, /\bshow\b/, /\blist\b/])
+  ) {
+    tools.add(ADMIN_ORDER_STATUS_TOOL);
+  }
+
+  if (
+    includesAny(normalized, [
+      /\balert\b/,
+      /\brisk\b/,
+      /\banomal/,
+      /\bissue\b/,
+      /\bcancell?ation rate\b/,
+      /\brevenue drop\b/,
+    ])
+  ) {
+    tools.add(ADMIN_ALERT_TOOL);
+  }
+
+  if (tools.size === 0) {
+    tools.add(ADMIN_SALES_SUMMARY_TOOL);
+    tools.add(ADMIN_ITEM_PERFORMANCE_TOOL);
+  }
+
+  return [...tools];
+};
+
+const buildLogicalAnalyticsToolCalls = (tools: string[], latencyMs: number) =>
+  tools
+    .filter(
+      (tool) => tool !== ADMIN_ORDER_STATUS_TOOL && tool !== ADMIN_ALERT_TOOL,
+    )
+    .map((name) => ({
+      name,
+      status: 'success' as const,
+      latencyMs,
+    }));
 
 const getRequestedOrderStatus = (question: string): OrderStatus | null => {
   const normalized = question.toLowerCase();
@@ -275,6 +378,127 @@ const buildFallbackInsights = (
   };
 };
 
+const buildChatFallbackInsights = ({
+  question,
+  analytics,
+  activeAlerts,
+  orderEvidence,
+}: {
+  question: string;
+  analytics: AdminAnalyticsSummary;
+  activeAlerts?: AnalyticsAlert[];
+  orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
+}): AdminInsightResponsePayload => {
+  const normalized = question.toLowerCase();
+
+  if (orderEvidence && orderEvidence.length > 0) {
+    return buildFallbackInsights(analytics, activeAlerts?.[0], orderEvidence);
+  }
+
+  if (
+    includesAny(normalized, [
+      /\bworst\b/,
+      /\blower\b/,
+      /\bunderperform/,
+      /\bslow\b/,
+      /\bweak\b/,
+    ]) &&
+    analytics.underperformingItems[0]
+  ) {
+    const item = analytics.underperformingItems[0];
+
+    return {
+      summary: `${item.name} is the weakest visible item in the selected ${analytics.range} window, based on sold quantity and revenue from paid orders.`,
+      insights: [
+        {
+          type: 'opportunity',
+          severity: item.quantitySold <= 1 ? 'medium' : 'low',
+          title: `${item.name} is underperforming`,
+          evidence: [
+            `${item.name} sold ${item.quantitySold} units for ${formatCurrency(
+              item.revenueCents,
+            )} revenue.`,
+            `${analytics.topItems[0]?.name ?? 'The top item'} is currently ahead in the same range.`,
+          ],
+          suggestedAction:
+            'Review placement, pairing, and promotion before changing the item itself.',
+          relatedMenuItemIds: [item.menuItemId],
+        },
+      ],
+    };
+  }
+
+  if (
+    includesAny(normalized, [/\bbest\b/, /\btop\b/, /\bpopular\b/]) &&
+    analytics.topItems[0]
+  ) {
+    const item = analytics.topItems[0];
+
+    return {
+      summary: `${item.name} is the strongest visible item in the selected ${analytics.range} window.`,
+      insights: [
+        {
+          type: 'trend',
+          severity: 'low',
+          title: `${item.name} leads item demand`,
+          evidence: [
+            `${item.name} sold ${item.quantitySold} units for ${formatCurrency(
+              item.revenueCents,
+            )} revenue.`,
+          ],
+          suggestedAction:
+            'Use this item as an anchor for bundles and compare whether sides or drinks attach strongly enough.',
+          relatedMenuItemIds: [item.menuItemId],
+        },
+      ],
+    };
+  }
+
+  if (
+    includesAny(normalized, [
+      /\bpayment\b/,
+      /\bpaid\b/,
+      /\bunpaid\b/,
+      /\bfailed\b/,
+      /\brefund/,
+      /\bcancell?ed\b/,
+    ])
+  ) {
+    const paidCount = getPaymentCount(analytics, 'paid');
+    const failedCount = getPaymentCount(analytics, 'failed');
+    const cancelledCount = getPaymentCount(analytics, 'cancelled');
+    const refundedCount = getPaymentCount(analytics, 'refunded');
+
+    return {
+      summary: `Payment outcomes for the selected ${analytics.range} window show ${paidCount} paid, ${failedCount} failed, ${cancelledCount} cancelled, and ${refundedCount} refunded orders.`,
+      insights: [
+        {
+          type:
+            failedCount + cancelledCount + refundedCount > 0 ? 'risk' : 'trend',
+          severity:
+            failedCount + cancelledCount + refundedCount >= 5
+              ? 'high'
+              : 'medium',
+          title: 'Payment outcome mix',
+          evidence: [
+            `${paidCount} paid orders in the selected range.`,
+            `${failedCount} failed, ${cancelledCount} cancelled, and ${refundedCount} refunded outcomes.`,
+          ],
+          suggestedAction:
+            'Compare payment outcomes with Stripe logs and order status changes before changing checkout behavior.',
+          relatedMenuItemIds: [],
+        },
+      ],
+    };
+  }
+
+  if (activeAlerts && activeAlerts.length > 0) {
+    return buildFallbackInsights(analytics, activeAlerts[0]);
+  }
+
+  return buildFallbackInsights(analytics);
+};
+
 export const buildAdminInsightSystemPromptForTest = () => {
   return [
     'You are Burger Club Admin Insight Agent.',
@@ -344,16 +568,22 @@ export const buildAdminInsightUserPromptForTest = ({
   question,
   analytics,
   alert,
+  activeAlerts,
   orderEvidence,
+  selectedTools,
 }: {
   question: string;
   analytics: AdminAnalyticsSummary;
   alert?: AnalyticsAlert;
+  activeAlerts?: AnalyticsAlert[];
   orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
+  selectedTools?: string[];
 }) => {
   return JSON.stringify({
     question,
+    selectedTools,
     alert,
+    activeAlerts,
     orderEvidence,
     analytics,
     displayAlert: buildDisplayAlert(alert),
@@ -363,6 +593,9 @@ export const buildAdminInsightUserPromptForTest = ({
       'Analytics contains raw AUD cents for backend precision. Use displayAnalytics for user-facing money. Never write cents or USD in summary, evidence, titles, or suggested actions.',
     alertInstruction: alert
       ? 'Investigate the provided alert. Explain what the backend evidence supports, what it does not prove, and what the admin should check next. Do not claim customer intent or causes that are not supported by analytics.'
+      : undefined,
+    chatInstruction: selectedTools
+      ? 'Answer the admin question using the selected backend tool results. If the available tools do not prove a cause, say what the data supports and what remains unknown.'
       : undefined,
     orderEvidenceInstruction: orderEvidence
       ? 'The provided orderEvidence is a restricted admin tool result. You may summarize these orders by id, status, payment status, total, item count, items, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
@@ -390,11 +623,13 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
 ) => {
   if (!env.OPENAI_API_KEY) {
     return {
-      content: buildFallbackInsights(
-        input.analytics,
-        input.alert,
-        input.orderEvidence,
-      ),
+      content: input.selectedTools
+        ? buildChatFallbackInsights(input)
+        : buildFallbackInsights(
+            input.analytics,
+            input.alert,
+            input.orderEvidence,
+          ),
       modelUsed: FALLBACK_MODEL,
     };
   }
@@ -422,11 +657,13 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
     });
 
     return {
-      content: buildFallbackInsights(
-        input.analytics,
-        input.alert,
-        input.orderEvidence,
-      ),
+      content: input.selectedTools
+        ? buildChatFallbackInsights(input)
+        : buildFallbackInsights(
+            input.analytics,
+            input.alert,
+            input.orderEvidence,
+          ),
       modelUsed: FALLBACK_MODEL,
     };
   }
@@ -554,6 +791,152 @@ export const generateAdminInsights = async (
     appLogger.error('admin_insight_generation_failed', { error });
     throw new AppError(
       'Could not generate admin insights. Please try again later.',
+      503,
+    );
+  }
+};
+
+export const chatWithAdminInsightAgent = async (
+  payload: AdminInsightChatRequestPayload,
+  actor: Pick<AuthenticatedUser, 'id'>,
+) => {
+  const startMs = nowMs();
+  const analyticsStartMs = nowMs();
+  const question = payload.question.trim();
+  const selectedTools = selectAdminChatTools(question);
+
+  let analytics: AdminAnalyticsSummary | null = null;
+  let analyticsLatencyMs = 0;
+  let activeAlerts: AnalyticsAlert[] | undefined;
+  let alertLatencyMs = 0;
+  let orderEvidence: AdminInsightResponsePayload['orderEvidence'];
+  let orderEvidenceLatencyMs = 0;
+
+  try {
+    analytics = await getAdminAnalyticsSummary(payload.range);
+    analyticsLatencyMs = nowMs() - analyticsStartMs;
+
+    if (selectedTools.includes(ADMIN_ALERT_TOOL)) {
+      const alertStartMs = nowMs();
+      activeAlerts = await detectAnalyticsAlerts(payload.range);
+      alertLatencyMs = nowMs() - alertStartMs;
+    }
+
+    const requestedStatus = getRequestedOrderStatus(question);
+
+    if (requestedStatus && selectedTools.includes(ADMIN_ORDER_STATUS_TOOL)) {
+      const orderEvidenceStartMs = nowMs();
+      orderEvidence = await getOrdersByStatusEvidence(requestedStatus);
+      orderEvidenceLatencyMs = nowMs() - orderEvidenceStartMs;
+    }
+
+    const modelResult = await adminInsightModelClient({
+      question,
+      analytics,
+      activeAlerts,
+      orderEvidence,
+      selectedTools,
+    });
+    const parsed = AdminInsightResponseSchema.parse(modelResult.content);
+    const latencyMs = nowMs() - startMs;
+    const agentRun = await agentRunRepository.create({
+      agentName: ADMIN_INSIGHT_AGENT,
+      actorId: actor.id,
+      prompt: question,
+      model: modelResult.modelUsed,
+      toolsUsed: selectedTools,
+      toolCalls: [
+        ...buildLogicalAnalyticsToolCalls(selectedTools, analyticsLatencyMs),
+        ...(selectedTools.includes(ADMIN_ALERT_TOOL)
+          ? [
+              {
+                name: ADMIN_ALERT_TOOL,
+                status: 'success' as const,
+                latencyMs: alertLatencyMs,
+              },
+            ]
+          : []),
+        ...(selectedTools.includes(ADMIN_ORDER_STATUS_TOOL) && orderEvidence
+          ? [
+              {
+                name: ADMIN_ORDER_STATUS_TOOL,
+                status: 'success' as const,
+                latencyMs: orderEvidenceLatencyMs,
+              },
+            ]
+          : []),
+      ],
+      latencyMs,
+      estimatedCostCents: estimateCostCents(modelResult.usage),
+      status: 'success',
+    });
+
+    return {
+      ...parsed,
+      analytics,
+      alert: activeAlerts?.[0],
+      orderEvidence,
+      run: {
+        id: String(agentRun._id),
+        agentName: ADMIN_INSIGHT_AGENT,
+        model: modelResult.modelUsed,
+        toolsUsed: selectedTools,
+        latencyMs,
+        estimatedCostCents: agentRun.estimatedCostCents,
+        status: 'success' as const,
+      },
+    };
+  } catch (error) {
+    const latencyMs = nowMs() - startMs;
+    const failureReason =
+      error instanceof Error ? error.message : String(error);
+
+    try {
+      await agentRunRepository.create({
+        agentName: ADMIN_INSIGHT_AGENT,
+        actorId: actor.id,
+        prompt: question,
+        model: env.OPENAI_API_KEY ? env.OPENAI_MODEL : FALLBACK_MODEL,
+        toolsUsed: analytics ? selectedTools : [],
+        toolCalls: analytics
+          ? [
+              ...buildLogicalAnalyticsToolCalls(
+                selectedTools,
+                analyticsLatencyMs,
+              ),
+              ...(activeAlerts
+                ? [
+                    {
+                      name: ADMIN_ALERT_TOOL,
+                      status: 'success' as const,
+                      latencyMs: alertLatencyMs,
+                    },
+                  ]
+                : []),
+              ...(orderEvidence
+                ? [
+                    {
+                      name: ADMIN_ORDER_STATUS_TOOL,
+                      status: 'success' as const,
+                      latencyMs: orderEvidenceLatencyMs,
+                    },
+                  ]
+                : []),
+            ]
+          : [],
+        latencyMs,
+        status: 'failed',
+        failureReason,
+      });
+    } catch (loggingError) {
+      appLogger.error('admin_insight_chat_run_log_failed', {
+        error: loggingError,
+      });
+    }
+
+    appLogger.error('admin_insight_chat_failed', { error });
+    throw new AppError(
+      'Could not answer admin insight question. Please try again later.',
       503,
     );
   }

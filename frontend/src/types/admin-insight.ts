@@ -50,3 +50,8 @@ export interface InvestigateAdminAlertPayload {
   alertId: string;
   question?: string;
 }
+
+export interface ChatWithAdminInsightAgentPayload {
+  range: AnalyticsRange;
+  question: string;
+}

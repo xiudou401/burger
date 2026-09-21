@@ -4,6 +4,7 @@ import { getAdminAnalyticsSummary } from './admin-dashboard.service';
 import {
   buildAdminInsightSystemPromptForTest,
   buildAdminInsightUserPromptForTest,
+  chatWithAdminInsightAgent,
   generateAdminInsights,
   investigateAdminAlert,
   resetAdminInsightModelClientForTest,
@@ -362,6 +363,90 @@ describe('admin insight service', () => {
         ],
       }),
     );
+    expect(result.orderEvidence).toHaveLength(1);
+  });
+
+  test('selects order evidence tool for admin chat questions about cancelled orders', async () => {
+    jest.mocked(orderRepository.listByStatus).mockResolvedValue([
+      {
+        _id: '66f000000000000000000002',
+        status: 'cancelled',
+        totalCents: 1800,
+        payment: {
+          status: 'cancelled',
+        },
+        items: [
+          {
+            nameAtPurchase: 'Fries',
+            quantity: 1,
+          },
+        ],
+        createdAt: new Date('2026-09-20T11:00:00.000Z'),
+        updatedAt: new Date('2026-09-20T11:03:00.000Z'),
+      },
+    ] as never);
+
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'One cancelled order was found.',
+        insights: [
+          {
+            type: 'risk',
+            severity: 'medium',
+            title: 'Cancelled order found',
+            evidence: ['66f000000000000000000002 is cancelled.'],
+            suggestedAction: 'Review the order record.',
+            relatedMenuItemIds: [],
+          },
+        ],
+        orderEvidence: [
+          {
+            orderId: '66f000000000000000000002',
+            status: 'cancelled',
+            paymentStatus: 'cancelled',
+            totalCents: 1800,
+            itemCount: 1,
+            items: ['Fries'],
+            createdAt: '2026-09-20T11:00:00.000Z',
+            updatedAt: '2026-09-20T11:03:00.000Z',
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await chatWithAdminInsightAgent(
+      {
+        range: '7d',
+        question: 'show me the cancelled orders',
+      },
+      actor,
+    );
+
+    expect(orderRepository.listByStatus).toHaveBeenCalledWith('cancelled', 5);
+    expect(modelClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        question: 'show me the cancelled orders',
+        selectedTools: ['getPaymentStats', 'getOrdersByStatus'],
+        orderEvidence: [
+          expect.objectContaining({
+            orderId: '66f000000000000000000002',
+            status: 'cancelled',
+          }),
+        ],
+      }),
+    );
+    expect(agentRunRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolsUsed: ['getPaymentStats', 'getOrdersByStatus'],
+        status: 'success',
+      }),
+    );
+    expect(result.run.toolsUsed).toEqual([
+      'getPaymentStats',
+      'getOrdersByStatus',
+    ]);
     expect(result.orderEvidence).toHaveLength(1);
   });
 });

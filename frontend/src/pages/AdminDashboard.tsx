@@ -9,6 +9,7 @@ import { formatCurrency } from '../utils/currency';
 import { formatOrderStatus } from '../utils/order';
 import type { OrderStatus } from '../types/order';
 import {
+  chatWithAdminInsightAgent,
   generateAdminInsights,
   investigateAdminAlert,
 } from '../api/admin-insights';
@@ -42,6 +43,11 @@ const AdminDashboard = () => {
     null,
   );
   const [alertFollowUpQuestion, setAlertFollowUpQuestion] = useState('');
+  const [adminChatQuestion, setAdminChatQuestion] = useState('');
+  const [adminChatResult, setAdminChatResult] =
+    useState<AdminInsightResponse | null>(null);
+  const [isAskingAdminChat, setIsAskingAdminChat] = useState(false);
+  const [adminChatError, setAdminChatError] = useState<string | null>(null);
 
   const generateInsights = async () => {
     setIsGeneratingInsights(true);
@@ -80,6 +86,32 @@ const AdminDashboard = () => {
       );
     } finally {
       setInvestigatingAlertId(null);
+    }
+  };
+
+  const askAdminInsightAgent = async (question: string) => {
+    const trimmedQuestion = question.trim();
+
+    if (!trimmedQuestion) return;
+
+    setIsAskingAdminChat(true);
+    setAdminChatError(null);
+
+    try {
+      const result = await chatWithAdminInsightAgent({
+        range: '7d',
+        question: trimmedQuestion,
+      });
+      setAdminChatResult(result);
+      setAdminChatQuestion('');
+    } catch (err) {
+      setAdminChatError(
+        err instanceof Error
+          ? err.message
+          : 'Could not answer admin insight question',
+      );
+    } finally {
+      setIsAskingAdminChat(false);
     }
   };
 
@@ -416,6 +448,109 @@ const AdminDashboard = () => {
                 {isGeneratingInsights ? 'Generating...' : 'Generate insights'}
               </AdminButton>
             </div>
+
+            <form
+              className={classes.AdminChatForm}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void askAdminInsightAgent(adminChatQuestion);
+              }}
+            >
+              <input
+                type="text"
+                value={adminChatQuestion}
+                onChange={(event) => {
+                  setAdminChatQuestion(event.target.value);
+                }}
+                placeholder="Ask about sales, menu items, payments, or orders"
+                maxLength={240}
+              />
+              <AdminButton
+                type="submit"
+                disabled={!adminChatQuestion.trim() || isAskingAdminChat}
+              >
+                {isAskingAdminChat ? 'Asking...' : 'Ask agent'}
+              </AdminButton>
+            </form>
+
+            {adminChatError && (
+              <AdminStatusText tone="error">{adminChatError}</AdminStatusText>
+            )}
+
+            {adminChatResult && (
+              <article className={classes.AdminChatResult}>
+                <article className={classes.InsightSummary}>
+                  <p>{adminChatResult.summary}</p>
+                  <dl>
+                    <div>
+                      <dt>Model</dt>
+                      <dd>{adminChatResult.run.model}</dd>
+                    </div>
+                    <div>
+                      <dt>Tools</dt>
+                      <dd>{adminChatResult.run.toolsUsed.join(', ')}</dd>
+                    </div>
+                    <div>
+                      <dt>Latency</dt>
+                      <dd>{adminChatResult.run.latencyMs}ms</dd>
+                    </div>
+                    <div>
+                      <dt>Trace</dt>
+                      <dd>{adminChatResult.run.id}</dd>
+                    </div>
+                  </dl>
+                </article>
+
+                <div className={classes.InsightGrid}>
+                  {adminChatResult.insights.map((insight) => (
+                    <article
+                      className={classes.InsightCard}
+                      key={`chat-${insight.type}-${insight.title}`}
+                    >
+                      <div className={classes.InsightMeta}>
+                        <span>{insight.type}</span>
+                        <b>{insight.severity}</b>
+                      </div>
+                      <h3>{insight.title}</h3>
+                      <ul>
+                        {insight.evidence.map((evidence) => (
+                          <li key={evidence}>{evidence}</li>
+                        ))}
+                      </ul>
+                      <p>{insight.suggestedAction}</p>
+                    </article>
+                  ))}
+                </div>
+
+                {adminChatResult.orderEvidence &&
+                  adminChatResult.orderEvidence.length > 0 && (
+                    <div className={classes.OrderEvidenceList}>
+                      <p className={classes.MetricLabel}>Order evidence</p>
+                      {adminChatResult.orderEvidence.map((order) => (
+                        <article
+                          className={classes.OrderEvidenceCard}
+                          key={`chat-${order.orderId}`}
+                        >
+                          <div>
+                            <b>#{order.orderId.slice(-6)}</b>
+                            <span>
+                              {formatOrderStatus(order.status as OrderStatus)}
+                            </span>
+                          </div>
+                          <p>
+                            {formatCurrency(order.totalCents)} ·{' '}
+                            {order.itemCount} items
+                            {order.paymentStatus
+                              ? ` · payment ${order.paymentStatus}`
+                              : ''}
+                          </p>
+                          <small>{order.items.join(', ')}</small>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+              </article>
+            )}
 
             {insightError && (
               <AdminStatusText tone="error">{insightError}</AdminStatusText>
