@@ -161,6 +161,7 @@ describe('admin dashboard service', () => {
 
     await expect(getAdminAnalyticsSummary('7d', now)).resolves.toEqual({
       range: '7d',
+      currency: 'AUD',
       startAt: new Date('2026-09-13T12:00:00.000Z'),
       endAt: now,
       revenueCents: 18250,

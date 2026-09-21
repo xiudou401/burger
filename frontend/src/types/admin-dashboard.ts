@@ -31,6 +31,7 @@ export interface DashboardPaymentStatusCount {
 
 export interface AdminAnalyticsSummary {
   range: AnalyticsRange;
+  currency: 'AUD';
   startAt: string;
   endAt: string;
   revenueCents: number;

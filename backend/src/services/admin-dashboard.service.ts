@@ -54,6 +54,7 @@ export interface DashboardPaymentStatusCount {
 
 export interface AdminAnalyticsSummary {
   range: AnalyticsRange;
+  currency: 'AUD';
   startAt: Date;
   endAt: Date;
   revenueCents: number;
@@ -257,6 +258,7 @@ export const getAdminAnalyticsSummary = async (
 
   return {
     range,
+    currency: 'AUD',
     startAt: start,
     endAt: end,
     revenueCents: totals.revenueCents,

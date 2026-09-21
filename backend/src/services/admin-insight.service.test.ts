@@ -24,6 +24,7 @@ jest.mock('../utils/logger', () => ({
 
 const analyticsSummary = {
   range: '7d' as const,
+  currency: 'AUD' as const,
   startAt: new Date('2026-09-13T00:00:00.000Z'),
   endAt: new Date('2026-09-20T00:00:00.000Z'),
   revenueCents: 18250,
@@ -135,7 +136,7 @@ describe('admin insight service', () => {
   test('uses deterministic fallback insights when the model client is not overridden', async () => {
     const result = await generateAdminInsights({ range: '7d' }, actor);
 
-    expect(result.summary).toContain('$182.50');
+    expect(result.summary).toContain('A$182.50');
     expect(result.insights.length).toBeGreaterThan(0);
     expect(result.run.model).toBe('deterministic-fallback');
     expect(agentRunRepository.create).toHaveBeenCalledWith(

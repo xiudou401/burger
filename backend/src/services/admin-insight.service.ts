@@ -36,7 +36,7 @@ type AdminInsightModelClient = (input: {
 const nowMs = () => Date.now();
 
 const formatCurrency = (valueCents: number) =>
-  `$${(valueCents / 100).toFixed(2)}`;
+  `A$${(valueCents / 100).toFixed(2)}`;
 
 const estimateCostCents = (usage?: ModelUsage) => {
   if (!usage?.inputTokens && !usage?.outputTokens) {
@@ -166,6 +166,7 @@ const buildSystemPrompt = () => {
     'You are Burger Club Admin Insight Agent.',
     'Use only the provided analytics summary.',
     'Do not invent revenue, order counts, prices, menu item ids, or payment data.',
+    'All money values are AUD cents; when writing money, use AUD or A$, never USD.',
     'Return operational insight cards for a restaurant admin.',
     'Every insight must include evidence from the provided analytics.',
     'Do not propose automatically changing menu items, prices, payments, or orders.',
@@ -183,6 +184,8 @@ const buildUserPrompt = ({
   return JSON.stringify({
     question,
     analytics,
+    currencyInstruction:
+      'All monetary values in analytics are AUD cents. Convert cents to AUD only when writing narrative explanations. Never use USD.',
     outputShape: {
       summary: 'short executive summary',
       insights: [
