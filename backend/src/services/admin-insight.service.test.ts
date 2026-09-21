@@ -1,6 +1,8 @@
 import { agentRunRepository } from '../repositories/agent-run.repository';
 import { getAdminAnalyticsSummary } from './admin-dashboard.service';
 import {
+  buildAdminInsightSystemPromptForTest,
+  buildAdminInsightUserPromptForTest,
   generateAdminInsights,
   resetAdminInsightModelClientForTest,
   setAdminInsightModelClientForTest,
@@ -161,6 +163,34 @@ describe('admin insight service', () => {
         status: 'failed',
         failureReason: 'Model unavailable',
       }),
+    );
+  });
+
+  test('prompts the model to use AUD display values instead of raw cents', () => {
+    const systemPrompt = buildAdminInsightSystemPromptForTest();
+    const userPrompt = JSON.parse(
+      buildAdminInsightUserPromptForTest({
+        question: 'What should we improve?',
+        analytics: analyticsSummary,
+      }),
+    ) as {
+      currencyInstruction: string;
+      displayAnalytics: {
+        revenue: string;
+        categorySales: Array<{ category: string; revenue: string }>;
+      };
+    };
+
+    expect(systemPrompt).toContain('Do not write cents');
+    expect(userPrompt.currencyInstruction).toContain('Never write cents');
+    expect(userPrompt.displayAnalytics.revenue).toBe('A$182.50');
+    expect(userPrompt.displayAnalytics.categorySales).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          category: 'burger',
+          revenue: 'A$126.00',
+        }),
+      ]),
     );
   });
 });

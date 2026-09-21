@@ -161,12 +161,13 @@ const buildFallbackInsights = (
   };
 };
 
-const buildSystemPrompt = () => {
+export const buildAdminInsightSystemPromptForTest = () => {
   return [
     'You are Burger Club Admin Insight Agent.',
     'Use only the provided analytics summary.',
     'Do not invent revenue, order counts, prices, menu item ids, or payment data.',
     'All money values are AUD cents; when writing money, use AUD or A$, never USD.',
+    'Do not write cents in user-facing summaries, evidence, titles, or suggested actions; convert cents to A$ amounts.',
     'Return operational insight cards for a restaurant admin.',
     'Every insight must include evidence from the provided analytics.',
     'Do not propose automatically changing menu items, prices, payments, or orders.',
@@ -174,7 +175,29 @@ const buildSystemPrompt = () => {
   ].join(' ');
 };
 
-const buildUserPrompt = ({
+const buildDisplayAnalytics = (analytics: AdminAnalyticsSummary) => ({
+  revenue: formatCurrency(analytics.revenueCents),
+  averageOrderValue: formatCurrency(analytics.averageOrderValueCents),
+  categorySales: analytics.categorySales.map((category) => ({
+    category: category.category,
+    quantitySold: category.quantitySold,
+    revenue: formatCurrency(category.revenueCents),
+  })),
+  topItems: analytics.topItems.map((item) => ({
+    menuItemId: item.menuItemId,
+    name: item.name,
+    quantitySold: item.quantitySold,
+    revenue: formatCurrency(item.revenueCents),
+  })),
+  underperformingItems: analytics.underperformingItems.map((item) => ({
+    menuItemId: item.menuItemId,
+    name: item.name,
+    quantitySold: item.quantitySold,
+    revenue: formatCurrency(item.revenueCents),
+  })),
+});
+
+export const buildAdminInsightUserPromptForTest = ({
   question,
   analytics,
 }: {
@@ -184,8 +207,9 @@ const buildUserPrompt = ({
   return JSON.stringify({
     question,
     analytics,
+    displayAnalytics: buildDisplayAnalytics(analytics),
     currencyInstruction:
-      'All monetary values in analytics are AUD cents. Convert cents to AUD only when writing narrative explanations. Never use USD.',
+      'Analytics contains raw AUD cents for backend precision. Use displayAnalytics for user-facing money. Never write cents or USD in summary, evidence, titles, or suggested actions.',
     outputShape: {
       summary: 'short executive summary',
       insights: [
@@ -225,8 +249,8 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: buildSystemPrompt() },
-        { role: 'user', content: buildUserPrompt(input) },
+        { role: 'system', content: buildAdminInsightSystemPromptForTest() },
+        { role: 'user', content: buildAdminInsightUserPromptForTest(input) },
       ],
     }),
   });
