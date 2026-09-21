@@ -56,7 +56,7 @@ const AdminDashboard = () => {
     try {
       const result = await generateAdminInsights({
         range: '7d',
-        question: 'What should we improve this week?',
+        question: 'What needs operational attention this week?',
       });
       setInsightResult(result);
     } catch (err) {
@@ -435,8 +435,10 @@ const AdminDashboard = () => {
           <section className={classes.InsightSection}>
             <div className={classes.InsightHeader}>
               <div>
-                <p className={classes.MetricLabel}>AI Admin Insight Agent</p>
-                <h2>Operational insights</h2>
+                <p className={classes.MetricLabel}>
+                  AI Operations Insight Agent
+                </p>
+                <h2>What needs attention</h2>
               </div>
               <AdminButton
                 type="button"
@@ -445,7 +447,9 @@ const AdminDashboard = () => {
                 }}
                 disabled={isGeneratingInsights}
               >
-                {isGeneratingInsights ? 'Generating...' : 'Generate insights'}
+                {isGeneratingInsights
+                  ? 'Investigating...'
+                  : 'Find what needs attention'}
               </AdminButton>
             </div>
 
@@ -462,7 +466,7 @@ const AdminDashboard = () => {
                 onChange={(event) => {
                   setAdminChatQuestion(event.target.value);
                 }}
-                placeholder="Ask about sales, menu items, payments, or orders"
+                placeholder="Ask about an anomaly, weak item, payment issue, or order status"
                 maxLength={240}
               />
               <AdminButton
@@ -558,7 +562,8 @@ const AdminDashboard = () => {
 
             {!insightResult && !insightError && (
               <AdminStatusText>
-                Generate AI insights from verified 7-day analytics.
+                Find the operational issues most worth checking from verified
+                7-day analytics.
               </AdminStatusText>
             )}
 

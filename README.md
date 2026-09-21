@@ -171,28 +171,34 @@ remain the source of truth. Admin Orders and Admin Dashboard fall back to
 or cannot be established. Public menu clients keep the same behavior for menu
 version changes.
 
-## AI Admin Insight Agent
+## AI Operations Insight Agent
 
-The admin dashboard can generate AI insight cards from the verified analytics
-summary. The backend first computes metrics with MongoDB aggregation, then
-passes the structured summary to the insight agent. The model explains trends,
-risks, and opportunities, while the backend keeps revenue, order counts, item
-sales, and payment status as deterministic facts.
+The admin dashboard includes an AI operations insight agent that turns verified
+analytics into operational attention, not unbounded chat. The backend first
+computes metrics with MongoDB aggregation, detects active alerts, and exposes
+restricted read-only tools such as `getPaymentStats`, `getItemPerformance`,
+and `getOrdersByStatus`. The model can then explain what happened, cite the
+evidence, describe a likely explanation only when the data supports it, and
+recommend what the manager should check next.
 
 ```text
 Orders in MongoDB
   -> deterministic aggregation tools
   -> analytics summary and active alerts
+  -> selected read-only tools
   -> AI insight agent
-  -> evidence-grounded insight cards and follow-up alert investigation
+  -> evidence-grounded operational attention cards
+  -> follow-up alert and order investigation
   -> AgentRun logging for model, tool, latency, status, and cost estimate
 ```
 
 Each insight run is recorded in an `AgentRun` document with the agent name,
-prompt, model, backend tool used, latency, status, and optional cost estimate.
-If `OPENAI_API_KEY` is not configured, the agent returns deterministic fallback
-insights and still logs the run, so the demo remains usable without external AI
-spend.
+prompt, selected backend tools, latency, status, and optional cost estimate.
+The agent is intentionally constrained: it may recommend checks, but it does
+not automatically change menu items, prices, payments, refunds, or orders. If
+`OPENAI_API_KEY` is not configured, deterministic fallback insights still use
+the same verified analytics and run logging, so the demo remains usable without
+external AI spend.
 
 ## Live Demo Notes
 

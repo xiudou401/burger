@@ -246,7 +246,7 @@ const buildFallbackInsights = (
       summary: `Found ${orderEvidence.length} recent ${orderEvidence[0].status.replace(
         '_',
         ' ',
-      )} orders. Review the listed order evidence before deciding whether the issue is operational or payment-related.`,
+      )} orders. The evidence shows affected orders, but it does not prove customer intent. Check payment status, item mix, and timing before changing operations.`,
       insights: [
         {
           type: 'risk',
@@ -261,7 +261,7 @@ const buildFallbackInsights = (
                 )} total and ${order.itemCount} items.`,
             ),
           suggestedAction:
-            'Open the affected orders in the admin order console and compare payment status, item mix, and timing before changing menu settings.',
+            'Check the affected orders in the admin console, then compare payment status, item mix, and timing before changing menu settings.',
           relatedMenuItemIds: [],
         },
       ],
@@ -271,7 +271,7 @@ const buildFallbackInsights = (
 
   if (alert) {
     return {
-      summary: `${alert.title}: ${alert.message} The likely next step is to verify the affected operational path before changing menu or payment settings.`,
+      summary: `${alert.title}: ${alert.message} This needs operational attention, but the current data supports investigation rather than an automatic change.`,
       insights: [
         {
           type: 'risk',
@@ -280,10 +280,10 @@ const buildFallbackInsights = (
           evidence: alert.evidence,
           suggestedAction:
             alert.type === 'revenue_drop'
-              ? 'Compare category and item sales against the previous period, then review whether lower-performing items need placement or bundle changes.'
+              ? 'Check category and item sales against the previous period, then review whether the drop is order volume, average order value, or item mix.'
               : alert.type === 'low_paid_order_rate'
-                ? 'Review checkout completion and Stripe payment outcomes before changing promotions.'
-                : 'Review cancelled checkout sessions and recent order status changes to identify whether the issue is customer payment flow or operations handling.',
+                ? 'Check checkout completion and Stripe payment outcomes before changing promotions.'
+                : 'Check cancelled checkout sessions and recent order status changes to identify whether the issue is payment flow or operations handling.',
           relatedMenuItemIds: [],
         },
       ],
@@ -318,8 +318,8 @@ const buildFallbackInsights = (
         )} revenue.`,
       ],
       suggestedAction: lowerItem
-        ? `Feature ${lowerItem.name} beside a stronger ${highestCategory.category} offer and watch attachment over the next week.`
-        : `Bundle a ${lowestCategory.category} item with a stronger ${highestCategory.category} offer and watch attachment over the next week.`,
+        ? `Check whether ${lowerItem.name} is visible, available, and paired with a stronger ${highestCategory.category} offer before changing price.`
+        : `Check whether ${lowestCategory.category} items need stronger placement or pairing with ${highestCategory.category} items.`,
       relatedMenuItemIds: lowerItem ? [lowerItem.menuItemId] : [],
     });
   }
@@ -334,7 +334,7 @@ const buildFallbackInsights = (
         `${failedCount} failed payments in the selected range.`,
       ],
       suggestedAction:
-        'Review Stripe logs and checkout messaging before changing menu promotions.',
+        'Check Stripe logs and checkout messaging before changing menu promotions.',
       relatedMenuItemIds: [],
     });
   }
@@ -350,7 +350,7 @@ const buildFallbackInsights = (
         )} revenue.`,
       ],
       suggestedAction:
-        'Use this item as an anchor for pairings and compare whether sides or drinks attach strongly enough.',
+        'Check whether sides or drinks attach strongly enough to this item before changing menu layout.',
       relatedMenuItemIds: [analytics.topItems[0].menuItemId],
     });
   }
@@ -360,7 +360,7 @@ const buildFallbackInsights = (
       analytics.revenueCents,
     )} across ${
       analytics.paidOrderCount
-    } paid orders. The clearest action is to protect top-selling demand while improving lower-performing categories with bundles or placement.`,
+    } paid orders. The highest-value operational check is to protect top-selling demand while reviewing lower-performing categories, payment outcomes, and item pairing.`,
     insights:
       insights.length > 0
         ? insights.slice(0, 4)
@@ -371,7 +371,7 @@ const buildFallbackInsights = (
               title: 'More order data is needed',
               evidence: ['No paid order pattern is strong enough yet.'],
               suggestedAction:
-                'Keep collecting orders before making menu changes.',
+                'Keep collecting orders before making menu or operations changes.',
               relatedMenuItemIds: [],
             },
           ],
@@ -421,7 +421,7 @@ const buildChatFallbackInsights = ({
             `${analytics.topItems[0]?.name ?? 'The top item'} is currently ahead in the same range.`,
           ],
           suggestedAction:
-            'Review placement, pairing, and promotion before changing the item itself.',
+            'Check placement, availability, and pairing before changing the item itself.',
           relatedMenuItemIds: [item.menuItemId],
         },
       ],
@@ -447,7 +447,7 @@ const buildChatFallbackInsights = ({
             )} revenue.`,
           ],
           suggestedAction:
-            'Use this item as an anchor for bundles and compare whether sides or drinks attach strongly enough.',
+            'Check whether this item is driving enough side or drink attachment before changing bundles.',
           relatedMenuItemIds: [item.menuItemId],
         },
       ],
@@ -485,7 +485,7 @@ const buildChatFallbackInsights = ({
             `${failedCount} failed, ${cancelledCount} cancelled, and ${refundedCount} refunded outcomes.`,
           ],
           suggestedAction:
-            'Compare payment outcomes with Stripe logs and order status changes before changing checkout behavior.',
+            'Check payment outcomes against Stripe logs and order status changes before changing checkout behavior.',
           relatedMenuItemIds: [],
         },
       ],
@@ -501,13 +501,15 @@ const buildChatFallbackInsights = ({
 
 export const buildAdminInsightSystemPromptForTest = () => {
   return [
-    'You are Burger Club Admin Insight Agent.',
+    'You are Burger Club AI Operations Insight Agent.',
     'Use only the provided analytics summary.',
     'Do not invent revenue, order counts, prices, menu item ids, or payment data.',
     'All money values are AUD cents; when writing money, use AUD or A$, never USD.',
     'Do not write cents in user-facing summaries, evidence, titles, or suggested actions; convert cents to A$ amounts.',
-    'Return operational insight cards for a restaurant admin.',
+    'Return operational attention cards for a restaurant owner or manager.',
+    'Focus on what happened, what evidence supports it, what might explain it, and what the admin should check next.',
     'Every insight must include evidence from the provided analytics.',
+    'Separate facts from likely explanations; say when the current data cannot prove a cause.',
     'Do not propose automatically changing menu items, prices, payments, or orders.',
     'Return only JSON with summary and insights.',
   ].join(' ');
@@ -592,23 +594,25 @@ export const buildAdminInsightUserPromptForTest = ({
     currencyInstruction:
       'Analytics contains raw AUD cents for backend precision. Use displayAnalytics for user-facing money. Never write cents or USD in summary, evidence, titles, or suggested actions.',
     alertInstruction: alert
-      ? 'Investigate the provided alert. Explain what the backend evidence supports, what it does not prove, and what the admin should check next. Do not claim customer intent or causes that are not supported by analytics.'
+      ? 'Investigate the provided alert. Explain what happened, what evidence supports it, what the likely explanation could be, what the current data does not prove, and what the admin should check next. Do not claim customer intent or causes that are not supported by analytics.'
       : undefined,
     chatInstruction: selectedTools
-      ? 'Answer the admin question using the selected backend tool results. If the available tools do not prove a cause, say what the data supports and what remains unknown.'
+      ? 'Answer the admin question using the selected backend tool results. Prioritize operational attention: what happened, evidence, likely explanation, what to check next, and data boundaries. If the tools do not prove a cause, say what the data supports and what remains unknown.'
       : undefined,
     orderEvidenceInstruction: orderEvidence
       ? 'The provided orderEvidence is a restricted admin tool result. You may summarize these orders by id, status, payment status, total, item count, items, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
       : undefined,
     outputShape: {
-      summary: 'short executive summary',
+      summary:
+        'short operational attention summary that states what needs checking next',
       insights: [
         {
           type: 'opportunity | risk | trend',
           severity: 'low | medium | high',
-          title: 'short title',
+          title: 'short operational issue or opportunity',
           evidence: ['specific metric-backed evidence'],
-          suggestedAction: 'admin-safe recommendation',
+          suggestedAction:
+            'what the admin should check next, not an automated action',
           relatedMenuItemIds: [
             'ids from topItems or underperformingItems only',
           ],
