@@ -1,6 +1,8 @@
 import { AppError } from '../errors/AppError';
 import { env } from '../config/env';
 import { agentRunRepository } from '../repositories/agent-run.repository';
+import { orderRepository } from '../repositories/order.repository';
+import type { OrderStatus } from '../models/order.model';
 import {
   getAdminAnalyticsSummary,
   type AdminAnalyticsSummary,
@@ -22,6 +24,7 @@ import { ServiceError } from '../errors/ServiceError';
 const ADMIN_INSIGHT_AGENT = 'admin_insight_agent';
 const ADMIN_INSIGHT_TOOL = 'getAdminAnalyticsSummary';
 const ADMIN_ALERT_TOOL = 'detectAnalyticsAlerts';
+const ADMIN_ORDER_STATUS_TOOL = 'getOrdersByStatus';
 const FALLBACK_MODEL = 'deterministic-fallback';
 
 interface ModelUsage {
@@ -39,12 +42,22 @@ type AdminInsightModelClient = (input: {
   question: string;
   analytics: AdminAnalyticsSummary;
   alert?: AnalyticsAlert;
+  orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
 }) => Promise<InsightModelResult>;
 
 const nowMs = () => Date.now();
 
 const formatCurrency = (valueCents: number) =>
   `A$${(valueCents / 100).toFixed(2)}`;
+
+const ORDER_STATUSES: OrderStatus[] = [
+  'pending_payment',
+  'paid',
+  'preparing',
+  'ready',
+  'completed',
+  'cancelled',
+];
 
 const estimateCostCents = (usage?: ModelUsage) => {
   if (!usage?.inputTokens && !usage?.outputTokens) {
@@ -79,10 +92,80 @@ const getPaymentCount = (analytics: AdminAnalyticsSummary, status: string) => {
   );
 };
 
+const getRequestedOrderStatus = (question: string): OrderStatus | null => {
+  const normalized = question.toLowerCase();
+
+  if (
+    /\bcancell?ed\b/.test(normalized) ||
+    /\bcancell?ations?\b/.test(normalized)
+  ) {
+    return 'cancelled';
+  }
+
+  if (/\bpending\b/.test(normalized) || /\bunpaid\b/.test(normalized)) {
+    return 'pending_payment';
+  }
+
+  return (
+    ORDER_STATUSES.find((status) =>
+      normalized.includes(status.replace('_', ' ')),
+    ) ?? null
+  );
+};
+
+const getOrdersByStatusEvidence = async (
+  status: OrderStatus,
+  limit = 5,
+): Promise<AdminInsightResponsePayload['orderEvidence']> => {
+  const orders = await orderRepository.listByStatus(status, limit);
+
+  return orders.map((order) => ({
+    orderId: String(order._id),
+    status: order.status,
+    paymentStatus: order.payment?.status,
+    totalCents: order.totalCents,
+    itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+    items: order.items
+      .slice(0, 6)
+      .map((item) => item.nameAtPurchase ?? 'Menu item'),
+    createdAt: order.createdAt.toISOString(),
+    updatedAt: order.updatedAt.toISOString(),
+  }));
+};
+
 const buildFallbackInsights = (
   analytics: AdminAnalyticsSummary,
   alert?: AnalyticsAlert,
+  orderEvidence?: AdminInsightResponsePayload['orderEvidence'],
 ): AdminInsightResponsePayload => {
+  if (orderEvidence && orderEvidence.length > 0) {
+    return {
+      summary: `Found ${orderEvidence.length} recent ${orderEvidence[0].status.replace(
+        '_',
+        ' ',
+      )} orders. Review the listed order evidence before deciding whether the issue is operational or payment-related.`,
+      insights: [
+        {
+          type: 'risk',
+          severity: alert?.severity ?? 'medium',
+          title: `Recent ${orderEvidence[0].status.replace('_', ' ')} orders`,
+          evidence: orderEvidence
+            .slice(0, 4)
+            .map(
+              (order) =>
+                `${order.orderId} is ${order.status} with ${formatCurrency(
+                  order.totalCents,
+                )} total and ${order.itemCount} items.`,
+            ),
+          suggestedAction:
+            'Open the affected orders in the admin order console and compare payment status, item mix, and timing before changing menu settings.',
+          relatedMenuItemIds: [],
+        },
+      ],
+      orderEvidence,
+    };
+  }
+
   if (alert) {
     return {
       summary: `${alert.title}: ${alert.message} The likely next step is to verify the affected operational path before changing menu or payment settings.`,
@@ -101,6 +184,7 @@ const buildFallbackInsights = (
           relatedMenuItemIds: [],
         },
       ],
+      orderEvidence,
     };
   }
 
@@ -242,25 +326,46 @@ const buildDisplayAlert = (alert?: AnalyticsAlert) =>
       }
     : undefined;
 
+const buildDisplayOrderEvidence = (
+  orderEvidence?: AdminInsightResponsePayload['orderEvidence'],
+) =>
+  orderEvidence?.map((order) => ({
+    orderId: order.orderId,
+    status: order.status,
+    paymentStatus: order.paymentStatus,
+    total: formatCurrency(order.totalCents),
+    itemCount: order.itemCount,
+    items: order.items,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+  }));
+
 export const buildAdminInsightUserPromptForTest = ({
   question,
   analytics,
   alert,
+  orderEvidence,
 }: {
   question: string;
   analytics: AdminAnalyticsSummary;
   alert?: AnalyticsAlert;
+  orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
 }) => {
   return JSON.stringify({
     question,
     alert,
+    orderEvidence,
     analytics,
     displayAlert: buildDisplayAlert(alert),
+    displayOrderEvidence: buildDisplayOrderEvidence(orderEvidence),
     displayAnalytics: buildDisplayAnalytics(analytics),
     currencyInstruction:
       'Analytics contains raw AUD cents for backend precision. Use displayAnalytics for user-facing money. Never write cents or USD in summary, evidence, titles, or suggested actions.',
     alertInstruction: alert
       ? 'Investigate the provided alert. Explain what the backend evidence supports, what it does not prove, and what the admin should check next. Do not claim customer intent or causes that are not supported by analytics.'
+      : undefined,
+    orderEvidenceInstruction: orderEvidence
+      ? 'The provided orderEvidence is a restricted admin tool result. You may summarize these orders by id, status, payment status, total, item count, items, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
       : undefined,
     outputShape: {
       summary: 'short executive summary',
@@ -285,7 +390,11 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
 ) => {
   if (!env.OPENAI_API_KEY) {
     return {
-      content: buildFallbackInsights(input.analytics, input.alert),
+      content: buildFallbackInsights(
+        input.analytics,
+        input.alert,
+        input.orderEvidence,
+      ),
       modelUsed: FALLBACK_MODEL,
     };
   }
@@ -313,7 +422,11 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
     });
 
     return {
-      content: buildFallbackInsights(input.analytics, input.alert),
+      content: buildFallbackInsights(
+        input.analytics,
+        input.alert,
+        input.orderEvidence,
+      ),
       modelUsed: FALLBACK_MODEL,
     };
   }
@@ -460,6 +573,8 @@ export const investigateAdminAlert = async (
   let analyticsLatencyMs = 0;
   let alertLatencyMs = 0;
   let alert: AnalyticsAlert | null = null;
+  let orderEvidence: AdminInsightResponsePayload['orderEvidence'];
+  let orderEvidenceLatencyMs = 0;
 
   try {
     analytics = await getAdminAnalyticsSummary(payload.range);
@@ -474,14 +589,27 @@ export const investigateAdminAlert = async (
       throw new ServiceError('Analytics alert is no longer active.', 404);
     }
 
+    const requestedStatus = getRequestedOrderStatus(question);
+
+    if (requestedStatus) {
+      const orderEvidenceStartMs = nowMs();
+      orderEvidence = await getOrdersByStatusEvidence(requestedStatus);
+      orderEvidenceLatencyMs = nowMs() - orderEvidenceStartMs;
+    }
+
     const modelResult = await adminInsightModelClient({
       question,
       analytics,
       alert,
+      orderEvidence,
     });
     const parsed = AdminInsightResponseSchema.parse(modelResult.content);
     const latencyMs = nowMs() - startMs;
-    const toolsUsed = [ADMIN_INSIGHT_TOOL, ADMIN_ALERT_TOOL];
+    const toolsUsed = [
+      ADMIN_INSIGHT_TOOL,
+      ADMIN_ALERT_TOOL,
+      ...(orderEvidence ? [ADMIN_ORDER_STATUS_TOOL] : []),
+    ];
     const agentRun = await agentRunRepository.create({
       agentName: ADMIN_INSIGHT_AGENT,
       actorId: actor.id,
@@ -499,6 +627,15 @@ export const investigateAdminAlert = async (
           status: 'success',
           latencyMs: alertLatencyMs,
         },
+        ...(orderEvidence
+          ? [
+              {
+                name: ADMIN_ORDER_STATUS_TOOL,
+                status: 'success' as const,
+                latencyMs: orderEvidenceLatencyMs,
+              },
+            ]
+          : []),
       ],
       latencyMs,
       estimatedCostCents: estimateCostCents(modelResult.usage),
@@ -509,6 +646,7 @@ export const investigateAdminAlert = async (
       ...parsed,
       alert,
       analytics,
+      orderEvidence,
       run: {
         id: String(agentRun._id),
         agentName: ADMIN_INSIGHT_AGENT,

@@ -212,6 +212,33 @@ const AdminDashboard = () => {
                     </article>
                   ))}
                 </div>
+                {alertInsightResult.orderEvidence &&
+                  alertInsightResult.orderEvidence.length > 0 && (
+                    <div className={classes.OrderEvidenceList}>
+                      <p className={classes.MetricLabel}>Order evidence</p>
+                      {alertInsightResult.orderEvidence.map((order) => (
+                        <article
+                          className={classes.OrderEvidenceCard}
+                          key={order.orderId}
+                        >
+                          <div>
+                            <b>#{order.orderId.slice(-6)}</b>
+                            <span>
+                              {formatOrderStatus(order.status as OrderStatus)}
+                            </span>
+                          </div>
+                          <p>
+                            {formatCurrency(order.totalCents)} ·{' '}
+                            {order.itemCount} items
+                            {order.paymentStatus
+                              ? ` · payment ${order.paymentStatus}`
+                              : ''}
+                          </p>
+                          <small>{order.items.join(', ')}</small>
+                        </article>
+                      ))}
+                    </div>
+                  )}
                 <form
                   className={classes.AlertFollowUpForm}
                   onSubmit={(event) => {

@@ -20,11 +20,23 @@ export interface AdminInsightRun {
   status: 'success';
 }
 
+export interface AdminInsightOrderEvidence {
+  orderId: string;
+  status: string;
+  paymentStatus?: string;
+  totalCents: number;
+  itemCount: number;
+  items: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminInsightResponse {
   summary: string;
   insights: AdminInsightCard[];
   analytics: AdminAnalyticsSummary;
   alert?: AdminAnalyticsAlert;
+  orderEvidence?: AdminInsightOrderEvidence[];
   run: AdminInsightRun;
 }
 

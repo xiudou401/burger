@@ -106,6 +106,14 @@ export const orderRepository = {
       .exec();
   },
 
+  listByStatus(status: OrderStatus, limit: number) {
+    return OrderModel.find({ status })
+      .sort({ updatedAt: -1, createdAt: -1, _id: -1 })
+      .limit(limit)
+      .lean()
+      .exec();
+  },
+
   listCreatedBetween(start: Date, end: Date) {
     return OrderModel.find({
       createdAt: {

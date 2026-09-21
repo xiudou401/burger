@@ -120,7 +120,9 @@ channel so staff can see operational risks without refreshing the page.
 Admins can then investigate an alert with the AI insight agent, which reloads
 trusted analytics and active alert context before generating an evidence-based
 recommendation. Follow-up questions reuse the same grounded alert investigation
-endpoint instead of relying on unbounded chat memory.
+endpoint instead of relying on unbounded chat memory. When a manager asks to see
+orders by status, the agent can call a restricted `getOrdersByStatus` tool that
+returns only operational order evidence, not customer private data.
 
 Local demos can run `npm run seed:demo-orders` after seeding users and menu
 items to create realistic 30-day order history for the analytics dashboard.

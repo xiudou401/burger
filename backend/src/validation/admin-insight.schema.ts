@@ -34,10 +34,24 @@ export const AdminInsightCardSchema = z
   })
   .strict();
 
+export const AdminInsightOrderEvidenceSchema = z
+  .object({
+    orderId: z.string(),
+    status: z.string(),
+    paymentStatus: z.string().optional(),
+    totalCents: z.number().int().nonnegative(),
+    itemCount: z.number().int().nonnegative(),
+    items: z.array(z.string()).max(6),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+  })
+  .strict();
+
 export const AdminInsightResponseSchema = z
   .object({
     summary: z.string().trim().min(1).max(700),
     insights: z.array(AdminInsightCardSchema).min(1).max(4),
+    orderEvidence: z.array(AdminInsightOrderEvidenceSchema).max(10).optional(),
   })
   .strict();
 

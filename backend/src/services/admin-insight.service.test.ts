@@ -1,4 +1,5 @@
 import { agentRunRepository } from '../repositories/agent-run.repository';
+import { orderRepository } from '../repositories/order.repository';
 import { getAdminAnalyticsSummary } from './admin-dashboard.service';
 import {
   buildAdminInsightSystemPromptForTest,
@@ -21,6 +22,12 @@ jest.mock('./admin-alert.service', () => ({
 jest.mock('../repositories/agent-run.repository', () => ({
   agentRunRepository: {
     create: jest.fn(),
+  },
+}));
+
+jest.mock('../repositories/order.repository', () => ({
+  orderRepository: {
+    listByStatus: jest.fn(),
   },
 }));
 
@@ -97,6 +104,7 @@ describe('admin insight service', () => {
       _id: 'agent-run-1',
       estimatedCostCents: 0.01,
     } as never);
+    jest.mocked(orderRepository.listByStatus).mockResolvedValue([]);
   });
 
   test('passes verified analytics summary into the insight model and logs the run', async () => {
@@ -272,5 +280,88 @@ describe('admin insight service', () => {
         actor,
       ),
     ).rejects.toThrow('Analytics alert is no longer active.');
+  });
+
+  test('uses getOrdersByStatus tool when a follow-up asks for cancelled orders', async () => {
+    jest.mocked(orderRepository.listByStatus).mockResolvedValue([
+      {
+        _id: '66f000000000000000000001',
+        status: 'cancelled',
+        totalCents: 3200,
+        payment: {
+          status: 'cancelled',
+        },
+        items: [
+          {
+            nameAtPurchase: 'Classic Burger',
+            quantity: 2,
+          },
+        ],
+        createdAt: new Date('2026-09-20T10:00:00.000Z'),
+        updatedAt: new Date('2026-09-20T10:05:00.000Z'),
+      },
+    ] as never);
+
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'One recent cancelled order needs review.',
+        insights: [
+          {
+            type: 'risk',
+            severity: 'medium',
+            title: 'Cancelled order evidence',
+            evidence: ['66f000000000000000000001 is cancelled.'],
+            suggestedAction: 'Open the order in the admin order console.',
+            relatedMenuItemIds: [],
+          },
+        ],
+        orderEvidence: [
+          {
+            orderId: '66f000000000000000000001',
+            status: 'cancelled',
+            paymentStatus: 'cancelled',
+            totalCents: 3200,
+            itemCount: 2,
+            items: ['Classic Burger'],
+            createdAt: '2026-09-20T10:00:00.000Z',
+            updatedAt: '2026-09-20T10:05:00.000Z',
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await investigateAdminAlert(
+      {
+        range: '7d',
+        alertId: activeAlert.id,
+        question: 'show me the cancelled orders',
+      },
+      actor,
+    );
+
+    expect(orderRepository.listByStatus).toHaveBeenCalledWith('cancelled', 5);
+    expect(modelClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderEvidence: [
+          expect.objectContaining({
+            orderId: '66f000000000000000000001',
+            status: 'cancelled',
+            totalCents: 3200,
+          }),
+        ],
+      }),
+    );
+    expect(agentRunRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolsUsed: [
+          'getAdminAnalyticsSummary',
+          'detectAnalyticsAlerts',
+          'getOrdersByStatus',
+        ],
+      }),
+    );
+    expect(result.orderEvidence).toHaveLength(1);
   });
 });
