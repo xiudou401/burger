@@ -1,4 +1,3 @@
-import { Server } from 'socket.io';
 import { userRepository } from '../repositories/user.repository';
 import { verifyAuthToken } from '../utils/token';
 import {
