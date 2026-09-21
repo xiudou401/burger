@@ -46,8 +46,11 @@ export const useAdminDashboardPage = () => {
     let refreshTimeout: number | null = null;
     let fallbackTimer: number | null = null;
     let isDisposed = false;
+    let fallbackActive = false;
 
     const clearFallbackPolling = () => {
+      fallbackActive = false;
+
       if (fallbackTimer !== null) {
         window.clearTimeout(fallbackTimer);
         fallbackTimer = null;
@@ -55,13 +58,17 @@ export const useAdminDashboardPage = () => {
     };
 
     const startFallbackPolling = () => {
-      if (isDisposed || fallbackTimer !== null) return;
+      if (isDisposed || fallbackActive) return;
+
+      fallbackActive = true;
 
       const tick = () => {
-        if (isDisposed) return;
+        if (isDisposed || !fallbackActive) return;
 
         void refresh();
-        fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
+        if (fallbackActive) {
+          fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
+        }
       };
 
       fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);

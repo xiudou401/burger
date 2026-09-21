@@ -179,3 +179,59 @@ test('only starts fallback polling when realtime disconnects', async () => {
 
   expect(fetchMenuVersion).toHaveBeenCalledTimes(4);
 });
+
+test('does not restart fallback polling when a reconnect aborts an in-flight fallback request', async () => {
+  jest.useFakeTimers();
+
+  const initialRequest = deferred<number>();
+  const fallbackRequest = deferred<number>();
+  let handlers: Parameters<typeof connectMenuRealtime>[0] | null = null;
+
+  jest
+    .mocked(fetchMenuVersion)
+    .mockReturnValueOnce(initialRequest.promise)
+    .mockReturnValueOnce(fallbackRequest.promise)
+    .mockResolvedValue(31);
+  jest.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
+    handlers = nextHandlers;
+    return mockSocket();
+  });
+
+  render(<Harness />);
+
+  await act(async () => {
+    initialRequest.resolve(30);
+    await initialRequest.promise;
+  });
+
+  await act(async () => {
+    handlers?.onDisconnected?.();
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(2);
+
+  await act(async () => {
+    handlers?.onConnected?.();
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(3);
+
+  await act(async () => {
+    fallbackRequest.reject(new DOMException('Aborted', 'AbortError'));
+
+    try {
+      await fallbackRequest.promise;
+    } catch {
+      // The fallback poller swallows request failures.
+    }
+  });
+
+  await act(async () => {
+    jest.advanceTimersByTime(30_000);
+    await Promise.resolve();
+  });
+
+  expect(fetchMenuVersion).toHaveBeenCalledTimes(3);
+});

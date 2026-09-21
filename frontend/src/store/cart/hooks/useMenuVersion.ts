@@ -8,6 +8,7 @@ export const useMenuVersion = () => {
   const [menuVersion, setMenuVersion] = useState<number | null>(null);
   const fallbackTimerRef = useRef<number | undefined>(undefined);
   const fallbackControllerRef = useRef<AbortController | null>(null);
+  const fallbackActiveRef = useRef(false);
 
   const refreshMenuVersion = useCallback(async (signal?: AbortSignal) => {
     const version = await fetchMenuVersion(signal);
@@ -26,6 +27,8 @@ export const useMenuVersion = () => {
     let cancelled = false;
 
     const clearFallbackPolling = () => {
+      fallbackActiveRef.current = false;
+
       if (fallbackTimerRef.current !== undefined) {
         window.clearTimeout(fallbackTimerRef.current);
         fallbackTimerRef.current = undefined;
@@ -36,10 +39,12 @@ export const useMenuVersion = () => {
     };
 
     const startFallbackPolling = () => {
-      if (cancelled || fallbackTimerRef.current !== undefined) return;
+      if (cancelled || fallbackActiveRef.current) return;
+
+      fallbackActiveRef.current = true;
 
       const tick = async () => {
-        if (cancelled) return;
+        if (cancelled || !fallbackActiveRef.current) return;
 
         const currentController = new AbortController();
         fallbackControllerRef.current = currentController;
@@ -53,7 +58,7 @@ export const useMenuVersion = () => {
             fallbackControllerRef.current = null;
           }
 
-          if (!cancelled) {
+          if (!cancelled && fallbackActiveRef.current) {
             fallbackTimerRef.current = window.setTimeout(tick, MENU_POLL_MS);
           }
         }
