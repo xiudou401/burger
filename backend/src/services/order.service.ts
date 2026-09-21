@@ -330,6 +330,7 @@ export const updateOrderStatus = async (
   emitOrderEvent(
     nextStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
     publicOrder,
+    String(order.userId),
   );
   void emitCurrentAnalyticsAlerts();
 

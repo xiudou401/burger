@@ -49,6 +49,16 @@ const requiresAdminAccess = (socketAuth: unknown) => {
   return (socketAuth as { scope?: unknown }).scope === 'admin';
 };
 
+const requiresCustomerAccess = (socketAuth: unknown) => {
+  if (!socketAuth || typeof socketAuth !== 'object') {
+    return false;
+  }
+
+  return (socketAuth as { scope?: unknown }).scope === 'customer';
+};
+
+const getUserRoom = (userId: string) => `user:${userId}`;
+
 export const initializeRealtimeServer = (server: HttpServer) => {
   io = new Server(server, {
     cors: {
@@ -59,12 +69,13 @@ export const initializeRealtimeServer = (server: HttpServer) => {
 
   io.use(async (socket, next) => {
     const isAdminSocket = requiresAdminAccess(socket.handshake.auth);
+    const isCustomerSocket = requiresCustomerAccess(socket.handshake.auth);
 
     try {
       const token = getTokenFromHandshake(socket.handshake.auth);
 
       if (!token) {
-        return isAdminSocket
+        return isAdminSocket || isCustomerSocket
           ? next(new Error('Authorization token required'))
           : next();
       }
@@ -82,7 +93,7 @@ export const initializeRealtimeServer = (server: HttpServer) => {
         permissions: getPermissionsForRole(user.role ?? 'customer'),
       };
 
-      if (!hasPermission(socketUser, 'view_orders')) {
+      if (isAdminSocket && !hasPermission(socketUser, 'view_orders')) {
         return next(new Error('Permission required'));
       }
 
@@ -90,14 +101,24 @@ export const initializeRealtimeServer = (server: HttpServer) => {
       return next();
     } catch (error) {
       appLogger.warn('realtime_auth_failed', { error });
-      return isAdminSocket ? next(new Error('Unauthorized')) : next();
+      return isAdminSocket || isCustomerSocket
+        ? next(new Error('Unauthorized'))
+        : next();
     }
   });
 
   io.on('connection', (socket) => {
     socket.join(MENU_ROOM);
 
-    if (socket.data.user && hasPermission(socket.data.user, 'view_orders')) {
+    if (socket.data.user) {
+      socket.join(getUserRoom(socket.data.user.id));
+    }
+
+    if (
+      socket.data.user &&
+      hasPermission(socket.data.user, 'view_orders') &&
+      requiresAdminAccess(socket.handshake.auth)
+    ) {
       socket.join(ADMIN_ROOM);
       appLogger.info('realtime_admin_connected', {
         socketId: socket.id,
@@ -124,10 +145,17 @@ const toOrderPayload = (order: PublicOrder): OrderEventPayload => ({
 export const emitOrderEvent = (
   event: OrderRealtimeEvent,
   order: PublicOrder,
+  userId?: string,
 ) => {
   if (!io) return;
 
-  io.to(ADMIN_ROOM).emit(event, toOrderPayload(order));
+  const payload = toOrderPayload(order);
+
+  io.to(ADMIN_ROOM).emit(event, payload);
+
+  if (userId) {
+    io.to(getUserRoom(userId)).emit(event, payload);
+  }
 };
 
 export const emitMenuUpdated = (payload: MenuUpdatedPayload) => {

@@ -82,7 +82,7 @@ export const markStripeCheckoutPaid = async (
 
   const publicOrder = toPublicOrder(order);
   await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
-  emitOrderEvent('order:paid', publicOrder);
+  emitOrderEvent('order:paid', publicOrder, String(order.userId));
   void emitCurrentAnalyticsAlerts();
 
   return publicOrder;
@@ -114,6 +114,7 @@ export const markStripeCheckoutFailed = async (
   emitOrderEvent(
     paymentStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
     publicOrder,
+    String(order.userId),
   );
   void emitCurrentAnalyticsAlerts();
 
@@ -138,7 +139,7 @@ export const markStripeOrderFailed = async (
   await orderRepository.save(order);
 
   const publicOrder = toPublicOrder(order);
-  emitOrderEvent('order:updated', publicOrder);
+  emitOrderEvent('order:updated', publicOrder, String(order.userId));
   void emitCurrentAnalyticsAlerts();
 
   return publicOrder;

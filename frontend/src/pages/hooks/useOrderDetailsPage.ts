@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchOrder } from '../../api/orders';
+import { connectCustomerRealtime } from '../../api/realtime';
 import type { Order } from '../../types/order';
 import { isObjectId } from '../../utils/object-id';
 
@@ -21,17 +22,17 @@ export const useOrderDetailsPage = (
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestIdRef = useRef(0);
 
-  useEffect(() => {
-    if (!isObjectId(orderId)) {
-      setError('Order not found');
-      return;
-    }
+  const loadOrder = useCallback(
+    async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
+      const requestId = loadRequestIdRef.current + 1;
+      loadRequestIdRef.current = requestId;
 
-    let cancelled = false;
+      if (showLoading) {
+        setIsLoading(true);
+      }
 
-    const loadOrder = async () => {
-      setIsLoading(true);
       setError(null);
 
       try {
@@ -46,7 +47,7 @@ export const useOrderDetailsPage = (
 
           const res = await fetchOrder(orderId);
 
-          if (cancelled) return;
+          if (requestId !== loadRequestIdRef.current) return;
 
           setOrder(res.order);
 
@@ -55,22 +56,50 @@ export const useOrderDetailsPage = (
           }
         }
       } catch (err) {
-        if (!cancelled) {
+        if (requestId === loadRequestIdRef.current) {
           setError(err instanceof Error ? err.message : 'Could not load order');
         }
       } finally {
-        if (!cancelled) {
+        if (requestId === loadRequestIdRef.current && showLoading) {
           setIsLoading(false);
         }
       }
-    };
+    },
+    [confirmPayment, orderId],
+  );
 
-    loadOrder();
+  useEffect(() => {
+    if (!isObjectId(orderId)) {
+      setError('Order not found');
+      return;
+    }
+
+    void loadOrder();
 
     return () => {
-      cancelled = true;
+      loadRequestIdRef.current += 1;
     };
-  }, [confirmPayment, orderId]);
+  }, [loadOrder, orderId]);
+
+  useEffect(() => {
+    if (!isObjectId(orderId)) {
+      return undefined;
+    }
+
+    const socket = connectCustomerRealtime({
+      onOrderEvent: (_eventName, payload) => {
+        if (payload.orderId !== orderId) {
+          return;
+        }
+
+        void loadOrder({ showLoading: false });
+      },
+    });
+
+    return () => {
+      socket?.disconnect();
+    };
+  }, [loadOrder, orderId]);
 
   return {
     order,

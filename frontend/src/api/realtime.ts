@@ -36,6 +36,13 @@ interface AdminRealtimeHandlers {
   onAnalyticsAlert?: (payload: AdminAnalyticsAlert) => void;
 }
 
+interface CustomerRealtimeHandlers {
+  onOrderEvent?: (
+    eventName: AdminRealtimeOrderEventName,
+    payload: OrderRealtimeEvent,
+  ) => void;
+}
+
 const ORDER_EVENTS: AdminRealtimeOrderEventName[] = [
   'order:created',
   'order:updated',
@@ -73,6 +80,30 @@ export const connectAdminRealtime = ({
   });
   socket.on('analytics:alert', (payload: AdminAnalyticsAlert) => {
     onAnalyticsAlert?.(payload);
+  });
+
+  return socket;
+};
+
+export const connectCustomerRealtime = ({
+  onOrderEvent,
+}: CustomerRealtimeHandlers = {}): Socket | null => {
+  const token = getAccessToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const socket = io(getRealtimeOrigin(), {
+    auth: { token, scope: 'customer' },
+    transports: ['websocket'],
+    withCredentials: true,
+  });
+
+  ORDER_EVENTS.forEach((eventName) => {
+    socket.on(eventName, (payload: OrderRealtimeEvent) => {
+      onOrderEvent?.(eventName, payload);
+    });
   });
 
   return socket;

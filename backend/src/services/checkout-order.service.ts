@@ -158,7 +158,7 @@ export const createCheckoutOrder = async (
     return completeExistingCheckoutOrder(racedOrder, idempotencyKey);
   }
 
-  emitOrderEvent('order:created', toPublicOrder(order));
+  emitOrderEvent('order:created', toPublicOrder(order), String(order.userId));
   void emitCurrentAnalyticsAlerts();
 
   return completeCheckoutOrder(order, idempotencyKey);
