@@ -41,7 +41,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: |
+            shared/package-lock.json
+            frontend/package-lock.json
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v6.1.0
@@ -52,10 +54,11 @@ jobs:
           role-session-name: burger-club-${{ github.run_id }}
 
       - name: Build frontend
-        working-directory: frontend
         run: |
-          npm ci
-          npm run build
+          npm --prefix shared ci
+          npm --prefix shared run build
+          npm --prefix frontend ci
+          npm --prefix frontend run build
 
       - name: Upload frontend to S3
         run: aws s3 sync frontend/build/ "s3://${FRONTEND_BUCKET}" --delete
