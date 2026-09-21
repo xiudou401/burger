@@ -13,6 +13,7 @@ import {
 } from './checkout.types';
 import { createStripeCheckoutSession } from './stripe-checkout.service';
 import { emitOrderEvent } from './realtime.service';
+import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 
 const toOrderSnapshotItem = (menuItem: ValidatedCartMenuItem) => ({
   menuItemId: menuItem.id,
@@ -157,6 +158,7 @@ export const createCheckoutOrder = async (
   }
 
   emitOrderEvent('order:created', toPublicOrder(order));
+  void emitCurrentAnalyticsAlerts();
 
   return completeCheckoutOrder(order, idempotencyKey);
 };

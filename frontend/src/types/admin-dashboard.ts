@@ -43,3 +43,23 @@ export interface AdminAnalyticsSummary {
   underperformingItems: DashboardTopItem[];
   paymentStatusCounts: DashboardPaymentStatusCount[];
 }
+
+export type AnalyticsAlertType =
+  | 'high_cancellation_rate'
+  | 'low_paid_order_rate'
+  | 'revenue_drop';
+
+export type AnalyticsAlertSeverity = 'low' | 'medium' | 'high';
+
+export interface AdminAnalyticsAlert {
+  id: string;
+  type: AnalyticsAlertType;
+  severity: AnalyticsAlertSeverity;
+  title: string;
+  message: string;
+  evidence: string[];
+  metricValue: number;
+  threshold: number;
+  range: AnalyticsRange;
+  createdAt: string;
+}

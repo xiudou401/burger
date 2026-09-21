@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  getAdminAnalyticsAlertsHandler,
   getAdminAnalyticsSummaryHandler,
   getAdminDashboardSummaryHandler,
 } from '../controllers/admin-dashboard.controller';
@@ -17,6 +18,11 @@ router.get(
   '/analytics',
   validateQuery(AdminAnalyticsQuerySchema, 'Admin analytics query'),
   getAdminAnalyticsSummaryHandler,
+);
+router.get(
+  '/alerts',
+  validateQuery(AdminAnalyticsQuerySchema, 'Admin analytics alerts query'),
+  getAdminAnalyticsAlertsHandler,
 );
 
 export default router;

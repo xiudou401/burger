@@ -9,6 +9,7 @@ import { hasPermission } from '../types/permissions';
 import { recordAuditLog } from './audit-log.service';
 import { appLogger } from '../utils/logger';
 import { emitOrderEvent } from './realtime.service';
+import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 
 export interface PublicOrderItem {
   menuItemId: string;
@@ -330,6 +331,7 @@ export const updateOrderStatus = async (
     nextStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
     publicOrder,
   );
+  void emitCurrentAnalyticsAlerts();
 
   return publicOrder;
 };

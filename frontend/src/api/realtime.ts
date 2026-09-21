@@ -2,6 +2,7 @@ import { io, type Socket } from 'socket.io-client';
 import { API_ORIGIN } from './api-base';
 import { getAccessToken } from './auth-token';
 import type { OrderStatus, PaymentStatus } from '../types/order';
+import type { AdminAnalyticsAlert } from '../types/admin-dashboard';
 
 export type AdminRealtimeOrderEventName =
   | 'order:created'
@@ -32,6 +33,7 @@ interface AdminRealtimeHandlers {
     payload: OrderRealtimeEvent,
   ) => void;
   onMenuUpdated?: (payload: MenuUpdatedEvent) => void;
+  onAnalyticsAlert?: (payload: AdminAnalyticsAlert) => void;
 }
 
 const ORDER_EVENTS: AdminRealtimeOrderEventName[] = [
@@ -46,6 +48,7 @@ const getRealtimeOrigin = () => API_ORIGIN || window.location.origin;
 export const connectAdminRealtime = ({
   onOrderEvent,
   onMenuUpdated,
+  onAnalyticsAlert,
 }: AdminRealtimeHandlers = {}): Socket | null => {
   const token = getAccessToken();
 
@@ -67,6 +70,9 @@ export const connectAdminRealtime = ({
 
   socket.on('menu:updated', (payload: MenuUpdatedEvent) => {
     onMenuUpdated?.(payload);
+  });
+  socket.on('analytics:alert', (payload: AdminAnalyticsAlert) => {
+    onAnalyticsAlert?.(payload);
   });
 
   return socket;

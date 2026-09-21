@@ -7,6 +7,7 @@ import { getPermissionsForRole, hasPermission } from '../types/permissions';
 import { verifyAuthToken } from '../utils/token';
 import { appLogger } from '../utils/logger';
 import type { PublicOrder } from './order.service';
+import type { AnalyticsAlert } from './admin-alert.service';
 
 const ADMIN_ROOM = 'admins';
 const MENU_ROOM = 'menu-subscribers';
@@ -133,4 +134,10 @@ export const emitMenuUpdated = (payload: MenuUpdatedPayload) => {
   if (!io) return;
 
   io.to(MENU_ROOM).emit('menu:updated', payload);
+};
+
+export const emitAnalyticsAlert = (payload: AnalyticsAlert) => {
+  if (!io) return;
+
+  io.to(ADMIN_ROOM).emit('analytics:alert', payload);
 };

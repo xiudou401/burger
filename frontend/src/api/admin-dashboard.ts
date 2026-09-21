@@ -1,5 +1,6 @@
 import { request } from './request';
 import type {
+  AdminAnalyticsAlert,
   AdminAnalyticsSummary,
   AdminDashboardSummary,
   AnalyticsRange,
@@ -8,6 +9,20 @@ import type {
 export const fetchAdminDashboardSummary = (signal?: AbortSignal) => {
   return request<{ summary: AdminDashboardSummary }>(
     '/admin/dashboard/summary',
+    {
+      signal,
+    },
+  );
+};
+
+export const fetchAdminAnalyticsAlerts = (
+  range: AnalyticsRange,
+  signal?: AbortSignal,
+) => {
+  const query = new URLSearchParams({ range });
+
+  return request<{ alerts: AdminAnalyticsAlert[] }>(
+    `/admin/dashboard/alerts?${query.toString()}`,
     {
       signal,
     },

@@ -113,6 +113,11 @@ items, lower-selling items, and payment status counts. These metrics are
 computed by the backend rather than the AI layer, giving future admin AI
 insights a verified data foundation to explain.
 
+The dashboard also exposes deterministic analytics alerts for high cancellation
+rate, low paid-order rate, and revenue drops versus the previous period. Order
+events can trigger `analytics:alert` over the authenticated admin WebSocket
+channel so staff can see operational risks without refreshing the page.
+
 Local demos can run `npm run seed:demo-orders` after seeding users and menu
 items to create realistic 30-day order history for the analytics dashboard.
 

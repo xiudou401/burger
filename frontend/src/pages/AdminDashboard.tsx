@@ -24,7 +24,7 @@ const formatMinutes = (value: number | null) =>
   value === null ? 'N/A' : `${value} min`;
 
 const AdminDashboard = () => {
-  const { summary, analytics, isLoading, error, refresh } =
+  const { summary, analytics, alerts, isLoading, error, refresh } =
     useAdminDashboardPage();
   const [insightResult, setInsightResult] =
     useState<AdminInsightResponse | null>(null);
@@ -91,6 +91,42 @@ const AdminDashboard = () => {
             <p>
               Metrics are calculated by the backend from saved order records.
             </p>
+          </section>
+
+          <section
+            className={classes.AlertSection}
+            aria-label="Analytics alerts"
+          >
+            <div className={classes.AlertHeader}>
+              <div>
+                <p className={classes.MetricLabel}>Realtime operations</p>
+                <h2>Analytics alerts</h2>
+              </div>
+              <span>{alerts.length} active</span>
+            </div>
+            {alerts.length === 0 ? (
+              <AdminStatusText>
+                No active analytics alerts for the current 7-day window.
+              </AdminStatusText>
+            ) : (
+              <div className={classes.AlertGrid}>
+                {alerts.map((alert) => (
+                  <article className={classes.AlertCard} key={alert.id}>
+                    <div className={classes.AlertMeta}>
+                      <span>{alert.type.replaceAll('_', ' ')}</span>
+                      <b>{alert.severity}</b>
+                    </div>
+                    <h3>{alert.title}</h3>
+                    <p>{alert.message}</p>
+                    <ul>
+                      {alert.evidence.map((evidence) => (
+                        <li key={evidence}>{evidence}</li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
 
           <section
