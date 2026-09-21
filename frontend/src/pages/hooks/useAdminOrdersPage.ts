@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
-import { connectAdminRealtime } from '../../api/realtime';
+import {
+  connectAdminRealtime,
+  type AdminRealtimeOrderEventName,
+  type OrderRealtimeEvent,
+} from '../../api/realtime';
 import { HTTP_STATUS } from '../../api/http-status';
 import { ApiError } from '../../api/request';
 import { useAuth } from '../../store/auth/hooks/useAuth';
@@ -8,6 +12,40 @@ import type { Order, OrderStatus } from '../../types/order';
 import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 
 const ORDER_PAGE_LIMIT = 50;
+const REALTIME_FALLBACK_POLL_MS = 30_000;
+
+const applyRealtimeOrderEvent = (
+  orders: Order[],
+  eventName: AdminRealtimeOrderEventName,
+  payload: OrderRealtimeEvent,
+) => {
+  let didUpdate = false;
+
+  const nextOrders = orders.map((order) => {
+    if (order.id !== payload.orderId) {
+      return order;
+    }
+
+    didUpdate = true;
+
+    return {
+      ...order,
+      status: payload.status,
+      updatedAt: payload.updatedAt,
+      payment: order.payment
+        ? {
+            ...order.payment,
+            status: payload.paymentStatus ?? order.payment.status,
+          }
+        : order.payment,
+    };
+  });
+
+  return {
+    orders: nextOrders,
+    needsRefresh: eventName === 'order:created' || !didUpdate,
+  };
+};
 
 export const useAdminOrdersPage = () => {
   const user = useAuth((ctx) => ctx.user);
@@ -17,8 +55,13 @@ export const useAdminOrdersPage = () => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const ordersRef = useRef<Order[]>([]);
   const loadRequestIdRef = useRef(0);
   const loadControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
 
   const loadOrders = useCallback(
     async ({
@@ -91,23 +134,73 @@ export const useAdminOrdersPage = () => {
 
   useEffect(() => {
     let refreshTimeout: number | null = null;
-    const socket = connectAdminRealtime({
-      onOrderEvent: () => {
-        if (refreshTimeout !== null) {
-          window.clearTimeout(refreshTimeout);
-        }
+    let fallbackTimer: number | null = null;
+    let isDisposed = false;
 
-        refreshTimeout = window.setTimeout(() => {
-          void loadOrders();
-        }, 300);
-      },
-    });
+    const clearFallbackPolling = () => {
+      if (fallbackTimer !== null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
 
-    return () => {
+    const startFallbackPolling = () => {
+      if (isDisposed || fallbackTimer !== null) return;
+
+      const tick = () => {
+        if (isDisposed) return;
+
+        void loadOrders();
+        fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
+      };
+
+      fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
+    };
+
+    const scheduleRefresh = () => {
       if (refreshTimeout !== null) {
         window.clearTimeout(refreshTimeout);
       }
 
+      refreshTimeout = window.setTimeout(() => {
+        void loadOrders();
+      }, 300);
+    };
+
+    const socket = connectAdminRealtime({
+      onOrderEvent: (eventName, payload) => {
+        const result = applyRealtimeOrderEvent(
+          ordersRef.current,
+          eventName,
+          payload,
+        );
+
+        ordersRef.current = result.orders;
+        setOrders(result.orders);
+
+        if (result.needsRefresh) {
+          scheduleRefresh();
+        }
+      },
+      onConnected: () => {
+        clearFallbackPolling();
+        void loadOrders();
+      },
+      onDisconnected: startFallbackPolling,
+    });
+
+    if (!socket) {
+      startFallbackPolling();
+    }
+
+    return () => {
+      isDisposed = true;
+
+      if (refreshTimeout !== null) {
+        window.clearTimeout(refreshTimeout);
+      }
+
+      clearFallbackPolling();
       socket?.disconnect();
     };
   }, [loadOrders]);

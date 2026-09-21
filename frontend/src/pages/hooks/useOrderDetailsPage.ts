@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchOrder } from '../../api/orders';
-import { connectCustomerRealtime } from '../../api/realtime';
+import {
+  connectCustomerRealtime,
+  type OrderRealtimeEvent,
+} from '../../api/realtime';
 import type { Order } from '../../types/order';
 import { isObjectId } from '../../utils/object-id';
 
@@ -14,6 +17,21 @@ const wait = (ms: number) =>
 
 export const isConfirmedStripeOrder = (order: Order) =>
   order.status === 'paid' || order.payment?.status === 'paid';
+
+const applyRealtimeOrderEvent = (
+  order: Order,
+  payload: OrderRealtimeEvent,
+): Order => ({
+  ...order,
+  status: payload.status,
+  updatedAt: payload.updatedAt,
+  payment: order.payment
+    ? {
+        ...order.payment,
+        status: payload.paymentStatus ?? order.payment.status,
+      }
+    : order.payment,
+});
 
 export const useOrderDetailsPage = (
   orderId: string,
@@ -92,7 +110,14 @@ export const useOrderDetailsPage = (
           return;
         }
 
-        void loadOrder({ showLoading: false });
+        setOrder((current) => {
+          if (!current) {
+            void loadOrder({ showLoading: false });
+            return current;
+          }
+
+          return applyRealtimeOrderEvent(current, payload);
+        });
       },
     });
 

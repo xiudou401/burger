@@ -8,7 +8,6 @@ import MenuCategoryRail, {
 } from '../components/Menu/MenuCategoryRail/MenuCategoryRail';
 import MenuFeedStatus from '../components/Menu/MenuFeedStatus/MenuFeedStatus';
 import MenuLayout from '../components/Menu/MenuLayout/MenuLayout';
-import MenuAssistantPanel from '../components/Menu/MenuAssistantPanel/MenuAssistantPanel';
 import { fetchMenuItems } from '../api/menu-items';
 import {
   type MenuLoadResult,
@@ -126,7 +125,6 @@ const Home = () => {
         onRetry={retry}
       />
 
-      <MenuAssistantPanel />
       <CartBar />
     </MenuLayout>
   );

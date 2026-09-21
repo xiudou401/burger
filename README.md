@@ -40,6 +40,30 @@ recent orders while staff manage orders and menu changes.
 | Testing  | Jest, React Testing Library, ts-jest                                              |
 | Tooling  | Stripe CLI, npm scripts                                                           |
 
+## System Architecture
+
+```text
+React customer app
+  |-- REST API: menu, cart validation, checkout, profile orders
+  |-- Socket.IO: menu version updates, customer order status updates
+  v
+Express API
+  |-- Auth/RBAC: customer, staff, admin permissions
+  |-- Order state machine: pending_payment -> paid -> preparing -> ready -> completed
+  |-- Stripe webhook reconciliation
+  |-- MongoDB aggregation for dashboard analytics
+  |-- AI admin insight agent over verified backend data
+  v
+MongoDB Atlas
+  |-- menu items
+  |-- order snapshots
+  |-- users, sessions, staff invites
+  |-- audit logs and agent runs
+
+Stripe Checkout -> signed webhook -> Express -> MongoDB -> Socket.IO events
+Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin events
+```
+
 ## Core Features
 
 - Sydney-local restaurant ordering experience with AUD pricing.
@@ -59,8 +83,6 @@ recent orders while staff manage orders and menu changes.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
-- AI Menu Assistant that recommends only from current available MongoDB menu
-  records, with structured validation and a dedicated abuse limiter.
 - Staff/admin order console and menu management, including category and
   availability updates.
 - Staff invitation flow with token validation.
@@ -84,25 +106,6 @@ recent orders while staff manage orders and menu changes.
   basket.
 - Role-aware customer/admin routing and auth state managed through a dedicated
   auth provider.
-
-## AI Menu Assistant Design
-
-The assistant is intentionally small and controlled. `POST /api/assistant/chat`
-reads the current available menu from MongoDB, passes only `name`, `category`,
-`priceCents`, `isAvailable`, and `description` into the model, and returns a
-structured response to the menu chat panel.
-
-MongoDB remains the source of truth. The model can suggest menu item ids and
-short recommendation reasons, but the backend maps those ids back to live DB
-records before returning names or prices. Unknown, hallucinated, or sold-out
-item ids are dropped. Requests for orders, accounts, payments, private customer
-data, admin features, or secrets are refused before the model is called.
-
-The MVP deliberately avoids LangChain, vector databases, long-term memory,
-automatic ordering, and complex agents. Safety comes from Zod request/response
-validation, a dedicated assistant rate limiter, a controlled menu context, and
-tests for budgets, sold-out or hallucinated items, prompt-injection style
-private-data requests, and DB-backed pricing.
 
 ## Admin Analytics Foundation
 
@@ -134,17 +137,39 @@ returns only operational order evidence, not customer private data.
 Local demos can run `npm run seed:demo-orders` after seeding users and menu
 items to create realistic 30-day order history for the analytics dashboard.
 
-## Realtime Admin Events
+## Realtime Operations Flow
 
-The backend exposes an authenticated Socket.IO channel for staff users with the
-`view_orders` permission. Order creation, Stripe payment updates, manual order
-status changes, cancellations, and menu version updates emit small event
-payloads such as `order:paid`, `order:updated`, and `menu:updated`. The frontend
-treats these events as invalidation signals, then reloads the latest orders or
-dashboard analytics through the REST API so MongoDB remains the source of truth.
-Public menu clients can also subscribe to `menu:updated`, while the existing
-30-second menu-version polling starts only when the realtime connection is
-unavailable.
+The backend exposes Socket.IO channels for public menu subscribers,
+authenticated customers, and authenticated staff/admin users. Realtime events
+use small payloads such as `order:paid`, `order:updated`, `order:cancelled`,
+`menu:updated`, and `analytics:alert`.
+
+```text
+Customer checkout
+  -> Stripe Checkout
+  -> signed Stripe webhook
+  -> backend marks order paid
+  -> order:paid emitted to admins and the order owner's user room
+  -> Kitchen Board updates and customer order page updates
+
+Staff Kitchen Board
+  -> Start preparing / Mark ready / Complete order
+  -> backend validates the order state transition and version
+  -> MongoDB order is updated
+  -> order:updated emitted to admins and the customer
+
+Admin disables customer
+  -> user status becomes disabled
+  -> active sockets in user:<id> are disconnected
+```
+
+Order pages use WebSocket payloads to update visible order status locally when
+the order is already loaded. New orders, missing orders, and aggregate admin
+dashboard data still trigger REST refreshes so MongoDB and backend analytics
+remain the source of truth. Admin Orders and Admin Dashboard fall back to
+30-second polling only when the authenticated realtime connection disconnects
+or cannot be established. Public menu clients keep the same behavior for menu
+version changes.
 
 ## AI Admin Insight Agent
 
@@ -153,6 +178,15 @@ summary. The backend first computes metrics with MongoDB aggregation, then
 passes the structured summary to the insight agent. The model explains trends,
 risks, and opportunities, while the backend keeps revenue, order counts, item
 sales, and payment status as deterministic facts.
+
+```text
+Orders in MongoDB
+  -> deterministic aggregation tools
+  -> analytics summary and active alerts
+  -> AI insight agent
+  -> evidence-grounded insight cards and follow-up alert investigation
+  -> AgentRun logging for model, tool, latency, status, and cost estimate
+```
 
 Each insight run is recorded in an `AgentRun` document with the agent name,
 prompt, model, backend tool used, latency, status, and optional cost estimate.

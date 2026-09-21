@@ -6,6 +6,7 @@ import {
   enableCustomer,
   listCustomers,
 } from './admin-customer.service';
+import { disconnectRealtimeUser } from './realtime.service';
 
 jest.mock('../repositories/user.repository', () => ({
   userRepository: {
@@ -14,6 +15,10 @@ jest.mock('../repositories/user.repository', () => ({
     findCustomersPage: jest.fn(),
     save: jest.fn(),
   },
+}));
+
+jest.mock('./realtime.service', () => ({
+  disconnectRealtimeUser: jest.fn(),
 }));
 
 const customerDoc = {
@@ -84,6 +89,7 @@ describe('admin customer service', () => {
     expect(user.disabledAt).toBeInstanceOf(Date);
     expect(user.disabledReason).toBe('Chargeback review');
     expect(userRepository.save).toHaveBeenCalledWith(user);
+    expect(disconnectRealtimeUser).toHaveBeenCalledWith(customerDoc._id);
     expect(result.status).toBe('disabled');
   });
 
@@ -103,6 +109,7 @@ describe('admin customer service', () => {
     expect(user.disabledAt).toBeUndefined();
     expect(user.disabledReason).toBeUndefined();
     expect(userRepository.save).toHaveBeenCalledWith(user);
+    expect(disconnectRealtimeUser).not.toHaveBeenCalled();
     expect(result.status).toBe('active');
   });
 

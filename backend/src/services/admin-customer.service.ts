@@ -5,6 +5,7 @@ import type {
   AdminCustomerQuery,
   DisableCustomerPayload,
 } from '../validation/admin-customer.schema';
+import { disconnectRealtimeUser } from './realtime.service';
 
 export interface PublicCustomer {
   id: string;
@@ -97,6 +98,7 @@ export const disableCustomer = async (
   customer.disabledAt = new Date();
   customer.disabledReason = reason || undefined;
   await userRepository.save(customer);
+  disconnectRealtimeUser(String(customer._id));
 
   return toPublicCustomer(customer);
 };

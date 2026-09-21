@@ -169,3 +169,9 @@ export const emitAnalyticsAlert = (payload: AnalyticsAlert) => {
 
   io.to(ADMIN_ROOM).emit('analytics:alert', payload);
 };
+
+export const disconnectRealtimeUser = (userId: string) => {
+  if (!io) return;
+
+  io.in(getUserRoom(userId)).disconnectSockets(true);
+};

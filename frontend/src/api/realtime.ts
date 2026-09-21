@@ -34,6 +34,8 @@ interface AdminRealtimeHandlers {
   ) => void;
   onMenuUpdated?: (payload: MenuUpdatedEvent) => void;
   onAnalyticsAlert?: (payload: AdminAnalyticsAlert) => void;
+  onConnected?: () => void;
+  onDisconnected?: () => void;
 }
 
 interface CustomerRealtimeHandlers {
@@ -56,6 +58,8 @@ export const connectAdminRealtime = ({
   onOrderEvent,
   onMenuUpdated,
   onAnalyticsAlert,
+  onConnected,
+  onDisconnected,
 }: AdminRealtimeHandlers = {}): Socket | null => {
   const token = getAccessToken();
 
@@ -80,6 +84,15 @@ export const connectAdminRealtime = ({
   });
   socket.on('analytics:alert', (payload: AdminAnalyticsAlert) => {
     onAnalyticsAlert?.(payload);
+  });
+  socket.on('connect', () => {
+    onConnected?.();
+  });
+  socket.on('disconnect', () => {
+    onDisconnected?.();
+  });
+  socket.on('connect_error', () => {
+    onDisconnected?.();
   });
 
   return socket;

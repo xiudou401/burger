@@ -12,6 +12,8 @@ import type {
 } from '../../types/admin-dashboard';
 import { useAdminResource } from './useAdminResource';
 
+const REALTIME_FALLBACK_POLL_MS = 30_000;
+
 interface AdminDashboardPageData {
   summary: AdminDashboardSummary;
   analytics: AdminAnalyticsSummary;
@@ -42,6 +44,29 @@ export const useAdminDashboardPage = () => {
 
   useEffect(() => {
     let refreshTimeout: number | null = null;
+    let fallbackTimer: number | null = null;
+    let isDisposed = false;
+
+    const clearFallbackPolling = () => {
+      if (fallbackTimer !== null) {
+        window.clearTimeout(fallbackTimer);
+        fallbackTimer = null;
+      }
+    };
+
+    const startFallbackPolling = () => {
+      if (isDisposed || fallbackTimer !== null) return;
+
+      const tick = () => {
+        if (isDisposed) return;
+
+        void refresh();
+        fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
+      };
+
+      fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
+    };
+
     const scheduleRefresh = () => {
       if (refreshTimeout !== null) {
         window.clearTimeout(refreshTimeout);
@@ -56,13 +81,25 @@ export const useAdminDashboardPage = () => {
       onOrderEvent: scheduleRefresh,
       onMenuUpdated: scheduleRefresh,
       onAnalyticsAlert: scheduleRefresh,
+      onConnected: () => {
+        clearFallbackPolling();
+        void refresh();
+      },
+      onDisconnected: startFallbackPolling,
     });
 
+    if (!socket) {
+      startFallbackPolling();
+    }
+
     return () => {
+      isDisposed = true;
+
       if (refreshTimeout !== null) {
         window.clearTimeout(refreshTimeout);
       }
 
+      clearFallbackPolling();
       socket?.disconnect();
     };
   }, [refresh]);

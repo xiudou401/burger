@@ -32,14 +32,6 @@ export const menuItemRepository = {
     return MenuItemModel.findById(menuItemId).lean().exec();
   },
 
-  findAvailableForAssistant() {
-    return MenuItemModel.find({ isAvailable: true })
-      .select('name category priceCents isAvailable description')
-      .sort({ category: 1, priceCents: 1, name: 1 })
-      .lean()
-      .exec();
-  },
-
   findAllForAnalytics() {
     return MenuItemModel.find()
       .select('name category')

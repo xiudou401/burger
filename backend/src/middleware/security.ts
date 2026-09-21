@@ -55,18 +55,6 @@ export const authActionRateLimiter = rateLimit({
   },
 });
 
-export const assistantRateLimiter = rateLimit({
-  windowMs: FIFTEEN_MINUTES_MS,
-  limit: 20,
-  standardHeaders: 'draft-8',
-  legacyHeaders: false,
-  message: {
-    message: 'Too many assistant requests. Please try again later.',
-    statusCode: 429,
-    type: 'RateLimitError',
-  },
-});
-
 export const refreshSessionRateLimiter = rateLimit({
   windowMs: FIFTEEN_MINUTES_MS,
   limit: 60,
