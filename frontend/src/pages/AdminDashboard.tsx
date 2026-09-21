@@ -8,7 +8,10 @@ import { useAdminDashboardPage } from './hooks/useAdminDashboardPage';
 import { formatCurrency } from '../utils/currency';
 import { formatOrderStatus } from '../utils/order';
 import type { OrderStatus } from '../types/order';
-import { generateAdminInsights } from '../api/admin-insights';
+import {
+  generateAdminInsights,
+  investigateAdminAlert,
+} from '../api/admin-insights';
 import type { AdminInsightResponse } from '../types/admin-insight';
 
 const ORDER_STATUSES: OrderStatus[] = [
@@ -30,6 +33,15 @@ const AdminDashboard = () => {
     useState<AdminInsightResponse | null>(null);
   const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
   const [insightError, setInsightError] = useState<string | null>(null);
+  const [alertInsightResult, setAlertInsightResult] =
+    useState<AdminInsightResponse | null>(null);
+  const [investigatingAlertId, setInvestigatingAlertId] = useState<
+    string | null
+  >(null);
+  const [alertInsightError, setAlertInsightError] = useState<string | null>(
+    null,
+  );
+  const [alertFollowUpQuestion, setAlertFollowUpQuestion] = useState('');
 
   const generateInsights = async () => {
     setIsGeneratingInsights(true);
@@ -47,6 +59,27 @@ const AdminDashboard = () => {
       );
     } finally {
       setIsGeneratingInsights(false);
+    }
+  };
+
+  const investigateAlert = async (alertId: string, question?: string) => {
+    setInvestigatingAlertId(alertId);
+    setAlertInsightError(null);
+
+    try {
+      const result = await investigateAdminAlert({
+        range: '7d',
+        alertId,
+        question,
+      });
+      setAlertInsightResult(result);
+      setAlertFollowUpQuestion('');
+    } catch (err) {
+      setAlertInsightError(
+        err instanceof Error ? err.message : 'Could not investigate alert',
+      );
+    } finally {
+      setInvestigatingAlertId(null);
     }
   };
 
@@ -123,9 +156,96 @@ const AdminDashboard = () => {
                         <li key={evidence}>{evidence}</li>
                       ))}
                     </ul>
+                    <AdminButton
+                      type="button"
+                      onClick={() => {
+                        void investigateAlert(alert.id);
+                      }}
+                      disabled={investigatingAlertId === alert.id}
+                    >
+                      {investigatingAlertId === alert.id
+                        ? 'Investigating...'
+                        : 'Investigate with AI'}
+                    </AdminButton>
                   </article>
                 ))}
               </div>
+            )}
+
+            {alertInsightError && (
+              <AdminStatusText tone="error">
+                {alertInsightError}
+              </AdminStatusText>
+            )}
+
+            {alertInsightResult && (
+              <article className={classes.AlertInvestigation}>
+                <div className={classes.AlertInvestigationHeader}>
+                  <div>
+                    <p className={classes.MetricLabel}>
+                      AI alert investigation
+                    </p>
+                    <h3>
+                      {alertInsightResult.alert?.title ?? 'Investigation'}
+                    </h3>
+                  </div>
+                  <span>{alertInsightResult.run.model}</span>
+                </div>
+                <p>{alertInsightResult.summary}</p>
+                <div className={classes.InsightGrid}>
+                  {alertInsightResult.insights.map((insight) => (
+                    <article
+                      className={classes.InsightCard}
+                      key={`alert-${insight.type}-${insight.title}`}
+                    >
+                      <div className={classes.InsightMeta}>
+                        <span>{insight.type}</span>
+                        <b>{insight.severity}</b>
+                      </div>
+                      <h3>{insight.title}</h3>
+                      <ul>
+                        {insight.evidence.map((evidence) => (
+                          <li key={evidence}>{evidence}</li>
+                        ))}
+                      </ul>
+                      <p>{insight.suggestedAction}</p>
+                    </article>
+                  ))}
+                </div>
+                <form
+                  className={classes.AlertFollowUpForm}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    const question = alertFollowUpQuestion.trim();
+                    const alertId = alertInsightResult.alert?.id;
+
+                    if (!question || !alertId) return;
+
+                    void investigateAlert(alertId, question);
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={alertFollowUpQuestion}
+                    onChange={(event) => {
+                      setAlertFollowUpQuestion(event.target.value);
+                    }}
+                    placeholder="Ask a follow-up about this alert"
+                    maxLength={240}
+                  />
+                  <AdminButton
+                    type="submit"
+                    disabled={
+                      !alertFollowUpQuestion.trim() ||
+                      investigatingAlertId === alertInsightResult.alert?.id
+                    }
+                  >
+                    {investigatingAlertId === alertInsightResult.alert?.id
+                      ? 'Asking...'
+                      : 'Ask'}
+                  </AdminButton>
+                </form>
+              </article>
             )}
           </section>
 

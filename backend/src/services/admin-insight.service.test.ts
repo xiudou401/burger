@@ -4,12 +4,18 @@ import {
   buildAdminInsightSystemPromptForTest,
   buildAdminInsightUserPromptForTest,
   generateAdminInsights,
+  investigateAdminAlert,
   resetAdminInsightModelClientForTest,
   setAdminInsightModelClientForTest,
 } from './admin-insight.service';
+import { detectAnalyticsAlerts } from './admin-alert.service';
 
 jest.mock('./admin-dashboard.service', () => ({
   getAdminAnalyticsSummary: jest.fn(),
+}));
+
+jest.mock('./admin-alert.service', () => ({
+  detectAnalyticsAlerts: jest.fn(),
 }));
 
 jest.mock('../repositories/agent-run.repository', () => ({
@@ -66,6 +72,19 @@ const analyticsSummary = {
   ],
 };
 
+const activeAlert = {
+  id: '7d:high_cancellation_rate',
+  type: 'high_cancellation_rate' as const,
+  severity: 'medium' as const,
+  title: 'High cancellation rate',
+  message: '16.7% of orders were cancelled in the current 7d window.',
+  evidence: ['2 of 12 orders are cancelled.', 'Alert threshold is 10%.'],
+  metricValue: 0.167,
+  threshold: 0.1,
+  range: '7d' as const,
+  createdAt: new Date('2026-09-20T00:00:00.000Z'),
+};
+
 describe('admin insight service', () => {
   const actor = { id: '507f1f77bcf86cd799439011' };
 
@@ -73,6 +92,7 @@ describe('admin insight service', () => {
     jest.clearAllMocks();
     resetAdminInsightModelClientForTest();
     jest.mocked(getAdminAnalyticsSummary).mockResolvedValue(analyticsSummary);
+    jest.mocked(detectAnalyticsAlerts).mockResolvedValue([activeAlert]);
     jest.mocked(agentRunRepository.create).mockResolvedValue({
       _id: 'agent-run-1',
       estimatedCostCents: 0.01,
@@ -192,5 +212,65 @@ describe('admin insight service', () => {
         }),
       ]),
     );
+  });
+
+  test('investigates an active analytics alert with alert context and logs both tools', async () => {
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'Cancellation rate needs an operations check.',
+        insights: [
+          {
+            type: 'risk',
+            severity: 'medium',
+            title: 'Cancellation rate is above threshold',
+            evidence: ['2 of 12 orders are cancelled.'],
+            suggestedAction: 'Review cancelled checkout sessions.',
+            relatedMenuItemIds: [],
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await investigateAdminAlert(
+      {
+        range: '7d',
+        alertId: activeAlert.id,
+      },
+      actor,
+    );
+
+    expect(modelClient).toHaveBeenCalledWith({
+      question:
+        'Investigate this analytics alert and recommend the next operational check.',
+      analytics: analyticsSummary,
+      alert: activeAlert,
+    });
+    expect(agentRunRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolsUsed: ['getAdminAnalyticsSummary', 'detectAnalyticsAlerts'],
+        status: 'success',
+      }),
+    );
+    expect(result.alert).toEqual(activeAlert);
+    expect(result.run.toolsUsed).toEqual([
+      'getAdminAnalyticsSummary',
+      'detectAnalyticsAlerts',
+    ]);
+  });
+
+  test('rejects investigation when the alert is no longer active', async () => {
+    jest.mocked(detectAnalyticsAlerts).mockResolvedValue([]);
+
+    await expect(
+      investigateAdminAlert(
+        {
+          range: '7d',
+          alertId: activeAlert.id,
+        },
+        actor,
+      ),
+    ).rejects.toThrow('Analytics alert is no longer active.');
   });
 });

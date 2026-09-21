@@ -11,6 +11,18 @@ export const AdminInsightRequestSchema = z
   })
   .strict();
 
+export const AdminAlertInvestigationRequestSchema = z
+  .object({
+    range: z.enum(['7d', '30d']).default('7d'),
+    alertId: z.string().trim().min(1).max(120),
+    question: z
+      .string()
+      .trim()
+      .max(240, 'Alert investigation question cannot exceed 240 characters')
+      .optional(),
+  })
+  .strict();
+
 export const AdminInsightCardSchema = z
   .object({
     type: z.enum(['opportunity', 'risk', 'trend']),
@@ -31,6 +43,9 @@ export const AdminInsightResponseSchema = z
 
 export type AdminInsightRequestPayload = z.infer<
   typeof AdminInsightRequestSchema
+>;
+export type AdminAlertInvestigationRequestPayload = z.infer<
+  typeof AdminAlertInvestigationRequestSchema
 >;
 export type AdminInsightResponsePayload = z.infer<
   typeof AdminInsightResponseSchema

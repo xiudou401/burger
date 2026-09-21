@@ -7,14 +7,21 @@ import {
 } from './admin-dashboard.service';
 import {
   AdminInsightResponseSchema,
+  type AdminAlertInvestigationRequestPayload,
   type AdminInsightRequestPayload,
   type AdminInsightResponsePayload,
 } from '../validation/admin-insight.schema';
 import type { AuthenticatedUser } from '../types/auth';
 import { appLogger } from '../utils/logger';
+import {
+  detectAnalyticsAlerts,
+  type AnalyticsAlert,
+} from './admin-alert.service';
+import { ServiceError } from '../errors/ServiceError';
 
 const ADMIN_INSIGHT_AGENT = 'admin_insight_agent';
 const ADMIN_INSIGHT_TOOL = 'getAdminAnalyticsSummary';
+const ADMIN_ALERT_TOOL = 'detectAnalyticsAlerts';
 const FALLBACK_MODEL = 'deterministic-fallback';
 
 interface ModelUsage {
@@ -31,6 +38,7 @@ interface InsightModelResult {
 type AdminInsightModelClient = (input: {
   question: string;
   analytics: AdminAnalyticsSummary;
+  alert?: AnalyticsAlert;
 }) => Promise<InsightModelResult>;
 
 const nowMs = () => Date.now();
@@ -73,7 +81,29 @@ const getPaymentCount = (analytics: AdminAnalyticsSummary, status: string) => {
 
 const buildFallbackInsights = (
   analytics: AdminAnalyticsSummary,
+  alert?: AnalyticsAlert,
 ): AdminInsightResponsePayload => {
+  if (alert) {
+    return {
+      summary: `${alert.title}: ${alert.message} The likely next step is to verify the affected operational path before changing menu or payment settings.`,
+      insights: [
+        {
+          type: 'risk',
+          severity: alert.severity,
+          title: alert.title,
+          evidence: alert.evidence,
+          suggestedAction:
+            alert.type === 'revenue_drop'
+              ? 'Compare category and item sales against the previous period, then review whether lower-performing items need placement or bundle changes.'
+              : alert.type === 'low_paid_order_rate'
+                ? 'Review checkout completion and Stripe payment outcomes before changing promotions.'
+                : 'Review cancelled checkout sessions and recent order status changes to identify whether the issue is customer payment flow or operations handling.',
+          relatedMenuItemIds: [],
+        },
+      ],
+    };
+  }
+
   const lowestCategory = getLowestCategory(analytics);
   const highestCategory = getHighestCategory(analytics);
   const cancelledCount = getPaymentCount(analytics, 'cancelled');
@@ -197,19 +227,41 @@ const buildDisplayAnalytics = (analytics: AdminAnalyticsSummary) => ({
   })),
 });
 
+const buildDisplayAlert = (alert?: AnalyticsAlert) =>
+  alert
+    ? {
+        id: alert.id,
+        type: alert.type,
+        severity: alert.severity,
+        title: alert.title,
+        message: alert.message,
+        evidence: alert.evidence,
+        metricValue: alert.metricValue,
+        threshold: alert.threshold,
+        range: alert.range,
+      }
+    : undefined;
+
 export const buildAdminInsightUserPromptForTest = ({
   question,
   analytics,
+  alert,
 }: {
   question: string;
   analytics: AdminAnalyticsSummary;
+  alert?: AnalyticsAlert;
 }) => {
   return JSON.stringify({
     question,
+    alert,
     analytics,
+    displayAlert: buildDisplayAlert(alert),
     displayAnalytics: buildDisplayAnalytics(analytics),
     currencyInstruction:
       'Analytics contains raw AUD cents for backend precision. Use displayAnalytics for user-facing money. Never write cents or USD in summary, evidence, titles, or suggested actions.',
+    alertInstruction: alert
+      ? 'Investigate the provided alert. Explain what the backend evidence supports, what it does not prove, and what the admin should check next. Do not claim customer intent or causes that are not supported by analytics.'
+      : undefined,
     outputShape: {
       summary: 'short executive summary',
       insights: [
@@ -233,7 +285,7 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
 ) => {
   if (!env.OPENAI_API_KEY) {
     return {
-      content: buildFallbackInsights(input.analytics),
+      content: buildFallbackInsights(input.analytics, input.alert),
       modelUsed: FALLBACK_MODEL,
     };
   }
@@ -261,7 +313,7 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
     });
 
     return {
-      content: buildFallbackInsights(input.analytics),
+      content: buildFallbackInsights(input.analytics, input.alert),
       modelUsed: FALLBACK_MODEL,
     };
   }
@@ -389,6 +441,133 @@ export const generateAdminInsights = async (
     appLogger.error('admin_insight_generation_failed', { error });
     throw new AppError(
       'Could not generate admin insights. Please try again later.',
+      503,
+    );
+  }
+};
+
+export const investigateAdminAlert = async (
+  payload: AdminAlertInvestigationRequestPayload,
+  actor: Pick<AuthenticatedUser, 'id'>,
+) => {
+  const startMs = nowMs();
+  const analyticsStartMs = nowMs();
+  const question =
+    payload.question?.trim() ||
+    'Investigate this analytics alert and recommend the next operational check.';
+
+  let analytics: AdminAnalyticsSummary | null = null;
+  let analyticsLatencyMs = 0;
+  let alertLatencyMs = 0;
+  let alert: AnalyticsAlert | null = null;
+
+  try {
+    analytics = await getAdminAnalyticsSummary(payload.range);
+    analyticsLatencyMs = nowMs() - analyticsStartMs;
+
+    const alertStartMs = nowMs();
+    const alerts = await detectAnalyticsAlerts(payload.range);
+    alertLatencyMs = nowMs() - alertStartMs;
+    alert = alerts.find((item) => item.id === payload.alertId) ?? null;
+
+    if (!alert) {
+      throw new ServiceError('Analytics alert is no longer active.', 404);
+    }
+
+    const modelResult = await adminInsightModelClient({
+      question,
+      analytics,
+      alert,
+    });
+    const parsed = AdminInsightResponseSchema.parse(modelResult.content);
+    const latencyMs = nowMs() - startMs;
+    const toolsUsed = [ADMIN_INSIGHT_TOOL, ADMIN_ALERT_TOOL];
+    const agentRun = await agentRunRepository.create({
+      agentName: ADMIN_INSIGHT_AGENT,
+      actorId: actor.id,
+      prompt: `${question} Alert: ${alert.id}`,
+      model: modelResult.modelUsed,
+      toolsUsed,
+      toolCalls: [
+        {
+          name: ADMIN_INSIGHT_TOOL,
+          status: 'success',
+          latencyMs: analyticsLatencyMs,
+        },
+        {
+          name: ADMIN_ALERT_TOOL,
+          status: 'success',
+          latencyMs: alertLatencyMs,
+        },
+      ],
+      latencyMs,
+      estimatedCostCents: estimateCostCents(modelResult.usage),
+      status: 'success',
+    });
+
+    return {
+      ...parsed,
+      alert,
+      analytics,
+      run: {
+        id: String(agentRun._id),
+        agentName: ADMIN_INSIGHT_AGENT,
+        model: modelResult.modelUsed,
+        toolsUsed,
+        latencyMs,
+        estimatedCostCents: agentRun.estimatedCostCents,
+        status: 'success' as const,
+      },
+    };
+  } catch (error) {
+    if (error instanceof ServiceError) {
+      throw error;
+    }
+
+    const latencyMs = nowMs() - startMs;
+    const failureReason =
+      error instanceof Error ? error.message : String(error);
+
+    try {
+      await agentRunRepository.create({
+        agentName: ADMIN_INSIGHT_AGENT,
+        actorId: actor.id,
+        prompt: `${question} Alert: ${payload.alertId}`,
+        model: env.OPENAI_API_KEY ? env.OPENAI_MODEL : FALLBACK_MODEL,
+        toolsUsed: analytics
+          ? [ADMIN_INSIGHT_TOOL, ...(alert ? [ADMIN_ALERT_TOOL] : [])]
+          : [],
+        toolCalls: analytics
+          ? [
+              {
+                name: ADMIN_INSIGHT_TOOL,
+                status: 'success',
+                latencyMs: analyticsLatencyMs,
+              },
+              ...(alert
+                ? [
+                    {
+                      name: ADMIN_ALERT_TOOL,
+                      status: 'success' as const,
+                      latencyMs: alertLatencyMs,
+                    },
+                  ]
+                : []),
+            ]
+          : [],
+        latencyMs,
+        status: 'failed',
+        failureReason,
+      });
+    } catch (loggingError) {
+      appLogger.error('admin_alert_investigation_run_log_failed', {
+        error: loggingError,
+      });
+    }
+
+    appLogger.error('admin_alert_investigation_failed', { error });
+    throw new AppError(
+      'Could not investigate analytics alert. Please try again later.',
       503,
     );
   }

@@ -117,6 +117,10 @@ The dashboard also exposes deterministic analytics alerts for high cancellation
 rate, low paid-order rate, and revenue drops versus the previous period. Order
 events can trigger `analytics:alert` over the authenticated admin WebSocket
 channel so staff can see operational risks without refreshing the page.
+Admins can then investigate an alert with the AI insight agent, which reloads
+trusted analytics and active alert context before generating an evidence-based
+recommendation. Follow-up questions reuse the same grounded alert investigation
+endpoint instead of relying on unbounded chat memory.
 
 Local demos can run `npm run seed:demo-orders` after seeding users and menu
 items to create realistic 30-day order history for the analytics dashboard.

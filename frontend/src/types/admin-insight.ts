@@ -1,4 +1,5 @@
 import type { AdminAnalyticsSummary, AnalyticsRange } from './admin-dashboard';
+import type { AdminAnalyticsAlert } from './admin-dashboard';
 
 export interface AdminInsightCard {
   type: 'opportunity' | 'risk' | 'trend';
@@ -23,10 +24,17 @@ export interface AdminInsightResponse {
   summary: string;
   insights: AdminInsightCard[];
   analytics: AdminAnalyticsSummary;
+  alert?: AdminAnalyticsAlert;
   run: AdminInsightRun;
 }
 
 export interface GenerateAdminInsightsPayload {
   range: AnalyticsRange;
+  question?: string;
+}
+
+export interface InvestigateAdminAlertPayload {
+  range: AnalyticsRange;
+  alertId: string;
   question?: string;
 }
