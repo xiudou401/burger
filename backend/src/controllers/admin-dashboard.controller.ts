@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import {
   getAdminAnalyticsSummary,
+  getAdminDailyBrief,
   getAdminDashboardSummary,
 } from '../services/admin-dashboard.service';
 import { detectAnalyticsAlerts } from '../services/admin-alert.service';
@@ -15,6 +16,20 @@ export const getAdminDashboardSummaryHandler = async (
     const summary = await getAdminDashboardSummary();
 
     return res.status(200).json({ summary });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getAdminDailyBriefHandler = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const brief = await getAdminDailyBrief();
+
+    return res.status(200).json({ brief });
   } catch (error) {
     next(error);
   }

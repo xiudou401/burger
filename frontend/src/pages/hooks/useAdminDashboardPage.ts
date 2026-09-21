@@ -2,12 +2,14 @@ import { useCallback, useEffect } from 'react';
 import {
   fetchAdminAnalyticsAlerts,
   fetchAdminAnalyticsSummary,
+  fetchAdminDailyBrief,
   fetchAdminDashboardSummary,
 } from '../../api/admin-dashboard';
 import { connectAdminRealtime } from '../../api/realtime';
 import type {
   AdminAnalyticsAlert,
   AdminAnalyticsSummary,
+  AdminDailyBrief,
   AdminDashboardSummary,
 } from '../../types/admin-dashboard';
 import { useAdminResource } from './useAdminResource';
@@ -15,6 +17,7 @@ import { useAdminResource } from './useAdminResource';
 const REALTIME_FALLBACK_POLL_MS = 30_000;
 
 interface AdminDashboardPageData {
+  brief: AdminDailyBrief;
   summary: AdminDashboardSummary;
   analytics: AdminAnalyticsSummary;
   alerts: AdminAnalyticsAlert[];
@@ -22,13 +25,15 @@ interface AdminDashboardPageData {
 
 export const useAdminDashboardPage = () => {
   const loadDashboard = useCallback(async (signal: AbortSignal) => {
-    const [summaryRes, analyticsRes, alertsRes] = await Promise.all([
+    const [briefRes, summaryRes, analyticsRes, alertsRes] = await Promise.all([
+      fetchAdminDailyBrief(signal),
       fetchAdminDashboardSummary(signal),
       fetchAdminAnalyticsSummary('7d', signal),
       fetchAdminAnalyticsAlerts('7d', signal),
     ]);
 
     return {
+      brief: briefRes.brief,
       summary: summaryRes.summary,
       analytics: analyticsRes.analytics,
       alerts: alertsRes.alerts,
@@ -112,6 +117,7 @@ export const useAdminDashboardPage = () => {
   }, [refresh]);
 
   return {
+    brief: data?.brief ?? null,
     summary: data?.summary ?? null,
     analytics: data?.analytics ?? null,
     alerts: data?.alerts ?? [],

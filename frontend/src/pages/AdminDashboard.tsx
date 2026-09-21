@@ -27,8 +27,14 @@ const ORDER_STATUSES: OrderStatus[] = [
 const formatMinutes = (value: number | null) =>
   value === null ? 'N/A' : `${value} min`;
 
+const formatDelta = (value: number | null) => {
+  if (value === null) return 'no baseline';
+  if (value > 0) return `+${value}%`;
+  return `${value}%`;
+};
+
 const AdminDashboard = () => {
-  const { summary, analytics, alerts, isLoading, error, refresh } =
+  const { brief, summary, analytics, alerts, isLoading, error, refresh } =
     useAdminDashboardPage();
   const [insightResult, setInsightResult] =
     useState<AdminInsightResponse | null>(null);
@@ -123,8 +129,70 @@ const AdminDashboard = () => {
       {isLoading && <AdminStatusText>Loading dashboard...</AdminStatusText>}
       {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 
-      {!isLoading && !error && summary && analytics && (
+      {!isLoading && !error && brief && summary && analytics && (
         <>
+          <section className={classes.DailyBrief}>
+            <div className={classes.DailyBriefHeader}>
+              <div>
+                <p className={classes.MetricLabel}>AI Operations Daily Brief</p>
+                <h2>Yesterday at a glance</h2>
+              </div>
+              <span>{brief.date}</span>
+            </div>
+
+            <div className={classes.BriefMetricGrid}>
+              <article>
+                <p>Revenue</p>
+                <strong>
+                  {formatCurrency(brief.metrics.revenueCents.value)}
+                </strong>
+                <span>
+                  {formatDelta(brief.metrics.revenueCents.deltaPercent)} vs same
+                  weekday last week
+                </span>
+              </article>
+              <article>
+                <p>Orders</p>
+                <strong>{brief.metrics.orderCount.value}</strong>
+                <span>
+                  {formatDelta(brief.metrics.orderCount.deltaPercent)} vs same
+                  weekday last week
+                </span>
+              </article>
+              <article>
+                <p>Average order</p>
+                <strong>
+                  {formatCurrency(brief.metrics.averageOrderValueCents.value)}
+                </strong>
+                <span>
+                  {formatDelta(
+                    brief.metrics.averageOrderValueCents.deltaPercent,
+                  )}{' '}
+                  vs same weekday last week
+                </span>
+              </article>
+            </div>
+
+            <div className={classes.BriefBody}>
+              <div>
+                <p className={classes.MetricLabel}>Highlights</p>
+                <ul>
+                  {brief.highlights.map((highlight) => (
+                    <li key={highlight}>{highlight}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className={classes.MetricLabel}>Worth checking</p>
+                <ul>
+                  {brief.worthChecking.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
           <section className={classes.MetricGrid} aria-label="Today metrics">
             <article className={classes.MetricCard}>
               <p className={classes.MetricLabel}>Today revenue</p>

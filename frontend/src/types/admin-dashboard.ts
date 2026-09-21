@@ -44,6 +44,23 @@ export interface AdminAnalyticsSummary {
   paymentStatusCounts: DashboardPaymentStatusCount[];
 }
 
+export interface DailyBriefMetric {
+  value: number;
+  deltaPercent: number | null;
+}
+
+export interface AdminDailyBrief {
+  date: string;
+  comparison: 'same_weekday_last_week';
+  metrics: {
+    revenueCents: DailyBriefMetric;
+    orderCount: DailyBriefMetric;
+    averageOrderValueCents: DailyBriefMetric;
+  };
+  highlights: string[];
+  worthChecking: string[];
+}
+
 export type AnalyticsAlertType =
   | 'high_cancellation_rate'
   | 'low_paid_order_rate'

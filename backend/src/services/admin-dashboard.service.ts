@@ -71,6 +71,23 @@ export interface AdminAnalyticsSummary {
   paymentStatusCounts: DashboardPaymentStatusCount[];
 }
 
+export interface DailyBriefMetric {
+  value: number;
+  deltaPercent: number | null;
+}
+
+export interface AdminDailyBrief {
+  date: string;
+  comparison: 'same_weekday_last_week';
+  metrics: {
+    revenueCents: DailyBriefMetric;
+    orderCount: DailyBriefMetric;
+    averageOrderValueCents: DailyBriefMetric;
+  };
+  highlights: string[];
+  worthChecking: string[];
+}
+
 const ORDER_STATUSES: OrderStatus[] = [
   'pending_payment',
   'paid',
@@ -143,10 +160,17 @@ const zonedMidnightToUtc = ({
 const startOfBusinessToday = (now = new Date()) => {
   const parts = getTimeZoneParts(now, BUSINESS_TIME_ZONE);
 
+  return startOfBusinessDayFromParts(parts, 0);
+};
+
+const startOfBusinessDayFromParts = (
+  parts: ReturnType<typeof getTimeZoneParts>,
+  dayOffset: number,
+) => {
   return zonedMidnightToUtc({
     year: parts.year,
     month: parts.month,
-    day: parts.day,
+    day: parts.day + dayOffset,
     timeZone: BUSINESS_TIME_ZONE,
   });
 };
@@ -154,12 +178,15 @@ const startOfBusinessToday = (now = new Date()) => {
 const startOfNextBusinessDay = (now = new Date()) => {
   const parts = getTimeZoneParts(now, BUSINESS_TIME_ZONE);
 
-  return zonedMidnightToUtc({
-    year: parts.year,
-    month: parts.month,
-    day: parts.day + 1,
-    timeZone: BUSINESS_TIME_ZONE,
-  });
+  return startOfBusinessDayFromParts(parts, 1);
+};
+
+const getBusinessDayRange = (now: Date, startOffsetDays: number) => {
+  const parts = getTimeZoneParts(now, BUSINESS_TIME_ZONE);
+  const start = startOfBusinessDayFromParts(parts, startOffsetDays);
+  const end = startOfBusinessDayFromParts(parts, startOffsetDays + 1);
+
+  return { start, end };
 };
 
 const isRevenueOrder = (order: DashboardOrder) =>
@@ -307,6 +334,35 @@ const normalizePaymentStatusCounts = (
   }));
 };
 
+const getPaymentStatusCount = (
+  counts: DashboardPaymentStatusCount[],
+  status: string,
+) => counts.find((entry) => entry.status === status)?.count ?? 0;
+
+const calculateDeltaPercent = (current: number, comparison: number) => {
+  if (comparison === 0) {
+    return current === 0 ? 0 : null;
+  }
+
+  return Math.round(((current - comparison) / comparison) * 100);
+};
+
+const formatDelta = (deltaPercent: number | null) => {
+  if (deltaPercent === null) return 'no baseline';
+  if (deltaPercent > 0) return `+${deltaPercent}%`;
+  return `${deltaPercent}%`;
+};
+
+const formatAud = (valueCents: number) => `A$${(valueCents / 100).toFixed(2)}`;
+
+const formatBusinessDate = (date: Date) =>
+  new Intl.DateTimeFormat('en-AU', {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date);
+
 const includeZeroSaleMenuItems = async (
   itemSales: DashboardTopItem[],
   limit: number,
@@ -378,5 +434,137 @@ export const getAdminAnalyticsSummary = async (
     topItems,
     underperformingItems: underperformingWithZeroSales,
     paymentStatusCounts: normalizePaymentStatusCounts(paymentStatusCounts),
+  };
+};
+
+export const getAdminDailyBrief = async (
+  now = new Date(),
+): Promise<AdminDailyBrief> => {
+  const yesterday = getBusinessDayRange(now, -1);
+  const sameWeekdayLastWeek = getBusinessDayRange(now, -8);
+
+  const [
+    currentTotals,
+    comparisonTotals,
+    currentTopItems,
+    comparisonTopItems,
+    currentPaymentCounts,
+    comparisonPaymentCounts,
+  ] = await Promise.all([
+    orderRepository.getAnalyticsTotals(yesterday),
+    orderRepository.getAnalyticsTotals(sameWeekdayLastWeek),
+    orderRepository.getAnalyticsItemSales({
+      ...yesterday,
+      sort: { quantitySold: -1, revenueCents: -1 },
+      limit: 10,
+    }),
+    orderRepository.getAnalyticsItemSales({
+      ...sameWeekdayLastWeek,
+      sort: { quantitySold: -1, revenueCents: -1 },
+      limit: 10,
+    }),
+    orderRepository.getAnalyticsPaymentStatusCounts(yesterday),
+    orderRepository.getAnalyticsPaymentStatusCounts(sameWeekdayLastWeek),
+  ]);
+
+  const revenueDeltaPercent = calculateDeltaPercent(
+    currentTotals.revenueCents,
+    comparisonTotals.revenueCents,
+  );
+  const orderDeltaPercent = calculateDeltaPercent(
+    currentTotals.orderCount,
+    comparisonTotals.orderCount,
+  );
+  const averageOrderValueDeltaPercent = calculateDeltaPercent(
+    currentTotals.averageOrderValueCents,
+    comparisonTotals.averageOrderValueCents,
+  );
+  const strongestItem = currentTopItems[0];
+  const currentItemsById = new Map(
+    currentTopItems.map((item) => [item.menuItemId, item]),
+  );
+  const underperformingItem = comparisonTopItems
+    .map((item) => {
+      const currentQuantity = currentItemsById.get(
+        item.menuItemId,
+      )?.quantitySold;
+
+      return {
+        ...item,
+        currentQuantitySold: currentQuantity ?? 0,
+        quantityDrop: item.quantitySold - (currentQuantity ?? 0),
+      };
+    })
+    .filter((item) => item.quantityDrop > 0)
+    .sort((a, b) => b.quantityDrop - a.quantityDrop)[0];
+  const currentFailedPayments = getPaymentStatusCount(
+    currentPaymentCounts,
+    'failed',
+  );
+  const comparisonFailedPayments = getPaymentStatusCount(
+    comparisonPaymentCounts,
+    'failed',
+  );
+  const failedPaymentDelta = currentFailedPayments - comparisonFailedPayments;
+  const highlights = [
+    `Revenue was ${formatAud(currentTotals.revenueCents)} (${formatDelta(
+      revenueDeltaPercent,
+    )} vs the same weekday last week).`,
+    `Orders were ${currentTotals.orderCount} (${formatDelta(
+      orderDeltaPercent,
+    )}).`,
+    `Average order value was ${formatAud(
+      currentTotals.averageOrderValueCents,
+    )} (${formatDelta(averageOrderValueDeltaPercent)}).`,
+  ];
+  const worthChecking: string[] = [];
+
+  if (strongestItem) {
+    highlights.push(
+      `${strongestItem.name} was the strongest seller with ${strongestItem.quantitySold} sold.`,
+    );
+  }
+
+  if (underperformingItem) {
+    highlights.push(
+      `${underperformingItem.name} sold ${underperformingItem.currentQuantitySold}, down from ${underperformingItem.quantitySold} on the same weekday last week.`,
+    );
+    worthChecking.push(
+      `${underperformingItem.name} availability, placement, and pairing.`,
+    );
+  }
+
+  if (failedPaymentDelta > 0) {
+    highlights.push(
+      `Payment failures increased from ${comparisonFailedPayments} to ${currentFailedPayments}.`,
+    );
+    worthChecking.push('Payment failures and Stripe checkout logs.');
+  }
+
+  if (worthChecking.length === 0) {
+    worthChecking.push(
+      'No sharp anomaly stands out; monitor active orders and item mix.',
+    );
+  }
+
+  return {
+    date: formatBusinessDate(yesterday.start),
+    comparison: 'same_weekday_last_week',
+    metrics: {
+      revenueCents: {
+        value: currentTotals.revenueCents,
+        deltaPercent: revenueDeltaPercent,
+      },
+      orderCount: {
+        value: currentTotals.orderCount,
+        deltaPercent: orderDeltaPercent,
+      },
+      averageOrderValueCents: {
+        value: currentTotals.averageOrderValueCents,
+        deltaPercent: averageOrderValueDeltaPercent,
+      },
+    },
+    highlights,
+    worthChecking,
   };
 };

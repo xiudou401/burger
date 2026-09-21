@@ -2,6 +2,7 @@ import { orderRepository } from '../repositories/order.repository';
 import { menuItemRepository } from '../repositories/menu-item.repository';
 import {
   getAdminAnalyticsSummary,
+  getAdminDailyBrief,
   getAdminDashboardSummary,
 } from './admin-dashboard.service';
 
@@ -295,5 +296,98 @@ describe('admin dashboard service', () => {
       new Date('2026-01-01T13:00:00.000Z'),
       new Date('2026-01-02T13:00:00.000Z'),
     );
+  });
+
+  test('builds a daily brief from yesterday compared with the same weekday last week', async () => {
+    const now = new Date('2026-09-22T01:00:00.000Z');
+
+    jest
+      .mocked(orderRepository.getAnalyticsTotals)
+      .mockResolvedValueOnce({
+        orderCount: 10,
+        paidOrderCount: 9,
+        revenueCents: 22000,
+        averageOrderValueCents: 2444,
+      })
+      .mockResolvedValueOnce({
+        orderCount: 8,
+        paidOrderCount: 8,
+        revenueCents: 20000,
+        averageOrderValueCents: 2500,
+      });
+    jest
+      .mocked(orderRepository.getAnalyticsItemSales)
+      .mockResolvedValueOnce([
+        {
+          menuItemId: 'menu-1',
+          name: 'Double Burger',
+          quantitySold: 12,
+          revenueCents: 14400,
+        },
+        {
+          menuItemId: 'menu-2',
+          name: 'Vegetarian Burger',
+          quantitySold: 2,
+          revenueCents: 2800,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          menuItemId: 'menu-2',
+          name: 'Vegetarian Burger',
+          quantitySold: 7,
+          revenueCents: 9800,
+        },
+      ]);
+    jest
+      .mocked(orderRepository.getAnalyticsPaymentStatusCounts)
+      .mockResolvedValueOnce([
+        { status: 'paid', count: 9 },
+        { status: 'failed', count: 3 },
+      ])
+      .mockResolvedValueOnce([
+        { status: 'paid', count: 8 },
+        { status: 'failed', count: 1 },
+      ]);
+
+    await expect(getAdminDailyBrief(now)).resolves.toEqual({
+      date: '21/09/2026',
+      comparison: 'same_weekday_last_week',
+      metrics: {
+        revenueCents: {
+          value: 22000,
+          deltaPercent: 10,
+        },
+        orderCount: {
+          value: 10,
+          deltaPercent: 25,
+        },
+        averageOrderValueCents: {
+          value: 2444,
+          deltaPercent: -2,
+        },
+      },
+      highlights: [
+        'Revenue was A$220.00 (+10% vs the same weekday last week).',
+        'Orders were 10 (+25%).',
+        'Average order value was A$24.44 (-2%).',
+        'Double Burger was the strongest seller with 12 sold.',
+        'Vegetarian Burger sold 2, down from 7 on the same weekday last week.',
+        'Payment failures increased from 1 to 3.',
+      ],
+      worthChecking: [
+        'Vegetarian Burger availability, placement, and pairing.',
+        'Payment failures and Stripe checkout logs.',
+      ],
+    });
+
+    expect(orderRepository.getAnalyticsTotals).toHaveBeenNthCalledWith(1, {
+      start: new Date('2026-09-20T14:00:00.000Z'),
+      end: new Date('2026-09-21T14:00:00.000Z'),
+    });
+    expect(orderRepository.getAnalyticsTotals).toHaveBeenNthCalledWith(2, {
+      start: new Date('2026-09-13T14:00:00.000Z'),
+      end: new Date('2026-09-14T14:00:00.000Z'),
+    });
   });
 });

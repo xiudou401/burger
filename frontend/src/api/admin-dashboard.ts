@@ -2,6 +2,7 @@ import { request } from './request';
 import type {
   AdminAnalyticsAlert,
   AdminAnalyticsSummary,
+  AdminDailyBrief,
   AdminDashboardSummary,
   AnalyticsRange,
 } from '../types/admin-dashboard';
@@ -13,6 +14,12 @@ export const fetchAdminDashboardSummary = (signal?: AbortSignal) => {
       signal,
     },
   );
+};
+
+export const fetchAdminDailyBrief = (signal?: AbortSignal) => {
+  return request<{ brief: AdminDailyBrief }>('/admin/dashboard/daily-brief', {
+    signal,
+  });
 };
 
 export const fetchAdminAnalyticsAlerts = (

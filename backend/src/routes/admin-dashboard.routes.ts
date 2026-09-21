@@ -2,6 +2,7 @@ import express from 'express';
 import {
   getAdminAnalyticsAlertsHandler,
   getAdminAnalyticsSummaryHandler,
+  getAdminDailyBriefHandler,
   getAdminDashboardSummaryHandler,
 } from '../controllers/admin-dashboard.controller';
 import { authenticate } from '../middleware/authenticate';
@@ -13,6 +14,7 @@ const router = express.Router();
 
 router.use(authenticate, requirePermission('view_orders'));
 
+router.get('/daily-brief', getAdminDailyBriefHandler);
 router.get('/summary', getAdminDashboardSummaryHandler);
 router.get(
   '/analytics',
