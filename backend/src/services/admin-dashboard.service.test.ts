@@ -29,8 +29,8 @@ describe('admin dashboard service', () => {
   });
 
   test('summarizes today revenue, order status counts, prep time, and top items', async () => {
-    const now = new Date(2026, 6, 10, 14);
-    const paidAt = new Date(2026, 6, 10, 10);
+    const now = new Date('2026-07-10T04:00:00.000Z');
+    const paidAt = new Date('2026-07-10T00:00:00.000Z');
 
     jest.mocked(orderRepository.countActive).mockResolvedValue(2);
     jest.mocked(orderRepository.listPaidBetween).mockResolvedValue([
@@ -41,7 +41,7 @@ describe('admin dashboard service', () => {
           status: 'paid',
           paidAt,
         },
-        updatedAt: new Date(2026, 6, 10, 10, 18),
+        updatedAt: new Date('2026-07-10T00:18:00.000Z'),
         items: [
           {
             menuItemId: 'menu-1',
@@ -56,9 +56,9 @@ describe('admin dashboard service', () => {
         totalCents: 900,
         payment: {
           status: 'paid',
-          paidAt: new Date(2026, 6, 10, 11),
+          paidAt: new Date('2026-07-10T01:00:00.000Z'),
         },
-        updatedAt: new Date(2026, 6, 10, 11, 5),
+        updatedAt: new Date('2026-07-10T01:05:00.000Z'),
         items: [
           {
             menuItemId: 'menu-2',
@@ -77,7 +77,7 @@ describe('admin dashboard service', () => {
           status: 'paid',
           paidAt,
         },
-        updatedAt: new Date(2026, 6, 10, 10, 18),
+        updatedAt: new Date('2026-07-10T00:18:00.000Z'),
         items: [
           {
             menuItemId: 'menu-1',
@@ -92,9 +92,9 @@ describe('admin dashboard service', () => {
         totalCents: 900,
         payment: {
           status: 'paid',
-          paidAt: new Date(2026, 6, 10, 11),
+          paidAt: new Date('2026-07-10T01:00:00.000Z'),
         },
-        updatedAt: new Date(2026, 6, 10, 11, 5),
+        updatedAt: new Date('2026-07-10T01:05:00.000Z'),
         items: [
           {
             menuItemId: 'menu-2',
@@ -110,7 +110,7 @@ describe('admin dashboard service', () => {
         payment: {
           status: 'requires_payment',
         },
-        updatedAt: new Date(2026, 6, 10, 12),
+        updatedAt: new Date('2026-07-10T02:00:00.000Z'),
         items: [
           {
             menuItemId: 'menu-3',
