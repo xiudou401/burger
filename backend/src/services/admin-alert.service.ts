@@ -6,6 +6,7 @@ import {
 } from './admin-dashboard.service';
 import { emitAnalyticsAlert } from './realtime.service';
 import { appLogger } from '../utils/logger';
+import { env } from '../config/env';
 
 export type AnalyticsAlertType =
   | 'high_cancellation_rate'
@@ -32,6 +33,9 @@ const MIN_PAID_ORDERS_FOR_REVENUE_DROP = 3;
 const HIGH_CANCELLATION_RATE = 0.1;
 const LOW_PAID_ORDER_RATE = 0.75;
 const REVENUE_DROP_RATE = 0.2;
+const ALERT_EMIT_COOLDOWN_MS = 5 * 60 * 1000;
+
+const lastEmittedAlertAt = new Map<string, number>();
 
 const RANGE_DAYS: Record<AnalyticsRange, number> = {
   '7d': 7,
@@ -64,6 +68,25 @@ const createAlert = (
   ...input,
   createdAt: new Date(),
 });
+
+const getAlertCooldownKey = (alert: AnalyticsAlert) =>
+  `${alert.id}:${alert.severity}`;
+
+const shouldEmitAlert = (alert: AnalyticsAlert, now: Date) => {
+  const key = getAlertCooldownKey(alert);
+  const lastEmittedAt = lastEmittedAlertAt.get(key);
+  const nowMs = now.getTime();
+
+  if (
+    lastEmittedAt !== undefined &&
+    nowMs - lastEmittedAt < ALERT_EMIT_COOLDOWN_MS
+  ) {
+    return false;
+  }
+
+  lastEmittedAlertAt.set(key, nowMs);
+  return true;
+};
 
 export const detectAnalyticsAlerts = async (
   range: AnalyticsRange = '7d',
@@ -158,14 +181,26 @@ export const detectAnalyticsAlerts = async (
   return alerts;
 };
 
-export const emitCurrentAnalyticsAlerts = async () => {
+export const emitCurrentAnalyticsAlerts = async (now = new Date()) => {
   try {
-    const alerts = await detectAnalyticsAlerts('7d');
+    const alerts = await detectAnalyticsAlerts('7d', now);
 
     for (const alert of alerts) {
+      if (!shouldEmitAlert(alert, now)) {
+        continue;
+      }
+
       emitAnalyticsAlert(alert);
     }
   } catch (error) {
     appLogger.warn('analytics_alert_detection_failed', { error });
   }
+};
+
+export const resetAnalyticsAlertEmitCooldownForTest = () => {
+  if (env.NODE_ENV !== 'test') {
+    return;
+  }
+
+  lastEmittedAlertAt.clear();
 };

@@ -1,4 +1,5 @@
 import { orderRepository } from '../repositories/order.repository';
+import { menuItemRepository } from '../repositories/menu-item.repository';
 import {
   getAdminAnalyticsSummary,
   getAdminDashboardSummary,
@@ -7,11 +8,18 @@ import {
 jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
     listCreatedBetween: jest.fn(),
+    listPaidBetween: jest.fn(),
     countActive: jest.fn(),
     getAnalyticsTotals: jest.fn(),
     getAnalyticsCategorySales: jest.fn(),
     getAnalyticsItemSales: jest.fn(),
     getAnalyticsPaymentStatusCounts: jest.fn(),
+  },
+}));
+
+jest.mock('../repositories/menu-item.repository', () => ({
+  menuItemRepository: {
+    findAllForAnalytics: jest.fn(),
   },
 }));
 
@@ -25,6 +33,42 @@ describe('admin dashboard service', () => {
     const paidAt = new Date(2026, 6, 10, 10);
 
     jest.mocked(orderRepository.countActive).mockResolvedValue(2);
+    jest.mocked(orderRepository.listPaidBetween).mockResolvedValue([
+      {
+        status: 'ready',
+        totalCents: 2400,
+        payment: {
+          status: 'paid',
+          paidAt,
+        },
+        updatedAt: new Date(2026, 6, 10, 10, 18),
+        items: [
+          {
+            menuItemId: 'menu-1',
+            nameAtPurchase: 'Classic Burger',
+            quantity: 2,
+            subtotalCents: 2400,
+          },
+        ],
+      },
+      {
+        status: 'preparing',
+        totalCents: 900,
+        payment: {
+          status: 'paid',
+          paidAt: new Date(2026, 6, 10, 11),
+        },
+        updatedAt: new Date(2026, 6, 10, 11, 5),
+        items: [
+          {
+            menuItemId: 'menu-2',
+            nameAtPurchase: 'Fries',
+            quantity: 1,
+            subtotalCents: 900,
+          },
+        ],
+      },
+    ] as never);
     jest.mocked(orderRepository.listCreatedBetween).mockResolvedValue([
       {
         status: 'ready',
@@ -108,8 +152,12 @@ describe('admin dashboard service', () => {
     });
 
     expect(orderRepository.listCreatedBetween).toHaveBeenCalledWith(
-      new Date(2026, 6, 10),
-      new Date(2026, 6, 11),
+      new Date('2026-07-09T14:00:00.000Z'),
+      new Date('2026-07-10T14:00:00.000Z'),
+    );
+    expect(orderRepository.listPaidBetween).toHaveBeenCalledWith(
+      new Date('2026-07-09T14:00:00.000Z'),
+      new Date('2026-07-10T14:00:00.000Z'),
     );
   });
 
@@ -158,6 +206,13 @@ describe('admin dashboard service', () => {
         { status: 'paid', count: 9 },
         { status: 'cancelled', count: 2 },
       ]);
+    jest.mocked(menuItemRepository.findAllForAnalytics).mockResolvedValue([
+      {
+        _id: { toString: () => 'menu-3' },
+        name: 'Vanilla Soft Serve',
+        category: 'dessert',
+      },
+    ] as never);
 
     await expect(getAdminAnalyticsSummary('7d', now)).resolves.toEqual({
       range: '7d',
@@ -190,6 +245,12 @@ describe('admin dashboard service', () => {
           quantitySold: 1,
           revenueCents: 900,
         },
+        {
+          menuItemId: 'menu-3',
+          name: 'Vanilla Soft Serve',
+          quantitySold: 0,
+          revenueCents: 0,
+        },
       ],
       paymentStatusCounts: [
         { status: 'unpaid', count: 0 },
@@ -218,6 +279,21 @@ describe('admin dashboard service', () => {
         sort: { quantitySold: 1, revenueCents: 1 },
         limit: 5,
       }),
+    );
+  });
+
+  test('uses Australia/Sydney business day boundaries for today summary', async () => {
+    const now = new Date('2026-01-01T13:30:00.000Z');
+
+    jest.mocked(orderRepository.countActive).mockResolvedValue(0);
+    jest.mocked(orderRepository.listCreatedBetween).mockResolvedValue([]);
+    jest.mocked(orderRepository.listPaidBetween).mockResolvedValue([]);
+
+    await getAdminDashboardSummary(now);
+
+    expect(orderRepository.listCreatedBetween).toHaveBeenCalledWith(
+      new Date('2026-01-01T13:00:00.000Z'),
+      new Date('2026-01-02T13:00:00.000Z'),
     );
   });
 });

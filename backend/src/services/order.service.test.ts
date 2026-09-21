@@ -80,7 +80,7 @@ describe('order service', () => {
     isAvailable: true,
     quantity: 2,
     subtotalCents: 2400,
-  };
+  } as const;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -222,6 +222,7 @@ describe('order service', () => {
             menuItemId,
             nameAtPurchase: 'Classic Burger',
             imageAtPurchase: '/img/burger.png',
+            categoryAtPurchase: 'burger',
             priceCentsAtPurchase: 1200,
             quantity: 2,
             subtotalCents: 2400,

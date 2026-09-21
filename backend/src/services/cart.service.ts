@@ -2,6 +2,7 @@ import { getMenuVersion } from './menu.service';
 import { ServiceError } from '../errors/ServiceError';
 import { menuItemRepository } from '../repositories/menu-item.repository';
 import type { CartPayload } from '../validation/cart.schema';
+import type { MenuItemCategory } from '../models/menu-item.model';
 
 export type CartStoredItem = CartPayload['items'][number];
 
@@ -10,7 +11,7 @@ export interface ValidatedCartMenuItem {
   name: string;
   image?: string;
   priceCents: number;
-  category: string;
+  category: MenuItemCategory;
   isAvailable: boolean;
   quantity: number;
   subtotalCents: number;

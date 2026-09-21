@@ -1,6 +1,9 @@
 import type { OrderStatus } from '../models/order.model';
 import { orderRepository } from '../repositories/order.repository';
 import { MENU_ITEM_CATEGORIES } from '../models/menu-item.model';
+import { menuItemRepository } from '../repositories/menu-item.repository';
+
+const BUSINESS_TIME_ZONE = 'Australia/Sydney';
 
 interface DashboardOrderItem {
   menuItemId?: unknown;
@@ -8,6 +11,7 @@ interface DashboardOrderItem {
   mealId?: unknown;
   nameAtPurchase?: string;
   name?: string;
+  categoryAtPurchase?: string;
   quantity: number;
   subtotalCents: number;
 }
@@ -76,11 +80,87 @@ const ORDER_STATUSES: OrderStatus[] = [
   'cancelled',
 ];
 
-const startOfToday = (now = new Date()) =>
-  new Date(now.getFullYear(), now.getMonth(), now.getDate());
+const getTimeZoneParts = (date: Date, timeZone: string) => {
+  const parts = new Intl.DateTimeFormat('en-AU', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+    hourCycle: 'h23',
+  }).formatToParts(date);
 
-const startOfTomorrow = (today: Date) =>
-  new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, Number(part.value)]),
+  );
+
+  return {
+    year: values.year,
+    month: values.month,
+    day: values.day,
+    hour: values.hour,
+    minute: values.minute,
+    second: values.second,
+  };
+};
+
+const getTimeZoneOffsetMs = (date: Date, timeZone: string) => {
+  const parts = getTimeZoneParts(date, timeZone);
+  const localAsUtcMs = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second,
+  );
+
+  return localAsUtcMs - date.getTime();
+};
+
+const zonedMidnightToUtc = ({
+  year,
+  month,
+  day,
+  timeZone,
+}: {
+  year: number;
+  month: number;
+  day: number;
+  timeZone: string;
+}) => {
+  const utcGuess = new Date(Date.UTC(year, month - 1, day));
+  const offsetMs = getTimeZoneOffsetMs(utcGuess, timeZone);
+
+  return new Date(utcGuess.getTime() - offsetMs);
+};
+
+const startOfBusinessToday = (now = new Date()) => {
+  const parts = getTimeZoneParts(now, BUSINESS_TIME_ZONE);
+
+  return zonedMidnightToUtc({
+    year: parts.year,
+    month: parts.month,
+    day: parts.day,
+    timeZone: BUSINESS_TIME_ZONE,
+  });
+};
+
+const startOfNextBusinessDay = (now = new Date()) => {
+  const parts = getTimeZoneParts(now, BUSINESS_TIME_ZONE);
+
+  return zonedMidnightToUtc({
+    year: parts.year,
+    month: parts.month,
+    day: parts.day + 1,
+    timeZone: BUSINESS_TIME_ZONE,
+  });
+};
 
 const isRevenueOrder = (order: DashboardOrder) =>
   order.payment?.status === 'paid';
@@ -134,15 +214,17 @@ const summarizeTopItems = (orders: DashboardOrder[]) => {
 export const getAdminDashboardSummary = async (
   now = new Date(),
 ): Promise<AdminDashboardSummary> => {
-  const today = startOfToday(now);
-  const tomorrow = startOfTomorrow(today);
+  const today = startOfBusinessToday(now);
+  const tomorrow = startOfNextBusinessDay(now);
 
-  const [orders, activeOrders] = await Promise.all([
+  const [orders, paidOrders, activeOrders] = await Promise.all([
     orderRepository.listCreatedBetween(today, tomorrow),
+    orderRepository.listPaidBetween(today, tomorrow),
     orderRepository.countActive(),
   ]);
 
   const dashboardOrders = orders as DashboardOrder[];
+  const dashboardPaidOrders = paidOrders as DashboardOrder[];
   const ordersByStatus = ORDER_STATUSES.reduce(
     (summary, status) => ({
       ...summary,
@@ -157,15 +239,15 @@ export const getAdminDashboardSummary = async (
   for (const order of dashboardOrders) {
     ordersByStatus[order.status] += 1;
 
-    if (isRevenueOrder(order)) {
-      todayRevenueCents += order.totalCents;
-    }
-
     const minutes = getPreparationMinutes(order);
 
     if (minutes !== null) {
       preparationMinutes.push(minutes);
     }
+  }
+
+  for (const order of dashboardPaidOrders) {
+    todayRevenueCents += order.totalCents;
   }
 
   return {
@@ -180,7 +262,7 @@ export const getAdminDashboardSummary = async (
               preparationMinutes.length,
           )
         : null,
-    topItems: summarizeTopItems(dashboardOrders),
+    topItems: summarizeTopItems(dashboardPaidOrders),
   };
 };
 
@@ -225,6 +307,28 @@ const normalizePaymentStatusCounts = (
   }));
 };
 
+const includeZeroSaleMenuItems = async (
+  itemSales: DashboardTopItem[],
+  limit: number,
+) => {
+  if (itemSales.length >= limit) {
+    return itemSales.slice(0, limit);
+  }
+
+  const soldItemIds = new Set(itemSales.map((item) => item.menuItemId));
+  const menuItems = await menuItemRepository.findAllForAnalytics();
+  const zeroSaleItems = menuItems
+    .filter((item) => !soldItemIds.has(item._id.toString()))
+    .map((item) => ({
+      menuItemId: item._id.toString(),
+      name: item.name,
+      quantitySold: 0,
+      revenueCents: 0,
+    }));
+
+  return [...itemSales, ...zeroSaleItems].slice(0, limit);
+};
+
 export const getAdminAnalyticsSummary = async (
   range: AnalyticsRange = '7d',
   now = new Date(),
@@ -256,6 +360,11 @@ export const getAdminAnalyticsSummary = async (
     orderRepository.getAnalyticsPaymentStatusCounts({ start, end }),
   ]);
 
+  const underperformingWithZeroSales = await includeZeroSaleMenuItems(
+    underperformingItems,
+    5,
+  );
+
   return {
     range,
     currency: 'AUD',
@@ -267,7 +376,7 @@ export const getAdminAnalyticsSummary = async (
     averageOrderValueCents: totals.averageOrderValueCents,
     categorySales: normalizeCategorySales(categorySales),
     topItems,
-    underperformingItems,
+    underperformingItems: underperformingWithZeroSales,
     paymentStatusCounts: normalizePaymentStatusCounts(paymentStatusCounts),
   };
 };

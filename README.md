@@ -113,6 +113,13 @@ items, lower-selling items, and payment status counts. These metrics are
 computed by the backend rather than the AI layer, giving future admin AI
 insights a verified data foundation to explain.
 
+Analytics uses the restaurant's `Australia/Sydney` business day for today
+metrics. Revenue, paid order counts, category sales, and item sales are
+attributed by `payment.paidAt`, while order-count and payment-status funnel
+metrics remain based on order creation time. Order item snapshots include
+`categoryAtPurchase` so historical category reporting is not affected by later
+menu edits, and lower-selling items include current menu items with zero sales.
+
 The dashboard also exposes deterministic analytics alerts for high cancellation
 rate, low paid-order rate, and revenue drops versus the previous period. Order
 events can trigger `analytics:alert` over the authenticated admin WebSocket

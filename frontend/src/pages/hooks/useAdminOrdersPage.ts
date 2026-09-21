@@ -7,7 +7,7 @@ import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { Order, OrderStatus } from '../../types/order';
 import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 
-const ORDER_PAGE_LIMIT = 20;
+const ORDER_PAGE_LIMIT = 50;
 
 export const useAdminOrdersPage = () => {
   const user = useAuth((ctx) => ctx.user);

@@ -40,6 +40,14 @@ export const menuItemRepository = {
       .exec();
   },
 
+  findAllForAnalytics() {
+    return MenuItemModel.find()
+      .select('name category')
+      .sort({ name: 1 })
+      .lean()
+      .exec();
+  },
+
   create(
     data: Pick<
       MenuItem,

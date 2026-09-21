@@ -1,6 +1,11 @@
 import { orderRepository } from '../repositories/order.repository';
 import { getAdminAnalyticsSummary } from './admin-dashboard.service';
-import { detectAnalyticsAlerts } from './admin-alert.service';
+import { emitAnalyticsAlert } from './realtime.service';
+import {
+  detectAnalyticsAlerts,
+  emitCurrentAnalyticsAlerts,
+  resetAnalyticsAlertEmitCooldownForTest,
+} from './admin-alert.service';
 
 jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
@@ -10,6 +15,10 @@ jest.mock('../repositories/order.repository', () => ({
 
 jest.mock('./admin-dashboard.service', () => ({
   getAdminAnalyticsSummary: jest.fn(),
+}));
+
+jest.mock('./realtime.service', () => ({
+  emitAnalyticsAlert: jest.fn(),
 }));
 
 const baseAnalytics = {
@@ -37,6 +46,7 @@ const baseAnalytics = {
 describe('admin alert service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    resetAnalyticsAlertEmitCooldownForTest();
   });
 
   test('detects cancellation, paid-rate, and revenue-drop alerts from deterministic analytics', async () => {
@@ -90,5 +100,32 @@ describe('admin alert service', () => {
     });
 
     await expect(detectAnalyticsAlerts('7d')).resolves.toEqual([]);
+  });
+
+  test('deduplicates realtime alert emits during the cooldown window', async () => {
+    jest.mocked(getAdminAnalyticsSummary).mockResolvedValue({
+      ...baseAnalytics,
+      paidOrderCount: 9,
+      paymentStatusCounts: [
+        { status: 'paid', count: 9 },
+        { status: 'cancelled', count: 1 },
+      ],
+    });
+    jest.mocked(orderRepository.getAnalyticsTotals).mockResolvedValue({
+      orderCount: 10,
+      paidOrderCount: 8,
+      revenueCents: 12_000,
+      averageOrderValueCents: 1500,
+    });
+
+    await emitCurrentAnalyticsAlerts(new Date('2026-09-20T12:00:00.000Z'));
+    await emitCurrentAnalyticsAlerts(new Date('2026-09-20T12:01:00.000Z'));
+    await emitCurrentAnalyticsAlerts(new Date('2026-09-20T12:06:00.000Z'));
+
+    expect(emitAnalyticsAlert).toHaveBeenCalledTimes(2);
+    expect(jest.mocked(emitAnalyticsAlert).mock.calls[0][0]).toMatchObject({
+      id: '7d:high_cancellation_rate',
+      severity: 'medium',
+    });
   });
 });

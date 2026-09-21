@@ -19,6 +19,7 @@ const toOrderSnapshotItem = (menuItem: ValidatedCartMenuItem) => ({
   menuItemId: menuItem.id,
   nameAtPurchase: menuItem.name,
   imageAtPurchase: menuItem.image,
+  categoryAtPurchase: menuItem.category,
   priceCentsAtPurchase: menuItem.priceCents,
   quantity: menuItem.quantity,
   subtotalCents: menuItem.subtotalCents,

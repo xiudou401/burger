@@ -125,6 +125,18 @@ export const orderRepository = {
       .exec();
   },
 
+  listPaidBetween(start: Date, end: Date) {
+    return OrderModel.find({
+      'payment.status': 'paid',
+      'payment.paidAt': {
+        $gte: start,
+        $lt: end,
+      },
+    })
+      .lean()
+      .exec();
+  },
+
   countActive() {
     return OrderModel.countDocuments({
       status: {
@@ -136,23 +148,44 @@ export const orderRepository = {
   async getAnalyticsTotals({ start, end }: AnalyticsRange) {
     const [totals] = await OrderModel.aggregate<OrderAnalyticsTotals>([
       {
-        $match: {
-          createdAt: { $gte: start, $lt: end },
+        $facet: {
+          createdOrders: [
+            {
+              $match: {
+                createdAt: { $gte: start, $lt: end },
+              },
+            },
+            {
+              $count: 'orderCount',
+            },
+          ],
+          paidOrders: [
+            {
+              $match: {
+                'payment.status': 'paid',
+                'payment.paidAt': { $gte: start, $lt: end },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                paidOrderCount: { $sum: 1 },
+                revenueCents: { $sum: '$totalCents' },
+              },
+            },
+          ],
         },
       },
       {
-        $group: {
-          _id: null,
-          orderCount: { $sum: 1 },
+        $project: {
+          orderCount: {
+            $ifNull: [{ $arrayElemAt: ['$createdOrders.orderCount', 0] }, 0],
+          },
           paidOrderCount: {
-            $sum: {
-              $cond: [{ $eq: ['$payment.status', 'paid'] }, 1, 0],
-            },
+            $ifNull: [{ $arrayElemAt: ['$paidOrders.paidOrderCount', 0] }, 0],
           },
           revenueCents: {
-            $sum: {
-              $cond: [{ $eq: ['$payment.status', 'paid'] }, '$totalCents', 0],
-            },
+            $ifNull: [{ $arrayElemAt: ['$paidOrders.revenueCents', 0] }, 0],
           },
         },
       },
@@ -213,28 +246,14 @@ export const orderRepository = {
     return OrderModel.aggregate<OrderAnalyticsCategorySale>([
       {
         $match: {
-          createdAt: { $gte: start, $lt: end },
+          'payment.paidAt': { $gte: start, $lt: end },
           'payment.status': 'paid',
         },
       },
       { $unwind: '$items' },
       {
-        $lookup: {
-          from: 'meals',
-          localField: 'items.menuItemId',
-          foreignField: '_id',
-          as: 'menuItem',
-        },
-      },
-      {
-        $unwind: {
-          path: '$menuItem',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
         $group: {
-          _id: { $ifNull: ['$menuItem.category', 'unknown'] },
+          _id: { $ifNull: ['$items.categoryAtPurchase', 'unknown'] },
           quantitySold: { $sum: '$items.quantity' },
           revenueCents: { $sum: '$items.subtotalCents' },
         },
@@ -263,7 +282,7 @@ export const orderRepository = {
     return OrderModel.aggregate<OrderAnalyticsItemSale>([
       {
         $match: {
-          createdAt: { $gte: start, $lt: end },
+          'payment.paidAt': { $gte: start, $lt: end },
           'payment.status': 'paid',
         },
       },

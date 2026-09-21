@@ -70,6 +70,44 @@ describe('orderRepository', () => {
     expect(query.exec).toHaveBeenCalled();
   });
 
+  test('lists orders by status sorted by recent updates', async () => {
+    const query = chain([]);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+
+    await expect(orderRepository.listByStatus('cancelled', 5)).resolves.toEqual(
+      [],
+    );
+
+    expect(OrderModel.find).toHaveBeenCalledWith({ status: 'cancelled' });
+    expect(query.sort).toHaveBeenCalledWith({
+      updatedAt: -1,
+      createdAt: -1,
+      _id: -1,
+    });
+    expect(query.limit).toHaveBeenCalledWith(5);
+  });
+
+  test('lists paid orders by paidAt range', async () => {
+    const query = chain([]);
+    const start = new Date('2026-09-20T00:00:00.000Z');
+    const end = new Date('2026-09-21T00:00:00.000Z');
+
+    jest.mocked(OrderModel.find).mockReturnValue({ lean: query.lean } as never);
+
+    await expect(orderRepository.listPaidBetween(start, end)).resolves.toEqual(
+      [],
+    );
+
+    expect(OrderModel.find).toHaveBeenCalledWith({
+      'payment.status': 'paid',
+      'payment.paidAt': {
+        $gte: start,
+        $lt: end,
+      },
+    });
+    expect(query.lean).toHaveBeenCalled();
+  });
+
   test('finds an order scoped to a user', async () => {
     const exec = jest.fn().mockResolvedValue(null);
     const lean = jest.fn().mockReturnValue({ exec });

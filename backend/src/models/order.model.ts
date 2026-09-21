@@ -1,4 +1,5 @@
 import { model, Schema, Types } from 'mongoose';
+import { MENU_ITEM_CATEGORIES, type MenuItemCategory } from './menu-item.model';
 
 export type OrderStatus =
   | 'pending_payment'
@@ -20,6 +21,7 @@ export interface OrderItem {
   menuItemId: Types.ObjectId;
   nameAtPurchase: string;
   imageAtPurchase?: string;
+  categoryAtPurchase?: MenuItemCategory;
   priceCentsAtPurchase: number;
   quantity: number;
   subtotalCents: number;
@@ -59,6 +61,10 @@ const orderItemSchema = new Schema<OrderItem>(
       trim: true,
     },
     imageAtPurchase: String,
+    categoryAtPurchase: {
+      type: String,
+      enum: MENU_ITEM_CATEGORIES,
+    },
     priceCentsAtPurchase: {
       type: Number,
       required: true,
