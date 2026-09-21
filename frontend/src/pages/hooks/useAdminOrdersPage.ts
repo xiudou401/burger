@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
+import { connectAdminRealtime } from '../../api/realtime';
 import { HTTP_STATUS } from '../../api/http-status';
 import { ApiError } from '../../api/request';
 import { useAuth } from '../../store/auth/hooks/useAuth';
@@ -85,6 +86,29 @@ export const useAdminOrdersPage = () => {
       loadRequestIdRef.current += 1;
       loadControllerRef.current?.abort();
       loadControllerRef.current = null;
+    };
+  }, [loadOrders]);
+
+  useEffect(() => {
+    let refreshTimeout: number | null = null;
+    const socket = connectAdminRealtime({
+      onOrderEvent: () => {
+        if (refreshTimeout !== null) {
+          window.clearTimeout(refreshTimeout);
+        }
+
+        refreshTimeout = window.setTimeout(() => {
+          void loadOrders();
+        }, 300);
+      },
+    });
+
+    return () => {
+      if (refreshTimeout !== null) {
+        window.clearTimeout(refreshTimeout);
+      }
+
+      socket?.disconnect();
     };
   }, [loadOrders]);
 

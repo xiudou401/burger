@@ -8,6 +8,7 @@ import type { AuthenticatedUser } from '../types/auth';
 import { hasPermission } from '../types/permissions';
 import { recordAuditLog } from './audit-log.service';
 import { appLogger } from '../utils/logger';
+import { emitOrderEvent } from './realtime.service';
 
 export interface PublicOrderItem {
   menuItemId: string;
@@ -324,6 +325,11 @@ export const updateOrderStatus = async (
   if (nextStatus === 'paid') {
     await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
   }
+
+  emitOrderEvent(
+    nextStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
+    publicOrder,
+  );
 
   return publicOrder;
 };

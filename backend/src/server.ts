@@ -1,12 +1,18 @@
 import app from './app';
 import { connectDB } from './config/db';
 import { env } from './config/env';
+import http from 'http';
+import { initializeRealtimeServer } from './services/realtime.service';
 import { appLogger } from './utils/logger';
 
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(Number(env.PORT), '0.0.0.0', () => {
+    const server = http.createServer(app);
+
+    initializeRealtimeServer(server);
+
+    server.listen(Number(env.PORT), '0.0.0.0', () => {
       appLogger.info('server_started', {
         host: '0.0.0.0',
         port: env.PORT,

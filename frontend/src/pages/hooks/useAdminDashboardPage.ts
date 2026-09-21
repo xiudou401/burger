@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import {
   fetchAdminAnalyticsSummary,
   fetchAdminDashboardSummary,
 } from '../../api/admin-dashboard';
+import { connectAdminRealtime } from '../../api/realtime';
 import type {
   AdminAnalyticsSummary,
   AdminDashboardSummary,
@@ -33,6 +34,32 @@ export const useAdminDashboardPage = () => {
       load: loadDashboard,
       errorMessage: 'Could not load dashboard',
     });
+
+  useEffect(() => {
+    let refreshTimeout: number | null = null;
+    const scheduleRefresh = () => {
+      if (refreshTimeout !== null) {
+        window.clearTimeout(refreshTimeout);
+      }
+
+      refreshTimeout = window.setTimeout(() => {
+        void refresh();
+      }, 500);
+    };
+
+    const socket = connectAdminRealtime({
+      onOrderEvent: scheduleRefresh,
+      onMenuUpdated: scheduleRefresh,
+    });
+
+    return () => {
+      if (refreshTimeout !== null) {
+        window.clearTimeout(refreshTimeout);
+      }
+
+      socket?.disconnect();
+    };
+  }, [refresh]);
 
   return {
     summary: data?.summary ?? null,

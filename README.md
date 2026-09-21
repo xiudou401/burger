@@ -54,6 +54,8 @@ recent orders while staff manage orders and menu changes.
 - Payment lifecycle updates for success, failed, cancelled, and repeated webhook events.
 - Order history and payment-return handling that treats Stripe webhooks as the
   source of payment truth.
+- Authenticated WebSocket admin events for order and menu changes, allowing the
+  staff dashboard to refresh without manual reloads.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
@@ -113,6 +115,17 @@ insights a verified data foundation to explain.
 
 Local demos can run `npm run seed:demo-orders` after seeding users and menu
 items to create realistic 30-day order history for the analytics dashboard.
+
+## Realtime Admin Events
+
+The backend exposes an authenticated Socket.IO channel for staff users with the
+`view_orders` permission. Order creation, Stripe payment updates, manual order
+status changes, cancellations, and menu version updates emit small event
+payloads such as `order:paid`, `order:updated`, and `menu:updated`. The frontend
+treats these events as invalidation signals, then reloads the latest orders or
+dashboard analytics through the REST API so MongoDB remains the source of truth.
+Public menu clients can also subscribe to `menu:updated`, while the existing
+30-second menu-version polling remains as a fallback for missed realtime events.
 
 ## AI Admin Insight Agent
 
@@ -216,9 +229,10 @@ Stripe Checkout requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 Google sign-in requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Email
 delivery through Resend is optional.
 
-The frontend currently uses relative `/api` requests. Create React App proxies
-those requests to the local backend during development, while Vercel rewrites
-them to the deployed Render API in production.
+The frontend should set `REACT_APP_API_URL` to the backend origin, for example
+`https://burger-rmc0.onrender.com`, when WebSocket admin events are enabled.
+REST requests can still be routed through relative `/api` rewrites, but the
+Socket.IO client needs a stable backend origin for the realtime connection.
 
 ## Optional AWS Deployment
 

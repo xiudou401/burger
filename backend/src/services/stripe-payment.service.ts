@@ -7,6 +7,7 @@ import {
   toPublicOrder,
 } from './order.service';
 import type { StripeCheckoutCompletedSession } from './checkout.types';
+import { emitOrderEvent } from './realtime.service';
 
 const isPaidOrder = (order: {
   status: OrderStatus;
@@ -80,6 +81,7 @@ export const markStripeCheckoutPaid = async (
 
   const publicOrder = toPublicOrder(order);
   await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
+  emitOrderEvent('order:paid', publicOrder);
 
   return publicOrder;
 };
@@ -106,7 +108,13 @@ export const markStripeCheckoutFailed = async (
 
   await orderRepository.save(order);
 
-  return toPublicOrder(order);
+  const publicOrder = toPublicOrder(order);
+  emitOrderEvent(
+    paymentStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
+    publicOrder,
+  );
+
+  return publicOrder;
 };
 
 export const markStripeOrderFailed = async (
@@ -126,5 +134,8 @@ export const markStripeOrderFailed = async (
 
   await orderRepository.save(order);
 
-  return toPublicOrder(order);
+  const publicOrder = toPublicOrder(order);
+  emitOrderEvent('order:updated', publicOrder);
+
+  return publicOrder;
 };

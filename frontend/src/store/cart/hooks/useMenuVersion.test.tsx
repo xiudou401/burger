@@ -1,10 +1,24 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { fetchMenuVersion } from '../../../api/menu-version';
+import { connectMenuRealtime } from '../../../api/realtime';
 import { useMenuVersion } from './useMenuVersion';
 
 jest.mock('../../../api/menu-version', () => ({
   fetchMenuVersion: jest.fn(),
 }));
+
+jest.mock('../../../api/realtime', () => ({
+  connectMenuRealtime: jest.fn(),
+}));
+
+const disconnect = jest.fn();
+const mockSocket = () =>
+  ({ disconnect }) as unknown as ReturnType<typeof connectMenuRealtime>;
+
+beforeEach(() => {
+  disconnect.mockClear();
+  jest.mocked(connectMenuRealtime).mockReturnValue(mockSocket());
+});
 
 const deferred = <T,>() => {
   let resolve!: (value: T) => void;
@@ -88,4 +102,29 @@ test('keeps an earlier successful result when a later request fails', async () =
   });
 
   expect(screen.getByText('10')).toBeInTheDocument();
+});
+
+test('updates menu version from realtime menu events', async () => {
+  const initialRequest = deferred<number>();
+  let onMenuUpdated: Parameters<typeof connectMenuRealtime>[0] | null = null;
+
+  jest.mocked(fetchMenuVersion).mockReturnValueOnce(initialRequest.promise);
+  jest.mocked(connectMenuRealtime).mockImplementation((handler) => {
+    onMenuUpdated = handler;
+    return mockSocket();
+  });
+
+  render(<Harness />);
+
+  act(() => {
+    onMenuUpdated?.({ menuVersion: 15 });
+  });
+
+  expect(screen.getByText('15')).toBeInTheDocument();
+
+  act(() => {
+    onMenuUpdated?.({ menuVersion: 14 });
+  });
+
+  expect(screen.getByText('15')).toBeInTheDocument();
 });

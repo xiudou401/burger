@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { fetchMenuVersion } from '../../../api/menu-version';
+import { connectMenuRealtime } from '../../../api/realtime';
 
 const MENU_POLL_MS = 30_000;
 
@@ -17,6 +18,18 @@ export const useMenuVersion = () => {
     }
 
     return version;
+  }, []);
+
+  useEffect(() => {
+    const socket = connectMenuRealtime(({ menuVersion: nextVersion }) => {
+      setMenuVersion((prev) =>
+        prev === null || nextVersion > prev ? nextVersion : prev,
+      );
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {

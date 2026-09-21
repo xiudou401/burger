@@ -12,6 +12,7 @@ import {
   type CheckoutOrderDocument,
 } from './checkout.types';
 import { createStripeCheckoutSession } from './stripe-checkout.service';
+import { emitOrderEvent } from './realtime.service';
 
 const toOrderSnapshotItem = (menuItem: ValidatedCartMenuItem) => ({
   menuItemId: menuItem.id,
@@ -154,6 +155,8 @@ export const createCheckoutOrder = async (
 
     return completeExistingCheckoutOrder(racedOrder, idempotencyKey);
   }
+
+  emitOrderEvent('order:created', toPublicOrder(order));
 
   return completeCheckoutOrder(order, idempotencyKey);
 };
