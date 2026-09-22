@@ -10,7 +10,6 @@ import { formatOrderStatus } from '../utils/order';
 import type { OrderStatus } from '../types/order';
 import {
   chatWithAdminInsightAgent,
-  generateAdminInsights,
   investigateAdminAlert,
 } from '../api/admin-insights';
 import type { AdminInsightResponse } from '../types/admin-insight';
@@ -36,10 +35,6 @@ const formatDelta = (value: number | null) => {
 const AdminDashboard = () => {
   const { brief, summary, analytics, alerts, isLoading, error, refresh } =
     useAdminDashboardPage();
-  const [insightResult, setInsightResult] =
-    useState<AdminInsightResponse | null>(null);
-  const [isGeneratingInsights, setIsGeneratingInsights] = useState(false);
-  const [insightError, setInsightError] = useState<string | null>(null);
   const [alertInsightResult, setAlertInsightResult] =
     useState<AdminInsightResponse | null>(null);
   const [investigatingAlertId, setInvestigatingAlertId] = useState<
@@ -54,25 +49,6 @@ const AdminDashboard = () => {
     useState<AdminInsightResponse | null>(null);
   const [isAskingAdminChat, setIsAskingAdminChat] = useState(false);
   const [adminChatError, setAdminChatError] = useState<string | null>(null);
-
-  const generateInsights = async () => {
-    setIsGeneratingInsights(true);
-    setInsightError(null);
-
-    try {
-      const result = await generateAdminInsights({
-        range: '7d',
-        question: 'What needs operational attention this week?',
-      });
-      setInsightResult(result);
-    } catch (err) {
-      setInsightError(
-        err instanceof Error ? err.message : 'Could not generate insights',
-      );
-    } finally {
-      setIsGeneratingInsights(false);
-    }
-  };
 
   const investigateAlert = async (alertId: string, question?: string) => {
     setInvestigatingAlertId(alertId);
@@ -506,19 +482,8 @@ const AdminDashboard = () => {
                 <p className={classes.MetricLabel}>
                   AI Operations Insight Agent
                 </p>
-                <h2>What needs attention</h2>
+                <h2>Ask a follow-up question</h2>
               </div>
-              <AdminButton
-                type="button"
-                onClick={() => {
-                  void generateInsights();
-                }}
-                disabled={isGeneratingInsights}
-              >
-                {isGeneratingInsights
-                  ? 'Investigating...'
-                  : 'Find what needs attention'}
-              </AdminButton>
             </div>
 
             <form
@@ -624,62 +589,11 @@ const AdminDashboard = () => {
               </article>
             )}
 
-            {insightError && (
-              <AdminStatusText tone="error">{insightError}</AdminStatusText>
-            )}
-
-            {!insightResult && !insightError && (
+            {!adminChatResult && !adminChatError && (
               <AdminStatusText>
-                Find the operational issues most worth checking from verified
-                7-day analytics.
+                Ask the agent to investigate a weak item, payment issue, order
+                status, or anomaly using verified backend tools.
               </AdminStatusText>
-            )}
-
-            {insightResult && (
-              <>
-                <article className={classes.InsightSummary}>
-                  <p>{insightResult.summary}</p>
-                  <dl>
-                    <div>
-                      <dt>Model</dt>
-                      <dd>{insightResult.run.model}</dd>
-                    </div>
-                    <div>
-                      <dt>Tool</dt>
-                      <dd>{insightResult.run.toolsUsed.join(', ')}</dd>
-                    </div>
-                    <div>
-                      <dt>Latency</dt>
-                      <dd>{insightResult.run.latencyMs}ms</dd>
-                    </div>
-                    <div>
-                      <dt>Trace</dt>
-                      <dd>{insightResult.run.id}</dd>
-                    </div>
-                  </dl>
-                </article>
-
-                <div className={classes.InsightGrid}>
-                  {insightResult.insights.map((insight) => (
-                    <article
-                      className={classes.InsightCard}
-                      key={`${insight.type}-${insight.title}`}
-                    >
-                      <div className={classes.InsightMeta}>
-                        <span>{insight.type}</span>
-                        <b>{insight.severity}</b>
-                      </div>
-                      <h3>{insight.title}</h3>
-                      <ul>
-                        {insight.evidence.map((evidence) => (
-                          <li key={evidence}>{evidence}</li>
-                        ))}
-                      </ul>
-                      <p>{insight.suggestedAction}</p>
-                    </article>
-                  ))}
-                </div>
-              </>
             )}
           </section>
         </>

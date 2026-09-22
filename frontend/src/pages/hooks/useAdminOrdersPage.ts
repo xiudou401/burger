@@ -8,7 +8,7 @@ import {
 import { HTTP_STATUS } from '../../api/http-status';
 import { ApiError } from '../../api/request';
 import { useAuth } from '../../store/auth/hooks/useAuth';
-import type { Order, OrderStatus } from '../../types/order';
+import type { CancellationReason, Order, OrderStatus } from '../../types/order';
 import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 
 const ORDER_PAGE_LIMIT = 50;
@@ -226,6 +226,7 @@ export const useAdminOrdersPage = () => {
     orderId: string,
     status: OrderStatus,
     version: number,
+    cancellationReason?: CancellationReason,
   ) => {
     const previousOrders = orders;
 
@@ -237,6 +238,12 @@ export const useAdminOrdersPage = () => {
           ? {
               ...order,
               status,
+              ...(status === 'cancelled'
+                ? {
+                    cancellationReason: cancellationReason ?? 'staff_cancelled',
+                    cancelledAt: new Date().toISOString(),
+                  }
+                : {}),
               version: order.version + 1,
               updatedAt: new Date().toISOString(),
             }
@@ -245,7 +252,12 @@ export const useAdminOrdersPage = () => {
     );
 
     try {
-      const res = await updateOrderStatus(orderId, status, version);
+      const res = await updateOrderStatus(
+        orderId,
+        status,
+        version,
+        cancellationReason,
+      );
       setOrders((current) =>
         current.map((order) => (order.id === orderId ? res.order : order)),
       );

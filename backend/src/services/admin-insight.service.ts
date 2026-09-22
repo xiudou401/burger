@@ -1,8 +1,6 @@
 import { AppError } from '../errors/AppError';
 import { env } from '../config/env';
 import { agentRunRepository } from '../repositories/agent-run.repository';
-import { orderRepository } from '../repositories/order.repository';
-import type { OrderStatus } from '../models/order.model';
 import {
   getAdminAnalyticsSummary,
   type AdminAnalyticsSummary,
@@ -21,6 +19,21 @@ import {
   type AnalyticsAlert,
 } from './admin-alert.service';
 import { ServiceError } from '../errors/ServiceError';
+import {
+  ADMIN_GET_ITEM_PERFORMANCE_TOOL,
+  ADMIN_GET_ORDERS_TOOL,
+  ADMIN_GET_PAYMENT_STATS_TOOL,
+  ADMIN_GET_SALES_METRICS_TOOL,
+  getItemPerformanceSortFromQuestion,
+  getMenuCategoryFromQuestion,
+  getOrderSortFromQuestion,
+  getOrderStatusFromQuestion,
+  getPaymentStatusFromQuestion,
+  runGetItemPerformanceTool,
+  runGetOrdersTool,
+  runGetPaymentStatsTool,
+  type GetOrdersToolParams,
+} from './admin-agent-tools';
 
 const ADMIN_INSIGHT_AGENT = 'admin_insight_agent';
 const ADMIN_INSIGHT_TOOL = 'getAdminAnalyticsSummary';
@@ -29,8 +42,15 @@ const ADMIN_SALES_SUMMARY_TOOL = 'getSalesSummary';
 const ADMIN_CATEGORY_PERFORMANCE_TOOL = 'getCategoryPerformance';
 const ADMIN_ITEM_PERFORMANCE_TOOL = 'getItemPerformance';
 const ADMIN_PAYMENT_STATS_TOOL = 'getPaymentStats';
-const ADMIN_ORDER_STATUS_TOOL = 'getOrdersByStatus';
+const ADMIN_ORDER_TOOL = ADMIN_GET_ORDERS_TOOL;
 const FALLBACK_MODEL = 'deterministic-fallback';
+
+interface InvestigationStepResult {
+  tool: string;
+  args: Record<string, unknown>;
+  reason: string;
+  resultSummary: string;
+}
 
 interface ModelUsage {
   inputTokens?: number;
@@ -50,21 +70,13 @@ type AdminInsightModelClient = (input: {
   activeAlerts?: AnalyticsAlert[];
   orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
   selectedTools?: string[];
+  toolResults?: Record<string, unknown>;
 }) => Promise<InsightModelResult>;
 
 const nowMs = () => Date.now();
 
 const formatCurrency = (valueCents: number) =>
   `A$${(valueCents / 100).toFixed(2)}`;
-
-const ORDER_STATUSES: OrderStatus[] = [
-  'pending_payment',
-  'paid',
-  'preparing',
-  'ready',
-  'completed',
-  'cancelled',
-];
 
 const estimateCostCents = (usage?: ModelUsage) => {
   if (!usage?.inputTokens && !usage?.outputTokens) {
@@ -157,10 +169,10 @@ const selectAdminChatTools = (question: string) => {
   }
 
   if (
-    getRequestedOrderStatus(question) ||
+    getOrderStatusFromQuestion(question) ||
     includesAny(normalized, [/\border\b/, /\borders\b/, /\bshow\b/, /\blist\b/])
   ) {
-    tools.add(ADMIN_ORDER_STATUS_TOOL);
+    tools.add(ADMIN_ORDER_TOOL);
   }
 
   if (
@@ -187,7 +199,10 @@ const selectAdminChatTools = (question: string) => {
 const buildLogicalAnalyticsToolCalls = (tools: string[], latencyMs: number) =>
   tools
     .filter(
-      (tool) => tool !== ADMIN_ORDER_STATUS_TOOL && tool !== ADMIN_ALERT_TOOL,
+      (tool) =>
+        tool !== ADMIN_ORDER_TOOL &&
+        tool !== ADMIN_ALERT_TOOL &&
+        tool !== ADMIN_GET_ITEM_PERFORMANCE_TOOL,
     )
     .map((name) => ({
       name,
@@ -195,45 +210,322 @@ const buildLogicalAnalyticsToolCalls = (tools: string[], latencyMs: number) =>
       latencyMs,
     }));
 
-const getRequestedOrderStatus = (question: string): OrderStatus | null => {
-  const normalized = question.toLowerCase();
+const buildGetOrdersParams = (
+  question: string,
+  analytics: AdminAnalyticsSummary,
+): GetOrdersToolParams => ({
+  from: analytics.startAt,
+  to: analytics.endAt,
+  status: getOrderStatusFromQuestion(question),
+  paymentStatus: getPaymentStatusFromQuestion(question),
+  sort: getOrderSortFromQuestion(question),
+  limit: 5,
+});
 
-  if (
-    /\bcancell?ed\b/.test(normalized) ||
-    /\bcancell?ations?\b/.test(normalized)
-  ) {
-    return 'cancelled';
+const getDominantPaymentIssue = (
+  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
+) => {
+  const issueStatuses = new Set(['unpaid', 'cancelled', 'failed']);
+  const counts = new Map<string, number>();
+
+  for (const order of orderEvidence ?? []) {
+    if (!order.paymentStatus || !issueStatuses.has(order.paymentStatus)) {
+      continue;
+    }
+
+    counts.set(order.paymentStatus, (counts.get(order.paymentStatus) ?? 0) + 1);
   }
 
-  if (/\bpending\b/.test(normalized) || /\bunpaid\b/.test(normalized)) {
-    return 'pending_payment';
-  }
-
-  return (
-    ORDER_STATUSES.find((status) =>
-      normalized.includes(status.replace('_', ' ')),
-    ) ?? null
-  );
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
 };
 
-const getOrdersByStatusEvidence = async (
-  status: OrderStatus,
-  limit = 5,
-): Promise<AdminInsightResponsePayload['orderEvidence']> => {
-  const orders = await orderRepository.listByStatus(status, limit);
+const getDominantCancellationReason = (
+  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
+) => {
+  const counts = new Map<string, number>();
 
-  return orders.map((order) => ({
-    orderId: String(order._id),
-    status: order.status,
-    paymentStatus: order.payment?.status,
-    totalCents: order.totalCents,
-    itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
-    items: order.items
-      .slice(0, 6)
-      .map((item) => item.nameAtPurchase ?? 'Menu item'),
-    createdAt: order.createdAt.toISOString(),
-    updatedAt: order.updatedAt.toISOString(),
-  }));
+  for (const order of orderEvidence ?? []) {
+    if (!order.cancellationReason) {
+      continue;
+    }
+
+    counts.set(
+      order.cancellationReason,
+      (counts.get(order.cancellationReason) ?? 0) + 1,
+    );
+  }
+
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+};
+
+const getRepeatedCancelledItem = (
+  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
+) => {
+  const counts = new Map<string, number>();
+
+  for (const order of orderEvidence ?? []) {
+    for (const item of order.items) {
+      counts.set(item, (counts.get(item) ?? 0) + 1);
+    }
+  }
+
+  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+};
+
+const getNarrowCancellationWindow = (
+  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
+) => {
+  const timestamps =
+    orderEvidence
+      ?.map((order) => new Date(order.createdAt).getTime())
+      .filter((time) => Number.isFinite(time))
+      .sort((a, b) => a - b) ?? [];
+
+  if (timestamps.length < 3) {
+    return null;
+  }
+
+  const twoHoursMs = 2 * 60 * 60 * 1000;
+
+  for (let index = 0; index < timestamps.length; index += 1) {
+    const start = timestamps[index];
+    const clustered = timestamps.filter(
+      (time) => time >= start && time <= start + twoHoursMs,
+    );
+
+    if (clustered.length >= Math.ceil(timestamps.length * 0.6)) {
+      return {
+        from: new Date(start),
+        to: new Date(start + twoHoursMs),
+        count: clustered.length,
+      };
+    }
+  }
+
+  return null;
+};
+
+const runCancellationInvestigation = async ({
+  analytics,
+  analyticsLatencyMs,
+}: {
+  analytics: AdminAnalyticsSummary;
+  analyticsLatencyMs: number;
+}) => {
+  const steps: InvestigationStepResult[] = [
+    {
+      tool: ADMIN_GET_SALES_METRICS_TOOL,
+      args: {
+        from: analytics.startAt.toISOString(),
+        to: analytics.endAt.toISOString(),
+      },
+      reason:
+        'Confirm cancellation, revenue, paid order, and overall order context before drilling into records.',
+      resultSummary: `${analytics.orderCount} orders, ${analytics.paidOrderCount} paid orders, and ${formatCurrency(
+        analytics.revenueCents,
+      )} revenue in the selected ${analytics.range} window.`,
+    },
+  ];
+  const toolCalls = [
+    {
+      name: ADMIN_GET_SALES_METRICS_TOOL,
+      status: 'success' as const,
+      latencyMs: analyticsLatencyMs,
+    },
+  ];
+  const selectedTools = [ADMIN_GET_SALES_METRICS_TOOL, ADMIN_GET_ORDERS_TOOL];
+  const toolResults: Record<string, unknown> = {
+    [ADMIN_GET_SALES_METRICS_TOOL]: {
+      params: {
+        from: analytics.startAt,
+        to: analytics.endAt,
+      },
+      result: analytics,
+    },
+  };
+
+  const ordersStartMs = nowMs();
+  const cancelledOrders = await runGetOrdersTool({
+    from: analytics.startAt,
+    to: analytics.endAt,
+    status: 'cancelled',
+    sort: 'updated_desc',
+    limit: 10,
+  });
+  const orderEvidence = cancelledOrders.result;
+  const orderEvidenceLatencyMs = nowMs() - ordersStartMs;
+  toolCalls.push({
+    name: ADMIN_GET_ORDERS_TOOL,
+    status: 'success' as const,
+    latencyMs: orderEvidenceLatencyMs,
+  });
+  toolResults[ADMIN_GET_ORDERS_TOOL] = {
+    params: cancelledOrders.params,
+    result: orderEvidence,
+  };
+  steps.push({
+    tool: ADMIN_GET_ORDERS_TOOL,
+    args: {
+      from: analytics.startAt.toISOString(),
+      to: analytics.endAt.toISOString(),
+      status: 'cancelled',
+      sort: 'updated_desc',
+      limit: 10,
+    },
+    reason:
+      'Inspect concrete cancelled order evidence before choosing the next investigation branch.',
+    resultSummary: `Found ${orderEvidence?.length ?? 0} cancelled orders for evidence review.`,
+  });
+
+  const dominantCancellationReason =
+    getDominantCancellationReason(orderEvidence);
+  const dominantPaymentIssue = getDominantPaymentIssue(orderEvidence);
+  const repeatedItem = getRepeatedCancelledItem(orderEvidence);
+  const narrowWindow = getNarrowCancellationWindow(orderEvidence);
+  const hasDominantReason =
+    dominantCancellationReason &&
+    dominantCancellationReason[1] >=
+      Math.ceil((orderEvidence?.length ?? 0) / 2);
+  const hasDominantPaymentIssue =
+    dominantPaymentIssue &&
+    dominantPaymentIssue[1] >= Math.ceil((orderEvidence?.length ?? 0) / 2);
+  const reasonSuggestsPaymentCheck =
+    dominantCancellationReason?.[0] === 'customer_abandoned_checkout' ||
+    dominantCancellationReason?.[0] === 'payment_failed';
+  const reasonSuggestsItemCheck =
+    dominantCancellationReason?.[0] === 'item_unavailable';
+
+  if (
+    (hasDominantReason && reasonSuggestsPaymentCheck) ||
+    hasDominantPaymentIssue
+  ) {
+    const paymentStartMs = nowMs();
+    const paymentStats = await runGetPaymentStatsTool({
+      from: analytics.startAt,
+      to: analytics.endAt,
+    });
+    const paymentLatencyMs = nowMs() - paymentStartMs;
+    selectedTools.push(ADMIN_GET_PAYMENT_STATS_TOOL);
+    toolCalls.push({
+      name: ADMIN_GET_PAYMENT_STATS_TOOL,
+      status: 'success' as const,
+      latencyMs: paymentLatencyMs,
+    });
+    toolResults[ADMIN_GET_PAYMENT_STATS_TOOL] = {
+      params: paymentStats.params,
+      result: paymentStats.result,
+    };
+    steps.push({
+      tool: ADMIN_GET_PAYMENT_STATS_TOOL,
+      args: {
+        from: analytics.startAt.toISOString(),
+        to: analytics.endAt.toISOString(),
+      },
+      reason: hasDominantReason
+        ? `${dominantCancellationReason?.[1] ?? 0} cancelled orders share cancellation reason "${dominantCancellationReason?.[0]}", so payment outcomes need a focused check.`
+        : `${dominantPaymentIssue?.[1] ?? 0} cancelled orders share payment status "${dominantPaymentIssue?.[0]}", so payment outcomes need a focused check.`,
+      resultSummary: `Payment outcomes: ${paymentStats.result
+        .map((entry) => `${entry.status}=${entry.count}`)
+        .join(', ')}.`,
+    });
+  } else if (
+    (hasDominantReason && reasonSuggestsItemCheck) ||
+    (repeatedItem && repeatedItem[1] >= 2)
+  ) {
+    const itemStartMs = nowMs();
+    const itemPerformance = await runGetItemPerformanceTool({
+      from: analytics.startAt,
+      to: analytics.endAt,
+      sort: 'quantity_desc',
+      limit: 5,
+    });
+    const itemLatencyMs = nowMs() - itemStartMs;
+    selectedTools.push(ADMIN_GET_ITEM_PERFORMANCE_TOOL);
+    toolCalls.push({
+      name: ADMIN_GET_ITEM_PERFORMANCE_TOOL,
+      status: 'success' as const,
+      latencyMs: itemLatencyMs,
+    });
+    toolResults[ADMIN_GET_ITEM_PERFORMANCE_TOOL] = {
+      params: itemPerformance.params,
+      result: itemPerformance.result,
+    };
+    steps.push({
+      tool: ADMIN_GET_ITEM_PERFORMANCE_TOOL,
+      args: {
+        from: analytics.startAt.toISOString(),
+        to: analytics.endAt.toISOString(),
+        sort: 'quantity_desc',
+        limit: 5,
+      },
+      reason:
+        hasDominantReason && reasonSuggestsItemCheck
+          ? `${dominantCancellationReason?.[1] ?? 0} cancelled orders share cancellation reason "${dominantCancellationReason?.[0]}", so item availability and item concentration need a focused check.`
+          : `${repeatedItem?.[0]} appears in ${repeatedItem?.[1]} cancelled order evidence entries, so item concentration needs a focused check.`,
+      resultSummary: `Top item performance: ${itemPerformance.result
+        .map((item) => `${item.name}=${item.quantitySold} sold`)
+        .join(', ')}.`,
+    });
+  } else if (narrowWindow) {
+    const windowStartMs = nowMs();
+    const windowOrders = await runGetOrdersTool({
+      from: narrowWindow.from,
+      to: narrowWindow.to,
+      status: 'cancelled',
+      sort: 'created_desc',
+      limit: 10,
+    });
+    const windowLatencyMs = nowMs() - windowStartMs;
+    toolCalls.push({
+      name: ADMIN_GET_ORDERS_TOOL,
+      status: 'success' as const,
+      latencyMs: windowLatencyMs,
+    });
+    toolResults[`${ADMIN_GET_ORDERS_TOOL}:narrowWindow`] = {
+      params: windowOrders.params,
+      result: windowOrders.result,
+    };
+    steps.push({
+      tool: ADMIN_GET_ORDERS_TOOL,
+      args: {
+        from: narrowWindow.from.toISOString(),
+        to: narrowWindow.to.toISOString(),
+        status: 'cancelled',
+        sort: 'created_desc',
+        limit: 10,
+      },
+      reason: `${narrowWindow.count} cancelled orders cluster inside a two-hour window, so the investigation narrows the time range.`,
+      resultSummary: `Found ${windowOrders.result?.length ?? 0} cancelled orders in the narrowed time window.`,
+    });
+  } else {
+    steps.push({
+      tool: 'no_extra_tool',
+      args: {},
+      reason:
+        'Cancelled order evidence did not show a dominant payment status, repeated item, or narrow time cluster.',
+      resultSummary:
+        'Current evidence is enough to flag the issue but not enough to identify a narrower likely cause.',
+    });
+  }
+
+  toolResults.investigationPlan = {
+    trigger: 'high_cancellation_rate',
+    steps,
+    constraints: [
+      'Only conclude from supplied evidence.',
+      'Distinguish observed facts from possible explanations.',
+      'If root cause cannot be established, say what data is missing.',
+      'Recommend what to check next; do not automate refunds, menu changes, or payment changes.',
+    ],
+  };
+
+  return {
+    selectedTools,
+    toolCalls,
+    toolResults,
+    orderEvidence,
+    steps,
+  };
 };
 
 const buildFallbackInsights = (
@@ -383,13 +675,18 @@ const buildChatFallbackInsights = ({
   analytics,
   activeAlerts,
   orderEvidence,
+  toolResults,
 }: {
   question: string;
   analytics: AdminAnalyticsSummary;
   activeAlerts?: AnalyticsAlert[];
   orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
+  toolResults?: Record<string, unknown>;
 }): AdminInsightResponsePayload => {
   const normalized = question.toLowerCase();
+  const itemPerformance = toolResults?.[ADMIN_GET_ITEM_PERFORMANCE_TOOL] as
+    | AdminAnalyticsSummary['topItems']
+    | undefined;
 
   if (orderEvidence && orderEvidence.length > 0) {
     return buildFallbackInsights(analytics, activeAlerts?.[0], orderEvidence);
@@ -403,9 +700,9 @@ const buildChatFallbackInsights = ({
       /\bslow\b/,
       /\bweak\b/,
     ]) &&
-    analytics.underperformingItems[0]
+    (itemPerformance?.[0] || analytics.underperformingItems[0])
   ) {
-    const item = analytics.underperformingItems[0];
+    const item = itemPerformance?.[0] || analytics.underperformingItems[0];
 
     return {
       summary: `${item.name} is the weakest visible item in the selected ${analytics.range} window, based on sold quantity and revenue from paid orders.`,
@@ -418,7 +715,7 @@ const buildChatFallbackInsights = ({
             `${item.name} sold ${item.quantitySold} units for ${formatCurrency(
               item.revenueCents,
             )} revenue.`,
-            `${analytics.topItems[0]?.name ?? 'The top item'} is currently ahead in the same range.`,
+            `${analytics.topItems[0]?.name ?? 'The top item'} is currently ahead in the broader selected range.`,
           ],
           suggestedAction:
             'Check placement, availability, and pairing before changing the item itself.',
@@ -430,9 +727,9 @@ const buildChatFallbackInsights = ({
 
   if (
     includesAny(normalized, [/\bbest\b/, /\btop\b/, /\bpopular\b/]) &&
-    analytics.topItems[0]
+    (itemPerformance?.[0] || analytics.topItems[0])
   ) {
-    const item = analytics.topItems[0];
+    const item = itemPerformance?.[0] || analytics.topItems[0];
 
     return {
       summary: `${item.name} is the strongest visible item in the selected ${analytics.range} window.`,
@@ -559,6 +856,8 @@ const buildDisplayOrderEvidence = (
     orderId: order.orderId,
     status: order.status,
     paymentStatus: order.paymentStatus,
+    cancellationReason: order.cancellationReason,
+    cancelledAt: order.cancelledAt,
     total: formatCurrency(order.totalCents),
     itemCount: order.itemCount,
     items: order.items,
@@ -573,6 +872,7 @@ export const buildAdminInsightUserPromptForTest = ({
   activeAlerts,
   orderEvidence,
   selectedTools,
+  toolResults,
 }: {
   question: string;
   analytics: AdminAnalyticsSummary;
@@ -580,10 +880,12 @@ export const buildAdminInsightUserPromptForTest = ({
   activeAlerts?: AnalyticsAlert[];
   orderEvidence?: AdminInsightResponsePayload['orderEvidence'];
   selectedTools?: string[];
+  toolResults?: Record<string, unknown>;
 }) => {
   return JSON.stringify({
     question,
     selectedTools,
+    toolResults,
     alert,
     activeAlerts,
     orderEvidence,
@@ -597,10 +899,10 @@ export const buildAdminInsightUserPromptForTest = ({
       ? 'Investigate the provided alert. Explain what happened, what evidence supports it, what the likely explanation could be, what the current data does not prove, and what the admin should check next. Do not claim customer intent or causes that are not supported by analytics.'
       : undefined,
     chatInstruction: selectedTools
-      ? 'Answer the admin question using the selected backend tool results. Prioritize operational attention: what happened, evidence, likely explanation, what to check next, and data boundaries. If the tools do not prove a cause, say what the data supports and what remains unknown.'
+      ? 'Answer the admin question using the selected backend tool results and toolResults. Prioritize operational attention: what happened, evidence, likely explanation, what to check next, and data boundaries. If the tools do not prove a cause, say what the data supports and what remains unknown.'
       : undefined,
     orderEvidenceInstruction: orderEvidence
-      ? 'The provided orderEvidence is a restricted admin tool result. You may summarize these orders by id, status, payment status, total, item count, items, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
+      ? 'The provided orderEvidence is a restricted admin tool result. You may summarize these orders by id, status, payment status, cancellation reason, total, item count, items, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
       : undefined,
     outputShape: {
       summary:
@@ -815,6 +1117,8 @@ export const chatWithAdminInsightAgent = async (
   let alertLatencyMs = 0;
   let orderEvidence: AdminInsightResponsePayload['orderEvidence'];
   let orderEvidenceLatencyMs = 0;
+  let itemPerformanceLatencyMs = 0;
+  const toolResults: Record<string, unknown> = {};
 
   try {
     analytics = await getAdminAnalyticsSummary(payload.range);
@@ -826,12 +1130,33 @@ export const chatWithAdminInsightAgent = async (
       alertLatencyMs = nowMs() - alertStartMs;
     }
 
-    const requestedStatus = getRequestedOrderStatus(question);
+    if (selectedTools.includes(ADMIN_GET_ITEM_PERFORMANCE_TOOL)) {
+      const itemPerformanceStartMs = nowMs();
+      const itemPerformance = await runGetItemPerformanceTool({
+        from: analytics.startAt,
+        to: analytics.endAt,
+        category: getMenuCategoryFromQuestion(question),
+        sort: getItemPerformanceSortFromQuestion(question),
+        limit: 5,
+      });
+      itemPerformanceLatencyMs = nowMs() - itemPerformanceStartMs;
+      toolResults[itemPerformance.name] = {
+        params: itemPerformance.params,
+        result: itemPerformance.result,
+      };
+    }
 
-    if (requestedStatus && selectedTools.includes(ADMIN_ORDER_STATUS_TOOL)) {
+    if (selectedTools.includes(ADMIN_ORDER_TOOL)) {
       const orderEvidenceStartMs = nowMs();
-      orderEvidence = await getOrdersByStatusEvidence(requestedStatus);
+      const orders = await runGetOrdersTool(
+        buildGetOrdersParams(question, analytics),
+      );
       orderEvidenceLatencyMs = nowMs() - orderEvidenceStartMs;
+      orderEvidence = orders.result;
+      toolResults[orders.name] = {
+        params: orders.params,
+        result: orders.result,
+      };
     }
 
     const modelResult = await adminInsightModelClient({
@@ -840,6 +1165,7 @@ export const chatWithAdminInsightAgent = async (
       activeAlerts,
       orderEvidence,
       selectedTools,
+      toolResults,
     });
     const parsed = AdminInsightResponseSchema.parse(modelResult.content);
     const latencyMs = nowMs() - startMs;
@@ -860,10 +1186,19 @@ export const chatWithAdminInsightAgent = async (
               },
             ]
           : []),
-        ...(selectedTools.includes(ADMIN_ORDER_STATUS_TOOL) && orderEvidence
+        ...(selectedTools.includes(ADMIN_GET_ITEM_PERFORMANCE_TOOL)
           ? [
               {
-                name: ADMIN_ORDER_STATUS_TOOL,
+                name: ADMIN_GET_ITEM_PERFORMANCE_TOOL,
+                status: 'success' as const,
+                latencyMs: itemPerformanceLatencyMs,
+              },
+            ]
+          : []),
+        ...(selectedTools.includes(ADMIN_ORDER_TOOL) && orderEvidence
+          ? [
+              {
+                name: ADMIN_ORDER_TOOL,
                 status: 'success' as const,
                 latencyMs: orderEvidenceLatencyMs,
               },
@@ -920,7 +1255,7 @@ export const chatWithAdminInsightAgent = async (
               ...(orderEvidence
                 ? [
                     {
-                      name: ADMIN_ORDER_STATUS_TOOL,
+                      name: ADMIN_ORDER_TOOL,
                       status: 'success' as const,
                       latencyMs: orderEvidenceLatencyMs,
                     },
@@ -962,6 +1297,13 @@ export const investigateAdminAlert = async (
   let alert: AnalyticsAlert | null = null;
   let orderEvidence: AdminInsightResponsePayload['orderEvidence'];
   let orderEvidenceLatencyMs = 0;
+  let selectedTools: string[] = [ADMIN_INSIGHT_TOOL, ADMIN_ALERT_TOOL];
+  let toolResults: Record<string, unknown> | undefined;
+  let investigationToolCalls: Array<{
+    name: string;
+    status: 'success';
+    latencyMs: number;
+  }> | null = null;
 
   try {
     analytics = await getAdminAnalyticsSummary(payload.range);
@@ -976,12 +1318,36 @@ export const investigateAdminAlert = async (
       throw new ServiceError('Analytics alert is no longer active.', 404);
     }
 
-    const requestedStatus = getRequestedOrderStatus(question);
-
-    if (requestedStatus) {
+    if (alert.type === 'high_cancellation_rate' && !payload.question?.trim()) {
+      const investigation = await runCancellationInvestigation({
+        analytics,
+        analyticsLatencyMs,
+      });
+      selectedTools = [ADMIN_ALERT_TOOL, ...investigation.selectedTools];
+      toolResults = investigation.toolResults;
+      investigationToolCalls = [
+        {
+          name: ADMIN_ALERT_TOOL,
+          status: 'success',
+          latencyMs: alertLatencyMs,
+        },
+        ...investigation.toolCalls,
+      ];
+      orderEvidence = investigation.orderEvidence;
+    } else if (getOrderStatusFromQuestion(question)) {
       const orderEvidenceStartMs = nowMs();
-      orderEvidence = await getOrdersByStatusEvidence(requestedStatus);
+      const orders = await runGetOrdersTool(
+        buildGetOrdersParams(question, analytics),
+      );
       orderEvidenceLatencyMs = nowMs() - orderEvidenceStartMs;
+      orderEvidence = orders.result;
+      selectedTools = [ADMIN_INSIGHT_TOOL, ADMIN_ALERT_TOOL, ADMIN_ORDER_TOOL];
+      toolResults = {
+        [ADMIN_ORDER_TOOL]: {
+          params: orders.params,
+          result: orders.result,
+        },
+      };
     }
 
     const modelResult = await adminInsightModelClient({
@@ -989,21 +1355,18 @@ export const investigateAdminAlert = async (
       analytics,
       alert,
       orderEvidence,
+      selectedTools,
+      toolResults,
     });
     const parsed = AdminInsightResponseSchema.parse(modelResult.content);
     const latencyMs = nowMs() - startMs;
-    const toolsUsed = [
-      ADMIN_INSIGHT_TOOL,
-      ADMIN_ALERT_TOOL,
-      ...(orderEvidence ? [ADMIN_ORDER_STATUS_TOOL] : []),
-    ];
     const agentRun = await agentRunRepository.create({
       agentName: ADMIN_INSIGHT_AGENT,
       actorId: actor.id,
       prompt: `${question} Alert: ${alert.id}`,
       model: modelResult.modelUsed,
-      toolsUsed,
-      toolCalls: [
+      toolsUsed: selectedTools,
+      toolCalls: investigationToolCalls ?? [
         {
           name: ADMIN_INSIGHT_TOOL,
           status: 'success',
@@ -1017,7 +1380,7 @@ export const investigateAdminAlert = async (
         ...(orderEvidence
           ? [
               {
-                name: ADMIN_ORDER_STATUS_TOOL,
+                name: ADMIN_ORDER_TOOL,
                 status: 'success' as const,
                 latencyMs: orderEvidenceLatencyMs,
               },
@@ -1038,7 +1401,7 @@ export const investigateAdminAlert = async (
         id: String(agentRun._id),
         agentName: ADMIN_INSIGHT_AGENT,
         model: modelResult.modelUsed,
-        toolsUsed,
+        toolsUsed: selectedTools,
         latencyMs,
         estimatedCostCents: agentRun.estimatedCostCents,
         status: 'success' as const,

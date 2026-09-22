@@ -165,6 +165,7 @@ describe('stripe webhook controller', () => {
     expect(markStripeCheckoutFailed).toHaveBeenCalledWith(
       'cs_test_123',
       'cancelled',
+      'customer_abandoned_checkout',
     );
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
       'evt_test_123',

@@ -89,7 +89,11 @@ export const stripeWebhookHandler = async (
           client_reference_id?: string | null;
         };
         orderId = getOrderIdFromCheckoutSession(session);
-        await markStripeCheckoutFailed(session.id, 'cancelled');
+        await markStripeCheckoutFailed(
+          session.id,
+          'cancelled',
+          'customer_abandoned_checkout',
+        );
       }
 
       if (event.type === 'checkout.session.async_payment_failed') {

@@ -1,5 +1,9 @@
 import { ServiceError } from '../errors/ServiceError';
-import type { OrderStatus, PaymentStatus } from '../models/order.model';
+import type {
+  CancellationReason,
+  OrderStatus,
+  PaymentStatus,
+} from '../models/order.model';
 import { orderRepository } from '../repositories/order.repository';
 import {
   type PublicOrder,
@@ -91,6 +95,7 @@ export const markStripeCheckoutPaid = async (
 export const markStripeCheckoutFailed = async (
   sessionId: string,
   paymentStatus: Extract<PaymentStatus, 'failed' | 'cancelled'>,
+  cancellationReason?: CancellationReason,
 ): Promise<PublicOrder> => {
   const order = await orderRepository.findByStripeSessionId(sessionId);
 
@@ -106,6 +111,9 @@ export const markStripeCheckoutFailed = async (
 
   if (paymentStatus === 'cancelled') {
     order.status = 'cancelled';
+    order.cancellationReason =
+      cancellationReason ?? 'customer_abandoned_checkout';
+    order.cancelledAt = order.cancelledAt ?? new Date();
   }
 
   await orderRepository.save(order);

@@ -24,6 +24,11 @@ interface AnalyticsRange {
   end: Date;
 }
 
+interface OrderQueryRange {
+  start?: Date;
+  end?: Date;
+}
+
 export interface OrderAnalyticsTotals {
   orderCount: number;
   paidOrderCount: number;
@@ -112,6 +117,49 @@ export const orderRepository = {
       .limit(limit)
       .lean()
       .exec();
+  },
+
+  queryOrders({
+    start,
+    end,
+    status,
+    paymentStatus,
+    sort,
+    limit,
+  }: OrderQueryRange & {
+    status?: OrderStatus;
+    paymentStatus?: PaymentStatus;
+    sort: 'updated_desc' | 'created_desc' | 'total_desc';
+    limit: number;
+  }) {
+    const query: Record<string, unknown> = {};
+
+    if (start || end) {
+      query.createdAt = {
+        ...(start ? { $gte: start } : {}),
+        ...(end ? { $lt: end } : {}),
+      };
+    }
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (paymentStatus) {
+      query['payment.status'] = paymentStatus;
+    }
+
+    let sortSpec: Record<string, 1 | -1>;
+
+    if (sort === 'total_desc') {
+      sortSpec = { totalCents: -1, createdAt: -1, _id: -1 };
+    } else if (sort === 'created_desc') {
+      sortSpec = { createdAt: -1, _id: -1 };
+    } else {
+      sortSpec = { updatedAt: -1, createdAt: -1, _id: -1 };
+    }
+
+    return OrderModel.find(query).sort(sortSpec).limit(limit).lean().exec();
   },
 
   listCreatedBetween(start: Date, end: Date) {
@@ -273,9 +321,11 @@ export const orderRepository = {
   getAnalyticsItemSales({
     start,
     end,
+    category,
     sort,
     limit,
   }: AnalyticsRange & {
+    category?: string;
     sort: Record<string, 1 | -1>;
     limit: number;
   }) {
@@ -287,6 +337,15 @@ export const orderRepository = {
         },
       },
       { $unwind: '$items' },
+      ...(category
+        ? [
+            {
+              $match: {
+                'items.categoryAtPurchase': category,
+              },
+            },
+          ]
+        : []),
       {
         $group: {
           _id: '$items.menuItemId',

@@ -811,8 +811,15 @@ describe('order service', () => {
 
     expect(order.status).toBe('cancelled');
     expect(order.payment.status).toBe('cancelled');
-    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(orderRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cancellationReason: 'customer_abandoned_checkout',
+        cancelledAt: expect.any(Date),
+      }),
+    );
     expect(result.payment?.status).toBe('cancelled');
+    expect(result.cancellationReason).toBe('customer_abandoned_checkout');
+    expect(result.cancelledAt).toBeInstanceOf(Date);
   });
 
   test('ignores late failed checkout events for already paid orders', async () => {
@@ -1059,12 +1066,20 @@ describe('order service', () => {
         'cancelled',
         0,
         adminActor,
+        { cancellationReason: 'staff_cancelled' },
       );
 
       expect(order.status).toBe('cancelled');
       expect(order.payment.status).toBe('paid');
-      expect(orderRepository.save).toHaveBeenCalledWith(order);
+      expect(orderRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cancellationReason: 'staff_cancelled',
+          cancelledAt: expect.any(Date),
+        }),
+      );
       expect(result.status).toBe('cancelled');
+      expect(result.cancellationReason).toBe('staff_cancelled');
+      expect(result.cancelledAt).toBeInstanceOf(Date);
       expect(result.payment?.status).toBe('paid');
     },
   );
@@ -1089,7 +1104,9 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'cancelled', 0, staffActor),
+      updateOrderStatus(orderId, 'cancelled', 0, staffActor, {
+        cancellationReason: 'staff_cancelled',
+      }),
     ).rejects.toThrow('Staff can only advance order fulfillment status');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
@@ -1114,7 +1131,9 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'cancelled', 0, adminActor),
+      updateOrderStatus(orderId, 'cancelled', 0, adminActor, {
+        cancellationReason: 'staff_cancelled',
+      }),
     ).rejects.toThrow('Cannot move order from completed to cancelled');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });

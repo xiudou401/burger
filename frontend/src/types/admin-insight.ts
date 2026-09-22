@@ -24,6 +24,8 @@ export interface AdminInsightOrderEvidence {
   orderId: string;
   status: string;
   paymentStatus?: string;
+  cancellationReason?: string;
+  cancelledAt?: string;
   totalCents: number;
   itemCount: number;
   items: string[];
@@ -38,11 +40,6 @@ export interface AdminInsightResponse {
   alert?: AdminAnalyticsAlert;
   orderEvidence?: AdminInsightOrderEvidence[];
   run: AdminInsightRun;
-}
-
-export interface GenerateAdminInsightsPayload {
-  range: AnalyticsRange;
-  question?: string;
 }
 
 export interface InvestigateAdminAlertPayload {

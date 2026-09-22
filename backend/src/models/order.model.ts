@@ -17,6 +17,14 @@ export type PaymentStatus =
   | 'cancelled'
   | 'refunded';
 
+export type CancellationReason =
+  | 'payment_failed'
+  | 'customer_abandoned_checkout'
+  | 'staff_cancelled'
+  | 'item_unavailable'
+  | 'duplicate_order'
+  | 'other';
+
 export interface OrderItem {
   menuItemId: Types.ObjectId;
   nameAtPurchase: string;
@@ -35,6 +43,8 @@ export interface Order {
   checkoutIdempotencyKey?: string;
   checkoutUrl?: string;
   status: OrderStatus;
+  cancellationReason?: CancellationReason;
+  cancelledAt?: Date;
   payment: {
     provider?: 'stripe';
     providerPaymentId?: string;
@@ -142,6 +152,18 @@ const orderSchema = new Schema<Order>(
       required: true,
       default: 'pending_payment',
     },
+    cancellationReason: {
+      type: String,
+      enum: [
+        'payment_failed',
+        'customer_abandoned_checkout',
+        'staff_cancelled',
+        'item_unavailable',
+        'duplicate_order',
+        'other',
+      ],
+    },
+    cancelledAt: Date,
     payment: {
       provider: {
         type: String,

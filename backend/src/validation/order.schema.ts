@@ -15,12 +15,31 @@ export const OrderStatusSchema = z.enum([
   'cancelled',
 ]);
 
+export const CancellationReasonSchema = z.enum([
+  'payment_failed',
+  'customer_abandoned_checkout',
+  'staff_cancelled',
+  'item_unavailable',
+  'duplicate_order',
+  'other',
+]);
+
 export const UpdateOrderStatusSchema = z
   .object({
     status: OrderStatusSchema,
     version: z.number().int().nonnegative(),
+    cancellationReason: CancellationReasonSchema.optional(),
   })
-  .strict();
+  .strict()
+  .refine(
+    (payload) =>
+      payload.status !== 'cancelled' ||
+      payload.cancellationReason !== undefined,
+    {
+      message: 'Cancellation reason is required when cancelling an order',
+      path: ['cancellationReason'],
+    },
+  );
 
 export const ListMyOrdersQuerySchema = z
   .object({

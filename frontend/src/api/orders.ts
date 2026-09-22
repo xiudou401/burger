@@ -1,6 +1,6 @@
 import { request } from './request';
 import type { CartStoredItem } from '../types/cart';
-import type { Order, OrderStatus } from '../types/order';
+import type { CancellationReason, Order, OrderStatus } from '../types/order';
 
 export const createCheckoutOrder = (
   items: CartStoredItem[],
@@ -56,12 +56,17 @@ export const updateOrderStatus = (
   orderId: string,
   status: OrderStatus,
   version: number,
+  cancellationReason?: CancellationReason,
 ) => {
   return request<{ order: Order }>(
     `/orders/${encodeURIComponent(orderId)}/status`,
     {
       method: 'PATCH',
-      body: JSON.stringify({ status, version }),
+      body: JSON.stringify({
+        status,
+        version,
+        ...(cancellationReason ? { cancellationReason } : {}),
+      }),
     },
   );
 };

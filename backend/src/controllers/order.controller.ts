@@ -106,10 +106,13 @@ export const updateOrderStatusHandler = async (
   }
 
   try {
-    const { status, version } = req.body as UpdateOrderStatusPayload;
+    const { status, version, cancellationReason } =
+      req.body as UpdateOrderStatusPayload;
     const { orderId } = req.params as OrderParamsPayload;
 
-    const order = await updateOrderStatus(orderId, status, version, req.user);
+    const order = await updateOrderStatus(orderId, status, version, req.user, {
+      cancellationReason,
+    });
 
     return res.status(200).json({ order });
   } catch (error) {

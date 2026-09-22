@@ -28,7 +28,9 @@ jest.mock('../repositories/agent-run.repository', () => ({
 
 jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
-    listByStatus: jest.fn(),
+    queryOrders: jest.fn(),
+    getAnalyticsItemSales: jest.fn(),
+    getAnalyticsPaymentStatusCounts: jest.fn(),
   },
 }));
 
@@ -105,7 +107,11 @@ describe('admin insight service', () => {
       _id: 'agent-run-1',
       estimatedCostCents: 0.01,
     } as never);
-    jest.mocked(orderRepository.listByStatus).mockResolvedValue([]);
+    jest.mocked(orderRepository.queryOrders).mockResolvedValue([]);
+    jest.mocked(orderRepository.getAnalyticsItemSales).mockResolvedValue([]);
+    jest
+      .mocked(orderRepository.getAnalyticsPaymentStatusCounts)
+      .mockResolvedValue([]);
   });
 
   test('passes verified analytics summary into the insight model and logs the run', async () => {
@@ -223,7 +229,52 @@ describe('admin insight service', () => {
     );
   });
 
-  test('investigates an active analytics alert with alert context and logs both tools', async () => {
+  test('runs bounded cancellation investigation for an active cancellation alert', async () => {
+    jest.mocked(orderRepository.queryOrders).mockResolvedValue([
+      {
+        _id: '66f000000000000000000003',
+        status: 'cancelled',
+        cancellationReason: 'customer_abandoned_checkout',
+        cancelledAt: new Date('2026-09-20T11:05:00.000Z'),
+        totalCents: 2800,
+        payment: {
+          status: 'cancelled',
+        },
+        items: [
+          {
+            nameAtPurchase: 'Classic Burger',
+            quantity: 1,
+          },
+        ],
+        createdAt: new Date('2026-09-20T11:00:00.000Z'),
+        updatedAt: new Date('2026-09-20T11:05:00.000Z'),
+      },
+      {
+        _id: '66f000000000000000000004',
+        status: 'cancelled',
+        cancellationReason: 'customer_abandoned_checkout',
+        cancelledAt: new Date('2026-09-20T12:05:00.000Z'),
+        totalCents: 1800,
+        payment: {
+          status: 'cancelled',
+        },
+        items: [
+          {
+            nameAtPurchase: 'Fries',
+            quantity: 1,
+          },
+        ],
+        createdAt: new Date('2026-09-20T12:00:00.000Z'),
+        updatedAt: new Date('2026-09-20T12:05:00.000Z'),
+      },
+    ] as never);
+    jest
+      .mocked(orderRepository.getAnalyticsPaymentStatusCounts)
+      .mockResolvedValue([
+        { status: 'paid', count: 9 },
+        { status: 'cancelled', count: 2 },
+      ]);
+
     const modelClient = jest.fn().mockResolvedValue({
       content: {
         summary: 'Cancellation rate needs an operations check.',
@@ -255,18 +306,60 @@ describe('admin insight service', () => {
         'Investigate this analytics alert and recommend the next operational check.',
       analytics: analyticsSummary,
       alert: activeAlert,
+      selectedTools: [
+        'detectAnalyticsAlerts',
+        'getSalesMetrics',
+        'getOrders',
+        'getPaymentStats',
+      ],
+      orderEvidence: [
+        expect.objectContaining({
+          orderId: '66f000000000000000000003',
+          status: 'cancelled',
+          cancellationReason: 'customer_abandoned_checkout',
+        }),
+        expect.objectContaining({
+          orderId: '66f000000000000000000004',
+          status: 'cancelled',
+          cancellationReason: 'customer_abandoned_checkout',
+        }),
+      ],
+      toolResults: expect.objectContaining({
+        investigationPlan: expect.objectContaining({
+          trigger: 'high_cancellation_rate',
+          steps: expect.arrayContaining([
+            expect.objectContaining({
+              tool: 'getSalesMetrics',
+            }),
+            expect.objectContaining({
+              tool: 'getOrders',
+            }),
+            expect.objectContaining({
+              tool: 'getPaymentStats',
+            }),
+          ]),
+        }),
+      }),
     });
     expect(agentRunRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        toolsUsed: ['getAdminAnalyticsSummary', 'detectAnalyticsAlerts'],
+        toolsUsed: [
+          'detectAnalyticsAlerts',
+          'getSalesMetrics',
+          'getOrders',
+          'getPaymentStats',
+        ],
         status: 'success',
       }),
     );
     expect(result.alert).toEqual(activeAlert);
     expect(result.run.toolsUsed).toEqual([
-      'getAdminAnalyticsSummary',
       'detectAnalyticsAlerts',
+      'getSalesMetrics',
+      'getOrders',
+      'getPaymentStats',
     ]);
+    expect(result.orderEvidence).toHaveLength(2);
   });
 
   test('rejects investigation when the alert is no longer active', async () => {
@@ -283,8 +376,8 @@ describe('admin insight service', () => {
     ).rejects.toThrow('Analytics alert is no longer active.');
   });
 
-  test('uses getOrdersByStatus tool when a follow-up asks for cancelled orders', async () => {
-    jest.mocked(orderRepository.listByStatus).mockResolvedValue([
+  test('uses getOrders tool when a follow-up asks for cancelled orders', async () => {
+    jest.mocked(orderRepository.queryOrders).mockResolvedValue([
       {
         _id: '66f000000000000000000001',
         status: 'cancelled',
@@ -342,7 +435,14 @@ describe('admin insight service', () => {
       actor,
     );
 
-    expect(orderRepository.listByStatus).toHaveBeenCalledWith('cancelled', 5);
+    expect(orderRepository.queryOrders).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'cancelled',
+        paymentStatus: 'cancelled',
+        sort: 'updated_desc',
+        limit: 5,
+      }),
+    );
     expect(modelClient).toHaveBeenCalledWith(
       expect.objectContaining({
         orderEvidence: [
@@ -359,7 +459,7 @@ describe('admin insight service', () => {
         toolsUsed: [
           'getAdminAnalyticsSummary',
           'detectAnalyticsAlerts',
-          'getOrdersByStatus',
+          'getOrders',
         ],
       }),
     );
@@ -367,7 +467,7 @@ describe('admin insight service', () => {
   });
 
   test('selects order evidence tool for admin chat questions about cancelled orders', async () => {
-    jest.mocked(orderRepository.listByStatus).mockResolvedValue([
+    jest.mocked(orderRepository.queryOrders).mockResolvedValue([
       {
         _id: '66f000000000000000000002',
         status: 'cancelled',
@@ -424,29 +524,114 @@ describe('admin insight service', () => {
       actor,
     );
 
-    expect(orderRepository.listByStatus).toHaveBeenCalledWith('cancelled', 5);
+    expect(orderRepository.queryOrders).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'cancelled',
+        paymentStatus: 'cancelled',
+        sort: 'updated_desc',
+        limit: 5,
+      }),
+    );
     expect(modelClient).toHaveBeenCalledWith(
       expect.objectContaining({
         question: 'show me the cancelled orders',
-        selectedTools: ['getPaymentStats', 'getOrdersByStatus'],
+        selectedTools: ['getPaymentStats', 'getOrders'],
         orderEvidence: [
           expect.objectContaining({
             orderId: '66f000000000000000000002',
             status: 'cancelled',
           }),
         ],
+        toolResults: expect.objectContaining({
+          getOrders: expect.objectContaining({
+            params: expect.objectContaining({
+              status: 'cancelled',
+              paymentStatus: 'cancelled',
+            }),
+          }),
+        }),
       }),
     );
     expect(agentRunRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        toolsUsed: ['getPaymentStats', 'getOrdersByStatus'],
+        toolsUsed: ['getPaymentStats', 'getOrders'],
         status: 'success',
       }),
     );
-    expect(result.run.toolsUsed).toEqual([
-      'getPaymentStats',
-      'getOrdersByStatus',
-    ]);
+    expect(result.run.toolsUsed).toEqual(['getPaymentStats', 'getOrders']);
     expect(result.orderEvidence).toHaveLength(1);
+  });
+
+  test('selects parameterized item performance tool for worst burger questions', async () => {
+    jest.mocked(orderRepository.getAnalyticsItemSales).mockResolvedValue([
+      {
+        menuItemId: 'menu-burger-1',
+        name: 'Chicken Burger',
+        quantitySold: 1,
+        revenueCents: 1400,
+      },
+    ]);
+
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'Chicken Burger is the weakest burger item.',
+        insights: [
+          {
+            type: 'opportunity',
+            severity: 'medium',
+            title: 'Chicken Burger is underperforming',
+            evidence: ['Chicken Burger sold 1 unit.'],
+            suggestedAction: 'Check placement and availability.',
+            relatedMenuItemIds: ['menu-burger-1'],
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await chatWithAdminInsightAgent(
+      {
+        range: '7d',
+        question: 'Which burger performed worst this week?',
+      },
+      actor,
+    );
+
+    expect(orderRepository.getAnalyticsItemSales).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'burger',
+        sort: { quantitySold: 1, revenueCents: 1 },
+        limit: 5,
+      }),
+    );
+    expect(modelClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedTools: ['getSalesSummary', 'getItemPerformance'],
+        toolResults: expect.objectContaining({
+          getItemPerformance: expect.objectContaining({
+            params: expect.objectContaining({
+              category: 'burger',
+              sort: 'quantity_asc',
+            }),
+            result: [
+              expect.objectContaining({
+                name: 'Chicken Burger',
+                quantitySold: 1,
+              }),
+            ],
+          }),
+        }),
+      }),
+    );
+    expect(agentRunRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolsUsed: ['getSalesSummary', 'getItemPerformance'],
+      }),
+    );
+    expect(result.run.toolsUsed).toEqual([
+      'getSalesSummary',
+      'getItemPerformance',
+    ]);
   });
 });

@@ -13,6 +13,8 @@ export interface Order {
   totalCents: number;
   menuVersion: number;
   status: OrderStatus;
+  cancellationReason?: CancellationReason;
+  cancelledAt?: string;
   version: number;
   payment?: {
     provider?: 'stripe';
@@ -33,6 +35,14 @@ export type OrderStatus =
   | 'ready'
   | 'completed'
   | 'cancelled';
+
+export type CancellationReason =
+  | 'payment_failed'
+  | 'customer_abandoned_checkout'
+  | 'staff_cancelled'
+  | 'item_unavailable'
+  | 'duplicate_order'
+  | 'other';
 
 export type PaymentStatus =
   | 'unpaid'

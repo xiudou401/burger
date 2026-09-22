@@ -50,6 +50,8 @@ export const AdminInsightOrderEvidenceSchema = z
     orderId: z.string(),
     status: z.string(),
     paymentStatus: z.string().optional(),
+    cancellationReason: z.string().optional(),
+    cancelledAt: z.string().optional(),
     totalCents: z.number().int().nonnegative(),
     itemCount: z.number().int().nonnegative(),
     items: z.array(z.string()).max(6),

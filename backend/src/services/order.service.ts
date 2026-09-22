@@ -1,4 +1,8 @@
-import type { OrderStatus, PaymentStatus } from '../models/order.model';
+import type {
+  CancellationReason,
+  OrderStatus,
+  PaymentStatus,
+} from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
 import { sendOrderConfirmationEmail } from './email.service';
 import { orderRepository } from '../repositories/order.repository';
@@ -26,6 +30,8 @@ export interface PublicOrder {
   totalCents: number;
   menuVersion: number;
   status: OrderStatus;
+  cancellationReason?: CancellationReason;
+  cancelledAt?: Date;
   version: number;
   payment?: {
     provider?: 'stripe';
@@ -64,6 +70,8 @@ export const toPublicOrder = (order: {
   totalCents: number;
   menuVersion: number;
   status: OrderStatus;
+  cancellationReason?: CancellationReason;
+  cancelledAt?: Date;
   payment?: {
     provider?: 'stripe';
     providerPaymentId?: string;
@@ -95,6 +103,8 @@ export const toPublicOrder = (order: {
   totalCents: order.totalCents,
   menuVersion: order.menuVersion,
   status: order.status,
+  cancellationReason: order.cancellationReason,
+  cancelledAt: order.cancelledAt,
   version: order.__v ?? 0,
   payment: order.payment
     ? {
@@ -252,6 +262,9 @@ export const updateOrderStatus = async (
   nextStatus: OrderStatus,
   expectedVersion: number,
   actor: Pick<AuthenticatedUser, 'id' | 'role' | 'permissions'>,
+  options: {
+    cancellationReason?: CancellationReason;
+  } = {},
 ): Promise<PublicOrder> => {
   const order = await orderRepository.findById(orderId);
 
@@ -301,6 +314,15 @@ export const updateOrderStatus = async (
     order.payment.paidAt = order.payment.paidAt ?? new Date();
   }
 
+  if (nextStatus === 'cancelled') {
+    if (!options.cancellationReason) {
+      throw new ServiceError('Cancellation reason is required', 400);
+    }
+
+    order.cancellationReason = options.cancellationReason;
+    order.cancelledAt = order.cancelledAt ?? new Date();
+  }
+
   try {
     await orderRepository.save(order);
   } catch (error) {
@@ -320,7 +342,11 @@ export const updateOrderStatus = async (
     entityType: 'order',
     entityId: publicOrder.id,
     before: { status: previousStatus },
-    after: { status: nextStatus },
+    after: {
+      status: nextStatus,
+      cancellationReason:
+        nextStatus === 'cancelled' ? options.cancellationReason : undefined,
+    },
   });
 
   if (nextStatus === 'paid') {
