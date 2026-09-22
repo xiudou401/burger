@@ -43,9 +43,7 @@ export const createMenuItem = (payload: MenuItemPayload) => {
   return request<MenuItemResponse>('/menu-items', {
     method: 'POST',
     body: JSON.stringify(payload),
-  }).then((res) => ({
-    menuItem: res.menuItem,
-  }));
+  });
 };
 
 export const updateMenuItem = (
@@ -55,15 +53,11 @@ export const updateMenuItem = (
   return request<MenuItemResponse>(`/menu-items/${menuItemId}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
-  }).then((res) => ({
-    menuItem: res.menuItem,
-  }));
+  });
 };
 
 export const deleteMenuItem = (menuItemId: string) => {
   return request<MenuItemResponse>(`/menu-items/${menuItemId}`, {
     method: 'DELETE',
-  }).then((res) => ({
-    menuItem: res.menuItem,
-  }));
+  });
 };
