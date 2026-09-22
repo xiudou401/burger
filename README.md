@@ -134,8 +134,14 @@ endpoint instead of relying on unbounded chat memory. When a manager asks to see
 orders by status, the agent can call a restricted `getOrdersByStatus` tool that
 returns only operational order evidence, not customer private data.
 
-Local demos can run `npm run seed:demo-orders` after seeding users and menu
-items to create realistic 30-day order history for the analytics dashboard.
+Local demos can run `ALLOW_DEMO_ORDER_SEED=true npm run seed:demo-orders`
+after seeding users and menu items to create realistic 30-day order history
+for the analytics dashboard. The script replaces only orders whose
+`checkoutIdempotencyKey` starts with `demo-order-`. Existing older order
+records can be snapshot-backfilled by adding
+`BACKFILL_EXISTING_ORDER_SNAPSHOTS=true`, which fills missing
+`categoryAtPurchase`, `payment.paidAt`, `cancellationReason`, and
+`cancelledAt` fields from existing order and menu data.
 
 ## Realtime Operations Flow
 
@@ -249,7 +255,7 @@ the backend.
 cd backend
 npm run seed:meals
 npm run seed:demo-users
-npm run seed:demo-orders
+ALLOW_DEMO_ORDER_SEED=true npm run seed:demo-orders
 ```
 
 For an existing database created before integer money fields were introduced:
