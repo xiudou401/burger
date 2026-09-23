@@ -30,6 +30,8 @@
     "trailingComma": "all"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1138.0",
+    "@aws-sdk/s3-request-presigner": "^3.1138.0",
     "@burger/shared": "file:../shared",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",

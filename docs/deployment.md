@@ -49,6 +49,9 @@ Backend variables should be configured on Render:
 - `STRIPE_WEBHOOK_SECRET`
 - `RESEND_API_KEY`
 - `EMAIL_FROM`
+- `AWS_REGION`
+- `S3_MENU_IMAGES_BUCKET`
+- `S3_MENU_IMAGES_PUBLIC_BASE_URL`
 
 Frontend variables should be configured on Vercel:
 

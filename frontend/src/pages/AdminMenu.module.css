@@ -52,6 +52,26 @@
   grid-column: 1 / -1;
 }
 
+.ImageUploadRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rem;
+  margin-top: 10rem;
+}
+
+.ImageUploadRow input {
+  max-width: 100%;
+  color: #5b4a35;
+  font: inherit;
+}
+
+.ImageUploadStatus {
+  color: #bd0017;
+  font-size: 14rem;
+  font-weight: 800;
+}
+
 .CategoryField {
   min-width: 0;
 }

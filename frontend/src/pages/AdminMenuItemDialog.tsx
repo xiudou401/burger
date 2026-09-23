@@ -1,8 +1,9 @@
-import { FormEvent } from 'react';
+import { ChangeEvent, FormEvent, useState } from 'react';
 import AdminButton from '../components/Admin/AdminButton';
 import AdminDialog from '../components/Admin/AdminDialog';
 import AdminFormField from '../components/Admin/AdminFormField';
 import formControls from '../components/Admin/AdminFormControls.module.css';
+import { uploadMenuImageFile } from '../api/uploads';
 import { MENU_CATEGORIES } from '../constants/menu-categories';
 import type {
   AdminMenuForm,
@@ -31,6 +32,32 @@ const AdminMenuItemDialog = ({
   onSubmit,
   onClose,
 }: AdminMenuItemDialogProps) => {
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (!file) return;
+
+    setIsUploadingImage(true);
+    setUploadError(null);
+
+    try {
+      const imageUrl = await uploadMenuImageFile(file);
+      updateForm('image', imageUrl);
+    } catch (uploadFailure) {
+      setUploadError(
+        uploadFailure instanceof Error
+          ? uploadFailure.message
+          : 'Image upload failed',
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   return (
     <AdminDialog
       title={isEditing ? 'Edit menu item' : 'Add menu item'}
@@ -114,7 +141,7 @@ const AdminMenuItemDialog = ({
           htmlFor="menu-item-image"
           className={classes.ImageField}
           error={fieldErrors.image}
-          hint="Use an existing app image path or a hosted image URL."
+          hint="Upload a local image, or paste an existing image URL/path."
         >
           <input
             id="menu-item-image"
@@ -122,10 +149,22 @@ const AdminMenuItemDialog = ({
               fieldErrors.image ? formControls.Invalid : ''
             }`}
             aria-invalid={fieldErrors.image ? 'true' : undefined}
-            placeholder="/img/meals/1.png or https://..."
+            placeholder="Uploaded image URL, /img/meals/1.png, or https://..."
             value={form.image}
             onChange={(event) => updateForm('image', event.target.value)}
           />
+          <div className={classes.ImageUploadRow}>
+            <input
+              id="menu-item-image-upload"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              disabled={isSubmitting || isUploadingImage}
+              onChange={handleImageUpload}
+            />
+            <span className={classes.ImageUploadStatus}>
+              {isUploadingImage ? 'Uploading image...' : uploadError}
+            </span>
+          </div>
         </AdminFormField>
 
         <AdminFormField

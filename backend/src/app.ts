@@ -10,6 +10,7 @@ import auditLogRoutes from './routes/audit-log.routes';
 import adminDashboardRoutes from './routes/admin-dashboard.routes';
 import stripeRoutes from './routes/stripe.routes';
 import adminInsightRoutes from './routes/admin-insight.routes';
+import uploadRoutes from './routes/upload.routes';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
@@ -54,6 +55,7 @@ app.use('/api/staff-invites', staffInviteRoutes);
 app.use('/api/admin/customers', adminCustomerRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/menu-version', menuVersionRoutes);
+app.use('/api/uploads', uploadRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response, next: NextFunction) => {

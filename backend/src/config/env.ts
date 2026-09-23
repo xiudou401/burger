@@ -36,6 +36,9 @@ const EnvSchema = z
     STRIPE_CANCEL_URL: optionalNonEmptyString,
     OPENAI_API_KEY: optionalNonEmptyString,
     OPENAI_MODEL: z.string().trim().min(1).default('gpt-4o-mini'),
+    AWS_REGION: optionalNonEmptyString,
+    S3_MENU_IMAGES_BUCKET: optionalNonEmptyString,
+    S3_MENU_IMAGES_PUBLIC_BASE_URL: optionalNonEmptyString,
   })
   .passthrough()
   .superRefine((parsed, ctx) => {

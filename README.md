@@ -294,6 +294,11 @@ Stripe Checkout requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 Google sign-in requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Email
 delivery through Resend is optional.
 
+Admin menu image uploads can use S3 presigned URLs by setting `AWS_REGION`,
+`S3_MENU_IMAGES_BUCKET`, and optionally `S3_MENU_IMAGES_PUBLIC_BASE_URL` on the
+backend. If these are not configured, the existing image URL/path field still
+works.
+
 The frontend should set `REACT_APP_API_URL` to the backend origin, for example
 `https://burger-rmc0.onrender.com`, when WebSocket admin events are enabled.
 REST requests can still be routed through relative `/api` rewrites, but the
