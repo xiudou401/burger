@@ -1,4 +1,4 @@
-import { ChangeEvent, FormEvent, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, useState } from 'react';
 import AdminButton from '../components/Admin/AdminButton';
 import AdminDialog from '../components/Admin/AdminDialog';
 import AdminFormField from '../components/Admin/AdminFormField';
@@ -33,15 +33,14 @@ const AdminMenuItemDialog = ({
   onClose,
 }: AdminMenuItemDialogProps) => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
-  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = '';
-
+  const uploadImage = async (file?: File) => {
     if (!file) return;
 
     setIsUploadingImage(true);
+    setIsDraggingImage(false);
     setUploadError(null);
 
     try {
@@ -56,6 +55,34 @@ const AdminMenuItemDialog = ({
     } finally {
       setIsUploadingImage(false);
     }
+  };
+
+  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    await uploadImage(file);
+  };
+
+  const handleImageDragOver = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+
+    if (!isSubmitting && !isUploadingImage) {
+      setIsDraggingImage(true);
+    }
+  };
+
+  const handleImageDragLeave = (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+    setIsDraggingImage(false);
+  };
+
+  const handleImageDrop = async (event: DragEvent<HTMLLabelElement>) => {
+    event.preventDefault();
+
+    if (isSubmitting || isUploadingImage) return;
+
+    await uploadImage(event.dataTransfer.files[0]);
   };
 
   return (
@@ -153,18 +180,30 @@ const AdminMenuItemDialog = ({
             value={form.image}
             onChange={(event) => updateForm('image', event.target.value)}
           />
-          <div className={classes.ImageUploadRow}>
+          <label
+            className={`${classes.ImageUploadDropzone} ${
+              isDraggingImage ? classes.ImageUploadDropzoneActive : ''
+            }`}
+            htmlFor="menu-item-image-upload"
+            onDragOver={handleImageDragOver}
+            onDragLeave={handleImageDragLeave}
+            onDrop={handleImageDrop}
+          >
             <input
               id="menu-item-image-upload"
+              className={classes.ImageUploadInput}
               type="file"
               accept="image/png,image/jpeg,image/webp"
               disabled={isSubmitting || isUploadingImage}
               onChange={handleImageUpload}
             />
-            <span className={classes.ImageUploadStatus}>
-              {isUploadingImage ? 'Uploading image...' : uploadError}
+            <span className={classes.ImageUploadButton}>
+              {isUploadingImage ? 'Uploading...' : 'Upload image'}
             </span>
-          </div>
+            <span className={classes.ImageUploadStatus}>
+              {uploadError ?? 'Drop a PNG, JPG, or WebP image here'}
+            </span>
+          </label>
         </AdminFormField>
 
         <AdminFormField

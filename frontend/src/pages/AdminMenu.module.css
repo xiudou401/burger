@@ -52,22 +52,53 @@
   grid-column: 1 / -1;
 }
 
-.ImageUploadRow {
+.ImageUploadDropzone {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 10rem;
+  gap: 12rem;
   margin-top: 10rem;
+  border: 2rem dashed var(--border-warm);
+  border-radius: var(--radius-md);
+  padding: 12rem;
+  background: #fffaf0;
+  cursor: pointer;
+  transition:
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
-.ImageUploadRow input {
-  max-width: 100%;
-  color: #5b4a35;
-  font: inherit;
+.ImageUploadDropzone:hover,
+.ImageUploadDropzoneActive {
+  border-color: var(--brand-yellow);
+  background: #fff5d3;
+  box-shadow: 0 0 0 3rem rgba(255, 199, 44, 0.18);
+}
+
+.ImageUploadInput {
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.ImageUploadButton {
+  min-height: var(--control-height-sm);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-md);
+  padding: 0 12rem;
+  background: var(--brand-yellow);
+  color: var(--text-primary);
+  font-size: var(--font-meta);
+  font-weight: var(--weight-black);
 }
 
 .ImageUploadStatus {
-  color: #bd0017;
+  color: #5b4a35;
   font-size: 14rem;
   font-weight: 800;
 }
