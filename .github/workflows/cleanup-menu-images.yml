@@ -59,6 +59,21 @@ jobs:
             echo "MENU_IMAGE_CLEANUP_CONFIRM=false" >> "$GITHUB_ENV"
           fi
 
+      - name: Validate cleanup configuration
+        run: |
+          missing=0
+
+          for name in MONGO_URI AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY S3_MENU_IMAGES_BUCKET; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required cleanup configuration: ${name}"
+              missing=1
+            fi
+          done
+
+          if [[ "$missing" -ne 0 ]]; then
+            exit 1
+          fi
+
       - name: Build shared package
         working-directory: shared
         run: |

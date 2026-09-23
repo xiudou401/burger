@@ -1,6 +1,5 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
-import { cleanupOrphanMenuImages } from '../src/services/menu-image-cleanup.service';
 
 dotenv.config();
 
@@ -21,6 +20,8 @@ const run = async () => {
     throw new Error('MONGO_URI is not defined');
   }
 
+  const { cleanupOrphanMenuImages } =
+    await import('../src/services/menu-image-cleanup.service');
   const dryRun = process.env.MENU_IMAGE_CLEANUP_CONFIRM !== 'true';
 
   await mongoose.connect(process.env.MONGO_URI);
