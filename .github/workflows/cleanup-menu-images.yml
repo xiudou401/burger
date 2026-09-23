@@ -1,0 +1,74 @@
+name: Cleanup Menu Images
+
+on:
+  schedule:
+    - cron: '0 17 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run without deleting orphan images'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: menu-image-cleanup
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Cleanup orphan S3 menu images
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-southeast-2' }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      JWT_SECRET: cleanup-job-placeholder-secret-at-least-32-chars
+      MENU_IMAGE_CLEANUP_GRACE_HOURS: ${{ vars.MENU_IMAGE_CLEANUP_GRACE_HOURS || '24' }}
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      S3_MENU_IMAGES_BUCKET: ${{ vars.S3_MENU_IMAGES_BUCKET }}
+      S3_MENU_IMAGES_PUBLIC_BASE_URL: ${{ vars.S3_MENU_IMAGES_PUBLIC_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            shared/package-lock.json
+            backend/package-lock.json
+
+      - name: Configure cleanup mode
+        run: |
+          if [[ "${{ github.event_name }}" == "schedule" ]]; then
+            echo "MENU_IMAGE_CLEANUP_CONFIRM=true" >> "$GITHUB_ENV"
+          elif [[ "${{ inputs.dry_run }}" == "false" ]]; then
+            echo "MENU_IMAGE_CLEANUP_CONFIRM=true" >> "$GITHUB_ENV"
+          else
+            echo "MENU_IMAGE_CLEANUP_CONFIRM=false" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build shared package
+        working-directory: shared
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Cleanup orphan menu images
+        working-directory: backend
+        run: npm run cleanup:menu-images

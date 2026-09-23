@@ -53,6 +53,36 @@ Backend variables should be configured on Render:
 - `S3_MENU_IMAGES_BUCKET`
 - `S3_MENU_IMAGES_PUBLIC_BASE_URL`
 
+Menu image cleanup can be run manually or from a scheduler:
+
+```bash
+cd backend
+npm run cleanup:menu-images
+```
+
+The script defaults to a dry run. Set `MENU_IMAGE_CLEANUP_CONFIRM=true` to
+delete unreferenced S3 objects under `menu-images/` after the grace period. A
+custom grace period can be supplied with `MENU_IMAGE_CLEANUP_GRACE_HOURS`.
+Cleanup credentials need `s3:ListBucket` for the bucket prefix and
+`s3:DeleteObject` for `menu-images/*`.
+
+The repository includes `.github/workflows/cleanup-menu-images.yml` for daily
+scheduled cleanup and manual dry runs. Configure these GitHub Actions secrets:
+
+- `MONGO_URI`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+
+Configure these GitHub Actions variables:
+
+- `AWS_REGION`
+- `S3_MENU_IMAGES_BUCKET`
+- `S3_MENU_IMAGES_PUBLIC_BASE_URL`
+- `MENU_IMAGE_CLEANUP_GRACE_HOURS` optional, defaults to `24`
+
+Scheduled runs delete orphan images after the grace period. Manual runs default
+to dry run and can be switched to delete mode from the workflow input.
+
 Frontend variables should be configured on Vercel:
 
 - `REACT_APP_API_URL` when direct API calls should use a custom backend domain.
