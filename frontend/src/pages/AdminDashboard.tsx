@@ -10,6 +10,7 @@ import { formatOrderStatus } from '../utils/order';
 import type { OrderStatus } from '../types/order';
 import {
   chatWithAdminInsightAgent,
+  generateAdminDailyBrief,
   investigateAdminAlert,
 } from '../api/admin-insights';
 import type { AdminInsightResponse } from '../types/admin-insight';
@@ -49,6 +50,12 @@ const AdminDashboard = () => {
     useState<AdminInsightResponse | null>(null);
   const [isAskingAdminChat, setIsAskingAdminChat] = useState(false);
   const [adminChatError, setAdminChatError] = useState<string | null>(null);
+  const [dailyBriefInsight, setDailyBriefInsight] =
+    useState<AdminInsightResponse | null>(null);
+  const [isGeneratingDailyBrief, setIsGeneratingDailyBrief] = useState(false);
+  const [dailyBriefInsightError, setDailyBriefInsightError] = useState<
+    string | null
+  >(null);
 
   const investigateAlert = async (alertId: string, question?: string) => {
     setInvestigatingAlertId(alertId);
@@ -97,6 +104,24 @@ const AdminDashboard = () => {
     }
   };
 
+  const generateDailyBriefInsight = async () => {
+    setIsGeneratingDailyBrief(true);
+    setDailyBriefInsightError(null);
+
+    try {
+      const result = await generateAdminDailyBrief();
+      setDailyBriefInsight(result);
+    } catch (err) {
+      setDailyBriefInsightError(
+        err instanceof Error
+          ? err.message
+          : 'Could not generate AI daily brief',
+      );
+    } finally {
+      setIsGeneratingDailyBrief(false);
+    }
+  };
+
   return (
     <AdminLayout
       title="Dashboard"
@@ -113,7 +138,21 @@ const AdminDashboard = () => {
                 <p className={classes.MetricLabel}>AI Operations Daily Brief</p>
                 <h2>Yesterday at a glance</h2>
               </div>
-              <span>{brief.date}</span>
+              <div className={classes.DailyBriefActions}>
+                <span>{brief.date}</span>
+                <AdminButton
+                  type="button"
+                  size="compact"
+                  onClick={() => {
+                    void generateDailyBriefInsight();
+                  }}
+                  disabled={isGeneratingDailyBrief}
+                >
+                  {isGeneratingDailyBrief
+                    ? 'Generating...'
+                    : 'Generate AI brief'}
+                </AdminButton>
+              </div>
             </div>
 
             <div className={classes.BriefMetricGrid}>
@@ -167,6 +206,45 @@ const AdminDashboard = () => {
                 </ul>
               </div>
             </div>
+
+            {dailyBriefInsightError && (
+              <AdminStatusText tone="error">
+                {dailyBriefInsightError}
+              </AdminStatusText>
+            )}
+
+            {dailyBriefInsight && (
+              <article className={classes.DailyBriefInsight}>
+                <div className={classes.AlertInvestigationHeader}>
+                  <div>
+                    <p className={classes.MetricLabel}>AI morning attention</p>
+                    <h3>What to check today</h3>
+                  </div>
+                  <span>{dailyBriefInsight.run.model}</span>
+                </div>
+                <p>{dailyBriefInsight.summary}</p>
+                <div className={classes.InsightGrid}>
+                  {dailyBriefInsight.insights.map((insight) => (
+                    <article
+                      className={classes.InsightCard}
+                      key={`daily-${insight.type}-${insight.title}`}
+                    >
+                      <div className={classes.InsightMeta}>
+                        <span>{insight.type}</span>
+                        <b>{insight.severity}</b>
+                      </div>
+                      <h3>{insight.title}</h3>
+                      <ul>
+                        {insight.evidence.map((evidence) => (
+                          <li key={evidence}>{evidence}</li>
+                        ))}
+                      </ul>
+                      <p>{insight.suggestedAction}</p>
+                    </article>
+                  ))}
+                </div>
+              </article>
+            )}
           </section>
 
           <section className={classes.MetricGrid} aria-label="Today metrics">

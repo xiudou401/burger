@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   chatWithAdminInsightAgentHandler,
+  generateAdminDailyBriefHandler,
   generateAdminInsightsHandler,
   investigateAdminAlertHandler,
 } from '../controllers/admin-insight.controller';
@@ -22,6 +23,7 @@ router.post(
   validateBody(AdminInsightRequestSchema, 'Admin insight request'),
   generateAdminInsightsHandler,
 );
+router.post('/daily-brief', generateAdminDailyBriefHandler);
 router.post(
   '/alert',
   validateBody(

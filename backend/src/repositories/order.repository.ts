@@ -2,6 +2,7 @@ import { Types } from 'mongoose';
 import {
   OrderModel,
   type Order,
+  type CancellationReason,
   type PaymentStatus,
   type OrderStatus,
 } from '../models/order.model';
@@ -124,11 +125,13 @@ export const orderRepository = {
     end,
     status,
     paymentStatus,
+    cancellationReason,
     sort,
     limit,
   }: OrderQueryRange & {
     status?: OrderStatus;
     paymentStatus?: PaymentStatus;
+    cancellationReason?: CancellationReason;
     sort: 'updated_desc' | 'created_desc' | 'total_desc';
     limit: number;
   }) {
@@ -147,6 +150,10 @@ export const orderRepository = {
 
     if (paymentStatus) {
       query['payment.status'] = paymentStatus;
+    }
+
+    if (cancellationReason) {
+      query.cancellationReason = cancellationReason;
     }
 
     let sortSpec: Record<string, 1 | -1>;

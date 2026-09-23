@@ -22,3 +22,9 @@ export const chatWithAdminInsightAgent = (
     body: JSON.stringify(payload),
   });
 };
+
+export const generateAdminDailyBrief = () => {
+  return request<AdminInsightResponse>('/admin/insights/daily-brief', {
+    method: 'POST',
+  });
+};

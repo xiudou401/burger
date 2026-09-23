@@ -29,6 +29,14 @@
   font-weight: 900;
 }
 
+.DailyBriefActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12rem;
+  flex-wrap: wrap;
+}
+
 .BriefMetricGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -87,6 +95,21 @@
   font-size: 15rem;
   font-weight: 800;
   line-height: 1.4;
+}
+
+.DailyBriefInsight {
+  display: grid;
+  gap: 16rem;
+  border-top: 1rem solid #f0d39a;
+  padding-top: 16rem;
+}
+
+.DailyBriefInsight > p {
+  margin: 0;
+  color: #292929;
+  font-size: 16rem;
+  font-weight: 900;
+  line-height: 1.45;
 }
 
 .MetricGrid {

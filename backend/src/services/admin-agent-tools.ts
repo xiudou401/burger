@@ -1,6 +1,13 @@
 import { z } from 'zod';
-import { type OrderStatus, type PaymentStatus } from '../models/order.model';
-import { MENU_ITEM_CATEGORIES } from '../models/menu-item.model';
+import {
+  type CancellationReason,
+  type OrderStatus,
+  type PaymentStatus,
+} from '../models/order.model';
+import {
+  MENU_ITEM_CATEGORIES,
+  type MenuItemCategory,
+} from '../models/menu-item.model';
 import { orderRepository } from '../repositories/order.repository';
 import type { AdminInsightResponsePayload } from '../validation/admin-insight.schema';
 
@@ -8,6 +15,7 @@ export const ADMIN_GET_ORDERS_TOOL = 'getOrders';
 export const ADMIN_GET_ITEM_PERFORMANCE_TOOL = 'getItemPerformance';
 export const ADMIN_GET_PAYMENT_STATS_TOOL = 'getPaymentStats';
 export const ADMIN_GET_SALES_METRICS_TOOL = 'getSalesMetrics';
+export const ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL = 'getCancellationBreakdown';
 
 const OrderStatusSchema = z.enum([
   'pending_payment',
@@ -27,6 +35,15 @@ const PaymentStatusSchema = z.enum([
   'refunded',
 ]);
 
+const CancellationReasonSchema = z.enum([
+  'payment_failed',
+  'customer_abandoned_checkout',
+  'staff_cancelled',
+  'item_unavailable',
+  'duplicate_order',
+  'other',
+]);
+
 const ToolDateRangeShape = {
   from: z.date(),
   to: z.date(),
@@ -40,6 +57,7 @@ export const GetOrdersToolParamsSchema = z
     ...ToolDateRangeShape,
     status: OrderStatusSchema.optional(),
     paymentStatus: PaymentStatusSchema.optional(),
+    cancellationReason: CancellationReasonSchema.optional(),
     sort: z
       .enum(['updated_desc', 'created_desc', 'total_desc'])
       .default('updated_desc'),
@@ -72,6 +90,26 @@ export type GetItemPerformanceToolParams = z.infer<
   typeof GetItemPerformanceToolParamsSchema
 >;
 
+interface CountEntry<T extends string = string> {
+  value: T;
+  count: number;
+  percentage: number;
+}
+
+export interface CancellationBreakdown {
+  totalCancelled: number;
+  byReason: CountEntry<CancellationReason | 'unknown'>[];
+  byPaymentStatus: CountEntry<PaymentStatus | 'unknown'>[];
+  byTimeWindow: CountEntry[];
+  byCategory: CountEntry<MenuItemCategory | 'unknown'>[];
+  byItem: CountEntry[];
+  dominantReason?: CountEntry<CancellationReason | 'unknown'>;
+  dominantPaymentStatus?: CountEntry<PaymentStatus | 'unknown'>;
+  dominantTimeWindow?: CountEntry;
+  dominantCategory?: CountEntry<MenuItemCategory | 'unknown'>;
+  dominantItem?: CountEntry;
+}
+
 export interface AdminToolCallResult<TParams, TResult> {
   name: string;
   params: TParams;
@@ -92,9 +130,89 @@ const toOrderEvidence = (
     items: order.items
       .slice(0, 6)
       .map((item) => item.nameAtPurchase ?? 'Menu item'),
+    itemCategories: order.items
+      .slice(0, 6)
+      .map((item) => item.categoryAtPurchase ?? 'unknown'),
     createdAt: order.createdAt.toISOString(),
     updatedAt: order.updatedAt.toISOString(),
   }));
+
+const incrementCount = <T extends string>(
+  counts: Map<T, number>,
+  value: T,
+  amount = 1,
+) => counts.set(value, (counts.get(value) ?? 0) + amount);
+
+const toCountEntries = <T extends string>(
+  counts: Map<T, number>,
+  total: number,
+): CountEntry<T>[] =>
+  [...counts.entries()]
+    .map(([value, count]) => ({
+      value,
+      count,
+      percentage: total > 0 ? Math.round((count / total) * 1000) / 10 : 0,
+    }))
+    .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+
+const getOperationalTimeWindow = (timestamp: string) => {
+  const date = new Date(timestamp);
+  const hour = date.getHours();
+
+  if (hour >= 5 && hour < 11) return 'breakfast';
+  if (hour >= 11 && hour < 15) return 'lunch';
+  if (hour >= 15 && hour < 17) return 'afternoon';
+  if (hour >= 17 && hour < 21) return 'dinner';
+  return 'late';
+};
+
+export const buildCancellationBreakdown = (
+  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
+): CancellationBreakdown => {
+  const reasonCounts = new Map<CancellationReason | 'unknown', number>();
+  const paymentCounts = new Map<PaymentStatus | 'unknown', number>();
+  const timeWindowCounts = new Map<string, number>();
+  const categoryCounts = new Map<MenuItemCategory | 'unknown', number>();
+  const itemCounts = new Map<string, number>();
+  const totalCancelled = orderEvidence?.length ?? 0;
+
+  for (const order of orderEvidence ?? []) {
+    incrementCount(reasonCounts, order.cancellationReason ?? 'unknown');
+    incrementCount(paymentCounts, order.paymentStatus ?? 'unknown');
+    incrementCount(
+      timeWindowCounts,
+      getOperationalTimeWindow(order.cancelledAt ?? order.updatedAt),
+    );
+
+    for (const category of order.itemCategories ?? []) {
+      incrementCount(categoryCounts, category);
+    }
+
+    for (const item of order.items) {
+      incrementCount(itemCounts, item);
+    }
+  }
+
+  const byReason = toCountEntries(reasonCounts, totalCancelled);
+  const byPaymentStatus = toCountEntries(paymentCounts, totalCancelled);
+  const byTimeWindow = toCountEntries(timeWindowCounts, totalCancelled);
+  const byCategory = toCountEntries(categoryCounts, totalCancelled);
+  const byItem = toCountEntries(itemCounts, totalCancelled);
+
+  return {
+    totalCancelled,
+    byReason,
+    byPaymentStatus,
+    byTimeWindow,
+    byCategory,
+    byItem,
+    dominantReason: byReason[0],
+    dominantPaymentStatus: byPaymentStatus[0],
+    dominantTimeWindow: byTimeWindow[0],
+    dominantCategory: byCategory[0],
+    dominantItem: byItem[0],
+  };
+};
 
 const getItemPerformanceSort = (sort: GetItemPerformanceToolParams['sort']) => {
   switch (sort) {
@@ -124,6 +242,7 @@ export const runGetOrdersTool = async (
     end: parsed.to,
     status: parsed.status,
     paymentStatus: parsed.paymentStatus,
+    cancellationReason: parsed.cancellationReason,
     sort: parsed.sort,
     limit: parsed.limit,
   });
@@ -134,6 +253,16 @@ export const runGetOrdersTool = async (
     result: toOrderEvidence(orders),
   };
 };
+
+export const runGetCancellationBreakdownTool = (
+  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
+) => ({
+  name: ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL,
+  params: {
+    orderEvidenceCount: orderEvidence?.length ?? 0,
+  },
+  result: buildCancellationBreakdown(orderEvidence),
+});
 
 export const runGetItemPerformanceTool = async (
   params: GetItemPerformanceToolParams,
@@ -211,6 +340,21 @@ export const getPaymentStatusFromQuestion = (
   if (/\brequires payment\b/.test(normalized)) return 'requires_payment';
   if (/\bunpaid\b/.test(normalized)) return 'unpaid';
   if (/\bpaid\b/.test(normalized)) return 'paid';
+
+  return undefined;
+};
+
+export const getCancellationReasonFromQuestion = (
+  question: string,
+): CancellationReason | undefined => {
+  const normalized = question.toLowerCase();
+
+  if (/\bpayment failed\b/.test(normalized)) return 'payment_failed';
+  if (/\babandoned\b/.test(normalized)) return 'customer_abandoned_checkout';
+  if (/\bstaff\b/.test(normalized)) return 'staff_cancelled';
+  if (/\bunavailable\b/.test(normalized)) return 'item_unavailable';
+  if (/\bduplicate\b/.test(normalized)) return 'duplicate_order';
+  if (/\bother\b/.test(normalized)) return 'other';
 
   return undefined;
 };

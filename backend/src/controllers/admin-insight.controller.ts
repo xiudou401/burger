@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import {
   chatWithAdminInsightAgent,
+  generateAdminDailyBrief,
   generateAdminInsights,
   investigateAdminAlert,
 } from '../services/admin-insight.service';
@@ -23,6 +24,24 @@ export const generateAdminInsightsHandler = async (
   try {
     const payload = req.body as AdminInsightRequestPayload;
     const result = await generateAdminInsights(payload, req.user);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const generateAdminDailyBriefHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  if (!req.user) {
+    return next(new ServiceError('Unauthorized', 401));
+  }
+
+  try {
+    const result = await generateAdminDailyBrief(req.user);
 
     return res.status(200).json(result);
   } catch (error) {

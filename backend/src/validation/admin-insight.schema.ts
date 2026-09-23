@@ -55,6 +55,7 @@ export const AdminInsightOrderEvidenceSchema = z
     totalCents: z.number().int().nonnegative(),
     itemCount: z.number().int().nonnegative(),
     items: z.array(z.string()).max(6),
+    itemCategories: z.array(z.string()).max(6).optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
   })

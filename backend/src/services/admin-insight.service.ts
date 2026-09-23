@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { agentRunRepository } from '../repositories/agent-run.repository';
 import {
   getAdminAnalyticsSummary,
+  getAdminDailyBrief,
   type AdminAnalyticsSummary,
 } from './admin-dashboard.service';
 import {
@@ -20,16 +21,19 @@ import {
 } from './admin-alert.service';
 import { ServiceError } from '../errors/ServiceError';
 import {
+  ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL,
   ADMIN_GET_ITEM_PERFORMANCE_TOOL,
   ADMIN_GET_ORDERS_TOOL,
   ADMIN_GET_PAYMENT_STATS_TOOL,
   ADMIN_GET_SALES_METRICS_TOOL,
+  getCancellationReasonFromQuestion,
   getItemPerformanceSortFromQuestion,
   getMenuCategoryFromQuestion,
   getOrderSortFromQuestion,
   getOrderStatusFromQuestion,
   getPaymentStatusFromQuestion,
   runGetItemPerformanceTool,
+  runGetCancellationBreakdownTool,
   runGetOrdersTool,
   runGetPaymentStatsTool,
   type GetOrdersToolParams,
@@ -43,6 +47,7 @@ const ADMIN_CATEGORY_PERFORMANCE_TOOL = 'getCategoryPerformance';
 const ADMIN_ITEM_PERFORMANCE_TOOL = 'getItemPerformance';
 const ADMIN_PAYMENT_STATS_TOOL = 'getPaymentStats';
 const ADMIN_ORDER_TOOL = ADMIN_GET_ORDERS_TOOL;
+const ADMIN_DAILY_BRIEF_TOOL = 'getAdminDailyBrief';
 const FALLBACK_MODEL = 'deterministic-fallback';
 
 interface InvestigationStepResult {
@@ -218,45 +223,10 @@ const buildGetOrdersParams = (
   to: analytics.endAt,
   status: getOrderStatusFromQuestion(question),
   paymentStatus: getPaymentStatusFromQuestion(question),
+  cancellationReason: getCancellationReasonFromQuestion(question),
   sort: getOrderSortFromQuestion(question),
   limit: 5,
 });
-
-const getDominantPaymentIssue = (
-  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
-) => {
-  const issueStatuses = new Set(['unpaid', 'cancelled', 'failed']);
-  const counts = new Map<string, number>();
-
-  for (const order of orderEvidence ?? []) {
-    if (!order.paymentStatus || !issueStatuses.has(order.paymentStatus)) {
-      continue;
-    }
-
-    counts.set(order.paymentStatus, (counts.get(order.paymentStatus) ?? 0) + 1);
-  }
-
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-};
-
-const getDominantCancellationReason = (
-  orderEvidence: AdminInsightResponsePayload['orderEvidence'],
-) => {
-  const counts = new Map<string, number>();
-
-  for (const order of orderEvidence ?? []) {
-    if (!order.cancellationReason) {
-      continue;
-    }
-
-    counts.set(
-      order.cancellationReason,
-      (counts.get(order.cancellationReason) ?? 0) + 1,
-    );
-  }
-
-  return [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
-};
 
 const getRepeatedCancelledItem = (
   orderEvidence: AdminInsightResponsePayload['orderEvidence'],
@@ -277,7 +247,7 @@ const getNarrowCancellationWindow = (
 ) => {
   const timestamps =
     orderEvidence
-      ?.map((order) => new Date(order.createdAt).getTime())
+      ?.map((order) => new Date(order.cancelledAt ?? order.updatedAt).getTime())
       .filter((time) => Number.isFinite(time))
       .sort((a, b) => a - b) ?? [];
 
@@ -377,23 +347,78 @@ const runCancellationInvestigation = async ({
     resultSummary: `Found ${orderEvidence?.length ?? 0} cancelled orders for evidence review.`,
   });
 
-  const dominantCancellationReason =
-    getDominantCancellationReason(orderEvidence);
-  const dominantPaymentIssue = getDominantPaymentIssue(orderEvidence);
+  const breakdownStartMs = nowMs();
+  const cancellationBreakdown = runGetCancellationBreakdownTool(orderEvidence);
+  const breakdownLatencyMs = nowMs() - breakdownStartMs;
+  selectedTools.push(ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL);
+  toolCalls.push({
+    name: ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL,
+    status: 'success' as const,
+    latencyMs: breakdownLatencyMs,
+  });
+  toolResults[ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL] = {
+    params: cancellationBreakdown.params,
+    result: cancellationBreakdown.result,
+  };
+  steps.push({
+    tool: ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL,
+    args: cancellationBreakdown.params,
+    reason:
+      'Group cancelled order evidence by cancellation reason, payment status, time window, category, and item before choosing the next check.',
+    resultSummary: [
+      `Reasons: ${
+        cancellationBreakdown.result.byReason
+          .map((entry) => `${entry.value}=${entry.count}`)
+          .join(', ') || 'none'
+      }.`,
+      `Time windows: ${
+        cancellationBreakdown.result.byTimeWindow
+          .map((entry) => `${entry.value}=${entry.count}`)
+          .join(', ') || 'none'
+      }.`,
+      `Items: ${
+        cancellationBreakdown.result.byItem
+          .slice(0, 3)
+          .map((entry) => `${entry.value}=${entry.count}`)
+          .join(', ') || 'none'
+      }.`,
+    ].join(' '),
+  });
+
   const repeatedItem = getRepeatedCancelledItem(orderEvidence);
   const narrowWindow = getNarrowCancellationWindow(orderEvidence);
+  const dominantCancellationReason =
+    cancellationBreakdown.result.dominantReason;
+  const dominantPaymentIssue =
+    cancellationBreakdown.result.dominantPaymentStatus;
+  const dominantItem = cancellationBreakdown.result.dominantItem;
+  const dominantCategory = cancellationBreakdown.result.dominantCategory;
+  const dominantTimeWindow = cancellationBreakdown.result.dominantTimeWindow;
   const hasDominantReason =
     dominantCancellationReason &&
-    dominantCancellationReason[1] >=
-      Math.ceil((orderEvidence?.length ?? 0) / 2);
+    dominantCancellationReason.count >=
+      Math.ceil(cancellationBreakdown.result.totalCancelled / 2);
   const hasDominantPaymentIssue =
     dominantPaymentIssue &&
-    dominantPaymentIssue[1] >= Math.ceil((orderEvidence?.length ?? 0) / 2);
+    ['unpaid', 'cancelled', 'failed'].includes(dominantPaymentIssue.value) &&
+    dominantPaymentIssue.count >=
+      Math.ceil(cancellationBreakdown.result.totalCancelled / 2);
+  const hasDominantItem =
+    dominantItem && dominantItem.count >= 2 && dominantItem.percentage >= 40;
+  const hasDominantCategory =
+    dominantCategory &&
+    dominantCategory.value !== 'unknown' &&
+    dominantCategory.count >= 2 &&
+    dominantCategory.percentage >= 50;
+  const hasDominantTimeWindow =
+    dominantTimeWindow &&
+    dominantTimeWindow.count >= 3 &&
+    dominantTimeWindow.percentage >= 60;
   const reasonSuggestsPaymentCheck =
-    dominantCancellationReason?.[0] === 'customer_abandoned_checkout' ||
-    dominantCancellationReason?.[0] === 'payment_failed';
+    dominantCancellationReason?.value === 'customer_abandoned_checkout' ||
+    dominantCancellationReason?.value === 'payment_failed';
   const reasonSuggestsItemCheck =
-    dominantCancellationReason?.[0] === 'item_unavailable';
+    dominantCancellationReason?.value === 'item_unavailable';
 
   if (
     (hasDominantReason && reasonSuggestsPaymentCheck) ||
@@ -422,20 +447,26 @@ const runCancellationInvestigation = async ({
         to: analytics.endAt.toISOString(),
       },
       reason: hasDominantReason
-        ? `${dominantCancellationReason?.[1] ?? 0} cancelled orders share cancellation reason "${dominantCancellationReason?.[0]}", so payment outcomes need a focused check.`
-        : `${dominantPaymentIssue?.[1] ?? 0} cancelled orders share payment status "${dominantPaymentIssue?.[0]}", so payment outcomes need a focused check.`,
+        ? `${dominantCancellationReason?.count ?? 0} cancelled orders share cancellation reason "${dominantCancellationReason?.value}", so payment outcomes need a focused check.`
+        : `${dominantPaymentIssue?.count ?? 0} cancelled orders share payment status "${dominantPaymentIssue?.value}", so payment outcomes need a focused check.`,
       resultSummary: `Payment outcomes: ${paymentStats.result
         .map((entry) => `${entry.status}=${entry.count}`)
         .join(', ')}.`,
     });
   } else if (
     (hasDominantReason && reasonSuggestsItemCheck) ||
+    hasDominantItem ||
+    hasDominantCategory ||
     (repeatedItem && repeatedItem[1] >= 2)
   ) {
     const itemStartMs = nowMs();
     const itemPerformance = await runGetItemPerformanceTool({
       from: analytics.startAt,
       to: analytics.endAt,
+      category:
+        hasDominantCategory && dominantCategory.value !== 'unknown'
+          ? dominantCategory.value
+          : undefined,
       sort: 'quantity_desc',
       limit: 5,
     });
@@ -455,22 +486,29 @@ const runCancellationInvestigation = async ({
       args: {
         from: analytics.startAt.toISOString(),
         to: analytics.endAt.toISOString(),
+        ...(hasDominantCategory && dominantCategory.value !== 'unknown'
+          ? { category: dominantCategory.value }
+          : {}),
         sort: 'quantity_desc',
         limit: 5,
       },
       reason:
         hasDominantReason && reasonSuggestsItemCheck
-          ? `${dominantCancellationReason?.[1] ?? 0} cancelled orders share cancellation reason "${dominantCancellationReason?.[0]}", so item availability and item concentration need a focused check.`
-          : `${repeatedItem?.[0]} appears in ${repeatedItem?.[1]} cancelled order evidence entries, so item concentration needs a focused check.`,
+          ? `${dominantCancellationReason?.count ?? 0} cancelled orders share cancellation reason "${dominantCancellationReason?.value}", so item availability and item concentration need a focused check.`
+          : hasDominantCategory
+            ? `${dominantCategory.count} cancelled order items are in category "${dominantCategory.value}", so category-level item concentration needs a focused check.`
+            : `${dominantItem?.value ?? repeatedItem?.[0]} appears in ${dominantItem?.count ?? repeatedItem?.[1]} cancelled order evidence entries, so item concentration needs a focused check.`,
       resultSummary: `Top item performance: ${itemPerformance.result
         .map((item) => `${item.name}=${item.quantitySold} sold`)
         .join(', ')}.`,
     });
-  } else if (narrowWindow) {
+  } else if (hasDominantTimeWindow || narrowWindow) {
+    const fallbackWindowStart = narrowWindow?.from ?? analytics.startAt;
+    const fallbackWindowEnd = narrowWindow?.to ?? analytics.endAt;
     const windowStartMs = nowMs();
     const windowOrders = await runGetOrdersTool({
-      from: narrowWindow.from,
-      to: narrowWindow.to,
+      from: fallbackWindowStart,
+      to: fallbackWindowEnd,
       status: 'cancelled',
       sort: 'created_desc',
       limit: 10,
@@ -488,13 +526,15 @@ const runCancellationInvestigation = async ({
     steps.push({
       tool: ADMIN_GET_ORDERS_TOOL,
       args: {
-        from: narrowWindow.from.toISOString(),
-        to: narrowWindow.to.toISOString(),
+        from: fallbackWindowStart.toISOString(),
+        to: fallbackWindowEnd.toISOString(),
         status: 'cancelled',
         sort: 'created_desc',
         limit: 10,
       },
-      reason: `${narrowWindow.count} cancelled orders cluster inside a two-hour window, so the investigation narrows the time range.`,
+      reason: hasDominantTimeWindow
+        ? `${dominantTimeWindow.count} cancelled orders are in the "${dominantTimeWindow.value}" window, so the investigation checks timing concentration.`
+        : `${narrowWindow?.count ?? 0} cancelled orders cluster inside a two-hour window, so the investigation narrows the time range.`,
       resultSummary: `Found ${windowOrders.result?.length ?? 0} cancelled orders in the narrowed time window.`,
     });
   } else {
@@ -502,7 +542,7 @@ const runCancellationInvestigation = async ({
       tool: 'no_extra_tool',
       args: {},
       reason:
-        'Cancelled order evidence did not show a dominant payment status, repeated item, or narrow time cluster.',
+        'Cancelled order evidence did not show a dominant cancellation reason, payment status, item/category, or time cluster.',
       resultSummary:
         'Current evidence is enough to flag the issue but not enough to identify a narrower likely cause.',
     });
@@ -684,9 +724,53 @@ const buildChatFallbackInsights = ({
   toolResults?: Record<string, unknown>;
 }): AdminInsightResponsePayload => {
   const normalized = question.toLowerCase();
+  const dailyBrief = toolResults?.[ADMIN_DAILY_BRIEF_TOOL] as
+    | {
+        highlights?: string[];
+        worthChecking?: string[];
+        metrics?: {
+          revenueCents?: { value?: number; deltaPercent?: number | null };
+          orderCount?: { value?: number; deltaPercent?: number | null };
+          averageOrderValueCents?: {
+            value?: number;
+            deltaPercent?: number | null;
+          };
+        };
+      }
+    | undefined;
   const itemPerformance = toolResults?.[ADMIN_GET_ITEM_PERFORMANCE_TOOL] as
     | AdminAnalyticsSummary['topItems']
     | undefined;
+
+  if (dailyBrief) {
+    const firstCheck = dailyBrief.worthChecking?.[0];
+    const revenueCents = dailyBrief.metrics?.revenueCents?.value ?? 0;
+    const orderCount = dailyBrief.metrics?.orderCount?.value ?? 0;
+    const averageOrderValueCents =
+      dailyBrief.metrics?.averageOrderValueCents?.value ?? 0;
+
+    return {
+      summary: `Yesterday generated ${formatCurrency(
+        revenueCents,
+      )} from ${orderCount} orders with an average order value of ${formatCurrency(
+        averageOrderValueCents,
+      )}. The highest-value operational check is ${firstCheck ?? 'to keep monitoring item mix and payment outcomes'}.`,
+      insights: [
+        {
+          type: firstCheck ? 'opportunity' : 'trend',
+          severity: firstCheck ? 'medium' : 'low',
+          title: firstCheck ?? 'Yesterday looks stable',
+          evidence: dailyBrief.highlights?.slice(0, 3) ?? [
+            'Daily brief metrics were calculated from order records.',
+          ],
+          suggestedAction:
+            firstCheck ??
+            'No sharp anomaly stands out; review active orders and item mix during the next service window.',
+          relatedMenuItemIds: [],
+        },
+      ],
+    };
+  }
 
   if (orderEvidence && orderEvidence.length > 0) {
     return buildFallbackInsights(analytics, activeAlerts?.[0], orderEvidence);
@@ -861,6 +945,7 @@ const buildDisplayOrderEvidence = (
     total: formatCurrency(order.totalCents),
     itemCount: order.itemCount,
     items: order.items,
+    itemCategories: order.itemCategories,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
   }));
@@ -901,8 +986,11 @@ export const buildAdminInsightUserPromptForTest = ({
     chatInstruction: selectedTools
       ? 'Answer the admin question using the selected backend tool results and toolResults. Prioritize operational attention: what happened, evidence, likely explanation, what to check next, and data boundaries. If the tools do not prove a cause, say what the data supports and what remains unknown.'
       : undefined,
+    dailyBriefInstruction: toolResults?.[ADMIN_DAILY_BRIEF_TOOL]
+      ? 'This is a morning daily brief for a restaurant owner. Turn yesterday metrics into operational attention: summarize what changed, cite concrete evidence, say what to check next, and avoid unsupported customer intent claims.'
+      : undefined,
     orderEvidenceInstruction: orderEvidence
-      ? 'The provided orderEvidence is a restricted admin tool result. You may summarize these orders by id, status, payment status, cancellation reason, total, item count, items, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
+      ? 'The provided orderEvidence and cancellation breakdown are restricted admin tool results. You may summarize these orders by id, status, payment status, cancellation reason, total, item count, items, item categories, and timestamps. Do not invent customer identity, private contact details, addresses, or payment secrets.'
       : undefined,
     outputShape: {
       summary:
@@ -1097,6 +1185,131 @@ export const generateAdminInsights = async (
     appLogger.error('admin_insight_generation_failed', { error });
     throw new AppError(
       'Could not generate admin insights. Please try again later.',
+      503,
+    );
+  }
+};
+
+export const generateAdminDailyBrief = async (
+  actor: Pick<AuthenticatedUser, 'id'>,
+) => {
+  const startMs = nowMs();
+  const briefStartMs = nowMs();
+  const question =
+    'Generate a concise AI operations daily brief for yesterday.';
+
+  let analytics: AdminAnalyticsSummary | null = null;
+  let briefLatencyMs = 0;
+  let analyticsLatencyMs = 0;
+  let alertLatencyMs = 0;
+
+  try {
+    const [brief, analyticsResult, activeAlerts] = await Promise.all([
+      getAdminDailyBrief(),
+      (async () => {
+        const analyticsStartMs = nowMs();
+        const result = await getAdminAnalyticsSummary('7d');
+        analyticsLatencyMs = nowMs() - analyticsStartMs;
+        return result;
+      })(),
+      (async () => {
+        const alertStartMs = nowMs();
+        const result = await detectAnalyticsAlerts('7d');
+        alertLatencyMs = nowMs() - alertStartMs;
+        return result;
+      })(),
+    ]);
+    briefLatencyMs = nowMs() - briefStartMs;
+    analytics = analyticsResult;
+
+    const selectedTools = [
+      ADMIN_DAILY_BRIEF_TOOL,
+      ADMIN_INSIGHT_TOOL,
+      ADMIN_ALERT_TOOL,
+    ];
+    const toolResults = {
+      [ADMIN_DAILY_BRIEF_TOOL]: brief,
+      [ADMIN_INSIGHT_TOOL]: analytics,
+      [ADMIN_ALERT_TOOL]: activeAlerts,
+    };
+    const modelResult = await adminInsightModelClient({
+      question,
+      analytics,
+      activeAlerts,
+      selectedTools,
+      toolResults,
+    });
+    const parsed = AdminInsightResponseSchema.parse(modelResult.content);
+    const latencyMs = nowMs() - startMs;
+    const agentRun = await agentRunRepository.create({
+      agentName: ADMIN_INSIGHT_AGENT,
+      actorId: actor.id,
+      prompt: question,
+      model: modelResult.modelUsed,
+      toolsUsed: selectedTools,
+      toolCalls: [
+        {
+          name: ADMIN_DAILY_BRIEF_TOOL,
+          status: 'success',
+          latencyMs: briefLatencyMs,
+        },
+        {
+          name: ADMIN_INSIGHT_TOOL,
+          status: 'success',
+          latencyMs: analyticsLatencyMs,
+        },
+        {
+          name: ADMIN_ALERT_TOOL,
+          status: 'success',
+          latencyMs: alertLatencyMs,
+        },
+      ],
+      latencyMs,
+      estimatedCostCents: estimateCostCents(modelResult.usage),
+      status: 'success',
+    });
+
+    return {
+      ...parsed,
+      analytics,
+      run: {
+        id: String(agentRun._id),
+        agentName: ADMIN_INSIGHT_AGENT,
+        model: modelResult.modelUsed,
+        toolsUsed: selectedTools,
+        latencyMs,
+        estimatedCostCents: agentRun.estimatedCostCents,
+        status: 'success' as const,
+      },
+    };
+  } catch (error) {
+    const latencyMs = nowMs() - startMs;
+    const failureReason =
+      error instanceof Error ? error.message : String(error);
+
+    try {
+      await agentRunRepository.create({
+        agentName: ADMIN_INSIGHT_AGENT,
+        actorId: actor.id,
+        prompt: question,
+        model: env.OPENAI_API_KEY ? env.OPENAI_MODEL : FALLBACK_MODEL,
+        toolsUsed: analytics
+          ? [ADMIN_DAILY_BRIEF_TOOL, ADMIN_INSIGHT_TOOL, ADMIN_ALERT_TOOL]
+          : [],
+        toolCalls: [],
+        latencyMs,
+        status: 'failed',
+        failureReason,
+      });
+    } catch (loggingError) {
+      appLogger.error('admin_daily_brief_agent_run_log_failed', {
+        error: loggingError,
+      });
+    }
+
+    appLogger.error('admin_daily_brief_generation_failed', { error });
+    throw new AppError(
+      'Could not generate admin daily brief. Please try again later.',
       503,
     );
   }

@@ -1,10 +1,14 @@
 import { agentRunRepository } from '../repositories/agent-run.repository';
 import { orderRepository } from '../repositories/order.repository';
-import { getAdminAnalyticsSummary } from './admin-dashboard.service';
+import {
+  getAdminAnalyticsSummary,
+  getAdminDailyBrief,
+} from './admin-dashboard.service';
 import {
   buildAdminInsightSystemPromptForTest,
   buildAdminInsightUserPromptForTest,
   chatWithAdminInsightAgent,
+  generateAdminDailyBrief,
   generateAdminInsights,
   investigateAdminAlert,
   resetAdminInsightModelClientForTest,
@@ -14,6 +18,7 @@ import { detectAnalyticsAlerts } from './admin-alert.service';
 
 jest.mock('./admin-dashboard.service', () => ({
   getAdminAnalyticsSummary: jest.fn(),
+  getAdminDailyBrief: jest.fn(),
 }));
 
 jest.mock('./admin-alert.service', () => ({
@@ -95,6 +100,30 @@ const activeAlert = {
   createdAt: new Date('2026-09-20T00:00:00.000Z'),
 };
 
+const dailyBrief = {
+  date: '21/09/2026',
+  comparison: 'same_weekday_last_week' as const,
+  metrics: {
+    revenueCents: {
+      value: 22000,
+      deltaPercent: 10,
+    },
+    orderCount: {
+      value: 10,
+      deltaPercent: 25,
+    },
+    averageOrderValueCents: {
+      value: 2444,
+      deltaPercent: -2,
+    },
+  },
+  highlights: [
+    'Revenue was A$220.00 (+10% vs the same weekday last week).',
+    'Double Burger was the strongest seller with 12 sold.',
+  ],
+  worthChecking: ['Vegetarian Burger availability, placement, and pairing.'],
+};
+
 describe('admin insight service', () => {
   const actor = { id: '507f1f77bcf86cd799439011' };
 
@@ -102,6 +131,7 @@ describe('admin insight service', () => {
     jest.clearAllMocks();
     resetAdminInsightModelClientForTest();
     jest.mocked(getAdminAnalyticsSummary).mockResolvedValue(analyticsSummary);
+    jest.mocked(getAdminDailyBrief).mockResolvedValue(dailyBrief);
     jest.mocked(detectAnalyticsAlerts).mockResolvedValue([activeAlert]);
     jest.mocked(agentRunRepository.create).mockResolvedValue({
       _id: 'agent-run-1',
@@ -168,6 +198,67 @@ describe('admin insight service', () => {
         status: 'success',
       },
     });
+  });
+
+  test('generates an AI daily brief from deterministic brief and analytics tools', async () => {
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'Yesterday needs attention on vegetarian availability.',
+        insights: [
+          {
+            type: 'opportunity',
+            severity: 'medium',
+            title: 'Vegetarian Burger needs a morning check',
+            evidence: [
+              'Vegetarian Burger availability, placement, and pairing.',
+            ],
+            suggestedAction:
+              'Check availability and placement before the lunch service.',
+            relatedMenuItemIds: [],
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await generateAdminDailyBrief(actor);
+
+    expect(modelClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        question: 'Generate a concise AI operations daily brief for yesterday.',
+        analytics: analyticsSummary,
+        activeAlerts: [activeAlert],
+        selectedTools: [
+          'getAdminDailyBrief',
+          'getAdminAnalyticsSummary',
+          'detectAnalyticsAlerts',
+        ],
+        toolResults: expect.objectContaining({
+          getAdminDailyBrief: dailyBrief,
+          getAdminAnalyticsSummary: analyticsSummary,
+          detectAnalyticsAlerts: [activeAlert],
+        }),
+      }),
+    );
+    expect(agentRunRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolsUsed: [
+          'getAdminDailyBrief',
+          'getAdminAnalyticsSummary',
+          'detectAnalyticsAlerts',
+        ],
+        status: 'success',
+      }),
+    );
+    expect(result.summary).toBe(
+      'Yesterday needs attention on vegetarian availability.',
+    );
+    expect(result.run.toolsUsed).toEqual([
+      'getAdminDailyBrief',
+      'getAdminAnalyticsSummary',
+      'detectAnalyticsAlerts',
+    ]);
   });
 
   test('uses deterministic fallback insights when the model client is not overridden', async () => {
@@ -243,6 +334,7 @@ describe('admin insight service', () => {
         items: [
           {
             nameAtPurchase: 'Classic Burger',
+            categoryAtPurchase: 'burger',
             quantity: 1,
           },
         ],
@@ -261,6 +353,7 @@ describe('admin insight service', () => {
         items: [
           {
             nameAtPurchase: 'Fries',
+            categoryAtPurchase: 'side',
             quantity: 1,
           },
         ],
@@ -310,6 +403,7 @@ describe('admin insight service', () => {
         'detectAnalyticsAlerts',
         'getSalesMetrics',
         'getOrders',
+        'getCancellationBreakdown',
         'getPaymentStats',
       ],
       orderEvidence: [
@@ -335,6 +429,9 @@ describe('admin insight service', () => {
               tool: 'getOrders',
             }),
             expect.objectContaining({
+              tool: 'getCancellationBreakdown',
+            }),
+            expect.objectContaining({
               tool: 'getPaymentStats',
             }),
           ]),
@@ -347,6 +444,7 @@ describe('admin insight service', () => {
           'detectAnalyticsAlerts',
           'getSalesMetrics',
           'getOrders',
+          'getCancellationBreakdown',
           'getPaymentStats',
         ],
         status: 'success',
@@ -357,6 +455,7 @@ describe('admin insight service', () => {
       'detectAnalyticsAlerts',
       'getSalesMetrics',
       'getOrders',
+      'getCancellationBreakdown',
       'getPaymentStats',
     ]);
     expect(result.orderEvidence).toHaveLength(2);

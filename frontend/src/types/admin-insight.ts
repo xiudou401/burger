@@ -29,6 +29,7 @@ export interface AdminInsightOrderEvidence {
   totalCents: number;
   itemCount: number;
   items: string[];
+  itemCategories?: string[];
   createdAt: string;
   updatedAt: string;
 }
