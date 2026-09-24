@@ -6,9 +6,7 @@ import { menuItemRepository } from '../repositories/menu-item.repository';
 const BUSINESS_TIME_ZONE = 'Australia/Sydney';
 
 interface DashboardOrderItem {
-  menuItemId?: unknown;
-  // Legacy fallback for orders created before menuItemId became the public name.
-  mealId?: unknown;
+  menuItemId: unknown;
   nameAtPurchase?: string;
   name?: string;
   categoryAtPurchase?: string;
@@ -215,7 +213,7 @@ const summarizeTopItems = (orders: DashboardOrder[]) => {
     if (!isRevenueOrder(order)) continue;
 
     for (const item of order.items) {
-      const menuItemId = String(item.menuItemId ?? item.mealId);
+      const menuItemId = String(item.menuItemId);
       const existing = topItems.get(menuItemId);
       const name = item.nameAtPurchase ?? item.name ?? 'Menu item';
 

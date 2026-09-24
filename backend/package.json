@@ -18,6 +18,7 @@
     "seed:demo-orders": "ts-node scripts/seedDemoOrders.ts",
     "benchmark:password": "ts-node scripts/benchmarkPassword.ts",
     "migrate:money-cents": "ts-node scripts/migrateMoneyToCents.ts",
+    "migrate:order-menu-item-ids": "ts-node scripts/migrateOrderMealIdToMenuItemId.ts",
     "cleanup:menu-images": "ts-node scripts/cleanupOrphanMenuImages.ts",
     "localize:meals": "npm run localize:menu-items",
     "localize:menu-items": "ts-node scripts/localizeMenuItems.ts",

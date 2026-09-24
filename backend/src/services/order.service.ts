@@ -51,12 +51,10 @@ export interface PaginatedPublicOrders {
 }
 
 interface OrderItemSnapshotInput {
-  menuItemId?: unknown;
+  menuItemId: unknown;
   nameAtPurchase?: string;
   imageAtPurchase?: string;
   priceCentsAtPurchase?: number;
-  // Legacy fallback for orders created before menuItemId became the public name.
-  mealId?: unknown;
   name?: string;
   image?: string;
   priceCents?: number;
@@ -86,7 +84,7 @@ export const toPublicOrder = (order: {
 }): PublicOrder => ({
   id: String(order._id),
   items: order.items.map((item) => {
-    const menuItemId = String(item.menuItemId ?? item.mealId);
+    const menuItemId = String(item.menuItemId);
     const name = item.nameAtPurchase ?? item.name ?? '';
     const image = item.imageAtPurchase ?? item.image;
     const priceCents = item.priceCentsAtPurchase ?? item.priceCents ?? 0;

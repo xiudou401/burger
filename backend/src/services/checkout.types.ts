@@ -19,12 +19,10 @@ export type CheckoutOrderDocument = {
   _id: unknown;
   userId: unknown;
   items: Array<{
-    menuItemId?: unknown;
+    menuItemId: unknown;
     nameAtPurchase?: string;
     imageAtPurchase?: string;
     priceCentsAtPurchase?: number;
-    // Legacy fallback for checkout orders created before menuItemId became the public name.
-    mealId?: unknown;
     name?: string;
     image?: string;
     priceCents?: number;
