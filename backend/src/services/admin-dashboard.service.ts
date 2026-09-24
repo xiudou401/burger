@@ -265,15 +265,15 @@ export const getAdminDashboardSummary = async (
 
   for (const order of dashboardOrders) {
     ordersByStatus[order.status] += 1;
+  }
 
+  for (const order of dashboardPaidOrders) {
     const minutes = getPreparationMinutes(order);
 
     if (minutes !== null) {
       preparationMinutes.push(minutes);
     }
-  }
 
-  for (const order of dashboardPaidOrders) {
     todayRevenueCents += order.totalCents;
   }
 
