@@ -1,5 +1,5 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { logout as logoutRequest, refreshSession } from '../../api/auth';
+import { logout as logoutRequest, restoreAuthSession } from '../../api/auth';
 import {
   clearAccessToken,
   setAccessToken as setApiAccessToken,
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: Props) => {
 
     const restoreSession = async () => {
       try {
-        const res = await refreshSession();
+        const res = await restoreAuthSession();
 
         if (!isMounted || !isRestoreActive) return;
 

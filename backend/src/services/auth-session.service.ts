@@ -21,7 +21,7 @@ interface CreateSessionOptions {
   parentSessionId?: string;
 }
 
-const createSession = async (
+const issueAuthSessionWithRecord = async (
   user: AuthenticatedUser,
   options: CreateSessionOptions = {},
 ) => {
@@ -49,10 +49,10 @@ const createSession = async (
   };
 };
 
-export const createAuthSession = async (
+export const issueAuthSession = async (
   user: AuthenticatedUser,
 ): Promise<SessionAuthResult> => {
-  const { result } = await createSession(user);
+  const { result } = await issueAuthSessionWithRecord(user);
 
   return result;
 };
@@ -173,7 +173,7 @@ export const rotateAuthSession = async (
   let result: SessionAuthResult;
 
   try {
-    const replacement = await createSession(toPublicUser(user), {
+    const replacement = await issueAuthSessionWithRecord(toPublicUser(user), {
       familyId: refreshFamilyId,
       parentSessionId: String(consumedSession._id),
     });

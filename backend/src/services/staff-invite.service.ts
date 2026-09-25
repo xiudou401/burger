@@ -6,7 +6,7 @@ import {
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { normalizeEmail } from '../utils/email';
 import { sendStaffInviteEmail } from './email.service';
-import { createAuthSession } from './auth-session.service';
+import { issueAuthSession } from './auth-session.service';
 import type { AuthenticatedUser } from '../types/auth';
 import { toPublicUser } from '../utils/public-user';
 import { env } from '../config/env';
@@ -171,7 +171,7 @@ export const acceptStaffInvite = async ({
   }
 
   const publicUser = toPublicUser(updatedUser);
-  const session = await createAuthSession(publicUser);
+  const session = await issueAuthSession(publicUser);
 
   return {
     ...session,

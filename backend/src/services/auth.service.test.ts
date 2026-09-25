@@ -2,7 +2,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { beforeEach, describe, expect, jest, test } from '@jest/globals';
 import { pbkdf2Sync } from 'crypto';
 import { userRepository } from '../repositories/user.repository';
-import { createAuthSession, revokeUserSessions } from './auth-session.service';
+import { issueAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendPasswordResetEmail, sendVerificationEmail } from './email.service';
 import { hashPassword } from '../utils/password';
 import {
@@ -32,7 +32,7 @@ jest.mock('../repositories/user.repository', () => ({
 }));
 
 jest.mock('./auth-session.service', () => ({
-  createAuthSession: jest.fn(),
+  issueAuthSession: jest.fn(),
   revokeUserSessions: jest.fn(),
 }));
 
@@ -74,7 +74,7 @@ describe('auth service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(createAuthSession).mockResolvedValue({
+    jest.mocked(issueAuthSession).mockResolvedValue({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
       user: publicUser,
@@ -112,7 +112,7 @@ describe('auth service', () => {
         token: expect.any(String),
       }),
     );
-    expect(createAuthSession).toHaveBeenCalledWith(publicUser);
+    expect(issueAuthSession).toHaveBeenCalledWith(publicUser);
     expect(result.accessToken).toBe('access-token');
     expect(result.emailVerificationEmailFailed).toBeUndefined();
   });
@@ -143,7 +143,7 @@ describe('auth service', () => {
       expect.any(String),
       expect.any(Date),
     );
-    expect(createAuthSession).toHaveBeenCalledWith(publicUser);
+    expect(issueAuthSession).toHaveBeenCalledWith(publicUser);
     expect(result.accessToken).toBe('access-token');
     expect(result.emailVerificationEmailFailed).toBe(true);
 
@@ -183,7 +183,7 @@ describe('auth service', () => {
     expect(userRepository.findByEmailWithPassword).toHaveBeenCalledWith(
       'pat@example.com',
     );
-    expect(createAuthSession).toHaveBeenCalledWith(publicUser);
+    expect(issueAuthSession).toHaveBeenCalledWith(publicUser);
     expect(result.refreshToken).toBe('refresh-token');
   });
 
@@ -204,7 +204,7 @@ describe('auth service', () => {
     jest
       .mocked(userRepository.findByEmailWithPassword)
       .mockResolvedValue(adminUser as never);
-    jest.mocked(createAuthSession).mockResolvedValue({
+    jest.mocked(issueAuthSession).mockResolvedValue({
       accessToken: 'admin-access-token',
       refreshToken: 'admin-refresh-token',
       user: publicAdmin,
@@ -215,7 +215,7 @@ describe('auth service', () => {
       password: 'Burger#2026',
     });
 
-    expect(createAuthSession).toHaveBeenCalledWith(publicAdmin);
+    expect(issueAuthSession).toHaveBeenCalledWith(publicAdmin);
     expect(result.refreshToken).toBe('admin-refresh-token');
   });
 
@@ -236,7 +236,7 @@ describe('auth service', () => {
       statusCode: 403,
     });
 
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('upgrades legacy password hashes after successful login', async () => {
@@ -269,7 +269,7 @@ describe('auth service', () => {
     await expect(
       login({ email: 'pat@example.com', password: 'wrong-password' }),
     ).rejects.toThrow(ServiceError);
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('verifies email and returns the updated public user', async () => {
@@ -351,7 +351,7 @@ describe('auth service', () => {
 
     expect(userRepository.findByEmail).not.toHaveBeenCalled();
     expect(userRepository.create).not.toHaveBeenCalled();
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('rejects admin OAuth for customer accounts without creating a session', async () => {
@@ -369,7 +369,7 @@ describe('auth service', () => {
       statusCode: 403,
     });
 
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('does not create customer accounts from admin OAuth login', async () => {
@@ -388,6 +388,6 @@ describe('auth service', () => {
     });
 
     expect(userRepository.create).not.toHaveBeenCalled();
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { refreshSession } from '../../api/auth';
+import { restoreAuthSession } from '../../api/auth';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 
 const PENDING_STAFF_INVITE_TOKEN = 'pendingStaffInviteToken';
@@ -22,7 +22,7 @@ export const useOAuthCallback = () => {
     const redirectTo = params.get('redirectTo');
 
     const finishSignIn = async () => {
-      const session = await refreshSession();
+      const session = await restoreAuthSession();
       loginFn(session.accessToken, session.user);
       const pendingInviteToken = sessionStorage.getItem(
         PENDING_STAFF_INVITE_TOKEN,

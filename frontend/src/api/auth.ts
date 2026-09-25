@@ -42,7 +42,7 @@ export const adminLogin = (email: string, password: string) => {
   });
 };
 
-export const refreshSession = () => {
+export const restoreAuthSession = () => {
   return refreshAuthSession();
 };
 

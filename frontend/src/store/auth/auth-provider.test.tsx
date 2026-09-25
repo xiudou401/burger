@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { AuthProvider } from './auth-provider';
 import { useAuth } from './hooks/useAuth';
-import { logout, refreshSession } from '../../api/auth';
+import { logout, restoreAuthSession } from '../../api/auth';
 import {
   notifyAuthSessionExpired,
   notifyAuthSessionRefreshed,
@@ -26,7 +26,7 @@ jest.mock('use-context-selector', () => {
 });
 
 jest.mock('../../api/auth', () => ({
-  refreshSession: jest.fn(),
+  restoreAuthSession: jest.fn(),
   logout: jest.fn(),
 }));
 
@@ -104,7 +104,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('restores an authenticated session on startup', async () => {
-    jest.mocked(refreshSession).mockResolvedValue({
+    jest.mocked(restoreAuthSession).mockResolvedValue({
       accessToken: 'restored-access-token',
       user: customerUser,
     });
@@ -127,7 +127,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('keeps the user logged out when startup refresh is unauthorized', async () => {
-    jest.mocked(refreshSession).mockRejectedValue(
+    jest.mocked(restoreAuthSession).mockRejectedValue(
       new ApiError(401, {
         message: 'Session expired',
       }),
@@ -148,7 +148,7 @@ describe('AuthProvider lifecycle', () => {
   test('stops auth loading if startup refresh does not settle', () => {
     jest.useFakeTimers();
     jest
-      .mocked(refreshSession)
+      .mocked(restoreAuthSession)
       .mockReturnValue(new Promise(() => undefined) as never);
 
     renderAuthProvider();
@@ -165,7 +165,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('clears auth state when the request layer reports session expiry', async () => {
-    jest.mocked(refreshSession).mockResolvedValue({
+    jest.mocked(restoreAuthSession).mockResolvedValue({
       accessToken: 'restored-access-token',
       user: customerUser,
     });
@@ -187,7 +187,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('updates auth state when the request layer refreshes the session', async () => {
-    jest.mocked(refreshSession).mockRejectedValue(
+    jest.mocked(restoreAuthSession).mockRejectedValue(
       new ApiError(401, {
         message: 'Session expired',
       }),
@@ -214,7 +214,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('logs out when another tab broadcasts logout', async () => {
-    jest.mocked(refreshSession).mockResolvedValue({
+    jest.mocked(restoreAuthSession).mockResolvedValue({
       accessToken: 'restored-access-token',
       user: customerUser,
     });

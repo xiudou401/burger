@@ -1,7 +1,7 @@
 import { ServiceError } from '../errors/ServiceError';
 import { staffInviteRepository } from '../repositories/staff-invite.repository';
 import { userRepository } from '../repositories/user.repository';
-import { createAuthSession } from './auth-session.service';
+import { issueAuthSession } from './auth-session.service';
 import { acceptStaffInvite } from './staff-invite.service';
 
 jest.mock('../repositories/staff-invite.repository', () => ({
@@ -20,7 +20,7 @@ jest.mock('../repositories/user.repository', () => ({
 }));
 
 jest.mock('./auth-session.service', () => ({
-  createAuthSession: jest.fn(),
+  issueAuthSession: jest.fn(),
 }));
 
 describe('staff invite service', () => {
@@ -59,7 +59,7 @@ describe('staff invite service', () => {
     jest
       .mocked(staffInviteRepository.restoreAcceptedInvite)
       .mockResolvedValue(null);
-    jest.mocked(createAuthSession).mockResolvedValue({
+    jest.mocked(issueAuthSession).mockResolvedValue({
       accessToken: 'access-token',
       refreshToken: 'refresh-token',
       user: {
@@ -95,7 +95,7 @@ describe('staff invite service', () => {
       userId,
       'staff',
     );
-    expect(createAuthSession).toHaveBeenCalledWith(
+    expect(issueAuthSession).toHaveBeenCalledWith(
       expect.objectContaining({
         id: userId,
         role: 'staff',
@@ -117,7 +117,7 @@ describe('staff invite service', () => {
     ).rejects.toThrow('Invite link is invalid or expired');
 
     expect(userRepository.acceptStaffInviteRole).not.toHaveBeenCalled();
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('does not claim invites for the wrong signed-in email', async () => {
@@ -141,7 +141,7 @@ describe('staff invite service', () => {
     });
 
     expect(userRepository.acceptStaffInviteRole).not.toHaveBeenCalled();
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('restores a claimed invite if user promotion fails', async () => {
@@ -159,7 +159,7 @@ describe('staff invite service', () => {
     expect(staffInviteRepository.restoreAcceptedInvite).toHaveBeenCalledWith(
       inviteId,
     );
-    expect(createAuthSession).not.toHaveBeenCalled();
+    expect(issueAuthSession).not.toHaveBeenCalled();
   });
 
   test('rejects users without the invited email before claiming', async () => {

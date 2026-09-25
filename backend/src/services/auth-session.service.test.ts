@@ -3,7 +3,7 @@ import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
 import { hashToken } from '../utils/secure-token';
 import {
-  createAuthSession,
+  issueAuthSession,
   rotateAuthSession,
   revokeAuthSession,
   revokeUserSessions,
@@ -55,7 +55,7 @@ describe('auth session service', () => {
       _id: 'session-1',
     } as never);
 
-    const result = await createAuthSession(user);
+    const result = await issueAuthSession(user);
 
     expect(authSessionRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({

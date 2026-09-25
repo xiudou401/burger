@@ -8,7 +8,7 @@ import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { toPublicUser } from '../utils/public-user';
 import { normalizeEmail } from '../utils/email';
-import { createAuthSession, revokeUserSessions } from './auth-session.service';
+import { issueAuthSession, revokeUserSessions } from './auth-session.service';
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
@@ -52,11 +52,11 @@ const assertUserIsActive = (user: { status?: 'active' | 'disabled' }) => {
   }
 };
 
-const createAuthResult = async (
+const issueAuthResult = async (
   user: AuthenticatedUser,
   extra?: Omit<AuthResult, 'accessToken' | 'refreshToken' | 'user'>,
 ): Promise<AuthResult> => {
-  const authResult = await createAuthSession(user);
+  const authResult = await issueAuthSession(user);
 
   return {
     ...authResult,
@@ -122,7 +122,7 @@ export const signup = async ({
   );
   const publicUser = toPublicUser(user);
 
-  return createAuthResult(publicUser, {
+  return issueAuthResult(publicUser, {
     ...(isDevEmailMode() ? { emailVerificationToken } : {}),
     ...(!emailSent ? { emailVerificationEmailFailed: true } : {}),
   });
@@ -134,7 +134,7 @@ export const login = async ({
 }: LoginPayload): Promise<AuthResult> => {
   const publicUser = await authenticatePasswordUser({ email, password });
 
-  return createAuthResult(publicUser);
+  return issueAuthResult(publicUser);
 };
 
 export const adminLogin = async (
@@ -146,7 +146,7 @@ export const adminLogin = async (
     throw new ServiceError('Admin access required', 403);
   }
 
-  return createAuthResult(publicUser);
+  return issueAuthResult(publicUser);
 };
 
 export const createEmailVerificationToken = async (userId: string) => {
@@ -318,5 +318,5 @@ export const loginWithOAuth = async ({
     });
   }
 
-  return createAuthResult(publicUser);
+  return issueAuthResult(publicUser);
 };

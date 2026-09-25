@@ -1,5 +1,5 @@
 import { clearAccessToken, setAccessToken } from './auth-token';
-import { refreshSession } from './auth';
+import { restoreAuthSession } from './auth';
 import { ApiError, request } from './request';
 
 const mockResponse = (
@@ -187,7 +187,7 @@ describe('authenticated request refresh', () => {
       )
       .mockResolvedValueOnce(mockResponse(200, restoredSession));
 
-    await expect(refreshSession()).resolves.toEqual(restoredSession);
+    await expect(restoreAuthSession()).resolves.toEqual(restoredSession);
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -246,7 +246,7 @@ describe('authenticated request refresh', () => {
       mockResponse(401, { message: 'Session expired' }),
     );
 
-    await expect(refreshSession()).rejects.toMatchObject({
+    await expect(restoreAuthSession()).rejects.toMatchObject({
       statusCode: 401,
     });
 
