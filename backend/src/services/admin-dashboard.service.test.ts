@@ -129,7 +129,7 @@ describe('admin dashboard service', () => {
       activeOrders: 2,
       ordersByStatus: {
         pending_payment: 1,
-        paid: 0,
+        confirmed: 0,
         preparing: 1,
         ready: 1,
         completed: 0,

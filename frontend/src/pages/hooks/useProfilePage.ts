@@ -25,7 +25,7 @@ const wait = (ms: number) =>
   });
 
 const isConfirmedStripeOrder = (order: Order) =>
-  order.status === 'paid' || order.payment?.status === 'paid';
+  order.status === 'confirmed' || order.payment?.status === 'paid';
 
 export const useProfilePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();

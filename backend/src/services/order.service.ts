@@ -280,7 +280,7 @@ export const updateOrderStatus = async (
 
   if (!hasPermission(actor, 'manage_orders')) {
     const isStaffFulfillmentTransition =
-      (order.status === 'paid' && nextStatus === 'preparing') ||
+      (order.status === 'confirmed' && nextStatus === 'preparing') ||
       (order.status === 'preparing' && nextStatus === 'ready') ||
       (order.status === 'ready' && nextStatus === 'completed');
 
@@ -292,16 +292,13 @@ export const updateOrderStatus = async (
     }
   }
 
-  if (nextStatus === 'paid' && order.payment?.provider === 'stripe') {
-    throw new ServiceError(
-      'Stripe payments must be marked paid by webhook',
-      400,
-    );
+  if (nextStatus === 'confirmed' && order.payment?.provider === 'stripe') {
+    throw new ServiceError('Stripe payments must be confirmed by webhook', 400);
   }
 
   order.status = nextStatus;
 
-  if (nextStatus === 'paid') {
+  if (nextStatus === 'confirmed') {
     order.payment = order.payment ?? {
       status: 'unpaid',
       amountCents: order.totalCents,
@@ -347,7 +344,7 @@ export const updateOrderStatus = async (
     },
   });
 
-  if (nextStatus === 'paid') {
+  if (nextStatus === 'confirmed') {
     await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
   }
 

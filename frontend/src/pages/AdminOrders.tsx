@@ -21,7 +21,7 @@ const KITCHEN_COLUMNS: Array<{
   title: string;
   status: OrderStatus;
 }> = [
-  { title: 'New', status: 'paid' },
+  { title: 'New', status: 'confirmed' },
   { title: 'Preparing', status: 'preparing' },
   { title: 'Ready', status: 'ready' },
 ];

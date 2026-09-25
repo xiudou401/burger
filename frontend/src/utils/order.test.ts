@@ -18,7 +18,7 @@ describe('order utils', () => {
   });
 
   test('maps order statuses to shared badge variants', () => {
-    expect(getOrderStatusVariant('paid')).toBe('success');
+    expect(getOrderStatusVariant('confirmed')).toBe('success');
     expect(getOrderStatusVariant('completed')).toBe('success');
     expect(
       getOrderStatusVariant('completed', { completedVariant: 'neutral' }),
@@ -28,7 +28,9 @@ describe('order utils', () => {
   });
 
   test('formats admin order action labels', () => {
-    expect(getOrderActionLabel('paid', 'preparing')).toBe('Start preparing');
+    expect(getOrderActionLabel('confirmed', 'preparing')).toBe(
+      'Start preparing',
+    );
     expect(getOrderActionLabel('pending_payment', 'cancelled')).toBe(
       'Cancel pending order',
     );

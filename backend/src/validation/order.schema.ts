@@ -8,7 +8,7 @@ export const CreateOrderSchema = CartPayloadSchema.extend({
 
 export const OrderStatusSchema = z.enum([
   'pending_payment',
-  'paid',
+  'confirmed',
   'preparing',
   'ready',
   'completed',

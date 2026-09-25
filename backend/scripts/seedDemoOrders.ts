@@ -94,7 +94,7 @@ const getBasePattern = (index: number): DemoOrderPattern => {
   ] satisfies MenuItemCategory[][];
 
   const paidStatuses: OrderStatus[] = [
-    'paid',
+    'confirmed',
     'preparing',
     'ready',
     'completed',

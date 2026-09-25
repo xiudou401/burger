@@ -2,7 +2,7 @@ import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 import { getPermissionsForRole } from '../../types/permissions';
 
 describe('admin order status permissions', () => {
-  test('allows admins to cancel paid and preparing orders before completion', () => {
+  test('allows admins to cancel confirmed and preparing orders before completion', () => {
     const nextStatuses = getNextStatusesByUser({
       id: 'admin-1',
       name: 'Admin',
@@ -11,7 +11,7 @@ describe('admin order status permissions', () => {
       emailVerified: true,
     });
 
-    expect(nextStatuses.paid).toEqual(['preparing', 'cancelled']);
+    expect(nextStatuses.confirmed).toEqual(['preparing', 'cancelled']);
     expect(nextStatuses.preparing).toEqual(['ready', 'cancelled']);
     expect(nextStatuses.pending_payment).toEqual(['cancelled']);
     expect(nextStatuses.completed).toEqual([]);
@@ -26,7 +26,7 @@ describe('admin order status permissions', () => {
       emailVerified: true,
     });
 
-    expect(nextStatuses.paid).toEqual(['preparing']);
+    expect(nextStatuses.confirmed).toEqual(['preparing']);
     expect(nextStatuses.preparing).toEqual(['ready']);
     expect(nextStatuses.completed).toEqual([]);
     expect(nextStatuses.cancelled).toEqual([]);

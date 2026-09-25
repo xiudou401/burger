@@ -88,7 +88,7 @@ export interface AdminDailyBrief {
 
 const ORDER_STATUSES: OrderStatus[] = [
   'pending_payment',
-  'paid',
+  'confirmed',
   'preparing',
   'ready',
   'completed',

@@ -195,7 +195,7 @@ export const orderRepository = {
   countActive() {
     return OrderModel.countDocuments({
       status: {
-        $in: ['paid', 'preparing', 'ready'],
+        $in: ['confirmed', 'preparing', 'ready'],
       },
     });
   },

@@ -13,7 +13,7 @@ interface SummarizeOrderItemsOptions {
 
 const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   pending_payment: 'Pending payment',
-  paid: 'Paid',
+  confirmed: 'Confirmed',
   preparing: 'Preparing',
   ready: 'Ready',
   completed: 'Completed',
@@ -22,7 +22,7 @@ const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 
 const ORDER_ACTION_LABELS: Record<OrderStatus, string> = {
   pending_payment: 'Mark pending',
-  paid: 'Mark paid',
+  confirmed: 'Confirm order',
   preparing: 'Start preparing',
   ready: 'Mark ready',
   completed: 'Complete order',
@@ -42,7 +42,7 @@ export const getOrderStatusVariant = (
   options: { completedVariant?: StatusBadgeVariant } = {},
 ): StatusBadgeVariant => {
   switch (status) {
-    case 'paid':
+    case 'confirmed':
       return 'success';
     case 'completed':
       return options.completedVariant ?? 'success';

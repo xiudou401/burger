@@ -19,7 +19,7 @@ export const ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL = 'getCancellationBreakdown';
 
 const OrderStatusSchema = z.enum([
   'pending_payment',
-  'paid',
+  'confirmed',
   'preparing',
   'ready',
   'completed',
@@ -324,7 +324,9 @@ export const getOrderStatusFromQuestion = (
   if (/\bpreparing\b/.test(normalized)) return 'preparing';
   if (/\bready\b/.test(normalized)) return 'ready';
   if (/\bcompleted\b/.test(normalized)) return 'completed';
-  if (/\bpaid\b/.test(normalized)) return 'paid';
+  if (/\bconfirmed\b/.test(normalized) || /\bpaid\b/.test(normalized)) {
+    return 'confirmed';
+  }
 
   return undefined;
 };

@@ -7,16 +7,16 @@ import {
 
 test('allows expected order status transitions', () => {
   expect(() =>
-    assertCanTransitionOrderStatus('pending_payment', 'paid'),
+    assertCanTransitionOrderStatus('pending_payment', 'confirmed'),
   ).not.toThrow();
   expect(() =>
     assertCanTransitionOrderStatus('pending_payment', 'cancelled'),
   ).not.toThrow();
   expect(() =>
-    assertCanTransitionOrderStatus('paid', 'preparing'),
+    assertCanTransitionOrderStatus('confirmed', 'preparing'),
   ).not.toThrow();
   expect(() =>
-    assertCanTransitionOrderStatus('paid', 'cancelled'),
+    assertCanTransitionOrderStatus('confirmed', 'cancelled'),
   ).not.toThrow();
   expect(() =>
     assertCanTransitionOrderStatus('preparing', 'ready'),
@@ -33,19 +33,19 @@ test('blocks invalid order status transitions', () => {
   expect(() =>
     assertCanTransitionOrderStatus('pending_payment', 'completed'),
   ).toThrow(ServiceError);
-  expect(() => assertCanTransitionOrderStatus('completed', 'paid')).toThrow(
-    ServiceError,
-  );
-  expect(() => assertCanTransitionOrderStatus('cancelled', 'paid')).toThrow(
-    ServiceError,
-  );
+  expect(() =>
+    assertCanTransitionOrderStatus('completed', 'confirmed'),
+  ).toThrow(ServiceError);
+  expect(() =>
+    assertCanTransitionOrderStatus('cancelled', 'confirmed'),
+  ).toThrow(ServiceError);
   expect(() =>
     assertCanTransitionOrderStatus('ready', 'pending_payment'),
   ).toThrow(ServiceError);
 });
 
 test('exposes transition checks for UI and service rules', () => {
-  expect(canTransitionOrderStatus('paid', 'preparing')).toBe(true);
+  expect(canTransitionOrderStatus('confirmed', 'preparing')).toBe(true);
   expect(canTransitionOrderStatus('completed', 'preparing')).toBe(false);
   expect(allowedOrderTransitions.completed).toEqual([]);
   expect(allowedOrderTransitions.cancelled).toEqual([]);

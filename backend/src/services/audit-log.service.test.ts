@@ -25,7 +25,7 @@ describe('audit log service', () => {
       action: 'order.status_changed',
       entityType: 'order',
       entityId: '507f1f77bcf86cd799439012',
-      before: { status: 'paid' },
+      before: { status: 'confirmed' },
       after: { status: 'preparing' },
     });
 
@@ -35,7 +35,7 @@ describe('audit log service', () => {
       action: 'order.status_changed',
       entityType: 'order',
       entityId: '507f1f77bcf86cd799439012',
-      before: { status: 'paid' },
+      before: { status: 'confirmed' },
       after: { status: 'preparing' },
     });
   });
@@ -70,7 +70,7 @@ describe('audit log service', () => {
         action: 'order.status_changed',
         entityType: 'order',
         entityId: '507f1f77bcf86cd799439012',
-        before: { status: 'paid' },
+        before: { status: 'confirmed' },
         after: { status: 'preparing' },
         createdAt,
       },
@@ -84,7 +84,7 @@ describe('audit log service', () => {
         action: 'order.status_changed',
         entityType: 'order',
         entityId: '507f1f77bcf86cd799439012',
-        before: { status: 'paid' },
+        before: { status: 'confirmed' },
         after: { status: 'preparing' },
         createdAt,
       },

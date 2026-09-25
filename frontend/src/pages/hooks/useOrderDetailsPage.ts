@@ -16,7 +16,7 @@ const wait = (ms: number) =>
   });
 
 export const isConfirmedStripeOrder = (order: Order) =>
-  order.status === 'paid' || order.payment?.status === 'paid';
+  order.status === 'confirmed' || order.payment?.status === 'paid';
 
 const applyRealtimeOrderEvent = (
   order: Order,

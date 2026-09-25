@@ -4,7 +4,7 @@ import { hasPermission } from '../../types/permissions';
 
 export const adminNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
   pending_payment: ['cancelled'],
-  paid: ['preparing', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
   preparing: ['ready', 'cancelled'],
   ready: ['completed'],
   completed: [],
@@ -13,7 +13,7 @@ export const adminNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
 
 export const staffNextStatusesByStatus: Record<OrderStatus, OrderStatus[]> = {
   pending_payment: [],
-  paid: ['preparing'],
+  confirmed: ['preparing'],
   preparing: ['ready'],
   ready: ['completed'],
   completed: [],

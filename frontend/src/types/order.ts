@@ -30,7 +30,7 @@ export interface Order {
 
 export type OrderStatus =
   | 'pending_payment'
-  | 'paid'
+  | 'confirmed'
   | 'preparing'
   | 'ready'
   | 'completed'

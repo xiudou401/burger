@@ -19,7 +19,7 @@ const isPaidOrder = (order: {
   payment: {
     status: PaymentStatus;
   };
-}) => order.status === 'paid' || order.payment.status === 'paid';
+}) => order.status === 'confirmed' || order.payment.status === 'paid';
 
 const assertStripeCheckoutMatchesOrder = (
   session: StripeCheckoutCompletedSession,
@@ -72,13 +72,13 @@ export const markStripeCheckoutPaid = async (
   assertStripeCheckoutMatchesOrder(session, order);
 
   const wasAlreadyPaid =
-    order.status === 'paid' && order.payment.status === 'paid';
+    order.status === 'confirmed' && order.payment.status === 'paid';
 
   if (wasAlreadyPaid) {
     return toPublicOrder(order);
   }
 
-  order.status = 'paid';
+  order.status = 'confirmed';
   order.payment.status = 'paid';
   order.payment.paidAt = order.payment.paidAt ?? new Date();
 

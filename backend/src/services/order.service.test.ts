@@ -121,7 +121,7 @@ describe('order service', () => {
       ],
       totalCents: 1200,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       payment: {
         status: 'paid',
         amountCents: 1200,
@@ -588,7 +588,7 @@ describe('order service', () => {
     expect(orderRepository.save).toHaveBeenCalledWith(order);
   });
 
-  test('marks paid orders, persists the change, and sends confirmation email', async () => {
+  test('confirms paid orders, persists the change, and sends confirmation email', async () => {
     const order = {
       _id: orderId,
       userId,
@@ -619,9 +619,9 @@ describe('order service', () => {
       email: 'pat@example.com',
     } as never);
 
-    const result = await updateOrderStatus(orderId, 'paid', 0, adminActor);
+    const result = await updateOrderStatus(orderId, 'confirmed', 0, adminActor);
 
-    expect(order.status).toBe('paid');
+    expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(order.payment.paidAt).toBeInstanceOf(Date);
     expect(orderRepository.save).toHaveBeenCalledWith(order);
@@ -632,7 +632,7 @@ describe('order service', () => {
         totalCents: 2400,
       }),
     );
-    expect(result.status).toBe('paid');
+    expect(result.status).toBe('confirmed');
     expect(recordAuditLog).toHaveBeenCalledWith({
       actorId: userId,
       actorRole: 'admin',
@@ -640,7 +640,7 @@ describe('order service', () => {
       entityType: 'order',
       entityId: orderId,
       before: { status: 'pending_payment' },
-      after: { status: 'paid' },
+      after: { status: 'confirmed' },
     });
   });
 
@@ -688,14 +688,14 @@ describe('order service', () => {
       client_reference_id: orderId,
     });
 
-    expect(order.status).toBe('paid');
+    expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(order.payment.paidAt).toBeInstanceOf(Date);
     expect(orderRepository.save).toHaveBeenCalledWith(order);
     expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
       expect.objectContaining({ orderId, totalCents: 2400 }),
     );
-    expect(result.status).toBe('paid');
+    expect(result.status).toBe('confirmed');
   });
 
   test('does not resend confirmation email for repeated paid Stripe webhooks', async () => {
@@ -714,7 +714,7 @@ describe('order service', () => {
       ],
       totalCents: 2400,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
@@ -742,7 +742,7 @@ describe('order service', () => {
 
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
-    expect(result.status).toBe('paid');
+    expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
 
@@ -830,7 +830,7 @@ describe('order service', () => {
       items: [],
       totalCents: 2400,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
@@ -849,10 +849,10 @@ describe('order service', () => {
 
     const result = await markStripeCheckoutFailed('cs_test_123', 'cancelled');
 
-    expect(order.status).toBe('paid');
+    expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(orderRepository.save).not.toHaveBeenCalled();
-    expect(result.status).toBe('paid');
+    expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
 
@@ -892,7 +892,7 @@ describe('order service', () => {
       items: [],
       totalCents: 2400,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       payment: {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
@@ -909,10 +909,10 @@ describe('order service', () => {
 
     const result = await markStripeOrderFailed(orderId);
 
-    expect(order.status).toBe('paid');
+    expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(orderRepository.save).not.toHaveBeenCalled();
-    expect(result.status).toBe('paid');
+    expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
 
@@ -923,7 +923,7 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'paid', 0, adminActor),
+      updateOrderStatus(orderId, 'confirmed', 0, adminActor),
     ).rejects.toThrow(ServiceError);
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
@@ -931,7 +931,7 @@ describe('order service', () => {
   test('rejects stale order status updates with a version conflict', async () => {
     jest.mocked(orderRepository.findById).mockResolvedValue({
       _id: orderId,
-      status: 'paid',
+      status: 'confirmed',
       __v: 2,
       payment: {
         status: 'paid',
@@ -959,7 +959,7 @@ describe('order service', () => {
       items: [],
       totalCents: 2400,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       __v: 1,
       payment: {
         provider: 'stripe',
@@ -996,7 +996,7 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'paid', 0, staffActor),
+      updateOrderStatus(orderId, 'confirmed', 0, staffActor),
     ).rejects.toThrow('Staff can only advance order fulfillment status');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
@@ -1008,7 +1008,7 @@ describe('order service', () => {
       items: [],
       totalCents: 2400,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       payment: {
         provider: 'stripe',
         status: 'paid',
@@ -1033,12 +1033,12 @@ describe('order service', () => {
       action: 'order.status_changed',
       entityType: 'order',
       entityId: orderId,
-      before: { status: 'paid' },
+      before: { status: 'confirmed' },
       after: { status: 'preparing' },
     });
   });
 
-  test.each(['paid', 'preparing'] as const)(
+  test.each(['confirmed', 'preparing'] as const)(
     'allows admins to cancel %s orders before completion',
     async (status) => {
       const order = {
@@ -1084,14 +1084,14 @@ describe('order service', () => {
     },
   );
 
-  test('rejects staff attempts to cancel paid orders', async () => {
+  test('rejects staff attempts to cancel confirmed orders', async () => {
     jest.mocked(orderRepository.findById).mockResolvedValue({
       _id: orderId,
       userId,
       items: [],
       totalCents: 2400,
       menuVersion: 7,
-      status: 'paid',
+      status: 'confirmed',
       payment: {
         provider: 'stripe',
         status: 'paid',
@@ -1151,8 +1151,8 @@ describe('order service', () => {
     } as never);
 
     await expect(
-      updateOrderStatus(orderId, 'paid', 0, adminActor),
-    ).rejects.toThrow('Stripe payments must be marked paid by webhook');
+      updateOrderStatus(orderId, 'confirmed', 0, adminActor),
+    ).rejects.toThrow('Stripe payments must be confirmed by webhook');
     expect(orderRepository.save).not.toHaveBeenCalled();
   });
 });

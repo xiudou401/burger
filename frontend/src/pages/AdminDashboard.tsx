@@ -17,7 +17,7 @@ import type { AdminInsightResponse } from '../types/admin-insight';
 
 const ORDER_STATUSES: OrderStatus[] = [
   'pending_payment',
-  'paid',
+  'confirmed',
   'preparing',
   'ready',
   'completed',

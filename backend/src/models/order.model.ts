@@ -3,7 +3,7 @@ import { MENU_ITEM_CATEGORIES, type MenuItemCategory } from './menu-item.model';
 
 export type OrderStatus =
   | 'pending_payment'
-  | 'paid'
+  | 'confirmed'
   | 'preparing'
   | 'ready'
   | 'completed'
@@ -143,7 +143,7 @@ const orderSchema = new Schema<Order>(
       type: String,
       enum: [
         'pending_payment',
-        'paid',
+        'confirmed',
         'preparing',
         'ready',
         'completed',

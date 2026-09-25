@@ -2,8 +2,8 @@ import type { OrderStatus } from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
 
 export const allowedOrderTransitions: Record<OrderStatus, OrderStatus[]> = {
-  pending_payment: ['paid', 'cancelled'],
-  paid: ['preparing', 'cancelled'],
+  pending_payment: ['confirmed', 'cancelled'],
+  confirmed: ['preparing', 'cancelled'],
   preparing: ['ready', 'cancelled'],
   ready: ['completed'],
   completed: [],
