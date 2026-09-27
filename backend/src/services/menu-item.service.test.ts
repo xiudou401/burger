@@ -41,6 +41,15 @@ describe('menu item service', () => {
     id: '507f1f77bcf86cd799439011',
     role: 'admin' as const,
   };
+  const menuItemMetadata = {
+    tags: [],
+    dietary: [],
+    allergens: [],
+    spiceLevel: 0,
+    servingSize: 'regular' as const,
+    pairingIds: [],
+    comboItemIds: [],
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -110,6 +119,7 @@ describe('menu item service', () => {
         priceCents: 1200,
         category: 'burger',
         isAvailable: true,
+        ...menuItemMetadata,
       },
       adminActor,
     );
@@ -149,6 +159,7 @@ describe('menu item service', () => {
         priceCents: 1300,
         category: 'burger',
         isAvailable: true,
+        ...menuItemMetadata,
       },
       adminActor,
     );
@@ -176,6 +187,7 @@ describe('menu item service', () => {
         priceCents: 1300,
         category: 'burger',
         isAvailable: true,
+        ...menuItemMetadata,
       }),
     ).rejects.toThrow('Menu item not found');
 

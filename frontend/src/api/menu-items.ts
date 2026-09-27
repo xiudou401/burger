@@ -2,6 +2,7 @@ import { request } from './request';
 import type {
   MenuItem,
   MenuItemCategory,
+  MenuItemServingSize,
   PaginatedMenuItems,
 } from '../types/menu-item';
 
@@ -33,6 +34,13 @@ export interface MenuItemPayload {
   image: string;
   category: MenuItemCategory;
   isAvailable: boolean;
+  tags?: string[];
+  dietary?: string[];
+  allergens?: string[];
+  spiceLevel?: number;
+  servingSize?: MenuItemServingSize;
+  pairingIds?: string[];
+  comboItemIds?: string[];
 }
 
 interface MenuItemResponse {

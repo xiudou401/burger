@@ -52,6 +52,13 @@ const toPublicMenuItem = (menuItem: {
   image?: string;
   category?: string;
   isAvailable?: boolean;
+  tags?: string[];
+  dietary?: string[];
+  allergens?: string[];
+  spiceLevel?: number;
+  servingSize?: string;
+  pairingIds?: unknown[];
+  comboItemIds?: unknown[];
 }) => ({
   id: String(menuItem._id),
   name: menuItem.name,
@@ -60,6 +67,13 @@ const toPublicMenuItem = (menuItem: {
   image: menuItem.image,
   category: menuItem.category ?? 'burger',
   isAvailable: menuItem.isAvailable ?? true,
+  tags: menuItem.tags ?? [],
+  dietary: menuItem.dietary ?? [],
+  allergens: menuItem.allergens ?? [],
+  spiceLevel: menuItem.spiceLevel ?? 0,
+  servingSize: menuItem.servingSize ?? 'regular',
+  pairingIds: (menuItem.pairingIds ?? []).map(String),
+  comboItemIds: (menuItem.comboItemIds ?? []).map(String),
 });
 
 export const findAllMenuItems = async (query: MenuItemQuery = {}) => {

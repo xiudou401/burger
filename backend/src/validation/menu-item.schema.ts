@@ -2,6 +2,11 @@ import { z } from 'zod';
 import { MENU_ITEM_CATEGORIES } from '../models/menu-item.model';
 import { ObjectIdSchema, paginationLimit } from './common.schema';
 
+const MenuItemMetadataListSchema = z
+  .array(z.string().trim().min(1).max(40))
+  .max(12)
+  .default([]);
+
 export const MenuItemSortSchema = z.enum([
   'price_asc',
   'price_desc',
@@ -60,6 +65,15 @@ export const MenuItemPayloadSchema = z
     image: z.string().trim().optional(),
     category: z.enum(MENU_ITEM_CATEGORIES).default('burger'),
     isAvailable: z.boolean().default(true),
+    tags: MenuItemMetadataListSchema,
+    dietary: MenuItemMetadataListSchema,
+    allergens: MenuItemMetadataListSchema,
+    spiceLevel: z.coerce.number().int().min(0).max(3).default(0),
+    servingSize: z
+      .enum(['light', 'regular', 'filling', 'share'])
+      .default('regular'),
+    pairingIds: z.array(ObjectIdSchema).max(12).default([]),
+    comboItemIds: z.array(ObjectIdSchema).max(12).default([]),
   })
   .strict();
 
@@ -70,5 +84,5 @@ export const MenuItemParamsSchema = z
   .strict();
 
 export type MenuItemQueryPayload = z.infer<typeof MenuItemQuerySchema>;
-export type MenuItemPayload = z.infer<typeof MenuItemPayloadSchema>;
+export type MenuItemPayload = z.output<typeof MenuItemPayloadSchema>;
 export type MenuItemParamsPayload = z.infer<typeof MenuItemParamsSchema>;

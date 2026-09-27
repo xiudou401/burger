@@ -1,4 +1,4 @@
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 
 export const MENU_ITEM_CATEGORIES = [
   'burger',
@@ -9,6 +9,7 @@ export const MENU_ITEM_CATEGORIES = [
 ] as const;
 
 export type MenuItemCategory = (typeof MENU_ITEM_CATEGORIES)[number];
+export type MenuItemServingSize = 'light' | 'regular' | 'filling' | 'share';
 
 export interface MenuItem {
   name: string;
@@ -17,6 +18,13 @@ export interface MenuItem {
   image?: string;
   category: MenuItemCategory;
   isAvailable: boolean;
+  tags: string[];
+  dietary: string[];
+  allergens: string[];
+  spiceLevel: number;
+  servingSize: MenuItemServingSize;
+  pairingIds: Types.ObjectId[];
+  comboItemIds: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +50,39 @@ const menuItemSchema = new Schema<MenuItem>(
       default: 'burger',
     },
     isAvailable: { type: Boolean, default: true },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    dietary: {
+      type: [String],
+      default: [],
+    },
+    allergens: {
+      type: [String],
+      default: [],
+    },
+    spiceLevel: {
+      type: Number,
+      min: 0,
+      max: 3,
+      default: 0,
+    },
+    servingSize: {
+      type: String,
+      enum: ['light', 'regular', 'filling', 'share'],
+      default: 'regular',
+    },
+    pairingIds: {
+      type: [Schema.Types.ObjectId],
+      ref: 'MenuItem',
+      default: [],
+    },
+    comboItemIds: {
+      type: [Schema.Types.ObjectId],
+      ref: 'MenuItem',
+      default: [],
+    },
   },
   { timestamps: true },
 );

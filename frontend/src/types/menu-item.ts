@@ -4,6 +4,7 @@ export type MenuItemCategory =
   | 'drink'
   | 'dessert'
   | 'combo';
+export type MenuItemServingSize = 'light' | 'regular' | 'filling' | 'share';
 
 export interface MenuItem {
   id: string;
@@ -13,6 +14,13 @@ export interface MenuItem {
   image: string;
   category: MenuItemCategory;
   isAvailable: boolean;
+  tags?: string[];
+  dietary?: string[];
+  allergens?: string[];
+  spiceLevel?: number;
+  servingSize?: MenuItemServingSize;
+  pairingIds?: string[];
+  comboItemIds?: string[];
 }
 
 export interface PaginatedMenuItems {

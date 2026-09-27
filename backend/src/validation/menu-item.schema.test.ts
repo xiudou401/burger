@@ -15,6 +15,13 @@ test('normalizes and coerces menu item payloads at the request boundary', () => 
     image: '/img/classic.jpg',
     category: 'burger',
     isAvailable: true,
+    tags: [],
+    dietary: [],
+    allergens: [],
+    spiceLevel: 0,
+    servingSize: 'regular',
+    pairingIds: [],
+    comboItemIds: [],
   });
 });
 
