@@ -176,7 +176,7 @@ const AdminMenuItemDialog = ({
               fieldErrors.image ? formControls.Invalid : ''
             }`}
             aria-invalid={fieldErrors.image ? 'true' : undefined}
-            placeholder="Uploaded image URL, /img/meals/1.png, or https://..."
+            placeholder="Uploaded image URL, /img/meals/ai/classic-beef-burger.png, or https://..."
             value={form.image}
             onChange={(event) => updateForm('image', event.target.value)}
           />

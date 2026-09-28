@@ -8,7 +8,7 @@ const validForm = {
   name: ' Classic Burger ',
   description: ' Fresh beef ',
   price: '12.50',
-  image: ' /img/meals/1.png ',
+  image: ' /img/meals/ai/classic-beef-burger.png ',
   category: 'burger' as const,
   isAvailable: true,
 };
@@ -19,7 +19,7 @@ describe('admin menu form helpers', () => {
       name: 'Classic Burger',
       description: 'Fresh beef',
       priceCents: 1250,
-      image: '/img/meals/1.png',
+      image: '/img/meals/ai/classic-beef-burger.png',
       category: 'burger',
       isAvailable: true,
     });
