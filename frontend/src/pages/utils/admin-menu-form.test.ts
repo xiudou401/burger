@@ -8,7 +8,8 @@ const validForm = {
   name: ' Classic Burger ',
   description: ' Fresh beef ',
   price: '12.50',
-  image: ' /img/meals/ai/classic-beef-burger.png ',
+  image:
+    ' https://sydney-burger-menu-images.s3.ap-southeast-2.amazonaws.com/menu-images/catalog/classic-beef-burger.png ',
   category: 'burger' as const,
   isAvailable: true,
 };
@@ -19,7 +20,8 @@ describe('admin menu form helpers', () => {
       name: 'Classic Burger',
       description: 'Fresh beef',
       priceCents: 1250,
-      image: '/img/meals/ai/classic-beef-burger.png',
+      image:
+        'https://sydney-burger-menu-images.s3.ap-southeast-2.amazonaws.com/menu-images/catalog/classic-beef-burger.png',
       category: 'burger',
       isAvailable: true,
     });

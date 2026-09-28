@@ -10,6 +10,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const MENU_IMAGE_BASE_URL =
+  process.env.S3_MENU_IMAGES_PUBLIC_BASE_URL ??
+  'https://sydney-burger-menu-images.s3.ap-southeast-2.amazonaws.com';
+
+const menuImage = (filename: string) =>
+  `${MENU_IMAGE_BASE_URL}/menu-images/catalog/${filename}`;
+
 interface SeedMenuItem {
   name: string;
   description: string;
@@ -32,7 +39,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Smashed beef patty, American cheese, pickles, red onion, lettuce, tomato, pink sauce and BBQ sauce.',
     priceCents: 1490,
-    image: '/img/meals/ai/beef-burger.png',
+    image: menuImage('beef-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'classic', 'cheese', 'popular'],
@@ -47,7 +54,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Two crispy-edged beef patties, double American cheese, pickles, red onion, mustard and house burger sauce.',
     priceCents: 2290,
-    image: '/img/meals/ai/double-smash-royale.png',
+    image: menuImage('double-smash-royale.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'double', 'filling', 'premium'],
@@ -62,7 +69,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Beef patty, American cheese, streaky smoked bacon, lettuce, tomato, pickles, BBQ sauce and pink sauce.',
     priceCents: 1990,
-    image: '/img/meals/ai/smoky-bacon-cheese.png',
+    image: menuImage('smoky-bacon-cheese.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'bacon', 'smoky', 'cheese'],
@@ -77,7 +84,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Flame-grilled chicken breast, lettuce, tomato, red onion, pickles, aioli and herb sauce.',
     priceCents: 1790,
-    image: '/img/meals/ai/lemon-herb-chicken-burger.png',
+    image: menuImage('lemon-herb-chicken-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['chicken', 'grilled', 'fresh', 'lighter'],
@@ -92,7 +99,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Double-crunch crispy chicken, cheese sauce, lettuce, red onion, pickles, aioli and chipotle pink sauce.',
     priceCents: 1890,
-    image: '/img/meals/ai/chicken-burger.png',
+    image: menuImage('chicken-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['chicken', 'crispy', 'chipotle', 'popular'],
@@ -107,7 +114,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Crispy chicken, hot honey glaze, slaw, pickles, jalapeno mayo and American cheese.',
     priceCents: 1990,
-    image: '/img/meals/ai/hot-honey-chicken-burger.png',
+    image: menuImage('hot-honey-chicken-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['chicken', 'spicy', 'sweet-heat', 'crispy'],
@@ -122,7 +129,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Beef patty, American cheese, bacon, fried egg, beetroot, pineapple, lettuce, tomato, pickles and BBQ sauce.',
     priceCents: 2190,
-    image: '/img/meals/ai/aussie-burger.png',
+    image: menuImage('aussie-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'aussie', 'bacon', 'egg'],
@@ -137,7 +144,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Grilled portobello mushroom, halloumi, lettuce, tomato, onion rings, pickles, aioli and herb sauce.',
     priceCents: 1990,
-    image: '/img/meals/ai/plant-based-burger.png',
+    image: menuImage('plant-based-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['vegetarian', 'mushroom', 'halloumi', 'grilled'],
@@ -152,7 +159,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Plant-based patty, vegan cheese, lettuce, tomato, pickles, onion, ketchup and vegan aioli.',
     priceCents: 2090,
-    image: '/img/meals/ai/veggie-burger.png',
+    image: menuImage('veggie-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['plant-based', 'vegan', 'classic'],
@@ -167,7 +174,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Small beef patty, American cheese, ketchup and pickles on a soft milk bun.',
     priceCents: 990,
-    image: '/img/meals/ai/kids-cheeseburger.png',
+    image: menuImage('kids-cheeseburger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['kids', 'beef', 'cheese', 'budget'],
@@ -181,7 +188,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Crispy Fries',
     description: 'Golden shoestring fries cooked crisp and lightly salted.',
     priceCents: 790,
-    image: '/img/meals/ai/crispy-fries.png',
+    image: menuImage('crispy-fries.png'),
     category: 'side',
     isAvailable: true,
     tags: ['fries', 'classic', 'shareable', 'budget'],
@@ -196,7 +203,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Crispy fries topped with cheese sauce, smoky bacon, spring onion and burger sauce.',
     priceCents: 1590,
-    image: '/img/meals/ai/loaded-fries.png',
+    image: menuImage('loaded-fries.png'),
     category: 'side',
     isAvailable: true,
     tags: ['fries', 'loaded', 'bacon', 'shareable'],
@@ -210,7 +217,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Golden Onion Rings',
     description: 'Crispy onion rings served with creamy aioli for dipping.',
     priceCents: 1090,
-    image: '/img/meals/ai/golden-onion-rings.png',
+    image: menuImage('golden-onion-rings.png'),
     category: 'side',
     isAvailable: true,
     tags: ['onion-rings', 'crispy', 'shareable'],
@@ -224,7 +231,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Sweet Potato Fries',
     description: 'Sweet potato fries with sea salt and chipotle mayo.',
     priceCents: 1190,
-    image: '/img/meals/ai/sweet-potato-fries.png',
+    image: menuImage('sweet-potato-fries.png'),
     category: 'side',
     isAvailable: true,
     tags: ['sweet-potato', 'fries', 'vegetarian'],
@@ -239,7 +246,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Cabbage, carrot, herbs and ranch dressing in a crisp side cup.',
     priceCents: 690,
-    image: '/img/meals/ai/ranch-slaw.png',
+    image: menuImage('ranch-slaw.png'),
     category: 'side',
     isAvailable: true,
     tags: ['slaw', 'fresh', 'lighter'],
@@ -253,7 +260,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Mozzarella Sticks',
     description: 'Crumbed mozzarella sticks with warm marinara sauce.',
     priceCents: 1290,
-    image: '/img/meals/ai/mozzarella-sticks.png',
+    image: menuImage('mozzarella-sticks.png'),
     category: 'side',
     isAvailable: true,
     tags: ['cheese', 'crispy', 'shareable'],
@@ -268,7 +275,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Cold sparkling lemonade with fresh lemon, ice and a bright citrus finish.',
     priceCents: 650,
-    image: '/img/meals/ai/house-lemonade.png',
+    image: menuImage('house-lemonade.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['lemonade', 'sparkling', 'refreshing'],
@@ -282,7 +289,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Cold Soft Drink',
     description: 'Classic chilled cola-style soft drink served over ice.',
     priceCents: 550,
-    image: '/img/meals/ai/ginger-beer.png',
+    image: menuImage('ginger-beer.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['cola', 'classic', 'budget'],
@@ -297,7 +304,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Creamy vanilla malt shake finished thick and cold for a classic burger shop treat.',
     priceCents: 1090,
-    image: '/img/meals/ai/vanilla-malt-thickshake.png',
+    image: menuImage('vanilla-malt-thickshake.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['shake', 'vanilla', 'malt', 'dessert-drink'],
@@ -312,7 +319,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Chocolate shake blended with peanut butter, malt and vanilla soft serve.',
     priceCents: 1190,
-    image: '/img/meals/ai/chocolate-peanut-butter-shake.png',
+    image: menuImage('chocolate-peanut-butter-shake.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['shake', 'chocolate', 'peanut-butter', 'rich'],
@@ -326,7 +333,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Iced Peach Tea',
     description: 'Cold black tea with peach syrup, lemon and plenty of ice.',
     priceCents: 690,
-    image: '/img/meals/ai/iced-peach-tea.png',
+    image: menuImage('iced-peach-tea.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['tea', 'peach', 'refreshing'],
@@ -340,7 +347,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Mango Passion Soda',
     description: 'Sparkling mango and passionfruit soda with lime.',
     priceCents: 750,
-    image: '/img/meals/ai/mango-passion-soda.png',
+    image: menuImage('mango-passion-soda.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['mango', 'sparkling', 'tropical'],
@@ -354,7 +361,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Bundaberg Ginger Beer',
     description: 'Bottled ginger beer with a spicy ginger finish.',
     priceCents: 790,
-    image: '/img/meals/ai/cold-drinks.png',
+    image: menuImage('cold-drinks.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['ginger-beer', 'spiced', 'bottle'],
@@ -369,7 +376,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Rich chocolate brownie served with vanilla ice cream and chocolate sauce.',
     priceCents: 990,
-    image: '/img/meals/ai/chocolate-brownie.png',
+    image: menuImage('chocolate-brownie.png'),
     category: 'dessert',
     isAvailable: true,
     tags: ['chocolate', 'warm', 'rich'],
@@ -383,7 +390,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Vanilla Soft Serve',
     description: 'Classic vanilla soft serve in a takeaway cup.',
     priceCents: 650,
-    image: '/img/meals/ai/vanilla-soft-serve.png',
+    image: menuImage('vanilla-soft-serve.png'),
     category: 'dessert',
     isAvailable: false,
     tags: ['soft-serve', 'vanilla', 'cold'],
@@ -398,7 +405,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Vanilla soft serve with salted caramel sauce and biscuit crumb.',
     priceCents: 890,
-    image: '/img/meals/ai/dessert-platter.png',
+    image: menuImage('dessert-platter.png'),
     category: 'dessert',
     isAvailable: true,
     tags: ['sundae', 'caramel', 'cold'],
@@ -412,7 +419,7 @@ const menuItems: SeedMenuItem[] = [
     name: 'Apple Pie Bites',
     description: 'Crisp apple pie bites dusted with cinnamon sugar.',
     priceCents: 790,
-    image: '/img/meals/ai/apple-pie-bites.png',
+    image: menuImage('apple-pie-bites.png'),
     category: 'dessert',
     isAvailable: true,
     tags: ['apple', 'cinnamon', 'shareable'],
@@ -427,7 +434,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Old School Cheese Burger with Crispy Fries and a Cold Soft Drink.',
     priceCents: 2490,
-    image: '/img/meals/ai/combo-meal.png',
+    image: menuImage('combo-meal.png'),
     category: 'combo',
     isAvailable: true,
     tags: ['combo', 'classic', 'value'],
@@ -442,7 +449,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Southern Crispy Chicken Burger with Crispy Fries and House Lemonade.',
     priceCents: 2790,
-    image: '/img/meals/ai/chicken-combo.png',
+    image: menuImage('chicken-combo.png'),
     category: 'combo',
     isAvailable: true,
     tags: ['combo', 'chicken', 'popular'],
@@ -461,7 +468,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Mushroom Halloumi Burger with Sweet Potato Fries and Iced Peach Tea.',
     priceCents: 2890,
-    image: '/img/meals/ai/plant-based-combo.png',
+    image: menuImage('plant-based-combo.png'),
     category: 'combo',
     isAvailable: true,
     tags: ['combo', 'vegetarian', 'fresh'],
@@ -480,7 +487,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Plant-Based Classic with Crispy Fries and Mango Passion Soda.',
     priceCents: 2890,
-    image: '/img/meals/ai/veggie-combo.png',
+    image: menuImage('veggie-combo.png'),
     category: 'combo',
     isAvailable: true,
     tags: ['combo', 'vegan', 'plant-based'],
@@ -495,7 +502,7 @@ const menuItems: SeedMenuItem[] = [
     description:
       'Two Old School Cheese Burgers, two Kids Mini Cheeseburgers, two Crispy Fries and two Cold Soft Drinks.',
     priceCents: 5990,
-    image: '/img/meals/ai/family-burger-box.png',
+    image: menuImage('family-burger-box.png'),
     category: 'combo',
     isAvailable: true,
     tags: ['combo', 'family', 'shareable', 'value'],
@@ -517,7 +524,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Cheeseburger',
     description: 'Classic beef cheeseburger with pickles and house sauce.',
     priceCents: 1200,
-    image: '/img/meals/ai/classic-beef-burger.png',
+    image: menuImage('classic-beef-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'cheese', 'classic', 'budget'],
@@ -531,7 +538,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Crispy Chicken Classic',
     description: 'Crispy chicken burger with lettuce, pickles and aioli.',
     priceCents: 1400,
-    image: '/img/meals/ai/crispy-chicken-classic.png',
+    image: menuImage('crispy-chicken-classic.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['chicken', 'crispy', 'classic', 'budget'],
@@ -545,7 +552,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Double Cheese Stack',
     description: 'Double beef cheeseburger with extra American cheese.',
     priceCents: 2000,
-    image: '/img/meals/ai/double-cheese-stack.png',
+    image: menuImage('double-cheese-stack.png'),
     category: 'burger',
     isAvailable: false,
     tags: ['beef', 'double', 'cheese', 'sold-out'],
@@ -559,7 +566,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Grilled Chicken Burger',
     description: 'Grilled chicken burger with salad, pickles and aioli.',
     priceCents: 2200,
-    image: '/img/meals/ai/grilled-chicken-burger.png',
+    image: menuImage('grilled-chicken-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['chicken', 'grilled', 'lighter'],
@@ -573,7 +580,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Harbour Classic Burger',
     description: 'Beef burger with cheese, lettuce, tomato and harbour sauce.',
     priceCents: 1200,
-    image: '/img/meals/ai/harbour-classic-burger.png',
+    image: menuImage('harbour-classic-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'classic', 'budget'],
@@ -587,7 +594,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Spicy Chicken Burger',
     description: 'Crispy chicken burger with jalapeno mayo and spicy slaw.',
     priceCents: 2200,
-    image: '/img/meals/ai/spicy-chicken-burger.png',
+    image: menuImage('spicy-chicken-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['chicken', 'spicy', 'crispy'],
@@ -601,7 +608,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Sydney Club Burger',
     description: 'Premium beef burger with bacon, egg, cheese and club sauce.',
     priceCents: 2500,
-    image: '/img/meals/ai/sydney-club-burger.png',
+    image: menuImage('sydney-club-burger.png'),
     category: 'burger',
     isAvailable: true,
     tags: ['beef', 'premium', 'bacon', 'egg'],
@@ -615,7 +622,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Classic Burger Combo',
     description: 'Classic burger with fries and a drink.',
     priceCents: 1990,
-    image: '/img/meals/ai/classic-combo.png',
+    image: menuImage('classic-combo.png'),
     category: 'combo',
     isAvailable: true,
     tags: ['combo', 'classic', 'value'],
@@ -629,7 +636,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Vanilla Thickshake',
     description: 'Cold vanilla thickshake with malted milk.',
     priceCents: 850,
-    image: '/img/meals/ai/vanilla-thickshake.png',
+    image: menuImage('vanilla-thickshake.png'),
     category: 'drink',
     isAvailable: true,
     tags: ['shake', 'vanilla', 'malt'],
@@ -643,7 +650,7 @@ const legacyMenuItems: SeedMenuItem[] = [
     name: 'Loaded Club Fries',
     description: 'Fries loaded with cheese sauce, bacon and club sauce.',
     priceCents: 900,
-    image: '/img/meals/ai/loaded-club-fries.png',
+    image: menuImage('loaded-club-fries.png'),
     category: 'side',
     isAvailable: true,
     tags: ['fries', 'loaded', 'bacon'],

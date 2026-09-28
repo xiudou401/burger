@@ -294,10 +294,11 @@ Stripe Checkout requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 Google sign-in requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Email
 delivery through Resend is optional.
 
-Admin menu image uploads can use S3 presigned URLs by setting `AWS_REGION`,
-`S3_MENU_IMAGES_BUCKET`, and optionally `S3_MENU_IMAGES_PUBLIC_BASE_URL` on the
-backend. If these are not configured, the existing image URL/path field still
-works.
+Menu images are stored in AWS S3. The backend uses S3 presigned URLs for admin
+image uploads when `AWS_REGION`, `S3_MENU_IMAGES_BUCKET`, and optionally
+`S3_MENU_IMAGES_PUBLIC_BASE_URL` are set. Seeded menu data also uses the
+configured public S3 base URL so MongoDB remains the source of truth for the
+image URL returned to the frontend.
 
 The frontend should set `REACT_APP_API_URL` to the backend origin, for example
 `https://burger-rmc0.onrender.com`, when WebSocket admin events are enabled.
@@ -363,6 +364,8 @@ flowchart TD
   api --> stripe["Stripe Checkout<br/>+ Webhooks"]
   api --> resend["Resend Email"]
   api --> google["Google OAuth"]
+  api --> s3Images["AWS S3<br/>menu images"]
+  frontend -->|menu image URLs| s3Images
 
   github["GitHub Actions<br/>optional AWS deploy"] --> aws["AWS S3 + CloudFront<br/>ECR + ECS Fargate"]
 ```
@@ -390,10 +393,10 @@ frontend payment-return page validates the returned order id format and only
 routes the user to the relevant order page; order status is read back from the
 backend.
 
-Menu images are stored as paths or URLs on each menu item. Demo assets live in
-`frontend/public/img/meals` and are served by the frontend deployment; production
-image uploads would normally use object storage or a hosted image service rather
-than the Vercel or Render filesystem.
+Menu images are stored as S3 HTTPS URLs on each menu item. The Vercel frontend
+renders the URL returned by the backend, while Render only signs uploads and
+never stores image files on its local filesystem. Local static images are kept
+only as development or legacy fallback assets.
 
 All monetary values are stored and transferred as integer AUD cents
 (`priceCents`, `subtotalCents`, `totalCents`, and `amountCents`). Stripe receives
