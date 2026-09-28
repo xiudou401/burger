@@ -10,6 +10,8 @@ import { MenuItemModel } from '../models/menu-item.model';
 import { OrderModel } from '../models/order.model';
 
 const MENU_IMAGES_PREFIX = 'menu-images/';
+const DEFAULT_MENU_IMAGES_PUBLIC_BASE_URL =
+  'https://d10n1zpv4omecm.cloudfront.net';
 const DEFAULT_GRACE_MS = 24 * 60 * 60 * 1000;
 const DELETE_BATCH_SIZE = 1000;
 
@@ -39,11 +41,7 @@ const getPublicBaseUrl = () => {
     return env.S3_MENU_IMAGES_PUBLIC_BASE_URL;
   }
 
-  if (!env.AWS_REGION || !env.S3_MENU_IMAGES_BUCKET) {
-    throw new ServiceError('Menu image cleanup is not configured', 503);
-  }
-
-  return `https://${env.S3_MENU_IMAGES_BUCKET}.s3.${env.AWS_REGION}.amazonaws.com`;
+  return DEFAULT_MENU_IMAGES_PUBLIC_BASE_URL;
 };
 
 export const getMenuImageKeyFromUrl = (imageUrl: string) => {

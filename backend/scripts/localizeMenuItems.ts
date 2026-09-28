@@ -7,7 +7,7 @@ dotenv.config();
 
 const MENU_IMAGE_BASE_URL =
   process.env.S3_MENU_IMAGES_PUBLIC_BASE_URL ??
-  'https://sydney-burger-menu-images.s3.ap-southeast-2.amazonaws.com';
+  'https://d10n1zpv4omecm.cloudfront.net';
 
 const menuImage = (filename: string) =>
   `${MENU_IMAGE_BASE_URL}/menu-images/catalog/${filename}`;

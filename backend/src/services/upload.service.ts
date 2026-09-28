@@ -7,6 +7,8 @@ import { ServiceError } from '../errors/ServiceError';
 import type { MenuImageUploadPayload } from '../validation/upload.schema';
 
 const SIGNED_UPLOAD_URL_TTL_SECONDS = 60;
+const DEFAULT_MENU_IMAGES_PUBLIC_BASE_URL =
+  'https://d10n1zpv4omecm.cloudfront.net';
 
 let s3Client: S3Client | null = null;
 
@@ -36,8 +38,7 @@ const getFileExtension = (payload: MenuImageUploadPayload) => {
 
 const buildPublicImageUrl = (key: string) => {
   const publicBaseUrl =
-    env.S3_MENU_IMAGES_PUBLIC_BASE_URL ??
-    `https://${env.S3_MENU_IMAGES_BUCKET}.s3.${env.AWS_REGION}.amazonaws.com`;
+    env.S3_MENU_IMAGES_PUBLIC_BASE_URL ?? DEFAULT_MENU_IMAGES_PUBLIC_BASE_URL;
   const baseUrl = publicBaseUrl.endsWith('/')
     ? publicBaseUrl
     : `${publicBaseUrl}/`;

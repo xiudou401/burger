@@ -294,11 +294,11 @@ Stripe Checkout requires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
 Google sign-in requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Email
 delivery through Resend is optional.
 
-Menu images are stored in AWS S3. The backend uses S3 presigned URLs for admin
-image uploads when `AWS_REGION`, `S3_MENU_IMAGES_BUCKET`, and optionally
-`S3_MENU_IMAGES_PUBLIC_BASE_URL` are set. Seeded menu data also uses the
-configured public S3 base URL so MongoDB remains the source of truth for the
-image URL returned to the frontend.
+Menu images are stored in AWS S3 and served through CloudFront. The backend uses
+S3 presigned URLs for admin image uploads when `AWS_REGION` and
+`S3_MENU_IMAGES_BUCKET` are set, then stores a CloudFront image URL in MongoDB.
+`S3_MENU_IMAGES_PUBLIC_BASE_URL` can override the default CloudFront domain,
+for example when moving to a custom CDN domain.
 
 The frontend should set `REACT_APP_API_URL` to the backend origin, for example
 `https://burger-rmc0.onrender.com`, when WebSocket admin events are enabled.
@@ -364,8 +364,9 @@ flowchart TD
   api --> stripe["Stripe Checkout<br/>+ Webhooks"]
   api --> resend["Resend Email"]
   api --> google["Google OAuth"]
-  api --> s3Images["AWS S3<br/>menu images"]
-  frontend -->|menu image URLs| s3Images
+  api --> s3Images["AWS S3<br/>private menu image origin"]
+  cloudfront["CloudFront CDN<br/>menu images"] --> s3Images
+  frontend -->|menu image URLs| cloudfront
 
   github["GitHub Actions<br/>optional AWS deploy"] --> aws["AWS S3 + CloudFront<br/>ECR + ECS Fargate"]
 ```
@@ -393,8 +394,9 @@ frontend payment-return page validates the returned order id format and only
 routes the user to the relevant order page; order status is read back from the
 backend.
 
-Menu images are stored as S3 HTTPS URLs on each menu item. The Vercel frontend
-renders the URL returned by the backend, while Render only signs uploads and
+Menu images are stored as CloudFront HTTPS URLs on each menu item. S3 keeps the
+original image objects, CloudFront serves public image traffic, and the Vercel
+frontend renders the URL returned by the backend. Render only signs uploads and
 never stores image files on its local filesystem. Local static images are kept
 only as development or legacy fallback assets.
 
