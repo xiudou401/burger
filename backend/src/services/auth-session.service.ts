@@ -99,6 +99,29 @@ const isConcurrentRefresh = (
   return elapsedMs >= 0 && elapsedMs <= TTL_MS.REFRESH_REUSE_GRACE;
 };
 
+const logRefreshTokenReuse = (
+  session: {
+    _id?: unknown;
+    userId?: unknown;
+    familyId?: string;
+    rotatedAt?: Date;
+    replacedBySessionId?: unknown;
+  },
+  metadata?: AuthSessionMetadata,
+) => {
+  appLogger.warn('refresh_token_reuse_detected', {
+    sessionId: session._id ? String(session._id) : undefined,
+    familyId: session.familyId,
+    userId: session.userId ? String(session.userId) : undefined,
+    rotatedAt: session.rotatedAt?.toISOString(),
+    replacedBySessionId: session.replacedBySessionId
+      ? String(session.replacedBySessionId)
+      : undefined,
+    requestIpAddress: metadata?.ipAddress,
+    requestUserAgent: metadata?.userAgent,
+  });
+};
+
 const restoreConsumedSession = async (sessionId: string) => {
   try {
     await authSessionRepository.restoreConsumedById(sessionId);
@@ -157,10 +180,7 @@ export const rotateAuthSession = async (
       isRefreshTokenReuse(previousSession)
     ) {
       await authSessionRepository.revokeActiveByFamilyId(previousFamilyId);
-      appLogger.warn('refresh_token_reuse_detected', {
-        familyId: previousFamilyId,
-        userId: String(previousSession.userId),
-      });
+      logRefreshTokenReuse(previousSession, metadata);
       throw new ServiceError('Session reuse detected', 401);
     }
 

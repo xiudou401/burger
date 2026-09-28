@@ -1,6 +1,7 @@
 import { ConcurrentRefreshError } from '../errors/ConcurrentRefreshError';
 import { authSessionRepository } from '../repositories/auth-session.repository';
 import { userRepository } from '../repositories/user.repository';
+import { appLogger } from '../utils/logger';
 import { hashToken } from '../utils/secure-token';
 import {
   issueAuthSession,
@@ -34,6 +35,13 @@ jest.mock('../repositories/user.repository', () => ({
 jest.mock('../utils/secure-token', () => ({
   createSecureToken: jest.fn(() => 'refresh-token'),
   hashToken: jest.fn((token: string) => `hash:${token}`),
+}));
+
+jest.mock('../utils/logger', () => ({
+  appLogger: {
+    error: jest.fn(),
+    warn: jest.fn(),
+  },
 }));
 
 describe('auth session service', () => {
@@ -263,9 +271,11 @@ describe('auth session service', () => {
   });
 
   test('revokes the token family when a rotated refresh token is reused', async () => {
-    const consoleWarn = jest
-      .spyOn(console, 'warn')
-      .mockImplementation(() => undefined);
+    const rotatedAt = new Date(Date.now() - 10_000);
+    const metadata = {
+      ipAddress: '203.0.113.50',
+      userAgent: 'Mozilla/5.0 Replay Browser',
+    };
 
     jest
       .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
@@ -273,13 +283,16 @@ describe('auth session service', () => {
     jest
       .mocked(authSessionRepository.findByRefreshTokenHash)
       .mockResolvedValue({
+        _id: 'reused-session',
         userId: user.id,
         familyId: 'family-1',
-        rotatedAt: new Date(Date.now() - 10_000),
+        rotatedAt,
         replacedBySessionId: 'replacement-session',
       } as never);
 
-    await expect(rotateAuthSession('replayed-token')).rejects.toMatchObject({
+    await expect(
+      rotateAuthSession('replayed-token', metadata),
+    ).rejects.toMatchObject({
       message: 'Session reuse detected',
       statusCode: 401,
     });
@@ -288,8 +301,18 @@ describe('auth session service', () => {
       'family-1',
     );
     expect(authSessionRepository.create).not.toHaveBeenCalled();
-
-    consoleWarn.mockRestore();
+    expect(appLogger.warn).toHaveBeenCalledWith(
+      'refresh_token_reuse_detected',
+      {
+        sessionId: 'reused-session',
+        familyId: 'family-1',
+        userId: user.id,
+        rotatedAt: rotatedAt.toISOString(),
+        replacedBySessionId: 'replacement-session',
+        requestIpAddress: metadata.ipAddress,
+        requestUserAgent: metadata.userAgent,
+      },
+    );
   });
 
   test('revokes the consumed session when the user no longer exists', async () => {

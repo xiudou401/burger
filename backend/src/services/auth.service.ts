@@ -47,6 +47,8 @@ interface MessageResult {
 }
 
 const SIGNUP_DUPLICATE_MESSAGE = 'Could not create account with these details';
+const PASSWORD_RESET_REQUEST_MESSAGE =
+  'If the email exists, a reset link has been sent';
 const isDevEmailMode = () =>
   env.NODE_ENV !== 'production' && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
 
@@ -100,6 +102,16 @@ const sendVerificationEmailSafely = async (email: string, token: string) => {
     return true;
   } catch (error) {
     appLogger.error('verification_email_send_failed', { email, error });
+    return false;
+  }
+};
+
+const sendPasswordResetEmailSafely = async (email: string, token: string) => {
+  try {
+    await sendPasswordResetEmail({ email, token });
+    return true;
+  } catch (error) {
+    appLogger.error('password_reset_email_send_failed', { email, error });
     return false;
   }
 };
@@ -229,22 +241,20 @@ export const requestPasswordReset = async ({
 }: ForgotPasswordPayload): Promise<MessageResult> => {
   const user = await userRepository.findByEmail(email);
 
-  if (!user || !user.email) {
-    return { message: 'If the email exists, a reset link has been sent' };
+  if (!user || !user.email || user.status === 'disabled') {
+    return { message: PASSWORD_RESET_REQUEST_MESSAGE };
   }
-
-  assertUserIsActive(user);
 
   const resetToken = createSecureToken();
   user.passwordResetTokenHash = hashToken(resetToken);
   user.passwordResetExpiresAt = new Date(Date.now() + TTL_MS.PASSWORD_RESET);
   await userRepository.save(user);
 
-  await sendPasswordResetEmail({ email: user.email, token: resetToken });
+  const emailSent = await sendPasswordResetEmailSafely(user.email, resetToken);
 
   return {
-    message: 'If the email exists, a reset link has been sent',
-    ...(isDevEmailMode() ? { resetToken } : {}),
+    message: PASSWORD_RESET_REQUEST_MESSAGE,
+    ...(isDevEmailMode() && emailSent ? { resetToken } : {}),
   };
 };
 

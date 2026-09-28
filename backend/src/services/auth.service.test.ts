@@ -4,6 +4,7 @@ import { pbkdf2Sync } from 'crypto';
 import { userRepository } from '../repositories/user.repository';
 import { issueAuthSession, revokeUserSessions } from './auth-session.service';
 import { sendPasswordResetEmail, sendVerificationEmail } from './email.service';
+import { appLogger } from '../utils/logger';
 import { hashPassword } from '../utils/password';
 import {
   adminLogin,
@@ -40,6 +41,12 @@ jest.mock('./email.service', () => ({
   sendVerificationEmail: jest.fn(),
   sendWelcomeEmail: jest.fn(),
   sendPasswordResetEmail: jest.fn(),
+}));
+
+jest.mock('../utils/logger', () => ({
+  appLogger: {
+    error: jest.fn(),
+  },
 }));
 
 const makeLegacyHash = (password: string) => {
@@ -335,6 +342,50 @@ describe('auth service', () => {
     });
     expect(userRepository.save).not.toHaveBeenCalled();
     expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  test('does not reveal disabled accounts during password reset requests', async () => {
+    const disabledUser = {
+      ...userDoc,
+      status: 'disabled' as const,
+    };
+    jest
+      .mocked(userRepository.findByEmail)
+      .mockResolvedValue(disabledUser as never);
+
+    const result = await requestPasswordReset({ email: 'pat@example.com' });
+
+    expect(result).toEqual({
+      message: 'If the email exists, a reset link has been sent',
+    });
+    expect(userRepository.save).not.toHaveBeenCalled();
+    expect(sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  test('keeps password reset responses generic when email delivery fails', async () => {
+    jest.mocked(userRepository.findByEmail).mockResolvedValue(userDoc as never);
+    jest
+      .mocked(sendPasswordResetEmail)
+      .mockRejectedValue(new Error('Email provider unavailable'));
+
+    const result = await requestPasswordReset({ email: 'pat@example.com' });
+
+    expect(result).toEqual({
+      message: 'If the email exists, a reset link has been sent',
+    });
+    expect(userRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        passwordResetTokenHash: expect.any(String),
+        passwordResetExpiresAt: expect.any(Date),
+      }),
+    );
+    expect(appLogger.error).toHaveBeenCalledWith(
+      'password_reset_email_send_failed',
+      expect.objectContaining({
+        email: 'pat@example.com',
+        error: expect.any(Error),
+      }),
+    );
   });
 
   test('rejects OAuth users when the provider email is not verified', async () => {
