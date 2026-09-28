@@ -7,6 +7,9 @@ export const authSessionRepository = {
     familyId: string;
     parentSessionId?: string;
     refreshTokenHash: string;
+    ipAddress?: string;
+    userAgent?: string;
+    lastUsedAt: Date;
     expiresAt: Date;
   }) {
     return AuthSessionModel.create({
@@ -35,6 +38,7 @@ export const authSessionRepository = {
       {
         revokedAt: now,
         rotatedAt: now,
+        lastUsedAt: now,
       },
       { new: true },
     )

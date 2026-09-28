@@ -23,3 +23,11 @@ test('indexes active sessions by token family', () => {
     {},
   ]);
 });
+
+test('stores session metadata for auditing', () => {
+  expect(AuthSessionModel.schema.path('ipAddress')).toBeDefined();
+  expect(AuthSessionModel.schema.path('userAgent')).toBeDefined();
+  expect(AuthSessionModel.schema.path('lastUsedAt').options.required).toBe(
+    true,
+  );
+});

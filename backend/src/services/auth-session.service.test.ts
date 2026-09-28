@@ -55,13 +55,22 @@ describe('auth session service', () => {
       _id: 'session-1',
     } as never);
 
-    const result = await issueAuthSession(user);
+    const metadata = {
+      ipAddress: '203.0.113.10',
+      userAgent: 'Mozilla/5.0 Test Browser',
+      lastUsedAt: new Date('2026-09-28T00:00:00.000Z'),
+    };
+
+    const result = await issueAuthSession(user, metadata);
 
     expect(authSessionRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: user.id,
         familyId: expect.any(String),
         refreshTokenHash: 'hash:refresh-token',
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+        lastUsedAt: metadata.lastUsedAt,
         expiresAt: expect.any(Date),
       }),
     );
@@ -98,7 +107,13 @@ describe('auth session service', () => {
       .mocked(authSessionRepository.create)
       .mockResolvedValue(replacementSession as never);
 
-    const result = await rotateAuthSession('old-refresh-token');
+    const metadata = {
+      ipAddress: '203.0.113.20',
+      userAgent: 'Mozilla/5.0 Refresh Browser',
+      lastUsedAt: new Date('2026-09-28T01:00:00.000Z'),
+    };
+
+    const result = await rotateAuthSession('old-refresh-token', metadata);
 
     expect(
       authSessionRepository.consumeActiveByRefreshTokenHash,
@@ -110,6 +125,9 @@ describe('auth session service', () => {
         userId: user.id,
         familyId: 'family-1',
         parentSessionId: 'old-session',
+        ipAddress: metadata.ipAddress,
+        userAgent: metadata.userAgent,
+        lastUsedAt: metadata.lastUsedAt,
       }),
     );
     expect(authSessionRepository.linkReplacement).toHaveBeenCalledWith(

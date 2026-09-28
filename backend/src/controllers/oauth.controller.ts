@@ -11,6 +11,7 @@ import {
   setOAuthStateCookie,
 } from '../utils/oauth-state-cookie';
 import { setRefreshCookie } from '../utils/refresh-cookie';
+import { getSessionMetadata } from '../utils/session-metadata';
 import {
   OAuthCallbackQuerySchema,
   OAuthProviderParamsSchema,
@@ -241,13 +242,16 @@ export const oauthCallbackHandler = async (
     let result: Awaited<ReturnType<typeof loginWithOAuth>>;
 
     try {
-      result = await loginWithOAuth({
-        email: googleUser.email,
-        name: googleUser.name,
-        emailVerified: googleUser.emailVerified,
-        mode:
-          mode === 'signup' ? 'signup' : mode === 'admin' ? 'admin' : 'login',
-      });
+      result = await loginWithOAuth(
+        {
+          email: googleUser.email,
+          name: googleUser.name,
+          emailVerified: googleUser.emailVerified,
+          mode:
+            mode === 'signup' ? 'signup' : mode === 'admin' ? 'admin' : 'login',
+        },
+        getSessionMetadata(req),
+      );
 
       if (mode === 'admin' && !hasPermission(result.user, 'view_orders')) {
         return redirectWithError(

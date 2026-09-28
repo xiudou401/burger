@@ -122,12 +122,19 @@ describe('oauth controller', () => {
       idToken: 'google-id-token',
       audience: 'google-client-id',
     });
-    expect(loginWithOAuth).toHaveBeenCalledWith({
-      email: 'pat@example.com',
-      name: 'Pat',
-      emailVerified: true,
-      mode: 'login',
-    });
+    expect(loginWithOAuth).toHaveBeenCalledWith(
+      {
+        email: 'pat@example.com',
+        name: 'Pat',
+        emailVerified: true,
+        mode: 'login',
+      },
+      {
+        ipAddress: undefined,
+        userAgent: undefined,
+        lastUsedAt: expect.any(Date),
+      },
+    );
     expect(res.redirect).toHaveBeenCalledWith(
       'https://www.sydneyburger.com/oauth/callback',
     );

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import { sendAuthResult } from '../utils/auth-response';
+import { getSessionMetadata } from '../utils/session-metadata';
 import {
   acceptStaffInvite,
   createStaffInvite,
@@ -76,10 +77,13 @@ export const acceptStaffInviteHandler = async (
 
   try {
     const { token } = req.body as AcceptStaffInvitePayload;
-    const result = await acceptStaffInvite({
-      token,
-      userId: req.user.id,
-    });
+    const result = await acceptStaffInvite(
+      {
+        token,
+        userId: req.user.id,
+      },
+      getSessionMetadata(req),
+    );
     return sendAuthResult(res, 200, result);
   } catch (error) {
     next(error);

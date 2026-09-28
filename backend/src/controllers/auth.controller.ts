@@ -8,6 +8,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { ConcurrentRefreshError } from '../errors/ConcurrentRefreshError';
 import { clearRefreshCookie, getRefreshToken } from '../utils/refresh-cookie';
 import { sendAuthResult } from '../utils/auth-response';
+import { getSessionMetadata } from '../utils/session-metadata';
 import type {
   ForgotPasswordPayload,
   LoginPayload,
@@ -22,7 +23,10 @@ export const signupHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.signup(req.body as SignupPayload);
+    const result = await authService.signup(
+      req.body as SignupPayload,
+      getSessionMetadata(req),
+    );
 
     sendAuthResult(res, 201, result);
   } catch (error) {
@@ -36,7 +40,10 @@ export const loginHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.login(req.body as LoginPayload);
+    const result = await authService.login(
+      req.body as LoginPayload,
+      getSessionMetadata(req),
+    );
 
     sendAuthResult(res, 200, result);
   } catch (error) {
@@ -50,7 +57,10 @@ export const adminLoginHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await authService.adminLogin(req.body as LoginPayload);
+    const result = await authService.adminLogin(
+      req.body as LoginPayload,
+      getSessionMetadata(req),
+    );
 
     sendAuthResult(res, 200, result);
   } catch (error) {
@@ -64,7 +74,10 @@ export const refreshHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const result = await rotateAuthSession(getRefreshToken(req));
+    const result = await rotateAuthSession(
+      getRefreshToken(req),
+      getSessionMetadata(req),
+    );
 
     sendAuthResult(res, 200, result);
   } catch (error) {

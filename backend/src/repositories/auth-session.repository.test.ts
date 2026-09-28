@@ -53,6 +53,7 @@ describe('authSessionRepository', () => {
       {
         revokedAt: now,
         rotatedAt: now,
+        lastUsedAt: now,
       },
       { new: true },
     );

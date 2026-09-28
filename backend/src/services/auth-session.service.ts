@@ -16,9 +16,16 @@ export interface SessionAuthResult {
   user: AuthenticatedUser;
 }
 
+export interface AuthSessionMetadata {
+  ipAddress?: string;
+  userAgent?: string;
+  lastUsedAt?: Date;
+}
+
 interface CreateSessionOptions {
   familyId?: string;
   parentSessionId?: string;
+  metadata?: AuthSessionMetadata;
 }
 
 const issueAuthSessionWithRecord = async (
@@ -27,12 +34,16 @@ const issueAuthSessionWithRecord = async (
 ) => {
   const refreshToken = createSecureToken();
   const familyId = options.familyId ?? randomUUID();
+  const lastUsedAt = options.metadata?.lastUsedAt ?? new Date();
 
   const session = await authSessionRepository.create({
     userId: user.id,
     familyId,
     parentSessionId: options.parentSessionId,
     refreshTokenHash: hashToken(refreshToken),
+    ipAddress: options.metadata?.ipAddress,
+    userAgent: options.metadata?.userAgent,
+    lastUsedAt,
     expiresAt: new Date(Date.now() + TTL_MS.REFRESH_SESSION),
   });
 
@@ -51,8 +62,9 @@ const issueAuthSessionWithRecord = async (
 
 export const issueAuthSession = async (
   user: AuthenticatedUser,
+  metadata?: AuthSessionMetadata,
 ): Promise<SessionAuthResult> => {
-  const { result } = await issueAuthSessionWithRecord(user);
+  const { result } = await issueAuthSessionWithRecord(user, { metadata });
 
   return result;
 };
@@ -111,6 +123,7 @@ const revokeReplacementSession = async (sessionId: string) => {
 
 export const rotateAuthSession = async (
   refreshToken: string,
+  metadata?: AuthSessionMetadata,
 ): Promise<SessionAuthResult> => {
   /**
    * Refresh flow:
@@ -176,6 +189,7 @@ export const rotateAuthSession = async (
     const replacement = await issueAuthSessionWithRecord(toPublicUser(user), {
       familyId: refreshFamilyId,
       parentSessionId: String(consumedSession._id),
+      metadata,
     });
 
     createdReplacementSession = replacement.session;

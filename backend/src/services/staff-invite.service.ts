@@ -6,7 +6,10 @@ import {
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { normalizeEmail } from '../utils/email';
 import { sendStaffInviteEmail } from './email.service';
-import { issueAuthSession } from './auth-session.service';
+import {
+  issueAuthSession,
+  type AuthSessionMetadata,
+} from './auth-session.service';
 import type { AuthenticatedUser } from '../types/auth';
 import { toPublicUser } from '../utils/public-user';
 import { env } from '../config/env';
@@ -106,12 +109,15 @@ export const revokeStaffInvite = async (
   return toPublicInvite(invite);
 };
 
-export const acceptStaffInvite = async ({
-  token,
-  userId,
-}: AcceptStaffInvitePayload & {
-  userId: string;
-}): Promise<{
+export const acceptStaffInvite = async (
+  {
+    token,
+    userId,
+  }: AcceptStaffInvitePayload & {
+    userId: string;
+  },
+  metadata?: AuthSessionMetadata,
+): Promise<{
   accessToken: string;
   refreshToken: string;
   user: AuthenticatedUser;
@@ -171,7 +177,9 @@ export const acceptStaffInvite = async ({
   }
 
   const publicUser = toPublicUser(updatedUser);
-  const session = await issueAuthSession(publicUser);
+  const session = metadata
+    ? await issueAuthSession(publicUser, metadata)
+    : await issueAuthSession(publicUser);
 
   return {
     ...session,

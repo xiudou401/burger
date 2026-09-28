@@ -6,6 +6,9 @@ export interface AuthSession {
   parentSessionId?: Types.ObjectId;
   replacedBySessionId?: Types.ObjectId;
   refreshTokenHash: string;
+  ipAddress?: string;
+  userAgent?: string;
+  lastUsedAt: Date;
   expiresAt: Date;
   revokedAt?: Date;
   rotatedAt?: Date;
@@ -38,6 +41,16 @@ const authSessionSchema = new Schema<AuthSession>(
       required: true,
       unique: true,
       select: false,
+    },
+    ipAddress: {
+      type: String,
+    },
+    userAgent: {
+      type: String,
+    },
+    lastUsedAt: {
+      type: Date,
+      required: true,
     },
     expiresAt: {
       type: Date,

@@ -8,7 +8,11 @@ import type { AuthenticatedUser } from '../types/auth';
 import { createSecureToken, hashToken } from '../utils/secure-token';
 import { toPublicUser } from '../utils/public-user';
 import { normalizeEmail } from '../utils/email';
-import { issueAuthSession, revokeUserSessions } from './auth-session.service';
+import {
+  issueAuthSession,
+  revokeUserSessions,
+  type AuthSessionMetadata,
+} from './auth-session.service';
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
@@ -55,8 +59,11 @@ const assertUserIsActive = (user: { status?: 'active' | 'disabled' }) => {
 const issueAuthResult = async (
   user: AuthenticatedUser,
   extra?: Omit<AuthResult, 'accessToken' | 'refreshToken' | 'user'>,
+  metadata?: AuthSessionMetadata,
 ): Promise<AuthResult> => {
-  const authResult = await issueAuthSession(user);
+  const authResult = metadata
+    ? await issueAuthSession(user, metadata)
+    : await issueAuthSession(user);
 
   return {
     ...authResult,
@@ -97,11 +104,10 @@ const sendVerificationEmailSafely = async (email: string, token: string) => {
   }
 };
 
-export const signup = async ({
-  name,
-  email,
-  password,
-}: SignupPayload): Promise<AuthResult> => {
+export const signup = async (
+  { name, email, password }: SignupPayload,
+  metadata?: AuthSessionMetadata,
+): Promise<AuthResult> => {
   const existingUser = await userRepository.existsByEmail(email);
 
   if (existingUser) {
@@ -122,23 +128,28 @@ export const signup = async ({
   );
   const publicUser = toPublicUser(user);
 
-  return issueAuthResult(publicUser, {
-    ...(isDevEmailMode() ? { emailVerificationToken } : {}),
-    ...(!emailSent ? { emailVerificationEmailFailed: true } : {}),
-  });
+  return issueAuthResult(
+    publicUser,
+    {
+      ...(isDevEmailMode() ? { emailVerificationToken } : {}),
+      ...(!emailSent ? { emailVerificationEmailFailed: true } : {}),
+    },
+    metadata,
+  );
 };
 
-export const login = async ({
-  email,
-  password,
-}: LoginPayload): Promise<AuthResult> => {
+export const login = async (
+  { email, password }: LoginPayload,
+  metadata?: AuthSessionMetadata,
+): Promise<AuthResult> => {
   const publicUser = await authenticatePasswordUser({ email, password });
 
-  return issueAuthResult(publicUser);
+  return issueAuthResult(publicUser, undefined, metadata);
 };
 
 export const adminLogin = async (
   payload: LoginPayload,
+  metadata?: AuthSessionMetadata,
 ): Promise<AuthResult> => {
   const publicUser = await authenticatePasswordUser(payload);
 
@@ -146,7 +157,7 @@ export const adminLogin = async (
     throw new ServiceError('Admin access required', 403);
   }
 
-  return issueAuthResult(publicUser);
+  return issueAuthResult(publicUser, undefined, metadata);
 };
 
 export const createEmailVerificationToken = async (userId: string) => {
@@ -256,17 +267,20 @@ export const resetPassword = async ({
   return { message: 'Password reset successfully' };
 };
 
-export const loginWithOAuth = async ({
-  email,
-  name,
-  emailVerified,
-  mode = 'login',
-}: {
-  email: string;
-  name: string;
-  emailVerified: boolean;
-  mode?: 'admin' | 'login' | 'signup';
-}): Promise<AuthResult> => {
+export const loginWithOAuth = async (
+  {
+    email,
+    name,
+    emailVerified,
+    mode = 'login',
+  }: {
+    email: string;
+    name: string;
+    emailVerified: boolean;
+    mode?: 'admin' | 'login' | 'signup';
+  },
+  metadata?: AuthSessionMetadata,
+): Promise<AuthResult> => {
   const normalizedEmail = normalizeEmail(email ?? '');
   const normalizedName = name?.trim() || normalizedEmail.split('@')[0];
 
@@ -318,5 +332,5 @@ export const loginWithOAuth = async ({
     });
   }
 
-  return issueAuthResult(publicUser);
+  return issueAuthResult(publicUser, undefined, metadata);
 };
