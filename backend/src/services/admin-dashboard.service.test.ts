@@ -15,6 +15,7 @@ jest.mock('../repositories/order.repository', () => ({
     getAnalyticsCategorySales: jest.fn(),
     getAnalyticsItemSales: jest.fn(),
     getAnalyticsPaymentStatusCounts: jest.fn(),
+    getAnalyticsAttachmentRates: jest.fn(),
   },
 }));
 
@@ -207,6 +208,16 @@ describe('admin dashboard service', () => {
         { status: 'paid', count: 9 },
         { status: 'cancelled', count: 2 },
       ]);
+    jest.mocked(orderRepository.getAnalyticsAttachmentRates).mockResolvedValue([
+      {
+        label: 'Burger orders with sides',
+        baseCategory: 'burger',
+        attachedCategory: 'side',
+        baseOrderCount: 6,
+        attachedOrderCount: 4,
+        attachmentRatePercent: 66.7,
+      },
+    ]);
     jest.mocked(menuItemRepository.findAllForAnalytics).mockResolvedValue([
       {
         _id: { toString: () => 'menu-3' },
@@ -261,6 +272,16 @@ describe('admin dashboard service', () => {
         { status: 'cancelled', count: 2 },
         { status: 'refunded', count: 0 },
       ],
+      attachmentRates: [
+        {
+          label: 'Burger orders with sides',
+          baseCategory: 'burger',
+          attachedCategory: 'side',
+          baseOrderCount: 6,
+          attachedOrderCount: 4,
+          attachmentRatePercent: 66.7,
+        },
+      ],
     });
 
     expect(orderRepository.getAnalyticsTotals).toHaveBeenCalledWith({
@@ -281,6 +302,26 @@ describe('admin dashboard service', () => {
         limit: 5,
       }),
     );
+    expect(orderRepository.getAnalyticsAttachmentRates).toHaveBeenCalledWith({
+      start: new Date('2026-09-13T12:00:00.000Z'),
+      end: now,
+      pairs: [
+        {
+          label: 'Burger orders with sides',
+          baseCategory: 'burger',
+          attachedCategory: 'side',
+        },
+        {
+          label: 'Burger orders with drinks',
+          baseCategory: 'burger',
+          attachedCategory: 'drink',
+        },
+        {
+          label: 'Paid orders with combos',
+          attachedCategory: 'combo',
+        },
+      ],
+    });
   });
 
   test('uses Australia/Sydney business day boundaries for today summary', async () => {
@@ -349,6 +390,24 @@ describe('admin dashboard service', () => {
         { status: 'paid', count: 8 },
         { status: 'failed', count: 1 },
       ]);
+    jest.mocked(orderRepository.getAnalyticsAttachmentRates).mockResolvedValue([
+      {
+        label: 'Burger orders with sides',
+        baseCategory: 'burger',
+        attachedCategory: 'side',
+        baseOrderCount: 6,
+        attachedOrderCount: 2,
+        attachmentRatePercent: 33.3,
+      },
+      {
+        label: 'Burger orders with drinks',
+        baseCategory: 'burger',
+        attachedCategory: 'drink',
+        baseOrderCount: 6,
+        attachedOrderCount: 1,
+        attachmentRatePercent: 16.7,
+      },
+    ]);
 
     await expect(getAdminDailyBrief(now)).resolves.toEqual({
       date: '21/09/2026',
@@ -374,10 +433,31 @@ describe('admin dashboard service', () => {
         'Double Burger was the strongest seller with 12 sold.',
         'Vegetarian Burger sold 2, down from 7 on the same weekday last week.',
         'Payment failures increased from 1 to 3.',
+        '33.3% of burger orders included a side.',
       ],
       worthChecking: [
         'Vegetarian Burger availability, placement, and pairing.',
         'Payment failures and Stripe checkout logs.',
+        'Burger-to-side upsell prompts and combo placement.',
+        'Drink attachment on burger orders.',
+      ],
+      attachmentRates: [
+        {
+          label: 'Burger orders with sides',
+          baseCategory: 'burger',
+          attachedCategory: 'side',
+          baseOrderCount: 6,
+          attachedOrderCount: 2,
+          attachmentRatePercent: 33.3,
+        },
+        {
+          label: 'Burger orders with drinks',
+          baseCategory: 'burger',
+          attachedCategory: 'drink',
+          baseOrderCount: 6,
+          attachedOrderCount: 1,
+          attachmentRatePercent: 16.7,
+        },
       ],
     });
 

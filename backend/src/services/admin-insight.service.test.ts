@@ -85,6 +85,16 @@ const analyticsSummary = {
     { status: 'cancelled', count: 2 },
     { status: 'refunded', count: 0 },
   ],
+  attachmentRates: [
+    {
+      label: 'Burger orders with sides',
+      baseCategory: 'burger',
+      attachedCategory: 'side',
+      baseOrderCount: 6,
+      attachedOrderCount: 4,
+      attachmentRatePercent: 66.7,
+    },
+  ],
 };
 
 const activeAlert = {
@@ -122,6 +132,16 @@ const dailyBrief = {
     'Double Burger was the strongest seller with 12 sold.',
   ],
   worthChecking: ['Vegetarian Burger availability, placement, and pairing.'],
+  attachmentRates: [
+    {
+      label: 'Burger orders with sides',
+      baseCategory: 'burger',
+      attachedCategory: 'side',
+      baseOrderCount: 6,
+      attachedOrderCount: 4,
+      attachmentRatePercent: 66.7,
+    },
+  ],
 };
 
 describe('admin insight service', () => {

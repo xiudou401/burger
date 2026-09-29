@@ -33,6 +33,7 @@ const baseAnalytics = {
   categorySales: [],
   topItems: [],
   underperformingItems: [],
+  attachmentRates: [],
   paymentStatusCounts: [
     { status: 'unpaid', count: 0 },
     { status: 'requires_payment', count: 0 },

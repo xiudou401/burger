@@ -29,6 +29,15 @@ export interface DashboardPaymentStatusCount {
   count: number;
 }
 
+export interface DashboardAttachmentRate {
+  label: string;
+  baseCategory: string | null;
+  attachedCategory: string;
+  baseOrderCount: number;
+  attachedOrderCount: number;
+  attachmentRatePercent: number | null;
+}
+
 export interface AdminAnalyticsSummary {
   range: AnalyticsRange;
   currency: 'AUD';
@@ -42,6 +51,7 @@ export interface AdminAnalyticsSummary {
   topItems: DashboardTopItem[];
   underperformingItems: DashboardTopItem[];
   paymentStatusCounts: DashboardPaymentStatusCount[];
+  attachmentRates: DashboardAttachmentRate[];
 }
 
 export interface DailyBriefMetric {
@@ -59,6 +69,7 @@ export interface AdminDailyBrief {
   };
   highlights: string[];
   worthChecking: string[];
+  attachmentRates: DashboardAttachmentRate[];
 }
 
 export type AnalyticsAlertType =

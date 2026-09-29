@@ -8,6 +8,7 @@ jest.mock('../models/order.model', () => ({
     find: jest.fn(),
     findOne: jest.fn(),
     findById: jest.fn(),
+    aggregate: jest.fn(),
   },
 }));
 
@@ -166,5 +167,73 @@ describe('orderRepository', () => {
       }),
     );
     expect(doc.save).toHaveBeenCalled();
+  });
+
+  test('calculates attachment rates with aggregation pipelines', async () => {
+    const start = new Date('2026-09-01T00:00:00.000Z');
+    const end = new Date('2026-09-08T00:00:00.000Z');
+    const exec = jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          label: 'Burger orders with sides',
+          baseCategory: 'burger',
+          attachedCategory: 'side',
+          baseOrderCount: 10,
+          attachedOrderCount: 6,
+          attachmentRatePercent: 60,
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    jest.mocked(OrderModel.aggregate).mockReturnValue({ exec } as never);
+
+    await expect(
+      orderRepository.getAnalyticsAttachmentRates({
+        start,
+        end,
+        pairs: [
+          {
+            label: 'Burger orders with sides',
+            baseCategory: 'burger',
+            attachedCategory: 'side',
+          },
+          {
+            label: 'Paid orders with combos',
+            attachedCategory: 'combo',
+          },
+        ],
+      }),
+    ).resolves.toEqual([
+      {
+        label: 'Burger orders with sides',
+        baseCategory: 'burger',
+        attachedCategory: 'side',
+        baseOrderCount: 10,
+        attachedOrderCount: 6,
+        attachmentRatePercent: 60,
+      },
+      {
+        label: 'Paid orders with combos',
+        baseCategory: null,
+        attachedCategory: 'combo',
+        baseOrderCount: 0,
+        attachedOrderCount: 0,
+        attachmentRatePercent: null,
+      },
+    ]);
+
+    expect(OrderModel.aggregate).toHaveBeenCalledTimes(2);
+    expect(OrderModel.aggregate).toHaveBeenNthCalledWith(
+      1,
+      expect.arrayContaining([
+        {
+          $match: {
+            'payment.paidAt': { $gte: start, $lt: end },
+            'payment.status': 'paid',
+          },
+        },
+      ]),
+    );
   });
 });

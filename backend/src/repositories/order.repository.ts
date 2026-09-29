@@ -55,6 +55,15 @@ export interface OrderAnalyticsPaymentStatusCount {
   count: number;
 }
 
+export interface OrderAnalyticsAttachmentRate {
+  label: string;
+  baseCategory: string | null;
+  attachedCategory: string;
+  baseOrderCount: number;
+  attachedOrderCount: number;
+  attachmentRatePercent: number | null;
+}
+
 export const orderRepository = {
   create(data: {
     userId: string;
@@ -373,6 +382,116 @@ export const orderRepository = {
       { $sort: sort },
       { $limit: limit },
     ]).exec();
+  },
+
+  async getAnalyticsAttachmentRates({
+    start,
+    end,
+    pairs,
+  }: AnalyticsRange & {
+    pairs: Array<{
+      label: string;
+      baseCategory?: string;
+      attachedCategory: string;
+    }>;
+  }) {
+    return Promise.all(
+      pairs.map(async ({ label, baseCategory, attachedCategory }) => {
+        const baseExpression = baseCategory
+          ? { $in: [baseCategory, '$categories'] }
+          : true;
+        const attachedExpression = { $in: [attachedCategory, '$categories'] };
+        const [result] =
+          await OrderModel.aggregate<OrderAnalyticsAttachmentRate>([
+            {
+              $match: {
+                'payment.paidAt': { $gte: start, $lt: end },
+                'payment.status': 'paid',
+              },
+            },
+            {
+              $project: {
+                categories: {
+                  $setUnion: [
+                    {
+                      $filter: {
+                        input: { $ifNull: ['$items.categoryAtPurchase', []] },
+                        as: 'category',
+                        cond: { $ne: ['$$category', null] },
+                      },
+                    },
+                    [],
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                baseOrderCount: {
+                  $sum: {
+                    $cond: [baseExpression, 1, 0],
+                  },
+                },
+                attachedOrderCount: {
+                  $sum: {
+                    $cond: [
+                      {
+                        $and: [baseExpression, attachedExpression],
+                      },
+                      1,
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                label,
+                baseCategory: baseCategory ?? null,
+                attachedCategory,
+                baseOrderCount: 1,
+                attachedOrderCount: 1,
+                attachmentRatePercent: {
+                  $cond: [
+                    { $gt: ['$baseOrderCount', 0] },
+                    {
+                      $round: [
+                        {
+                          $multiply: [
+                            {
+                              $divide: [
+                                '$attachedOrderCount',
+                                '$baseOrderCount',
+                              ],
+                            },
+                            100,
+                          ],
+                        },
+                        1,
+                      ],
+                    },
+                    null,
+                  ],
+                },
+              },
+            },
+          ]).exec();
+
+        return (
+          result ?? {
+            label,
+            baseCategory: baseCategory ?? null,
+            attachedCategory,
+            baseOrderCount: 0,
+            attachedOrderCount: 0,
+            attachmentRatePercent: null,
+          }
+        );
+      }),
+    );
   },
 
   findForUser(userId: string, orderId: string) {

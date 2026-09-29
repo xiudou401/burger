@@ -524,6 +524,23 @@ const AdminDashboard = () => {
             </article>
 
             <article className={classes.Panel}>
+              <h2 className={classes.PanelTitle}>Attachment rates</h2>
+              <div className={classes.TableRows}>
+                {analytics.attachmentRates.map((rate) => (
+                  <div className={classes.TableRow} key={rate.label}>
+                    <span className={classes.ItemName}>{rate.label}</span>
+                    <span className={classes.ItemMeta}>
+                      {rate.attachmentRatePercent === null
+                        ? 'No baseline'
+                        : `${rate.attachmentRatePercent}%`}{' '}
+                      · {rate.attachedOrderCount}/{rate.baseOrderCount} orders
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </article>
+
+            <article className={classes.Panel}>
               <h2 className={classes.PanelTitle}>7-day top items</h2>
               <div className={classes.TableRows}>
                 {analytics.topItems.map((item) => (

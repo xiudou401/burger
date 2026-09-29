@@ -916,6 +916,15 @@ const buildDisplayAnalytics = (analytics: AdminAnalyticsSummary) => ({
     quantitySold: item.quantitySold,
     revenue: formatCurrency(item.revenueCents),
   })),
+  attachmentRates: analytics.attachmentRates.map((rate) => ({
+    label: rate.label,
+    attachedOrderCount: rate.attachedOrderCount,
+    baseOrderCount: rate.baseOrderCount,
+    attachmentRate:
+      rate.attachmentRatePercent === null
+        ? 'no baseline'
+        : `${rate.attachmentRatePercent}%`,
+  })),
 });
 
 const buildDisplayAlert = (alert?: AnalyticsAlert) =>

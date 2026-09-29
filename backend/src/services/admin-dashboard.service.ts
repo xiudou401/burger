@@ -54,6 +54,15 @@ export interface DashboardPaymentStatusCount {
   count: number;
 }
 
+export interface DashboardAttachmentRate {
+  label: string;
+  baseCategory: string | null;
+  attachedCategory: string;
+  baseOrderCount: number;
+  attachedOrderCount: number;
+  attachmentRatePercent: number | null;
+}
+
 export interface AdminAnalyticsSummary {
   range: AnalyticsRange;
   currency: 'AUD';
@@ -67,6 +76,7 @@ export interface AdminAnalyticsSummary {
   topItems: DashboardTopItem[];
   underperformingItems: DashboardTopItem[];
   paymentStatusCounts: DashboardPaymentStatusCount[];
+  attachmentRates: DashboardAttachmentRate[];
 }
 
 export interface DailyBriefMetric {
@@ -84,6 +94,7 @@ export interface AdminDailyBrief {
   };
   highlights: string[];
   worthChecking: string[];
+  attachmentRates: DashboardAttachmentRate[];
 }
 
 const ORDER_STATUSES: OrderStatus[] = [
@@ -361,6 +372,23 @@ const formatBusinessDate = (date: Date) =>
     day: '2-digit',
   }).format(date);
 
+const ATTACHMENT_RATE_PAIRS = [
+  {
+    label: 'Burger orders with sides',
+    baseCategory: 'burger',
+    attachedCategory: 'side',
+  },
+  {
+    label: 'Burger orders with drinks',
+    baseCategory: 'burger',
+    attachedCategory: 'drink',
+  },
+  {
+    label: 'Paid orders with combos',
+    attachedCategory: 'combo',
+  },
+];
+
 const includeZeroSaleMenuItems = async (
   itemSales: DashboardTopItem[],
   limit: number,
@@ -396,6 +424,7 @@ export const getAdminAnalyticsSummary = async (
     topItems,
     underperformingItems,
     paymentStatusCounts,
+    attachmentRates,
   ] = await Promise.all([
     orderRepository.getAnalyticsTotals({ start, end }),
     orderRepository.getAnalyticsCategorySales({ start, end }),
@@ -412,6 +441,11 @@ export const getAdminAnalyticsSummary = async (
       limit: 5,
     }),
     orderRepository.getAnalyticsPaymentStatusCounts({ start, end }),
+    orderRepository.getAnalyticsAttachmentRates({
+      start,
+      end,
+      pairs: ATTACHMENT_RATE_PAIRS,
+    }),
   ]);
 
   const underperformingWithZeroSales = await includeZeroSaleMenuItems(
@@ -432,6 +466,7 @@ export const getAdminAnalyticsSummary = async (
     topItems,
     underperformingItems: underperformingWithZeroSales,
     paymentStatusCounts: normalizePaymentStatusCounts(paymentStatusCounts),
+    attachmentRates,
   };
 };
 
@@ -448,6 +483,7 @@ export const getAdminDailyBrief = async (
     comparisonTopItems,
     currentPaymentCounts,
     comparisonPaymentCounts,
+    currentAttachmentRates,
   ] = await Promise.all([
     orderRepository.getAnalyticsTotals(yesterday),
     orderRepository.getAnalyticsTotals(sameWeekdayLastWeek),
@@ -463,6 +499,10 @@ export const getAdminDailyBrief = async (
     }),
     orderRepository.getAnalyticsPaymentStatusCounts(yesterday),
     orderRepository.getAnalyticsPaymentStatusCounts(sameWeekdayLastWeek),
+    orderRepository.getAnalyticsAttachmentRates({
+      ...yesterday,
+      pairs: ATTACHMENT_RATE_PAIRS,
+    }),
   ]);
 
   const revenueDeltaPercent = calculateDeltaPercent(
@@ -504,6 +544,12 @@ export const getAdminDailyBrief = async (
     'failed',
   );
   const failedPaymentDelta = currentFailedPayments - comparisonFailedPayments;
+  const burgerSideAttachment = currentAttachmentRates.find(
+    (rate) => rate.label === 'Burger orders with sides',
+  );
+  const burgerDrinkAttachment = currentAttachmentRates.find(
+    (rate) => rate.label === 'Burger orders with drinks',
+  );
   const highlights = [
     `Revenue was ${formatAud(currentTotals.revenueCents)} (${formatDelta(
       revenueDeltaPercent,
@@ -539,6 +585,27 @@ export const getAdminDailyBrief = async (
     worthChecking.push('Payment failures and Stripe checkout logs.');
   }
 
+  if (
+    burgerSideAttachment?.attachmentRatePercent !== null &&
+    burgerSideAttachment?.attachmentRatePercent !== undefined
+  ) {
+    highlights.push(
+      `${burgerSideAttachment.attachmentRatePercent}% of burger orders included a side.`,
+    );
+
+    if (burgerSideAttachment.attachmentRatePercent < 50) {
+      worthChecking.push('Burger-to-side upsell prompts and combo placement.');
+    }
+  }
+
+  if (
+    burgerDrinkAttachment?.attachmentRatePercent !== null &&
+    burgerDrinkAttachment?.attachmentRatePercent !== undefined &&
+    burgerDrinkAttachment.attachmentRatePercent < 40
+  ) {
+    worthChecking.push('Drink attachment on burger orders.');
+  }
+
   if (worthChecking.length === 0) {
     worthChecking.push(
       'No sharp anomaly stands out; monitor active orders and item mix.',
@@ -564,5 +631,6 @@ export const getAdminDailyBrief = async (
     },
     highlights,
     worthChecking,
+    attachmentRates: currentAttachmentRates,
   };
 };
