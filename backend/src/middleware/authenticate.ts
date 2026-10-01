@@ -1,8 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { ServiceError } from '../errors/ServiceError';
 import { verifyAuthToken } from '../utils/token';
-import { getPermissionsForRole } from '../types/permissions';
 import { userRepository } from '../repositories/user.repository';
+import { toPublicUser } from '../utils/public-user';
 
 export const authenticate = async (
   req: Request,
@@ -30,15 +30,7 @@ export const authenticate = async (
       throw new ServiceError('Account disabled', 403);
     }
 
-    req.user = {
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name,
-      role: user.role ?? 'customer',
-      permissions: getPermissionsForRole(user.role ?? 'customer'),
-      status: user.status ?? 'active',
-      emailVerified: user.emailVerified,
-    };
+    req.user = toPublicUser(user);
 
     next();
   } catch (error) {
