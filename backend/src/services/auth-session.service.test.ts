@@ -220,6 +220,36 @@ describe('auth session service', () => {
     );
   });
 
+  test('rejects a consumed session missing a token family', async () => {
+    const session = {
+      _id: 'old-session',
+      userId: user.id,
+      revokedAt: new Date(),
+      rotatedAt: new Date(),
+    };
+    const userDoc = {
+      _id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      emailVerified: user.emailVerified,
+    };
+
+    jest
+      .mocked(authSessionRepository.consumeActiveByRefreshTokenHash)
+      .mockResolvedValue(session as never);
+    jest.mocked(userRepository.findById).mockResolvedValue(userDoc as never);
+
+    await expect(rotateAuthSession('old-refresh-token')).rejects.toMatchObject({
+      message: 'Invalid session',
+      statusCode: 401,
+    });
+
+    expect(authSessionRepository.save).toHaveBeenCalledWith(session);
+    expect(authSessionRepository.create).not.toHaveBeenCalled();
+    expect(authSessionRepository.linkReplacement).not.toHaveBeenCalled();
+  });
+
   test('rejects missing refresh tokens with 401', async () => {
     await expect(rotateAuthSession('')).rejects.toMatchObject({
       message: 'Refresh token required',

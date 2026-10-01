@@ -2,7 +2,7 @@ import { model, Schema, Types } from 'mongoose';
 
 export interface AuthSession {
   userId: Types.ObjectId;
-  familyId?: string;
+  familyId: string;
   parentSessionId?: Types.ObjectId;
   replacedBySessionId?: Types.ObjectId;
   refreshTokenHash: string;
@@ -26,6 +26,7 @@ const authSessionSchema = new Schema<AuthSession>(
     },
     familyId: {
       type: String,
+      required: true,
       index: true,
     },
     parentSessionId: {

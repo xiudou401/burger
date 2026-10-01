@@ -201,7 +201,14 @@ export const rotateAuthSession = async (
     throw new ServiceError('Account disabled', 403);
   }
 
-  const refreshFamilyId = consumedSession.familyId ?? randomUUID();
+  const refreshFamilyId = consumedSession.familyId;
+
+  if (!refreshFamilyId) {
+    consumedSession.revokedAt = new Date();
+    await authSessionRepository.save(consumedSession);
+    throw new ServiceError('Invalid session', 401);
+  }
+
   let createdReplacementSession: { _id: unknown };
   let result: SessionAuthResult;
 

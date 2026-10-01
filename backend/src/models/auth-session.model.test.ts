@@ -18,6 +18,7 @@ test('keeps refresh token hashes hidden and uniquely indexed', () => {
 });
 
 test('indexes active sessions by token family', () => {
+  expect(AuthSessionModel.schema.path('familyId').options.required).toBe(true);
   expect(AuthSessionModel.schema.indexes()).toContainEqual([
     { familyId: 1, revokedAt: 1, expiresAt: 1 },
     {},
