@@ -36,6 +36,7 @@ jest.mock('../repositories/order.repository', () => ({
     queryOrders: jest.fn(),
     getAnalyticsItemSales: jest.fn(),
     getAnalyticsPaymentStatusCounts: jest.fn(),
+    getAnalyticsAttachmentRates: jest.fn(),
   },
 }));
 
@@ -161,6 +162,9 @@ describe('admin insight service', () => {
     jest.mocked(orderRepository.getAnalyticsItemSales).mockResolvedValue([]);
     jest
       .mocked(orderRepository.getAnalyticsPaymentStatusCounts)
+      .mockResolvedValue([]);
+    jest
+      .mocked(orderRepository.getAnalyticsAttachmentRates)
       .mockResolvedValue([]);
   });
 
@@ -751,6 +755,86 @@ describe('admin insight service', () => {
     expect(result.run.toolsUsed).toEqual([
       'getSalesSummary',
       'getItemPerformance',
+    ]);
+  });
+
+  test('selects attachment rate tool for add-on and pairing questions', async () => {
+    jest.mocked(orderRepository.getAnalyticsAttachmentRates).mockResolvedValue([
+      {
+        label: 'burger orders with side',
+        baseCategory: 'burger',
+        attachedCategory: 'side',
+        baseOrderCount: 6,
+        attachedOrderCount: 3,
+        attachmentRatePercent: 50,
+      },
+    ]);
+
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'Half of burger orders included a side.',
+        insights: [
+          {
+            type: 'opportunity',
+            severity: 'medium',
+            title: 'Side attachment can improve',
+            evidence: ['3 of 6 burger orders included a side.'],
+            suggestedAction: 'Check combo placement around burgers.',
+            relatedMenuItemIds: [],
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await chatWithAdminInsightAgent(
+      {
+        range: '7d',
+        question: 'How many burger orders come with fries or sides?',
+      },
+      actor,
+    );
+
+    expect(orderRepository.getAnalyticsAttachmentRates).toHaveBeenCalledWith({
+      start: analyticsSummary.startAt,
+      end: analyticsSummary.endAt,
+      pairs: [
+        {
+          label: 'burger orders with side',
+          baseCategory: 'burger',
+          attachedCategory: 'side',
+        },
+      ],
+    });
+    expect(modelClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedTools: ['getItemPerformance', 'getAttachmentRates'],
+        toolResults: expect.objectContaining({
+          getAttachmentRates: expect.objectContaining({
+            params: expect.objectContaining({
+              baseCategory: 'burger',
+              attachedCategory: 'side',
+            }),
+            result: [
+              expect.objectContaining({
+                baseOrderCount: 6,
+                attachedOrderCount: 3,
+                attachmentRatePercent: 50,
+              }),
+            ],
+          }),
+        }),
+      }),
+    );
+    expect(agentRunRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolsUsed: ['getItemPerformance', 'getAttachmentRates'],
+      }),
+    );
+    expect(result.run.toolsUsed).toEqual([
+      'getItemPerformance',
+      'getAttachmentRates',
     ]);
   });
 });

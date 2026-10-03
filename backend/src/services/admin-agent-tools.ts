@@ -16,6 +16,7 @@ export const ADMIN_GET_ITEM_PERFORMANCE_TOOL = 'getItemPerformance';
 export const ADMIN_GET_PAYMENT_STATS_TOOL = 'getPaymentStats';
 export const ADMIN_GET_SALES_METRICS_TOOL = 'getSalesMetrics';
 export const ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL = 'getCancellationBreakdown';
+export const ADMIN_GET_ATTACHMENT_RATES_TOOL = 'getAttachmentRates';
 
 const OrderStatusSchema = z.enum([
   'pending_payment',
@@ -85,9 +86,23 @@ export const GetItemPerformanceToolParamsSchema = z
     message: 'Tool date range must have from before to',
   });
 
+export const GetAttachmentRatesToolParamsSchema = z
+  .object({
+    ...ToolDateRangeShape,
+    baseCategory: z.enum(MENU_ITEM_CATEGORIES).optional(),
+    attachedCategory: z.enum(MENU_ITEM_CATEGORIES).optional(),
+  })
+  .strict()
+  .refine(hasValidToolDateRange, {
+    message: 'Tool date range must have from before to',
+  });
+
 export type GetOrdersToolParams = z.infer<typeof GetOrdersToolParamsSchema>;
 export type GetItemPerformanceToolParams = z.infer<
   typeof GetItemPerformanceToolParamsSchema
+>;
+export type GetAttachmentRatesToolParams = z.infer<
+  typeof GetAttachmentRatesToolParamsSchema
 >;
 
 interface CountEntry<T extends string = string> {
@@ -228,6 +243,46 @@ const getItemPerformanceSort = (sort: GetItemPerformanceToolParams['sort']) => {
   }
 };
 
+const DEFAULT_ATTACHMENT_RATE_PAIRS = [
+  {
+    label: 'Burger orders with sides',
+    baseCategory: 'burger',
+    attachedCategory: 'side',
+  },
+  {
+    label: 'Burger orders with drinks',
+    baseCategory: 'burger',
+    attachedCategory: 'drink',
+  },
+  {
+    label: 'Paid orders with combos',
+    attachedCategory: 'combo',
+  },
+] satisfies Array<{
+  label: string;
+  baseCategory?: MenuItemCategory;
+  attachedCategory: MenuItemCategory;
+}>;
+
+const buildAttachmentRatePairs = ({
+  baseCategory,
+  attachedCategory,
+}: Pick<GetAttachmentRatesToolParams, 'baseCategory' | 'attachedCategory'>) => {
+  if (attachedCategory) {
+    return [
+      {
+        label: baseCategory
+          ? `${baseCategory} orders with ${attachedCategory}`
+          : `Paid orders with ${attachedCategory}`,
+        baseCategory,
+        attachedCategory,
+      },
+    ];
+  }
+
+  return DEFAULT_ATTACHMENT_RATE_PAIRS;
+};
+
 export const runGetOrdersTool = async (
   params: GetOrdersToolParams,
 ): Promise<
@@ -305,6 +360,23 @@ export const runGetPaymentStatsTool = async (
   };
 };
 
+export const runGetAttachmentRatesTool = async (
+  params: GetAttachmentRatesToolParams,
+) => {
+  const parsed = GetAttachmentRatesToolParamsSchema.parse(params);
+  const result = await orderRepository.getAnalyticsAttachmentRates({
+    start: parsed.from,
+    end: parsed.to,
+    pairs: buildAttachmentRatePairs(parsed),
+  });
+
+  return {
+    name: ADMIN_GET_ATTACHMENT_RATES_TOOL,
+    params: parsed,
+    result,
+  };
+};
+
 export const getOrderStatusFromQuestion = (
   question: string,
 ): OrderStatus | undefined => {
@@ -365,6 +437,46 @@ export const getMenuCategoryFromQuestion = (question: string) => {
   const normalized = question.toLowerCase();
 
   return MENU_ITEM_CATEGORIES.find((category) => normalized.includes(category));
+};
+
+export const getAttachmentRateCategoriesFromQuestion = (question: string) => {
+  const normalized = question.toLowerCase();
+  const baseCategory = /\bburgers?\b/.test(normalized)
+    ? ('burger' as const)
+    : undefined;
+
+  if (
+    /\bfries?\b/.test(normalized) ||
+    /\bsides?\b/.test(normalized) ||
+    /\bonion rings?\b/.test(normalized) ||
+    /\bslaw\b/.test(normalized)
+  ) {
+    return { baseCategory, attachedCategory: 'side' as const };
+  }
+
+  if (
+    /\bdrinks?\b/.test(normalized) ||
+    /\bshake\b/.test(normalized) ||
+    /\blemonade\b/.test(normalized) ||
+    /\bsoda\b/.test(normalized) ||
+    /\btea\b/.test(normalized)
+  ) {
+    return { baseCategory, attachedCategory: 'drink' as const };
+  }
+
+  if (/\bcombos?\b/.test(normalized) || /\bbundles?\b/.test(normalized)) {
+    return { baseCategory, attachedCategory: 'combo' as const };
+  }
+
+  if (
+    /\bdesserts?\b/.test(normalized) ||
+    /\bbrownie\b/.test(normalized) ||
+    /\bsundae\b/.test(normalized)
+  ) {
+    return { baseCategory, attachedCategory: 'dessert' as const };
+  }
+
+  return { baseCategory, attachedCategory: undefined };
 };
 
 export const getOrderSortFromQuestion = (

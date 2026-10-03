@@ -21,17 +21,20 @@ import {
 } from './admin-alert.service';
 import { ServiceError } from '../errors/ServiceError';
 import {
+  ADMIN_GET_ATTACHMENT_RATES_TOOL,
   ADMIN_GET_CANCELLATION_BREAKDOWN_TOOL,
   ADMIN_GET_ITEM_PERFORMANCE_TOOL,
   ADMIN_GET_ORDERS_TOOL,
   ADMIN_GET_PAYMENT_STATS_TOOL,
   ADMIN_GET_SALES_METRICS_TOOL,
+  getAttachmentRateCategoriesFromQuestion,
   getCancellationReasonFromQuestion,
   getItemPerformanceSortFromQuestion,
   getMenuCategoryFromQuestion,
   getOrderSortFromQuestion,
   getOrderStatusFromQuestion,
   getPaymentStatusFromQuestion,
+  runGetAttachmentRatesTool,
   runGetItemPerformanceTool,
   runGetCancellationBreakdownTool,
   runGetOrdersTool,
@@ -48,6 +51,7 @@ const ADMIN_ITEM_PERFORMANCE_TOOL = 'getItemPerformance';
 const ADMIN_PAYMENT_STATS_TOOL = 'getPaymentStats';
 const ADMIN_ORDER_TOOL = ADMIN_GET_ORDERS_TOOL;
 const ADMIN_DAILY_BRIEF_TOOL = 'getAdminDailyBrief';
+const ADMIN_ATTACHMENT_RATES_TOOL = ADMIN_GET_ATTACHMENT_RATES_TOOL;
 const FALLBACK_MODEL = 'deterministic-fallback';
 
 interface InvestigationStepResult {
@@ -160,6 +164,20 @@ const selectAdminChatTools = (question: string) => {
 
   if (
     includesAny(normalized, [
+      /\battach/,
+      /\badd[- ]?on/,
+      /\bupsell/,
+      /\bwith\b.*\b(fries?|sides?|drinks?|combos?)\b/,
+      /\b(fries?|sides?|drinks?|combos?|bundles?)\b.*\bwith\b/,
+      /\bpairs?\b/,
+      /\bpairing\b/,
+    ])
+  ) {
+    tools.add(ADMIN_ATTACHMENT_RATES_TOOL);
+  }
+
+  if (
+    includesAny(normalized, [
       /\bpayment\b/,
       /\bpayments\b/,
       /\bpaid\b/,
@@ -175,7 +193,7 @@ const selectAdminChatTools = (question: string) => {
 
   if (
     getOrderStatusFromQuestion(question) ||
-    includesAny(normalized, [/\border\b/, /\borders\b/, /\bshow\b/, /\blist\b/])
+    includesAny(normalized, [/\bshow\b/, /\blist\b/, /\bdetails?\b/])
   ) {
     tools.add(ADMIN_ORDER_TOOL);
   }
@@ -207,7 +225,8 @@ const buildLogicalAnalyticsToolCalls = (tools: string[], latencyMs: number) =>
       (tool) =>
         tool !== ADMIN_ORDER_TOOL &&
         tool !== ADMIN_ALERT_TOOL &&
-        tool !== ADMIN_GET_ITEM_PERFORMANCE_TOOL,
+        tool !== ADMIN_GET_ITEM_PERFORMANCE_TOOL &&
+        tool !== ADMIN_ATTACHMENT_RATES_TOOL,
     )
     .map((name) => ({
       name,
@@ -226,6 +245,15 @@ const buildGetOrdersParams = (
   cancellationReason: getCancellationReasonFromQuestion(question),
   sort: getOrderSortFromQuestion(question),
   limit: 5,
+});
+
+const buildGetAttachmentRatesParams = (
+  question: string,
+  analytics: AdminAnalyticsSummary,
+) => ({
+  from: analytics.startAt,
+  to: analytics.endAt,
+  ...getAttachmentRateCategoriesFromQuestion(question),
 });
 
 const getRepeatedCancelledItem = (
@@ -741,6 +769,9 @@ const buildChatFallbackInsights = ({
   const itemPerformance = toolResults?.[ADMIN_GET_ITEM_PERFORMANCE_TOOL] as
     | AdminAnalyticsSummary['topItems']
     | undefined;
+  const attachmentRates = toolResults?.[ADMIN_ATTACHMENT_RATES_TOOL] as
+    | AdminAnalyticsSummary['attachmentRates']
+    | undefined;
 
   if (dailyBrief) {
     const firstCheck = dailyBrief.worthChecking?.[0];
@@ -766,6 +797,43 @@ const buildChatFallbackInsights = ({
           suggestedAction:
             firstCheck ??
             'No sharp anomaly stands out; review active orders and item mix during the next service window.',
+          relatedMenuItemIds: [],
+        },
+      ],
+    };
+  }
+
+  if (attachmentRates?.[0]) {
+    const primaryRate = attachmentRates[0];
+    const rateText =
+      primaryRate.attachmentRatePercent === null
+        ? 'not enough paid order data to calculate a rate'
+        : `${primaryRate.attachmentRatePercent}%`;
+
+    return {
+      summary: `${primaryRate.label} is ${rateText} in the selected ${analytics.range} window.`,
+      insights: [
+        {
+          type:
+            primaryRate.attachmentRatePercent !== null &&
+            primaryRate.attachmentRatePercent < 50
+              ? 'opportunity'
+              : 'trend',
+          severity:
+            primaryRate.attachmentRatePercent !== null &&
+            primaryRate.attachmentRatePercent < 50
+              ? 'medium'
+              : 'low',
+          title: primaryRate.label,
+          evidence: [
+            `${primaryRate.attachedOrderCount} of ${primaryRate.baseOrderCount} matching paid orders included ${primaryRate.attachedCategory}.`,
+            'Attachment rates are calculated from paid order item category snapshots.',
+          ],
+          suggestedAction:
+            primaryRate.attachmentRatePercent !== null &&
+            primaryRate.attachmentRatePercent < 50
+              ? 'Check menu placement, combo visibility, and checkout prompts before changing prices.'
+              : 'Keep monitoring add-on mix during peak service windows.',
           relatedMenuItemIds: [],
         },
       ],
@@ -1340,6 +1408,7 @@ export const chatWithAdminInsightAgent = async (
   let orderEvidence: AdminInsightResponsePayload['orderEvidence'];
   let orderEvidenceLatencyMs = 0;
   let itemPerformanceLatencyMs = 0;
+  let attachmentRatesLatencyMs = 0;
   const toolResults: Record<string, unknown> = {};
 
   try {
@@ -1365,6 +1434,18 @@ export const chatWithAdminInsightAgent = async (
       toolResults[itemPerformance.name] = {
         params: itemPerformance.params,
         result: itemPerformance.result,
+      };
+    }
+
+    if (selectedTools.includes(ADMIN_ATTACHMENT_RATES_TOOL)) {
+      const attachmentRatesStartMs = nowMs();
+      const attachmentRates = await runGetAttachmentRatesTool(
+        buildGetAttachmentRatesParams(question, analytics),
+      );
+      attachmentRatesLatencyMs = nowMs() - attachmentRatesStartMs;
+      toolResults[attachmentRates.name] = {
+        params: attachmentRates.params,
+        result: attachmentRates.result,
       };
     }
 
@@ -1414,6 +1495,15 @@ export const chatWithAdminInsightAgent = async (
                 name: ADMIN_GET_ITEM_PERFORMANCE_TOOL,
                 status: 'success' as const,
                 latencyMs: itemPerformanceLatencyMs,
+              },
+            ]
+          : []),
+        ...(selectedTools.includes(ADMIN_ATTACHMENT_RATES_TOOL)
+          ? [
+              {
+                name: ADMIN_ATTACHMENT_RATES_TOOL,
+                status: 'success' as const,
+                latencyMs: attachmentRatesLatencyMs,
               },
             ]
           : []),
