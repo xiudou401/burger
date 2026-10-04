@@ -444,7 +444,18 @@ describe('admin insight service', () => {
       ],
       toolResults: expect.objectContaining({
         investigationPlan: expect.objectContaining({
+          version: 'cancellation_investigation_v2',
           trigger: 'high_cancellation_rate',
+          branchDecision: expect.objectContaining({
+            strategyVersion: 'cancellation_investigation_v2',
+            selectedBranch: 'payment_outcome_check',
+            confidence: 'medium',
+            signals: expect.objectContaining({
+              dominantReason: expect.objectContaining({
+                value: 'customer_abandoned_checkout',
+              }),
+            }),
+          }),
           steps: expect.arrayContaining([
             expect.objectContaining({
               tool: 'getSalesMetrics',
@@ -483,6 +494,136 @@ describe('admin insight service', () => {
       'getPaymentStats',
     ]);
     expect(result.orderEvidence).toHaveLength(2);
+  });
+
+  test('branches cancellation investigation into item performance when cancelled orders share item evidence', async () => {
+    jest.mocked(orderRepository.queryOrders).mockResolvedValue([
+      {
+        _id: '66f000000000000000000013',
+        status: 'cancelled',
+        cancellationReason: 'item_unavailable',
+        cancelledAt: new Date('2026-09-20T11:05:00.000Z'),
+        totalCents: 2800,
+        payment: {
+          status: 'paid',
+        },
+        items: [
+          {
+            nameAtPurchase: 'Double Smash Burger',
+            categoryAtPurchase: 'burger',
+            quantity: 1,
+          },
+        ],
+        createdAt: new Date('2026-09-20T11:00:00.000Z'),
+        updatedAt: new Date('2026-09-20T11:05:00.000Z'),
+      },
+      {
+        _id: '66f000000000000000000014',
+        status: 'cancelled',
+        cancellationReason: 'item_unavailable',
+        cancelledAt: new Date('2026-09-20T12:05:00.000Z'),
+        totalCents: 2800,
+        payment: {
+          status: 'paid',
+        },
+        items: [
+          {
+            nameAtPurchase: 'Double Smash Burger',
+            categoryAtPurchase: 'burger',
+            quantity: 1,
+          },
+        ],
+        createdAt: new Date('2026-09-20T12:00:00.000Z'),
+        updatedAt: new Date('2026-09-20T12:05:00.000Z'),
+      },
+    ] as never);
+    jest.mocked(orderRepository.getAnalyticsItemSales).mockResolvedValue([
+      {
+        menuItemId: 'menu-double-smash',
+        name: 'Double Smash Burger',
+        quantitySold: 12,
+        revenueCents: 21600,
+      },
+    ]);
+
+    const modelClient = jest.fn().mockResolvedValue({
+      content: {
+        summary: 'Cancelled orders point to item availability.',
+        insights: [
+          {
+            type: 'risk',
+            severity: 'medium',
+            title: 'Repeated item unavailable cancellations',
+            evidence: ['2 cancelled orders involved Double Smash Burger.'],
+            suggestedAction:
+              'Check item availability before the next lunch service.',
+            relatedMenuItemIds: ['menu-double-smash'],
+          },
+        ],
+      },
+      modelUsed: 'gpt-4o-mini',
+    });
+    setAdminInsightModelClientForTest(modelClient);
+
+    const result = await investigateAdminAlert(
+      {
+        range: '7d',
+        alertId: activeAlert.id,
+      },
+      actor,
+    );
+
+    expect(orderRepository.getAnalyticsItemSales).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: 'burger',
+        sort: { quantitySold: -1, revenueCents: -1 },
+        limit: 5,
+      }),
+    );
+    expect(
+      orderRepository.getAnalyticsPaymentStatusCounts,
+    ).not.toHaveBeenCalled();
+    expect(modelClient).toHaveBeenCalledWith(
+      expect.objectContaining({
+        selectedTools: [
+          'detectAnalyticsAlerts',
+          'getSalesMetrics',
+          'getOrders',
+          'getCancellationBreakdown',
+          'getItemPerformance',
+        ],
+        toolResults: expect.objectContaining({
+          investigationPlan: expect.objectContaining({
+            version: 'cancellation_investigation_v2',
+            branchDecision: expect.objectContaining({
+              selectedBranch: 'item_concentration_check',
+              signals: expect.objectContaining({
+                dominantReason: expect.objectContaining({
+                  value: 'item_unavailable',
+                }),
+                dominantCategory: expect.objectContaining({
+                  value: 'burger',
+                }),
+              }),
+            }),
+          }),
+          getItemPerformance: expect.objectContaining({
+            result: [
+              expect.objectContaining({
+                name: 'Double Smash Burger',
+              }),
+            ],
+          }),
+        }),
+      }),
+    );
+    expect(result.run.toolsUsed).toEqual([
+      'detectAnalyticsAlerts',
+      'getSalesMetrics',
+      'getOrders',
+      'getCancellationBreakdown',
+      'getItemPerformance',
+    ]);
   });
 
   test('rejects investigation when the alert is no longer active', async () => {

@@ -61,6 +61,20 @@ interface InvestigationStepResult {
   resultSummary: string;
 }
 
+type CancellationInvestigationBranch =
+  | 'payment_outcome_check'
+  | 'item_concentration_check'
+  | 'time_window_check'
+  | 'insufficient_signal';
+
+interface InvestigationBranchDecision {
+  strategyVersion: 'cancellation_investigation_v2';
+  selectedBranch: CancellationInvestigationBranch;
+  confidence: 'low' | 'medium';
+  reason: string;
+  signals: Record<string, unknown>;
+}
+
 interface ModelUsage {
   inputTokens?: number;
   outputTokens?: number;
@@ -447,11 +461,48 @@ const runCancellationInvestigation = async ({
     dominantCancellationReason?.value === 'payment_failed';
   const reasonSuggestsItemCheck =
     dominantCancellationReason?.value === 'item_unavailable';
+  let branchDecision: InvestigationBranchDecision;
+  const setBranchDecision = (
+    selectedBranch: CancellationInvestigationBranch,
+    reason: string,
+    confidence: InvestigationBranchDecision['confidence'] = 'medium',
+  ) => {
+    branchDecision = {
+      strategyVersion: 'cancellation_investigation_v2',
+      selectedBranch,
+      confidence,
+      reason,
+      signals: {
+        totalCancelled: cancellationBreakdown.result.totalCancelled,
+        dominantReason: dominantCancellationReason,
+        dominantPaymentStatus: dominantPaymentIssue,
+        dominantItem,
+        dominantCategory,
+        dominantTimeWindow,
+        repeatedItem: repeatedItem
+          ? { item: repeatedItem[0], count: repeatedItem[1] }
+          : null,
+        narrowWindow: narrowWindow
+          ? {
+              from: narrowWindow.from.toISOString(),
+              to: narrowWindow.to.toISOString(),
+              count: narrowWindow.count,
+            }
+          : null,
+      },
+    };
+  };
 
   if (
     (hasDominantReason && reasonSuggestsPaymentCheck) ||
     hasDominantPaymentIssue
   ) {
+    setBranchDecision(
+      'payment_outcome_check',
+      hasDominantReason
+        ? `Dominant cancellation reason "${dominantCancellationReason?.value}" points to checkout/payment completion evidence.`
+        : `Dominant payment status "${dominantPaymentIssue?.value}" points to payment outcome evidence.`,
+    );
     const paymentStartMs = nowMs();
     const paymentStats = await runGetPaymentStatsTool({
       from: analytics.startAt,
@@ -487,6 +538,14 @@ const runCancellationInvestigation = async ({
     hasDominantCategory ||
     (repeatedItem && repeatedItem[1] >= 2)
   ) {
+    setBranchDecision(
+      'item_concentration_check',
+      hasDominantReason && reasonSuggestsItemCheck
+        ? `Dominant cancellation reason "${dominantCancellationReason?.value}" points to item availability evidence.`
+        : hasDominantCategory
+          ? `Cancelled evidence is concentrated in category "${dominantCategory.value}".`
+          : `Cancelled evidence repeats item "${dominantItem?.value ?? repeatedItem?.[0]}".`,
+    );
     const itemStartMs = nowMs();
     const itemPerformance = await runGetItemPerformanceTool({
       from: analytics.startAt,
@@ -531,6 +590,12 @@ const runCancellationInvestigation = async ({
         .join(', ')}.`,
     });
   } else if (hasDominantTimeWindow || narrowWindow) {
+    setBranchDecision(
+      'time_window_check',
+      hasDominantTimeWindow
+        ? `Cancelled orders are concentrated in the "${dominantTimeWindow.value}" operational window.`
+        : 'Cancelled orders cluster inside a narrow two-hour window.',
+    );
     const fallbackWindowStart = narrowWindow?.from ?? analytics.startAt;
     const fallbackWindowEnd = narrowWindow?.to ?? analytics.endAt;
     const windowStartMs = nowMs();
@@ -566,6 +631,11 @@ const runCancellationInvestigation = async ({
       resultSummary: `Found ${windowOrders.result?.length ?? 0} cancelled orders in the narrowed time window.`,
     });
   } else {
+    setBranchDecision(
+      'insufficient_signal',
+      'Cancelled order evidence did not cross any configured dominance threshold for payment, item/category, or time-window investigation.',
+      'low',
+    );
     steps.push({
       tool: 'no_extra_tool',
       args: {},
@@ -577,7 +647,9 @@ const runCancellationInvestigation = async ({
   }
 
   toolResults.investigationPlan = {
+    version: 'cancellation_investigation_v2',
     trigger: 'high_cancellation_rate',
+    branchDecision: branchDecision!,
     steps,
     constraints: [
       'Only conclude from supplied evidence.',
