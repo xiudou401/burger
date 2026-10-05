@@ -4,6 +4,7 @@ import { agentRunRepository } from '../repositories/agent-run.repository';
 import {
   getAdminAnalyticsSummary,
   getAdminDailyBrief,
+  type AdminDailyBrief,
   type AdminAnalyticsSummary,
 } from './admin-dashboard.service';
 import {
@@ -112,6 +113,49 @@ const estimateCostCents = (usage?: ModelUsage) => {
 
   return Number((inputCost + outputCost).toFixed(4));
 };
+
+const getHighestSeverity = (
+  insights: AdminInsightResponsePayload['insights'],
+  activeAlerts?: AnalyticsAlert[],
+): 'low' | 'medium' | 'high' => {
+  if (
+    insights.some((insight) => insight.severity === 'high') ||
+    activeAlerts?.some((alert) => alert.severity === 'high')
+  ) {
+    return 'high';
+  }
+
+  if (
+    insights.some((insight) => insight.severity === 'medium') ||
+    activeAlerts?.some((alert) => alert.severity === 'medium')
+  ) {
+    return 'medium';
+  }
+
+  return 'low';
+};
+
+const buildProductizedDailyBrief = ({
+  brief,
+  insight,
+  activeAlerts,
+}: {
+  brief: AdminDailyBrief;
+  insight: AdminInsightResponsePayload;
+  activeAlerts?: AnalyticsAlert[];
+}): NonNullable<AdminInsightResponsePayload['dailyBrief']> => ({
+  date: brief.date,
+  headline: insight.summary,
+  priority: getHighestSeverity(insight.insights, activeAlerts),
+  focusAreas: insight.insights.slice(0, 4).map((item) => ({
+    type: item.type,
+    severity: item.severity,
+    title: item.title,
+    evidence: item.evidence.slice(0, 3),
+    nextCheck: item.suggestedAction,
+  })),
+  nextChecks: brief.worthChecking.slice(0, 5),
+});
 
 const getLowestCategory = (analytics: AdminAnalyticsSummary) => {
   return [...analytics.categorySales].sort(
@@ -1389,6 +1433,11 @@ export const generateAdminDailyBrief = async (
       toolResults,
     });
     const parsed = AdminInsightResponseSchema.parse(modelResult.content);
+    const productizedDailyBrief = buildProductizedDailyBrief({
+      brief,
+      insight: parsed,
+      activeAlerts,
+    });
     const latencyMs = nowMs() - startMs;
     const agentRun = await agentRunRepository.create({
       agentName: ADMIN_INSIGHT_AGENT,
@@ -1420,6 +1469,7 @@ export const generateAdminDailyBrief = async (
 
     return {
       ...parsed,
+      dailyBrief: productizedDailyBrief,
       analytics,
       run: {
         id: String(agentRun._id),

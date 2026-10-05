@@ -278,6 +278,22 @@ describe('admin insight service', () => {
     expect(result.summary).toBe(
       'Yesterday needs attention on vegetarian availability.',
     );
+    expect(result.dailyBrief).toEqual({
+      date: dailyBrief.date,
+      headline: 'Yesterday needs attention on vegetarian availability.',
+      priority: 'medium',
+      focusAreas: [
+        {
+          type: 'opportunity',
+          severity: 'medium',
+          title: 'Vegetarian Burger needs a morning check',
+          evidence: ['Vegetarian Burger availability, placement, and pairing.'],
+          nextCheck:
+            'Check availability and placement before the lunch service.',
+        },
+      ],
+      nextChecks: dailyBrief.worthChecking,
+    });
     expect(result.run.toolsUsed).toEqual([
       'getAdminDailyBrief',
       'getAdminAnalyticsSummary',

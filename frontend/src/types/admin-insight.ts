@@ -34,12 +34,29 @@ export interface AdminInsightOrderEvidence {
   updatedAt: string;
 }
 
+export interface AdminInsightDailyBriefFocusArea {
+  type: 'opportunity' | 'risk' | 'trend';
+  severity: 'low' | 'medium' | 'high';
+  title: string;
+  evidence: string[];
+  nextCheck: string;
+}
+
+export interface AdminInsightDailyBrief {
+  date: string;
+  headline: string;
+  priority: 'low' | 'medium' | 'high';
+  focusAreas: AdminInsightDailyBriefFocusArea[];
+  nextChecks: string[];
+}
+
 export interface AdminInsightResponse {
   summary: string;
   insights: AdminInsightCard[];
   analytics: AdminAnalyticsSummary;
   alert?: AdminAnalyticsAlert;
   orderEvidence?: AdminInsightOrderEvidence[];
+  dailyBrief?: AdminInsightDailyBrief;
   run: AdminInsightRun;
 }
 

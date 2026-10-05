@@ -220,29 +220,71 @@ const AdminDashboard = () => {
                     <p className={classes.MetricLabel}>AI morning attention</p>
                     <h3>What to check today</h3>
                   </div>
-                  <span>{dailyBriefInsight.run.model}</span>
+                  <span>
+                    {dailyBriefInsight.dailyBrief
+                      ? `${dailyBriefInsight.dailyBrief.priority} priority`
+                      : dailyBriefInsight.run.model}
+                  </span>
                 </div>
-                <p>{dailyBriefInsight.summary}</p>
-                <div className={classes.InsightGrid}>
-                  {dailyBriefInsight.insights.map((insight) => (
-                    <article
-                      className={classes.InsightCard}
-                      key={`daily-${insight.type}-${insight.title}`}
-                    >
-                      <div className={classes.InsightMeta}>
-                        <span>{insight.type}</span>
-                        <b>{insight.severity}</b>
-                      </div>
-                      <h3>{insight.title}</h3>
+                {dailyBriefInsight.dailyBrief ? (
+                  <>
+                    <p>{dailyBriefInsight.dailyBrief.headline}</p>
+                    <div className={classes.DailyBriefFocusGrid}>
+                      {dailyBriefInsight.dailyBrief.focusAreas.map((area) => (
+                        <article
+                          className={classes.DailyBriefFocusCard}
+                          key={`daily-focus-${area.type}-${area.title}`}
+                        >
+                          <div className={classes.InsightMeta}>
+                            <span>{area.type}</span>
+                            <b>{area.severity}</b>
+                          </div>
+                          <h3>{area.title}</h3>
+                          <ul>
+                            {area.evidence.map((evidence) => (
+                              <li key={evidence}>{evidence}</li>
+                            ))}
+                          </ul>
+                          <p>{area.nextCheck}</p>
+                        </article>
+                      ))}
+                    </div>
+                    <div className={classes.DailyBriefNextChecks}>
+                      <p className={classes.MetricLabel}>Next checks</p>
                       <ul>
-                        {insight.evidence.map((evidence) => (
-                          <li key={evidence}>{evidence}</li>
-                        ))}
+                        {dailyBriefInsight.dailyBrief.nextChecks.map(
+                          (item) => (
+                            <li key={item}>{item}</li>
+                          ),
+                        )}
                       </ul>
-                      <p>{insight.suggestedAction}</p>
-                    </article>
-                  ))}
-                </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p>{dailyBriefInsight.summary}</p>
+                    <div className={classes.InsightGrid}>
+                      {dailyBriefInsight.insights.map((insight) => (
+                        <article
+                          className={classes.InsightCard}
+                          key={`daily-${insight.type}-${insight.title}`}
+                        >
+                          <div className={classes.InsightMeta}>
+                            <span>{insight.type}</span>
+                            <b>{insight.severity}</b>
+                          </div>
+                          <h3>{insight.title}</h3>
+                          <ul>
+                            {insight.evidence.map((evidence) => (
+                              <li key={evidence}>{evidence}</li>
+                            ))}
+                          </ul>
+                          <p>{insight.suggestedAction}</p>
+                        </article>
+                      ))}
+                    </div>
+                  </>
+                )}
               </article>
             )}
           </section>

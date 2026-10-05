@@ -61,11 +61,35 @@ export const AdminInsightOrderEvidenceSchema = z
   })
   .strict();
 
+export const AdminInsightDailyBriefSchema = z
+  .object({
+    date: z.string().trim().min(1).max(40),
+    headline: z.string().trim().min(1).max(220),
+    priority: z.enum(['low', 'medium', 'high']),
+    focusAreas: z
+      .array(
+        z
+          .object({
+            type: z.enum(['opportunity', 'risk', 'trend']),
+            severity: z.enum(['low', 'medium', 'high']),
+            title: z.string().trim().min(1).max(120),
+            evidence: z.array(z.string().trim().min(1).max(220)).min(1).max(3),
+            nextCheck: z.string().trim().min(1).max(260),
+          })
+          .strict(),
+      )
+      .min(1)
+      .max(4),
+    nextChecks: z.array(z.string().trim().min(1).max(260)).min(1).max(5),
+  })
+  .strict();
+
 export const AdminInsightResponseSchema = z
   .object({
     summary: z.string().trim().min(1).max(700),
     insights: z.array(AdminInsightCardSchema).min(1).max(4),
     orderEvidence: z.array(AdminInsightOrderEvidenceSchema).max(10).optional(),
+    dailyBrief: AdminInsightDailyBriefSchema.optional(),
   })
   .strict();
 
