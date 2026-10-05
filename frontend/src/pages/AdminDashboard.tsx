@@ -252,11 +252,9 @@ const AdminDashboard = () => {
                     <div className={classes.DailyBriefNextChecks}>
                       <p className={classes.MetricLabel}>Next checks</p>
                       <ul>
-                        {dailyBriefInsight.dailyBrief.nextChecks.map(
-                          (item) => (
-                            <li key={item}>{item}</li>
-                          ),
-                        )}
+                        {dailyBriefInsight.dailyBrief.nextChecks.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
                       </ul>
                     </div>
                   </>
