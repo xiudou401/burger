@@ -215,9 +215,13 @@ external AI spend.
 
 ## Screenshots
 
-| Menu                                      | Login                                       | Profile                                         |
-| ----------------------------------------- | ------------------------------------------- | ----------------------------------------------- |
-| ![Menu screen](docs/screenshots/menu.png) | ![Login screen](docs/screenshots/login.png) | ![Profile screen](docs/screenshots/profile.png) |
+| Storefront menu                               | Login                                       | Admin dashboard                                          |
+| --------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
+| ![Storefront menu](docs/screenshots/home.png) | ![Login screen](docs/screenshots/login.png) | ![Admin dashboard](docs/screenshots/admin-dashboard.png) |
+
+| Admin menu management                                     | Kitchen order board                                       |
+| --------------------------------------------------------- | --------------------------------------------------------- |
+| ![Admin menu management](docs/screenshots/admin-menu.png) | ![Kitchen order board](docs/screenshots/admin-orders.png) |
 
 ## Local Setup
 
