@@ -39,6 +39,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
   const [isPaying, setIsPaying] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isPayingRef = useRef(false);
   const checkoutAttemptKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
       : (quoteNotice ?? 'Secure checkout powered by Stripe');
 
   const handlePayClick = async () => {
-    if (items.length === 0 || isPaying || isAuthLoading) return;
+    if (items.length === 0 || isPayingRef.current || isAuthLoading) return;
 
     if (!isAuthenticated) {
       showToast({
@@ -87,6 +88,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
 
     setMessage(null);
     setError(null);
+    isPayingRef.current = true;
     setIsPaying(true);
 
     try {
@@ -106,6 +108,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
       setError(errorMessage);
       showToast({ message: errorMessage, tone: 'error' });
     } finally {
+      isPayingRef.current = false;
       setIsPaying(false);
     }
   };

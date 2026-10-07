@@ -120,4 +120,27 @@ describe('PaymentBar', () => {
       expect.any(String),
     );
   });
+
+  test('ignores repeated pay clicks while checkout is already in flight', async () => {
+    let resolveQuote!: (quote: typeof validatedQuote) => void;
+    validateQuoteForUserAction.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveQuote = resolve;
+      }),
+    );
+
+    render(<PaymentBar totalCents={1200} onOrderComplete={jest.fn()} />);
+
+    const payButton = screen.getByRole('button', { name: 'Pay with Stripe' });
+    fireEvent.click(payButton);
+    fireEvent.click(payButton);
+
+    expect(validateQuoteForUserAction).toHaveBeenCalledTimes(1);
+
+    resolveQuote(validatedQuote);
+
+    await waitFor(() => {
+      expect(createCheckoutOrder).toHaveBeenCalledTimes(1);
+    });
+  });
 });
