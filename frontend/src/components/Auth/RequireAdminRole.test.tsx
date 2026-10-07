@@ -31,6 +31,7 @@ const baseAuth: AuthContextValue = {
   accessToken: null,
   login: jest.fn(),
   updateUser: jest.fn(),
+  revalidateSession: async () => user('admin'),
   logout: jest.fn(),
   isAuthenticated: false,
   isAuthLoading: false,
@@ -62,18 +63,20 @@ describe('RequireAdminRole', () => {
     expect(screen.getByText('Navigate to /admin/login')).toBeInTheDocument();
   });
 
-  test('redirects staff users to order fulfillment routes', () => {
+  test('redirects staff users to order fulfillment routes', async () => {
     renderGuard({
       isAuthenticated: true,
       accessToken: 'access-token',
       user: user('staff'),
     });
 
-    expect(screen.getByText('Navigate to /admin/orders')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Navigate to /admin/orders'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Admin management')).not.toBeInTheDocument();
   });
 
-  test('redirects customers away from admin-only routes', () => {
+  test('redirects customers away from admin-only routes', async () => {
     renderGuard({
       isAuthenticated: true,
       accessToken: 'access-token',
@@ -81,18 +84,20 @@ describe('RequireAdminRole', () => {
     });
 
     expect(
-      screen.getByText('Navigate to /admin/login?error=Admin access required'),
+      await screen.findByText(
+        'Navigate to /admin/login?error=Admin access required',
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText('Admin management')).not.toBeInTheDocument();
   });
 
-  test('allows admin users into admin-only routes', () => {
+  test('allows admin users into admin-only routes', async () => {
     renderGuard({
       isAuthenticated: true,
       accessToken: 'access-token',
       user: user('admin'),
     });
 
-    expect(screen.getByText('Admin management')).toBeInTheDocument();
+    expect(await screen.findByText('Admin management')).toBeInTheDocument();
   });
 });

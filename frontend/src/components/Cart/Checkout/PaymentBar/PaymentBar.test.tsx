@@ -76,6 +76,7 @@ const authContext = {
   isAuthLoading: false,
   login: jest.fn(),
   updateUser: jest.fn(),
+  revalidateSession: jest.fn(),
   logout: jest.fn(),
 } satisfies AuthContextValue;
 

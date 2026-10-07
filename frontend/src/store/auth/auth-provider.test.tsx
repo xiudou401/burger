@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { AuthProvider } from './auth-provider';
 import { useAuth } from './hooks/useAuth';
 import { logout, restoreAuthSession } from '../../api/auth';
@@ -61,6 +61,7 @@ const AuthState = () => {
   const accessToken = useAuth((ctx) => ctx.accessToken);
   const isAuthenticated = useAuth((ctx) => ctx.isAuthenticated);
   const isAuthLoading = useAuth((ctx) => ctx.isAuthLoading);
+  const revalidateSession = useAuth((ctx) => ctx.revalidateSession);
 
   return (
     <div>
@@ -71,6 +72,9 @@ const AuthState = () => {
       <span data-testid="permissions">
         {(user?.permissions ?? []).join(',') || 'none'}
       </span>
+      <button type="button" onClick={() => void revalidateSession()}>
+        Revalidate session
+      </button>
     </div>
   );
 };
@@ -211,6 +215,37 @@ describe('AuthProvider lifecycle', () => {
     expect(screen.getByTestId('user')).toHaveTextContent('admin@example.com');
     expect(screen.getByTestId('permissions')).toHaveTextContent('manage_menu');
     expect(setApiAccessToken).toHaveBeenCalledWith('fresh-access-token');
+  });
+
+  test('revalidates the current session on demand', async () => {
+    jest
+      .mocked(restoreAuthSession)
+      .mockResolvedValueOnce({
+        accessToken: 'restored-access-token',
+        user: customerUser,
+      })
+      .mockResolvedValueOnce({
+        accessToken: 'revalidated-access-token',
+        user: adminUser,
+      });
+
+    renderAuthProvider();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('user')).toHaveTextContent('pat@example.com');
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Revalidate session' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('token')).toHaveTextContent(
+        'revalidated-access-token',
+      );
+    });
+
+    expect(screen.getByTestId('user')).toHaveTextContent('admin@example.com');
+    expect(screen.getByTestId('permissions')).toHaveTextContent('manage_menu');
+    expect(restoreAuthSession).toHaveBeenCalledTimes(2);
   });
 
   test('logs out when another tab broadcasts logout', async () => {

@@ -44,6 +44,16 @@ export const AuthProvider = ({ children }: Props) => {
     setUser(null);
   }, []);
 
+  const applyAuthSession = useCallback((token: string, user: User) => {
+    const normalizedUser = normalizeUser(user);
+
+    setApiAccessToken(token);
+    setAccessToken(token);
+    setUser(normalizedUser);
+
+    return normalizedUser;
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
     let isRestoreActive = true;
@@ -66,9 +76,7 @@ export const AuthProvider = ({ children }: Props) => {
 
         window.clearTimeout(timeoutId);
 
-        setApiAccessToken(res.accessToken);
-        setAccessToken(res.accessToken);
-        setUser(normalizeUser(res.user));
+        applyAuthSession(res.accessToken, res.user);
       } catch (error) {
         if (
           process.env.NODE_ENV === 'development' &&
@@ -104,7 +112,7 @@ export const AuthProvider = ({ children }: Props) => {
       isRestoreActive = false;
       window.clearTimeout(timeoutId);
     };
-  }, [clearAuthState]);
+  }, [applyAuthSession, clearAuthState]);
 
   useEffect(() => {
     const channel = createAuthChannel();
@@ -128,21 +136,28 @@ export const AuthProvider = ({ children }: Props) => {
 
   useEffect(() => {
     return subscribeToAuthSessionRefreshed(({ accessToken, user }) => {
-      setApiAccessToken(accessToken);
-      setAccessToken(accessToken);
-      setUser(normalizeUser(user));
+      applyAuthSession(accessToken, user);
     });
-  }, []);
+  }, [applyAuthSession]);
 
   const login = useCallback((token: string, user: User) => {
-    setApiAccessToken(token);
-    setAccessToken(token);
-    setUser(normalizeUser(user));
-  }, []);
+    applyAuthSession(token, user);
+  }, [applyAuthSession]);
 
   const updateUser = useCallback((user: User) => {
     setUser(normalizeUser(user));
   }, []);
+
+  const revalidateSession = useCallback(async () => {
+    try {
+      const res = await restoreAuthSession();
+
+      return applyAuthSession(res.accessToken, res.user);
+    } catch (error) {
+      clearAuthState();
+      throw error;
+    }
+  }, [applyAuthSession, clearAuthState]);
 
   const logout = useCallback(async () => {
     try {
@@ -166,11 +181,20 @@ export const AuthProvider = ({ children }: Props) => {
       accessToken,
       login,
       updateUser,
+      revalidateSession,
       logout,
       isAuthenticated: !!accessToken && !!user,
       isAuthLoading,
     }),
-    [user, accessToken, login, updateUser, logout, isAuthLoading],
+    [
+      user,
+      accessToken,
+      login,
+      updateUser,
+      revalidateSession,
+      logout,
+      isAuthLoading,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

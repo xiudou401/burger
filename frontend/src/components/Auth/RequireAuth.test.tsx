@@ -24,6 +24,7 @@ const baseAuth: AuthContextValue = {
   accessToken: null,
   login: jest.fn(),
   updateUser: jest.fn(),
+  revalidateSession: jest.fn(),
   logout: jest.fn(),
   isAuthenticated: false,
   isAuthLoading: false,

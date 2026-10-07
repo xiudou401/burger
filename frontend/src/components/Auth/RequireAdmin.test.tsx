@@ -31,6 +31,7 @@ const baseAuth: AuthContextValue = {
   accessToken: null,
   login: jest.fn(),
   updateUser: jest.fn(),
+  revalidateSession: async () => user('admin'),
   logout: jest.fn(),
   isAuthenticated: false,
   isAuthLoading: false,
@@ -62,7 +63,7 @@ describe('RequireAdmin', () => {
     expect(screen.getByText('Navigate to /admin/login')).toBeInTheDocument();
   });
 
-  test('redirects customers away from admin routes', () => {
+  test('redirects customers away from admin routes', async () => {
     renderGuard({
       isAuthenticated: true,
       accessToken: 'access-token',
@@ -70,21 +71,53 @@ describe('RequireAdmin', () => {
     });
 
     expect(
-      screen.getByText('Navigate to /admin/login?error=Admin access required'),
+      await screen.findByText(
+        'Navigate to /admin/login?error=Admin access required',
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText('Admin orders')).not.toBeInTheDocument();
   });
 
   test.each(['admin', 'staff'] as const)(
     'allows %s users into admin routes',
-    (role) => {
+    async (role) => {
       renderGuard({
         isAuthenticated: true,
         accessToken: 'access-token',
         user: user(role),
       });
 
-      expect(screen.getByText('Admin orders')).toBeInTheDocument();
+      expect(await screen.findByText('Admin orders')).toBeInTheDocument();
     },
   );
+
+  test('revalidates active admin users before rendering admin routes', async () => {
+    const revalidateSession = jest.fn().mockResolvedValue(user('admin'));
+
+    renderGuard({
+      isAuthenticated: true,
+      accessToken: 'access-token',
+      user: user('admin'),
+      revalidateSession,
+    });
+
+    expect(await screen.findByText('Admin orders')).toBeInTheDocument();
+    expect(revalidateSession).toHaveBeenCalledTimes(1);
+  });
+
+  test('redirects to admin login when active admin revalidation fails', async () => {
+    const revalidateSession = jest
+      .fn()
+      .mockRejectedValue(new Error('Account disabled'));
+
+    renderGuard({
+      isAuthenticated: true,
+      accessToken: 'access-token',
+      user: user('admin'),
+      revalidateSession,
+    });
+
+    expect(await screen.findByText('Navigate to /admin/login')).toBeInTheDocument();
+    expect(screen.queryByText('Admin orders')).not.toBeInTheDocument();
+  });
 });
