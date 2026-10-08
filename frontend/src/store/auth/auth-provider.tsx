@@ -140,9 +140,12 @@ export const AuthProvider = ({ children }: Props) => {
     });
   }, [applyAuthSession]);
 
-  const login = useCallback((token: string, user: User) => {
-    applyAuthSession(token, user);
-  }, [applyAuthSession]);
+  const login = useCallback(
+    (token: string, user: User) => {
+      applyAuthSession(token, user);
+    },
+    [applyAuthSession],
+  );
 
   const updateUser = useCallback((user: User) => {
     setUser(normalizeUser(user));

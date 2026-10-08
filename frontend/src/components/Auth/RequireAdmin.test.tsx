@@ -117,7 +117,9 @@ describe('RequireAdmin', () => {
       revalidateSession,
     });
 
-    expect(await screen.findByText('Navigate to /admin/login')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Navigate to /admin/login'),
+    ).toBeInTheDocument();
     expect(screen.queryByText('Admin orders')).not.toBeInTheDocument();
   });
 });

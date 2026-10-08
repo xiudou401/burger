@@ -1,4 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { AuthProvider } from './auth-provider';
 import { useAuth } from './hooks/useAuth';
 import { logout, restoreAuthSession } from '../../api/auth';
