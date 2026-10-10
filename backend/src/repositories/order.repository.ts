@@ -540,8 +540,8 @@ export const orderRepository = {
         _id: toObjectId(orderId),
         'payment.provider': 'stripe',
         'payment.providerPaymentId': sessionId,
-        status: { $ne: 'confirmed' },
-        'payment.status': { $ne: 'paid' },
+        status: 'pending_payment',
+        'payment.status': 'requires_payment',
       },
       {
         $set: {
@@ -574,8 +574,8 @@ export const orderRepository = {
       {
         'payment.provider': 'stripe',
         'payment.providerPaymentId': sessionId,
-        status: { $ne: 'confirmed' },
-        'payment.status': { $ne: 'paid' },
+        status: 'pending_payment',
+        'payment.status': 'requires_payment',
       },
       { $set: set },
       { new: true },
@@ -590,8 +590,8 @@ export const orderRepository = {
     return OrderModel.findOneAndUpdate(
       {
         _id: toObjectId(orderId),
-        status: { $ne: 'confirmed' },
-        'payment.status': { $ne: 'paid' },
+        status: 'pending_payment',
+        'payment.status': 'requires_payment',
       },
       {
         $set: {

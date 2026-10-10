@@ -766,6 +766,55 @@ describe('order service', () => {
     expect(result.payment?.paidAt).toBe(paidAt);
   });
 
+  test('does not revive cancelled orders from late paid Stripe webhooks', async () => {
+    const cancelledAt = new Date('2026-01-01T00:02:00.000Z');
+    const order = {
+      _id: orderId,
+      userId,
+      items: [],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'cancelled',
+      cancellationReason: 'customer_abandoned_checkout',
+      cancelledAt,
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'cancelled',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValueOnce(order as never)
+      .mockResolvedValueOnce(order as never);
+    jest
+      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mockResolvedValue(null);
+
+    const result = await markStripeCheckoutPaid({
+      id: 'cs_test_123',
+      payment_status: 'paid',
+      amount_total: 2400,
+      currency: 'aud',
+      metadata: { orderId },
+      client_reference_id: orderId,
+    });
+
+    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledWith(
+      orderId,
+      'cs_test_123',
+    );
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
+    expect(result.status).toBe('cancelled');
+    expect(result.payment?.status).toBe('cancelled');
+    expect(result.cancelledAt).toBe(cancelledAt);
+  });
+
   test('sends one confirmation email when paid Stripe webhooks race on the same order', async () => {
     const unpaidOrder = {
       _id: orderId,
