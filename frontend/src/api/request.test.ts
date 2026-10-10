@@ -9,16 +9,16 @@ const mockResponse = (
   return {
     ok: status >= 200 && status < 300,
     status,
-    json: jest.fn().mockResolvedValue(body),
-    text: jest.fn().mockResolvedValue(JSON.stringify(body)),
+    json: vi.fn().mockResolvedValue(body),
+    text: vi.fn().mockResolvedValue(JSON.stringify(body)),
   } as unknown as Response;
 };
 
 describe('authenticated request refresh', () => {
-  const fetchMock = jest.fn();
+  const fetchMock = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     clearAccessToken();
     setAccessToken('expired-access-token');
     global.fetch = fetchMock;
@@ -47,7 +47,7 @@ describe('authenticated request refresh', () => {
   });
 
   test('notifies the app when refresh is unauthorized', async () => {
-    const sessionExpired = jest.fn();
+    const sessionExpired = vi.fn();
     window.addEventListener('auth:session-expired', sessionExpired);
 
     fetchMock
@@ -74,7 +74,7 @@ describe('authenticated request refresh', () => {
   });
 
   test('publishes the refreshed access token and user before retrying', async () => {
-    const sessionRefreshed = jest.fn();
+    const sessionRefreshed = vi.fn();
     window.addEventListener('auth:session-refreshed', sessionRefreshed);
     const refreshedSession = {
       accessToken: 'new-access-token',
@@ -133,7 +133,7 @@ describe('authenticated request refresh', () => {
   });
 
   test('retries a concurrent refresh conflict without expiring auth state', async () => {
-    const sessionExpired = jest.fn();
+    const sessionExpired = vi.fn();
     window.addEventListener('auth:session-expired', sessionExpired);
     const refreshedSession = {
       accessToken: 'new-access-token',
@@ -263,7 +263,7 @@ describe('authenticated request refresh', () => {
   });
 
   test('surfaces a refresh server error instead of the original 401', async () => {
-    const sessionExpired = jest.fn();
+    const sessionExpired = vi.fn();
     window.addEventListener('auth:session-expired', sessionExpired);
 
     fetchMock
@@ -284,7 +284,7 @@ describe('authenticated request refresh', () => {
   });
 
   test('surfaces a refresh network error instead of the original 401', async () => {
-    const sessionExpired = jest.fn();
+    const sessionExpired = vi.fn();
     window.addEventListener('auth:session-expired', sessionExpired);
 
     fetchMock

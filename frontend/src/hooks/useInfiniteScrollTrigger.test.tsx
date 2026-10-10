@@ -1,11 +1,12 @@
 import { act, render } from '@testing-library/react';
+import type { Mock } from 'vitest';
 import { useInfiniteScrollTrigger } from './useInfiniteScrollTrigger';
 
 type HookProps = Parameters<typeof useInfiniteScrollTrigger>[0];
 
 let observerCallback: IntersectionObserverCallback | null = null;
-let observeMock: jest.Mock;
-let disconnectMock: jest.Mock;
+let observeMock: Mock;
+let disconnectMock: Mock;
 
 class MockIntersectionObserver implements IntersectionObserver {
   readonly root: Element | Document | null = null;
@@ -18,8 +19,8 @@ class MockIntersectionObserver implements IntersectionObserver {
 
   disconnect = disconnectMock;
   observe = observeMock;
-  takeRecords = jest.fn(() => []);
-  unobserve = jest.fn();
+  takeRecords = vi.fn(() => []);
+  unobserve = vi.fn();
 }
 
 const triggerIntersection = (isIntersecting = true) => {
@@ -49,7 +50,7 @@ const renderHookHarness = (overrideProps: Partial<HookProps> = {}) => {
     isLoading: false,
     loadedPage: 1,
     requestedPage: 1,
-    onLoadMore: jest.fn(),
+    onLoadMore: vi.fn(),
     ...overrideProps,
   };
 
@@ -63,12 +64,12 @@ describe('useInfiniteScrollTrigger', () => {
 
   beforeEach(() => {
     observerCallback = null;
-    observeMock = jest.fn();
-    disconnectMock = jest.fn();
+    observeMock = vi.fn();
+    disconnectMock = vi.fn();
   });
 
   it('does not observe or trigger when more items cannot be loaded', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderHookHarness({ canLoadMore: false, onLoadMore });
 
@@ -77,7 +78,7 @@ describe('useInfiniteScrollTrigger', () => {
   });
 
   it('does not observe or trigger while loading', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderHookHarness({ isLoading: true, onLoadMore });
 
@@ -86,7 +87,7 @@ describe('useInfiniteScrollTrigger', () => {
   });
 
   it('does not load when the requested page has not finished loading', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderHookHarness({ loadedPage: 1, requestedPage: 2, onLoadMore });
 
@@ -98,7 +99,7 @@ describe('useInfiniteScrollTrigger', () => {
   });
 
   it('loads more when the sentinel enters the viewport', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderHookHarness({ onLoadMore });
 
@@ -110,7 +111,7 @@ describe('useInfiniteScrollTrigger', () => {
   });
 
   it('does not repeatedly load during the same loading cycle', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
 
     renderHookHarness({ onLoadMore });
 
@@ -123,7 +124,7 @@ describe('useInfiniteScrollTrigger', () => {
   });
 
   it('releases the load lock after loading finishes', () => {
-    const onLoadMore = jest.fn();
+    const onLoadMore = vi.fn();
     const { rerender } = renderHookHarness({ onLoadMore });
 
     act(() => {

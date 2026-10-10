@@ -1,6 +1,6 @@
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
 
-const configuredApiUrl = process.env.REACT_APP_API_URL?.trim();
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 
 export const API_ORIGIN = configuredApiUrl
   ? trimTrailingSlash(configuredApiUrl)

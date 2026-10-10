@@ -10,8 +10,8 @@ import { validateCart } from '../../../api/cart';
 import { ApiError } from '../../../api/request';
 import { useQuoteValidationRequest } from './useQuoteValidationRequest';
 
-jest.mock('../../../api/cart', () => ({
-  validateCart: jest.fn(),
+vi.mock('../../../api/cart', () => ({
+  validateCart: vi.fn(),
 }));
 
 interface HarnessProps {
@@ -55,7 +55,7 @@ const Harness = ({
 
 afterEach(() => {
   delete document.body.dataset.quoteResult;
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test('rejects when the menu version is not available', async () => {
@@ -72,10 +72,9 @@ test('rejects when the menu version is not available', async () => {
 });
 
 test('refreshes and retries after a menu version conflict', async () => {
-  const refreshMenuVersion = jest.fn().mockResolvedValue(2);
+  const refreshMenuVersion = vi.fn().mockResolvedValue(2);
 
-  jest
-    .mocked(validateCart)
+  vi.mocked(validateCart)
     .mockRejectedValueOnce(
       new ApiError(HTTP_STATUS.CONFLICT, { message: 'Menu updated' }),
     )
@@ -120,9 +119,9 @@ test('does not treat a local cart change as a menu version conflict', async () =
   }>((resolve) => {
     resolveValidation = resolve;
   });
-  const refreshMenuVersion = jest.fn().mockResolvedValue(2);
+  const refreshMenuVersion = vi.fn().mockResolvedValue(2);
 
-  jest.mocked(validateCart).mockReturnValue(validation);
+  vi.mocked(validateCart).mockReturnValue(validation);
 
   const { rerender } = render(
     <Harness menuVersion={1} refreshMenuVersion={refreshMenuVersion} />,

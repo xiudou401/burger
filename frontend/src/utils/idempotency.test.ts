@@ -11,7 +11,7 @@ describe('createCheckoutAttemptKey', () => {
 
   test('falls back to an RFC4122-style v4 UUID', () => {
     const key = createCheckoutAttemptKey({
-      randomUUID: undefined,
+      randomUUID: null as never,
       random: () => 0,
     });
 

@@ -19,8 +19,8 @@ import {
 } from '../../api/auth-token';
 import { createAuthChannel } from './auth-channel';
 
-jest.mock('use-context-selector', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
+vi.mock('use-context-selector', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
 
   return {
     createContext: React.createContext,
@@ -31,19 +31,19 @@ jest.mock('use-context-selector', () => {
   };
 });
 
-jest.mock('../../api/auth', () => ({
-  restoreAuthSession: jest.fn(),
-  logout: jest.fn(),
+vi.mock('../../api/auth', () => ({
+  restoreAuthSession: vi.fn(),
+  logout: vi.fn(),
 }));
 
-jest.mock('../../api/auth-token', () => ({
-  clearAccessToken: jest.fn(),
-  setAccessToken: jest.fn(),
+vi.mock('../../api/auth-token', () => ({
+  clearAccessToken: vi.fn(),
+  setAccessToken: vi.fn(),
 }));
 
-jest.mock('./auth-channel', () => ({
-  broadcastAuthLogout: jest.fn(),
-  createAuthChannel: jest.fn(),
+vi.mock('./auth-channel', () => ({
+  broadcastAuthLogout: vi.fn(),
+  createAuthChannel: vi.fn(),
 }));
 
 const customerUser = {
@@ -95,26 +95,26 @@ const renderAuthProvider = () => {
 
 describe('AuthProvider lifecycle', () => {
   const authChannel = {
-    close: jest.fn(),
+    close: vi.fn(),
     onmessage: null as ((event: MessageEvent) => void) | null,
-    postMessage: jest.fn(),
+    postMessage: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     authChannel.close.mockClear();
     authChannel.postMessage.mockClear();
     authChannel.onmessage = null;
-    jest.mocked(createAuthChannel).mockReturnValue(authChannel as never);
-    jest.mocked(logout).mockResolvedValue(undefined);
+    vi.mocked(createAuthChannel).mockReturnValue(authChannel as never);
+    vi.mocked(logout).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   test('restores an authenticated session on startup', async () => {
-    jest.mocked(restoreAuthSession).mockResolvedValue({
+    vi.mocked(restoreAuthSession).mockResolvedValue({
       accessToken: 'restored-access-token',
       user: customerUser,
     });
@@ -137,7 +137,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('keeps the user logged out when startup refresh is unauthorized', async () => {
-    jest.mocked(restoreAuthSession).mockRejectedValue(
+    vi.mocked(restoreAuthSession).mockRejectedValue(
       new ApiError(401, {
         message: 'Session expired',
       }),
@@ -156,17 +156,17 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('stops auth loading if startup refresh does not settle', () => {
-    jest.useFakeTimers();
-    jest
-      .mocked(restoreAuthSession)
-      .mockReturnValue(new Promise(() => undefined) as never);
+    vi.useFakeTimers();
+    vi.mocked(restoreAuthSession).mockReturnValue(
+      new Promise(() => undefined) as never,
+    );
 
     renderAuthProvider();
 
     expect(screen.getByTestId('loading')).toHaveTextContent('true');
 
     act(() => {
-      jest.advanceTimersByTime(12_000);
+      vi.advanceTimersByTime(12_000);
     });
 
     expect(screen.getByTestId('loading')).toHaveTextContent('false');
@@ -175,7 +175,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('clears auth state when the request layer reports session expiry', async () => {
-    jest.mocked(restoreAuthSession).mockResolvedValue({
+    vi.mocked(restoreAuthSession).mockResolvedValue({
       accessToken: 'restored-access-token',
       user: customerUser,
     });
@@ -197,7 +197,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('updates auth state when the request layer refreshes the session', async () => {
-    jest.mocked(restoreAuthSession).mockRejectedValue(
+    vi.mocked(restoreAuthSession).mockRejectedValue(
       new ApiError(401, {
         message: 'Session expired',
       }),
@@ -224,8 +224,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('revalidates the current session on demand', async () => {
-    jest
-      .mocked(restoreAuthSession)
+    vi.mocked(restoreAuthSession)
       .mockResolvedValueOnce({
         accessToken: 'restored-access-token',
         user: customerUser,
@@ -255,7 +254,7 @@ describe('AuthProvider lifecycle', () => {
   });
 
   test('logs out when another tab broadcasts logout', async () => {
-    jest.mocked(restoreAuthSession).mockResolvedValue({
+    vi.mocked(restoreAuthSession).mockResolvedValue({
       accessToken: 'restored-access-token',
       user: customerUser,
     });

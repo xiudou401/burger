@@ -90,7 +90,7 @@ describe('useDialogA11y', () => {
   });
 
   it('calls onClose when Escape is pressed', () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
 
     render(<DialogHarness onClose={onClose} />);
 

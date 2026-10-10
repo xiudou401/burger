@@ -4,18 +4,14 @@ import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { AuthContextValue } from '../../store/auth/auth-context';
 import type { User } from '../../types/auth';
 
-jest.mock(
-  'react-router-dom',
-  () => ({
-    Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
-    Outlet: () => <div>Admin orders</div>,
-    useLocation: () => ({ pathname: '/admin/orders' }),
-  }),
-  { virtual: true },
-);
+vi.mock('react-router-dom', () => ({
+  Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
+  Outlet: () => <div>Admin orders</div>,
+  useLocation: () => ({ pathname: '/admin/orders' }),
+}));
 
-jest.mock('../../store/auth/hooks/useAuth', () => ({
-  useAuth: jest.fn(),
+vi.mock('../../store/auth/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
 }));
 
 const user = (role: User['role']): User => ({
@@ -29,24 +25,24 @@ const user = (role: User['role']): User => ({
 const baseAuth: AuthContextValue = {
   user: null,
   accessToken: null,
-  login: jest.fn(),
-  updateUser: jest.fn(),
+  login: vi.fn(),
+  updateUser: vi.fn(),
   revalidateSession: async () => user('admin'),
-  logout: jest.fn(),
+  logout: vi.fn(),
   isAuthenticated: false,
   isAuthLoading: false,
 };
 
 const renderGuard = (auth: Partial<AuthContextValue>) => {
   const authValue = { ...baseAuth, ...auth };
-  jest.mocked(useAuth).mockImplementation((selector) => selector(authValue));
+  vi.mocked(useAuth).mockImplementation((selector) => selector(authValue));
 
   return render(<RequireAdmin />);
 };
 
 describe('RequireAdmin', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('shows a loading fallback while auth state is loading', () => {
@@ -92,7 +88,7 @@ describe('RequireAdmin', () => {
   );
 
   test('revalidates active admin users before rendering admin routes', async () => {
-    const revalidateSession = jest.fn().mockResolvedValue(user('admin'));
+    const revalidateSession = vi.fn().mockResolvedValue(user('admin'));
 
     renderGuard({
       isAuthenticated: true,
@@ -106,7 +102,7 @@ describe('RequireAdmin', () => {
   });
 
   test('redirects to admin login when active admin revalidation fails', async () => {
-    const revalidateSession = jest
+    const revalidateSession = vi
       .fn()
       .mockRejectedValue(new Error('Account disabled'));
 

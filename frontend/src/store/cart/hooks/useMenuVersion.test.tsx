@@ -3,22 +3,24 @@ import { fetchMenuVersion } from '../../../api/menu-version';
 import { connectMenuRealtime } from '../../../api/realtime';
 import { useMenuVersion } from './useMenuVersion';
 
-jest.mock('../../../api/menu-version', () => ({
-  fetchMenuVersion: jest.fn(),
+vi.mock('../../../api/menu-version', () => ({
+  fetchMenuVersion: vi.fn(),
 }));
 
-jest.mock('../../../api/realtime', () => ({
-  connectMenuRealtime: jest.fn(),
+vi.mock('../../../api/realtime', () => ({
+  connectMenuRealtime: vi.fn(),
 }));
 
-const disconnect = jest.fn();
+const disconnect = vi.fn();
 const mockSocket = () =>
   ({ disconnect }) as unknown as ReturnType<typeof connectMenuRealtime>;
 
 beforeEach(() => {
-  jest.useRealTimers();
-  disconnect.mockClear();
-  jest.mocked(connectMenuRealtime).mockReturnValue(mockSocket());
+  vi.useRealTimers();
+  vi.mocked(fetchMenuVersion).mockReset();
+  vi.mocked(connectMenuRealtime).mockReset();
+  disconnect.mockReset();
+  vi.mocked(connectMenuRealtime).mockReturnValue(mockSocket());
 });
 
 const deferred = <T,>() => {
@@ -52,8 +54,7 @@ test('does not let an older response overwrite a newer menu version', async () =
   const olderRequest = deferred<number>();
   const newerRequest = deferred<number>();
 
-  jest
-    .mocked(fetchMenuVersion)
+  vi.mocked(fetchMenuVersion)
     .mockReturnValueOnce(olderRequest.promise)
     .mockReturnValueOnce(newerRequest.promise);
 
@@ -79,8 +80,7 @@ test('keeps an earlier successful result when a later request fails', async () =
   const earlierRequest = deferred<number>();
   const laterRequest = deferred<number>();
 
-  jest
-    .mocked(fetchMenuVersion)
+  vi.mocked(fetchMenuVersion)
     .mockReturnValueOnce(earlierRequest.promise)
     .mockReturnValueOnce(laterRequest.promise);
 
@@ -109,8 +109,8 @@ test('updates menu version from realtime menu events', async () => {
   const initialRequest = deferred<number>();
   let handlers: Parameters<typeof connectMenuRealtime>[0] | null = null;
 
-  jest.mocked(fetchMenuVersion).mockReturnValueOnce(initialRequest.promise);
-  jest.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
+  vi.mocked(fetchMenuVersion).mockReturnValueOnce(initialRequest.promise);
+  vi.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
     handlers = nextHandlers;
     return mockSocket();
   });
@@ -131,11 +131,11 @@ test('updates menu version from realtime menu events', async () => {
 });
 
 test('only starts fallback polling when realtime disconnects', async () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 
   let handlers: Parameters<typeof connectMenuRealtime>[0] | null = null;
-  jest.mocked(fetchMenuVersion).mockResolvedValue(21);
-  jest.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
+  vi.mocked(fetchMenuVersion).mockResolvedValue(21);
+  vi.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
     handlers = nextHandlers;
     return mockSocket();
   });
@@ -145,7 +145,7 @@ test('only starts fallback polling when realtime disconnects', async () => {
   expect(fetchMenuVersion).toHaveBeenCalledTimes(1);
 
   await act(async () => {
-    jest.advanceTimersByTime(30_000);
+    vi.advanceTimersByTime(30_000);
     await Promise.resolve();
   });
 
@@ -159,7 +159,7 @@ test('only starts fallback polling when realtime disconnects', async () => {
   expect(fetchMenuVersion).toHaveBeenCalledTimes(2);
 
   await act(async () => {
-    jest.advanceTimersByTime(30_000);
+    vi.advanceTimersByTime(30_000);
     await Promise.resolve();
   });
 
@@ -173,7 +173,7 @@ test('only starts fallback polling when realtime disconnects', async () => {
   expect(fetchMenuVersion).toHaveBeenCalledTimes(4);
 
   await act(async () => {
-    jest.advanceTimersByTime(30_000);
+    vi.advanceTimersByTime(30_000);
     await Promise.resolve();
   });
 
@@ -181,18 +181,17 @@ test('only starts fallback polling when realtime disconnects', async () => {
 });
 
 test('does not restart fallback polling when a reconnect aborts an in-flight fallback request', async () => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 
   const initialRequest = deferred<number>();
   const fallbackRequest = deferred<number>();
   let handlers: Parameters<typeof connectMenuRealtime>[0] | null = null;
 
-  jest
-    .mocked(fetchMenuVersion)
+  vi.mocked(fetchMenuVersion)
     .mockReturnValueOnce(initialRequest.promise)
     .mockReturnValueOnce(fallbackRequest.promise)
     .mockResolvedValue(31);
-  jest.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
+  vi.mocked(connectMenuRealtime).mockImplementation((nextHandlers) => {
     handlers = nextHandlers;
     return mockSocket();
   });
@@ -229,7 +228,7 @@ test('does not restart fallback polling when a reconnect aborts an in-flight fal
   });
 
   await act(async () => {
-    jest.advanceTimersByTime(30_000);
+    vi.advanceTimersByTime(30_000);
     await Promise.resolve();
   });
 

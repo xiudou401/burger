@@ -7,29 +7,25 @@ import { useToast } from '../../../UI/Toast/ToastContext';
 import type { CartContextValue } from '../../../../types/cart';
 import type { AuthContextValue } from '../../../../store/auth/auth-context';
 
-jest.mock(
-  'react-router-dom',
-  () => ({
-    useLocation: () => ({ pathname: '/', search: '' }),
-    useNavigate: () => jest.fn(),
-  }),
-  { virtual: true },
-);
-
-jest.mock('../../../../api/orders', () => ({
-  createCheckoutOrder: jest.fn(),
+vi.mock('react-router-dom', () => ({
+  useLocation: () => ({ pathname: '/', search: '' }),
+  useNavigate: () => vi.fn(),
 }));
 
-jest.mock('../../../../store/cart/hooks/useCartSelector', () => ({
-  useCartSelector: jest.fn(),
+vi.mock('../../../../api/orders', () => ({
+  createCheckoutOrder: vi.fn(),
 }));
 
-jest.mock('../../../../store/auth/hooks/useAuth', () => ({
-  useAuth: jest.fn(),
+vi.mock('../../../../store/cart/hooks/useCartSelector', () => ({
+  useCartSelector: vi.fn(),
 }));
 
-jest.mock('../../../UI/Toast/ToastContext', () => ({
-  useToast: jest.fn(),
+vi.mock('../../../../store/auth/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
+}));
+
+vi.mock('../../../UI/Toast/ToastContext', () => ({
+  useToast: vi.fn(),
 }));
 
 const cartItem = {
@@ -44,12 +40,12 @@ const validatedQuote = {
   ts: Date.now(),
 };
 
-const validateQuoteForUserAction = jest.fn();
+const validateQuoteForUserAction = vi.fn();
 
 const cartContext: CartContextValue = {
   items: [cartItem],
   totalQuantity: 2,
-  cartDispatch: jest.fn(),
+  cartDispatch: vi.fn(),
   menuVersion: 1,
   quote: null,
   quoteError: null,
@@ -59,7 +55,7 @@ const cartContext: CartContextValue = {
   quoteMismatch: false,
   displayTotalCents: 1200,
   validateQuoteForUserAction,
-  clearQuote: jest.fn(),
+  clearQuote: vi.fn(),
 };
 
 const authContext = {
@@ -74,37 +70,35 @@ const authContext = {
   accessToken: 'access-token',
   isAuthenticated: true,
   isAuthLoading: false,
-  login: jest.fn(),
-  updateUser: jest.fn(),
-  revalidateSession: jest.fn(),
-  logout: jest.fn(),
+  login: vi.fn(),
+  updateUser: vi.fn(),
+  revalidateSession: vi.fn(),
+  logout: vi.fn(),
 } satisfies AuthContextValue;
 
 describe('PaymentBar', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     validateQuoteForUserAction.mockResolvedValue(validatedQuote);
-    jest
-      .mocked(useCartSelector)
-      .mockImplementation((selector) => selector(cartContext));
-    jest
-      .mocked(useAuth)
-      .mockImplementation((selector) => selector(authContext));
-    jest.mocked(useToast).mockReturnValue({ showToast: jest.fn() });
-    jest.mocked(createCheckoutOrder).mockResolvedValue({
+    vi.mocked(useCartSelector).mockImplementation((selector) =>
+      selector(cartContext),
+    );
+    vi.mocked(useAuth).mockImplementation((selector) => selector(authContext));
+    vi.mocked(useToast).mockReturnValue({ showToast: vi.fn() });
+    vi.mocked(createCheckoutOrder).mockResolvedValue({
       checkoutUrl: 'https://checkout.stripe.test/session',
       order: {} as never,
     });
     Object.defineProperty(window, 'location', {
       configurable: true,
       value: {
-        assign: jest.fn(),
+        assign: vi.fn(),
       },
     });
   });
 
   test('uses the menu version returned by the validated quote when checking out', async () => {
-    render(<PaymentBar totalCents={1200} onOrderComplete={jest.fn()} />);
+    render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
 
@@ -130,7 +124,7 @@ describe('PaymentBar', () => {
       }),
     );
 
-    render(<PaymentBar totalCents={1200} onOrderComplete={jest.fn()} />);
+    render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
 
     const payButton = screen.getByRole('button', { name: 'Pay with Stripe' });
     fireEvent.click(payButton);

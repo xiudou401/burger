@@ -7,7 +7,7 @@ import {
 
 describe('auth session events', () => {
   test('notifies subscribers when the current session expires', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const unsubscribe = subscribeToAuthSessionExpired(listener);
 
     notifyAuthSessionExpired();
@@ -21,7 +21,7 @@ describe('auth session events', () => {
   });
 
   test('provides refreshed auth state to subscribers', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const session = {
       accessToken: 'new-access-token',
       user: {
