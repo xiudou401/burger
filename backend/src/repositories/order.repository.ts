@@ -530,6 +530,78 @@ export const orderRepository = {
     }).exec();
   },
 
+  markStripeCheckoutPaidIfUnpaid(orderId: string, sessionId: string) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        'payment.provider': 'stripe',
+        'payment.providerPaymentId': sessionId,
+        status: { $ne: 'confirmed' },
+        'payment.status': { $ne: 'paid' },
+      },
+      {
+        $set: {
+          status: 'confirmed',
+          'payment.status': 'paid',
+          'payment.paidAt': new Date(),
+        },
+      },
+      { new: true },
+    ).exec();
+  },
+
+  markStripeCheckoutFailedIfNotPaid(
+    sessionId: string,
+    paymentStatus: Extract<PaymentStatus, 'failed' | 'cancelled'>,
+    cancellationReason?: CancellationReason,
+  ) {
+    const set: Record<string, unknown> = {
+      'payment.status': paymentStatus,
+    };
+
+    if (paymentStatus === 'cancelled') {
+      set.status = 'cancelled';
+      set.cancellationReason =
+        cancellationReason ?? 'customer_abandoned_checkout';
+      set.cancelledAt = new Date();
+    }
+
+    return OrderModel.findOneAndUpdate(
+      {
+        'payment.provider': 'stripe',
+        'payment.providerPaymentId': sessionId,
+        status: { $ne: 'confirmed' },
+        'payment.status': { $ne: 'paid' },
+      },
+      { $set: set },
+      { new: true },
+    ).exec();
+  },
+
+  markStripeOrderFailedIfNotPaid(orderId: string) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: { $ne: 'confirmed' },
+        'payment.status': { $ne: 'paid' },
+      },
+      {
+        $set: {
+          'payment.status': 'failed',
+        },
+      },
+      { new: true },
+    ).exec();
+  },
+
   findCheckoutByIdempotencyKey(userId: string, idempotencyKey: string) {
     if (!isObjectId(userId)) {
       return Promise.resolve(null);

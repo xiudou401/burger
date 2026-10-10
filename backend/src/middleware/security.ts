@@ -8,10 +8,33 @@ const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 const HOUR_MS = 60 * 60 * 1000;
 const CSRF_PROTECTION_HEADER = 'X-CSRF-Protection';
 const CSRF_PROTECTION_VALUE = '1';
+const DEFAULT_MENU_IMAGES_PUBLIC_BASE_URL =
+  'https://d10n1zpv4omecm.cloudfront.net';
 const trustedOrigins = new Set(env.TRUSTED_ORIGINS);
 const isProduction = process.env.NODE_ENV === 'production';
 
+const getImageSourceOrigin = (url: string) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return undefined;
+  }
+};
+
+const menuImageSources = Array.from(
+  new Set(
+    [DEFAULT_MENU_IMAGES_PUBLIC_BASE_URL, env.S3_MENU_IMAGES_PUBLIC_BASE_URL]
+      .map((url) => (url ? getImageSourceOrigin(url) : undefined))
+      .filter((origin): origin is string => Boolean(origin)),
+  ),
+);
+
 export const securityHeaders = helmet({
+  contentSecurityPolicy: {
+    directives: {
+      imgSrc: ["'self'", 'data:', ...menuImageSources],
+    },
+  },
   crossOriginResourcePolicy: false,
   strictTransportSecurity: isProduction
     ? { maxAge: 31536000, includeSubDomains: true }

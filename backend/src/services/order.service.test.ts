@@ -44,6 +44,9 @@ jest.mock('../repositories/order.repository', () => ({
     findById: jest.fn(),
     findCheckoutByIdempotencyKey: jest.fn(),
     findByStripeSessionId: jest.fn(),
+    markStripeCheckoutPaidIfUnpaid: jest.fn(),
+    markStripeCheckoutFailedIfNotPaid: jest.fn(),
+    markStripeOrderFailedIfNotPaid: jest.fn(),
     listAll: jest.fn(),
     save: jest.fn(),
   },
@@ -675,6 +678,19 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.findByStripeSessionId)
       .mockResolvedValue(order as never);
+    const paidAt = new Date('2026-01-01T00:01:00.000Z');
+    const paidOrder = {
+      ...order,
+      status: 'confirmed',
+      payment: {
+        ...order.payment,
+        status: 'paid',
+        paidAt,
+      },
+    };
+    jest
+      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mockResolvedValue(paidOrder as never);
     jest.mocked(userRepository.findLeanById).mockResolvedValue({
       email: 'pat@example.com',
     } as never);
@@ -688,14 +704,17 @@ describe('order service', () => {
       client_reference_id: orderId,
     });
 
-    expect(order.status).toBe('confirmed');
-    expect(order.payment.status).toBe('paid');
-    expect(order.payment.paidAt).toBeInstanceOf(Date);
-    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledWith(
+      orderId,
+      'cs_test_123',
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
       expect.objectContaining({ orderId, totalCents: 2400 }),
     );
     expect(result.status).toBe('confirmed');
+    expect(result.payment?.status).toBe('paid');
+    expect(result.payment?.paidAt).toBe(paidAt);
   });
 
   test('does not resend confirmation email for repeated paid Stripe webhooks', async () => {
@@ -741,9 +760,81 @@ describe('order service', () => {
     });
 
     expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
+  });
+
+  test('sends one confirmation email when paid Stripe webhooks race on the same order', async () => {
+    const unpaidOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId,
+          name: 'Classic Burger',
+          priceCents: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    const paidAt = new Date('2026-01-01T00:01:00.000Z');
+    const paidOrder = {
+      ...unpaidOrder,
+      status: 'confirmed',
+      payment: {
+        ...unpaidOrder.payment,
+        status: 'paid',
+        paidAt,
+      },
+    };
+    const session = {
+      id: 'cs_test_123',
+      payment_status: 'paid',
+      amount_total: 2400,
+      currency: 'aud',
+      metadata: { orderId },
+      client_reference_id: orderId,
+    } as const;
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValueOnce(unpaidOrder as never)
+      .mockResolvedValueOnce(unpaidOrder as never)
+      .mockResolvedValueOnce(paidOrder as never);
+    jest
+      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mockResolvedValueOnce(paidOrder as never)
+      .mockResolvedValueOnce(null);
+    jest.mocked(userRepository.findLeanById).mockResolvedValue({
+      email: 'pat@example.com',
+    } as never);
+
+    const [firstResult, secondResult] = await Promise.all([
+      markStripeCheckoutPaid(session),
+      markStripeCheckoutPaid(session),
+    ]);
+
+    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledTimes(
+      2,
+    );
+    expect(sendOrderConfirmationEmail).toHaveBeenCalledTimes(1);
+    expect(firstResult.payment?.status).toBe('paid');
+    expect(secondResult.payment?.status).toBe('paid');
   });
 
   test('rejects completed Stripe sessions that do not match the order amount', async () => {
@@ -806,20 +897,34 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.findByStripeSessionId)
       .mockResolvedValue(order as never);
+    const cancelledAt = new Date('2026-01-01T00:02:00.000Z');
+    const cancelledOrder = {
+      ...order,
+      status: 'cancelled',
+      cancellationReason: 'customer_abandoned_checkout',
+      cancelledAt,
+      payment: {
+        ...order.payment,
+        status: 'cancelled',
+      },
+    };
+    jest
+      .mocked(orderRepository.markStripeCheckoutFailedIfNotPaid)
+      .mockResolvedValue(cancelledOrder as never);
 
     const result = await markStripeCheckoutFailed('cs_test_123', 'cancelled');
 
-    expect(order.status).toBe('cancelled');
-    expect(order.payment.status).toBe('cancelled');
-    expect(orderRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
-        cancellationReason: 'customer_abandoned_checkout',
-        cancelledAt: expect.any(Date),
-      }),
+    expect(
+      orderRepository.markStripeCheckoutFailedIfNotPaid,
+    ).toHaveBeenCalledWith(
+      'cs_test_123',
+      'cancelled',
+      undefined,
     );
+    expect(orderRepository.save).not.toHaveBeenCalled();
     expect(result.payment?.status).toBe('cancelled');
     expect(result.cancellationReason).toBe('customer_abandoned_checkout');
-    expect(result.cancelledAt).toBeInstanceOf(Date);
+    expect(result.cancelledAt).toBe(cancelledAt);
   });
 
   test('ignores late failed checkout events for already paid orders', async () => {
@@ -852,6 +957,9 @@ describe('order service', () => {
     expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(
+      orderRepository.markStripeCheckoutFailedIfNotPaid,
+    ).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
@@ -876,11 +984,23 @@ describe('order service', () => {
     };
 
     jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
+    const failedOrder = {
+      ...order,
+      payment: {
+        ...order.payment,
+        status: 'failed',
+      },
+    };
+    jest
+      .mocked(orderRepository.markStripeOrderFailedIfNotPaid)
+      .mockResolvedValue(failedOrder as never);
 
     const result = await markStripeOrderFailed(orderId);
 
-    expect(order.payment.status).toBe('failed');
-    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(orderRepository.markStripeOrderFailedIfNotPaid).toHaveBeenCalledWith(
+      orderId,
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
     expect(result.payment?.status).toBe('failed');
   });
 
@@ -912,6 +1032,7 @@ describe('order service', () => {
     expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(orderRepository.save).not.toHaveBeenCalled();
+    expect(orderRepository.markStripeOrderFailedIfNotPaid).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
