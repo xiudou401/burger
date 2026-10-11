@@ -19,7 +19,7 @@ describe('error monitoring', () => {
   });
 
   it('reports structured error details without the response body', () => {
-    const consoleError = jest
+    const consoleError = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
 

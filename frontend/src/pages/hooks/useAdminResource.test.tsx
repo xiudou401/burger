@@ -26,8 +26,8 @@ const Harness = ({ load }: HarnessProps) => {
 
 describe('useAdminResource', () => {
   test('loads data on mount and refreshes on demand', async () => {
-    const load = jest
-      .fn<Promise<string>, [AbortSignal]>()
+    const load = vi
+      .fn<(signal: AbortSignal) => Promise<string>>()
       .mockResolvedValueOnce('first')
       .mockResolvedValueOnce('second');
 
@@ -52,8 +52,8 @@ describe('useAdminResource', () => {
     const secondLoad = new Promise<string>((resolve) => {
       resolveSecond = resolve;
     });
-    const load = jest
-      .fn<Promise<string>, [AbortSignal]>()
+    const load = vi
+      .fn<(signal: AbortSignal) => Promise<string>>()
       .mockReturnValueOnce(firstLoad)
       .mockReturnValueOnce(secondLoad);
 

@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }: Props) => {
         applyAuthSession(res.accessToken, res.user);
       } catch (error) {
         if (
-          process.env.NODE_ENV === 'development' &&
+          import.meta.env.DEV &&
           !(
             error instanceof ApiError &&
             error.statusCode === HTTP_STATUS.UNAUTHORIZED
@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }: Props) => {
     try {
       await logoutRequest();
     } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         reportError(error, {
           source: 'auth',
           operation: 'logout',

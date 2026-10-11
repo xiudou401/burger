@@ -78,15 +78,24 @@ export const markStripeCheckoutPaid = async (
     return toPublicOrder(order);
   }
 
-  order.status = 'confirmed';
-  order.payment.status = 'paid';
-  order.payment.paidAt = order.payment.paidAt ?? new Date();
+  const paidOrder = await orderRepository.markStripeCheckoutPaidIfUnpaid(
+    String(order._id),
+    session.id,
+  );
 
-  await orderRepository.save(order);
+  if (!paidOrder) {
+    const latestOrder = await orderRepository.findByStripeSessionId(session.id);
 
-  const publicOrder = toPublicOrder(order);
-  await sendOrderConfirmationIfPossible(String(order.userId), publicOrder);
-  emitOrderEvent('order:paid', publicOrder, String(order.userId));
+    if (!latestOrder) {
+      throw new ServiceError('Stripe order not found', 404);
+    }
+
+    return toPublicOrder(latestOrder);
+  }
+
+  const publicOrder = toPublicOrder(paidOrder);
+  await sendOrderConfirmationIfPossible(String(paidOrder.userId), publicOrder);
+  emitOrderEvent('order:paid', publicOrder, String(paidOrder.userId));
   void emitCurrentAnalyticsAlerts();
 
   return publicOrder;
@@ -107,22 +116,27 @@ export const markStripeCheckoutFailed = async (
     return toPublicOrder(order);
   }
 
-  order.payment.status = paymentStatus;
+  const failedOrder = await orderRepository.markStripeCheckoutFailedIfNotPaid(
+    sessionId,
+    paymentStatus,
+    cancellationReason,
+  );
 
-  if (paymentStatus === 'cancelled') {
-    order.status = 'cancelled';
-    order.cancellationReason =
-      cancellationReason ?? 'customer_abandoned_checkout';
-    order.cancelledAt = order.cancelledAt ?? new Date();
+  if (!failedOrder) {
+    const latestOrder = await orderRepository.findByStripeSessionId(sessionId);
+
+    if (!latestOrder) {
+      throw new ServiceError('Stripe order not found', 404);
+    }
+
+    return toPublicOrder(latestOrder);
   }
 
-  await orderRepository.save(order);
-
-  const publicOrder = toPublicOrder(order);
+  const publicOrder = toPublicOrder(failedOrder);
   emitOrderEvent(
     paymentStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
     publicOrder,
-    String(order.userId),
+    String(failedOrder.userId),
   );
   void emitCurrentAnalyticsAlerts();
 
@@ -142,12 +156,22 @@ export const markStripeOrderFailed = async (
     return toPublicOrder(order);
   }
 
-  order.payment.status = 'failed';
+  const failedOrder = await orderRepository.markStripeOrderFailedIfNotPaid(
+    orderId,
+  );
 
-  await orderRepository.save(order);
+  if (!failedOrder) {
+    const latestOrder = await orderRepository.findById(orderId);
 
-  const publicOrder = toPublicOrder(order);
-  emitOrderEvent('order:updated', publicOrder, String(order.userId));
+    if (!latestOrder) {
+      throw new ServiceError('Stripe order not found', 404);
+    }
+
+    return toPublicOrder(latestOrder);
+  }
+
+  const publicOrder = toPublicOrder(failedOrder);
+  emitOrderEvent('order:updated', publicOrder, String(failedOrder.userId));
   void emitCurrentAnalyticsAlerts();
 
   return publicOrder;

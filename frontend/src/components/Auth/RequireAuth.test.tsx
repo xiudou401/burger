@@ -5,41 +5,37 @@ import type { AuthContextValue } from '../../store/auth/auth-context';
 
 let mockLocation = { pathname: '/profile', search: '' };
 
-jest.mock(
-  'react-router-dom',
-  () => ({
-    Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
-    Outlet: () => <div>Private profile</div>,
-    useLocation: () => mockLocation,
-  }),
-  { virtual: true },
-);
+vi.mock('react-router-dom', () => ({
+  Navigate: ({ to }: { to: string }) => <div>Navigate to {to}</div>,
+  Outlet: () => <div>Private profile</div>,
+  useLocation: () => mockLocation,
+}));
 
-jest.mock('../../store/auth/hooks/useAuth', () => ({
-  useAuth: jest.fn(),
+vi.mock('../../store/auth/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
 }));
 
 const baseAuth: AuthContextValue = {
   user: null,
   accessToken: null,
-  login: jest.fn(),
-  updateUser: jest.fn(),
-  revalidateSession: jest.fn(),
-  logout: jest.fn(),
+  login: vi.fn(),
+  updateUser: vi.fn(),
+  revalidateSession: vi.fn(),
+  logout: vi.fn(),
   isAuthenticated: false,
   isAuthLoading: false,
 };
 
 const renderGuard = (auth: Partial<AuthContextValue>) => {
   const authValue = { ...baseAuth, ...auth };
-  jest.mocked(useAuth).mockImplementation((selector) => selector(authValue));
+  vi.mocked(useAuth).mockImplementation((selector) => selector(authValue));
 
   return render(<RequireAuth />);
 };
 
 describe('RequireAuth', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockLocation = { pathname: '/profile', search: '' };
   });
 

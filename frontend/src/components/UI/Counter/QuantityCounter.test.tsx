@@ -4,33 +4,33 @@ import { useCartActions } from '../../../store/cart/hooks/useCartActions';
 import { useCartSelector } from '../../../store/cart/hooks/useCartSelector';
 import { MAX_CART_ITEM_QUANTITY } from '../../../store/cart/cart-logic';
 
-jest.mock('../../../store/cart/hooks/useCartActions', () => ({
-  useCartActions: jest.fn(),
+vi.mock('../../../store/cart/hooks/useCartActions', () => ({
+  useCartActions: vi.fn(),
 }));
 
-jest.mock('../../../store/cart/hooks/useCartSelector', () => ({
-  useCartSelector: jest.fn(),
+vi.mock('../../../store/cart/hooks/useCartSelector', () => ({
+  useCartSelector: vi.fn(),
 }));
 
 describe('QuantityCounter', () => {
-  const addItem = jest.fn();
-  const removeItem = jest.fn();
+  const addItem = vi.fn();
+  const removeItem = vi.fn();
 
   beforeEach(() => {
-    jest.mocked(useCartActions).mockReturnValue({
+    vi.mocked(useCartActions).mockReturnValue({
       addItem,
       removeItem,
-      deleteItem: jest.fn(),
-      clearCart: jest.fn(),
+      deleteItem: vi.fn(),
+      clearCart: vi.fn(),
     });
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('renders only the increase button when quantity is zero', () => {
-    jest.mocked(useCartSelector).mockReturnValue(0);
+    vi.mocked(useCartSelector).mockReturnValue(0);
 
     render(<QuantityCounter id="meal-1" />);
 
@@ -44,7 +44,7 @@ describe('QuantityCounter', () => {
   });
 
   test('renders current quantity and supports increase/decrease actions', () => {
-    jest.mocked(useCartSelector).mockReturnValue(2);
+    vi.mocked(useCartSelector).mockReturnValue(2);
 
     render(<QuantityCounter id="meal-1" />);
 
@@ -59,7 +59,7 @@ describe('QuantityCounter', () => {
   });
 
   test('disables increase when quantity reaches the maximum', () => {
-    jest.mocked(useCartSelector).mockReturnValue(MAX_CART_ITEM_QUANTITY);
+    vi.mocked(useCartSelector).mockReturnValue(MAX_CART_ITEM_QUANTITY);
 
     render(<QuantityCounter id="meal-1" />);
 
@@ -74,12 +74,12 @@ describe('QuantityCounter', () => {
   });
 
   test('supports compact sizing', () => {
-    jest.mocked(useCartSelector).mockReturnValue(1);
+    vi.mocked(useCartSelector).mockReturnValue(1);
 
     render(<QuantityCounter id="meal-1" size="compact" />);
 
     expect(
-      screen.getByRole('group', { name: 'Quantity controls' }),
-    ).toHaveClass('Compact');
+      screen.getByRole('group', { name: 'Quantity controls' }).className,
+    ).toContain('Compact');
   });
 });

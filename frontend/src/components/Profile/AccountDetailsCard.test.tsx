@@ -15,12 +15,12 @@ const baseProps = {
   verificationMessage: null,
   verificationError: null,
   isSendingVerification: false,
-  onResendVerification: jest.fn(),
+  onResendVerification: vi.fn(),
 };
 
 describe('AccountDetailsCard', () => {
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('shows account and email verification details', () => {
