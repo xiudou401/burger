@@ -13,6 +13,7 @@ import {
 import type { StripeCheckoutCompletedSession } from './checkout.types';
 import { emitOrderEvent } from './realtime.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
+import { appLogger } from '../utils/logger';
 
 const isPaidOrder = (order: {
   status: OrderStatus;
@@ -20,6 +21,36 @@ const isPaidOrder = (order: {
     status: PaymentStatus;
   };
 }) => order.status === 'confirmed' || order.payment.status === 'paid';
+
+const runStripePaymentSideEffect = async (
+  event: string,
+  orderId: string,
+  task: () => Promise<void> | void,
+) => {
+  try {
+    await task();
+  } catch (error) {
+    appLogger.error(event, { orderId, error });
+  }
+};
+
+const emitStripeOrderEventIfPossible = (
+  event: 'order:updated' | 'order:paid' | 'order:cancelled',
+  order: PublicOrder,
+  userId: string,
+) =>
+  runStripePaymentSideEffect(
+    'stripe_order_realtime_emit_failed',
+    order.id,
+    () => emitOrderEvent(event, order, userId),
+  );
+
+const emitStripeAnalyticsAlertsIfPossible = (orderId: string) =>
+  runStripePaymentSideEffect(
+    'stripe_payment_analytics_alert_emit_failed',
+    orderId,
+    () => emitCurrentAnalyticsAlerts(),
+  );
 
 const assertStripeCheckoutMatchesOrder = (
   session: StripeCheckoutCompletedSession,
@@ -96,17 +127,30 @@ export const markStripeCheckoutPaid = async (
     const publicOrder = toPublicOrder(latestOrder);
 
     if (reviewOrder) {
-      emitOrderEvent('order:updated', publicOrder, String(reviewOrder.userId));
-      void emitCurrentAnalyticsAlerts();
+      void emitStripeOrderEventIfPossible(
+        'order:updated',
+        publicOrder,
+        String(reviewOrder.userId),
+      );
+      void emitStripeAnalyticsAlertsIfPossible(publicOrder.id);
     }
 
     return publicOrder;
   }
 
   const publicOrder = toPublicOrder(paidOrder);
-  await sendOrderConfirmationIfPossible(String(paidOrder.userId), publicOrder);
-  emitOrderEvent('order:paid', publicOrder, String(paidOrder.userId));
-  void emitCurrentAnalyticsAlerts();
+  await runStripePaymentSideEffect(
+    'stripe_order_confirmation_email_failed',
+    publicOrder.id,
+    () =>
+      sendOrderConfirmationIfPossible(String(paidOrder.userId), publicOrder),
+  );
+  void emitStripeOrderEventIfPossible(
+    'order:paid',
+    publicOrder,
+    String(paidOrder.userId),
+  );
+  void emitStripeAnalyticsAlertsIfPossible(publicOrder.id);
 
   return publicOrder;
 };
@@ -143,12 +187,12 @@ export const markStripeCheckoutFailed = async (
   }
 
   const publicOrder = toPublicOrder(failedOrder);
-  emitOrderEvent(
+  void emitStripeOrderEventIfPossible(
     paymentStatus === 'cancelled' ? 'order:cancelled' : 'order:updated',
     publicOrder,
     String(failedOrder.userId),
   );
-  void emitCurrentAnalyticsAlerts();
+  void emitStripeAnalyticsAlertsIfPossible(publicOrder.id);
 
   return publicOrder;
 };
@@ -180,8 +224,12 @@ export const markStripeOrderFailed = async (
   }
 
   const publicOrder = toPublicOrder(failedOrder);
-  emitOrderEvent('order:updated', publicOrder, String(failedOrder.userId));
-  void emitCurrentAnalyticsAlerts();
+  void emitStripeOrderEventIfPossible(
+    'order:updated',
+    publicOrder,
+    String(failedOrder.userId),
+  );
+  void emitStripeAnalyticsAlertsIfPossible(publicOrder.id);
 
   return publicOrder;
 };

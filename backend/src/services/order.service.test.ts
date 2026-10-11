@@ -3,6 +3,8 @@ import { orderRepository } from '../repositories/order.repository';
 import { userRepository } from '../repositories/user.repository';
 import { sendOrderConfirmationEmail } from './email.service';
 import { validateCart } from './cart.service';
+import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
+import { emitOrderEvent } from './realtime.service';
 import { env } from '../config/env';
 import { recordAuditLog } from './audit-log.service';
 import {
@@ -36,6 +38,14 @@ jest.mock('./email.service', () => ({
 
 jest.mock('./audit-log.service', () => ({
   recordAuditLog: jest.fn(),
+}));
+
+jest.mock('./admin-alert.service', () => ({
+  emitCurrentAnalyticsAlerts: jest.fn(),
+}));
+
+jest.mock('./realtime.service', () => ({
+  emitOrderEvent: jest.fn(),
 }));
 
 jest.mock('../repositories/order.repository', () => ({
@@ -141,6 +151,9 @@ describe('order service', () => {
     env.FRONTEND_URL = 'http://localhost:3000';
     env.STRIPE_SUCCESS_URL = undefined;
     env.STRIPE_CANCEL_URL = undefined;
+    jest.mocked(userRepository.findLeanById).mockResolvedValue(null);
+    jest.mocked(emitOrderEvent).mockImplementation(() => undefined);
+    jest.mocked(emitCurrentAnalyticsAlerts).mockResolvedValue(undefined);
     jest.mocked(orderRepository.save).mockResolvedValue(undefined as never);
     jest
       .mocked(orderRepository.findCheckoutByIdempotencyKey)
@@ -910,6 +923,86 @@ describe('order service', () => {
     expect(result.status).toBe('confirmed');
     expect(result.payment?.status).toBe('paid');
     expect(result.payment?.paidAt).toBe(paidAt);
+  });
+
+  test('does not fail paid Stripe webhooks when post-payment side effects fail', async () => {
+    const order = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId,
+          name: 'Classic Burger',
+          priceCents: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_123',
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    const paidAt = new Date('2026-01-01T00:01:00.000Z');
+    const paidOrder = {
+      ...order,
+      status: 'confirmed',
+      payment: {
+        ...order.payment,
+        status: 'paid',
+        paidAt,
+      },
+    };
+
+    jest
+      .mocked(orderRepository.findByStripeSessionId)
+      .mockResolvedValue(order as never);
+    jest
+      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mockResolvedValue(paidOrder as never);
+    jest
+      .mocked(userRepository.findLeanById)
+      .mockRejectedValue(new Error('User lookup unavailable') as never);
+    jest.mocked(emitOrderEvent).mockImplementation(() => {
+      throw new Error('Socket unavailable');
+    });
+    jest
+      .mocked(emitCurrentAnalyticsAlerts)
+      .mockRejectedValue(new Error('Analytics unavailable') as never);
+
+    await expect(
+      markStripeCheckoutPaid({
+        id: 'cs_test_123',
+        payment_status: 'paid',
+        amount_total: 2400,
+        currency: 'aud',
+        metadata: { orderId },
+        client_reference_id: orderId,
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        status: 'confirmed',
+        payment: expect.objectContaining({
+          status: 'paid',
+          paidAt,
+        }),
+      }),
+    );
+
+    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalled();
+    expect(emitOrderEvent).toHaveBeenCalledWith(
+      'order:paid',
+      expect.objectContaining({ id: orderId }),
+      userId,
+    );
   });
 
   test('does not resend confirmation email for repeated paid Stripe webhooks', async () => {
