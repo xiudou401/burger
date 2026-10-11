@@ -4,6 +4,7 @@ import { stripeWebhookEventRepository } from './stripe-webhook-event.repository'
 jest.mock('../models/stripe-webhook-event.model', () => ({
   StripeWebhookEventModel: {
     create: jest.fn(),
+    findOne: jest.fn(),
     findOneAndUpdate: jest.fn(),
   },
 }));
@@ -45,6 +46,13 @@ describe('stripe webhook event repository', () => {
     jest.mocked(StripeWebhookEventModel.findOneAndUpdate).mockReturnValue({
       exec: jest.fn().mockResolvedValue(null),
     } as never);
+    jest.mocked(StripeWebhookEventModel.findOne).mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        lean: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue({ status: 'processed' }),
+        }),
+      }),
+    } as never);
     jest
       .mocked(StripeWebhookEventModel.create)
       .mockRejectedValue({ code: 11000 } as never);
@@ -54,7 +62,38 @@ describe('stripe webhook event repository', () => {
         'evt_test_123',
         'checkout.session.completed',
       ),
-    ).resolves.toEqual({ shouldProcess: false, isDuplicate: true });
+    ).resolves.toEqual({
+      shouldProcess: false,
+      isDuplicate: true,
+      duplicateState: 'processed',
+    });
+  });
+
+  test('reports active processing duplicates separately from processed duplicates', async () => {
+    jest.mocked(StripeWebhookEventModel.findOneAndUpdate).mockReturnValue({
+      exec: jest.fn().mockResolvedValue(null),
+    } as never);
+    jest.mocked(StripeWebhookEventModel.findOne).mockReturnValue({
+      select: jest.fn().mockReturnValue({
+        lean: jest.fn().mockReturnValue({
+          exec: jest.fn().mockResolvedValue({ status: 'processing' }),
+        }),
+      }),
+    } as never);
+    jest
+      .mocked(StripeWebhookEventModel.create)
+      .mockRejectedValue({ code: 11000 } as never);
+
+    await expect(
+      stripeWebhookEventRepository.claim(
+        'evt_test_123',
+        'checkout.session.completed',
+      ),
+    ).resolves.toEqual({
+      shouldProcess: false,
+      isDuplicate: true,
+      duplicateState: 'processing',
+    });
   });
 
   test('atomically reclaims failed Stripe events', async () => {

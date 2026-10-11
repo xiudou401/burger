@@ -12,6 +12,7 @@ type StripeWebhookEventClaim =
   | {
       shouldProcess: false;
       isDuplicate: true;
+      duplicateState: 'processing' | 'processed' | 'failed' | 'unknown';
     };
 
 const isMongoDuplicateKeyError = (error: unknown) => {
@@ -80,7 +81,18 @@ export const stripeWebhookEventRepository = {
         throw error;
       }
 
-      return { shouldProcess: false, isDuplicate: true };
+      const existingEvent = await StripeWebhookEventModel.findOne({
+        stripeEventId,
+      })
+        .select({ status: 1 })
+        .lean()
+        .exec();
+
+      return {
+        shouldProcess: false,
+        isDuplicate: true,
+        duplicateState: existingEvent?.status ?? 'unknown',
+      };
     }
   },
 

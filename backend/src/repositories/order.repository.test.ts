@@ -7,6 +7,7 @@ jest.mock('../models/order.model', () => ({
     create: jest.fn(),
     find: jest.fn(),
     findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
     findById: jest.fn(),
     aggregate: jest.fn(),
   },
@@ -167,6 +168,58 @@ describe('orderRepository', () => {
       }),
     );
     expect(doc.save).toHaveBeenCalled();
+  });
+
+  test('allows stale checkout session creation claims to be reclaimed', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);
+
+    await orderRepository.claimCheckoutSessionCreationIfPending(
+      orderId,
+      'checkout_creation:new',
+    );
+
+    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: expect.any(Types.ObjectId),
+        status: 'pending_payment',
+        'payment.status': { $in: ['requires_payment', 'failed'] },
+        $and: expect.arrayContaining([
+          expect.objectContaining({
+            $or: expect.arrayContaining([
+              expect.objectContaining({
+                $and: expect.arrayContaining([
+                  {
+                    'payment.providerPaymentId': /^checkout_creation:/,
+                  },
+                  {
+                    $or: expect.arrayContaining([
+                      {
+                        'payment.checkoutSessionCreationClaimedAt': {
+                          $lt: expect.any(Date),
+                        },
+                      },
+                      {
+                        'payment.checkoutSessionCreationClaimedAt': {
+                          $exists: false,
+                        },
+                      },
+                    ]),
+                  },
+                ]),
+              }),
+            ]),
+          }),
+        ]),
+      }),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          'payment.providerPaymentId': 'checkout_creation:new',
+          'payment.checkoutSessionCreationClaimedAt': expect.any(Date),
+        }),
+      }),
+      { new: true },
+    );
   });
 
   test('calculates attachment rates with aggregation pipelines', async () => {

@@ -12,6 +12,7 @@ type RepositoryOrderItem = Omit<Order['items'][number], 'menuItemId'> & {
   menuItemId: string;
 };
 
+const CHECKOUT_SESSION_CREATION_LEASE_MS = 5 * 60 * 1000;
 const toObjectId = (id: string) => new Types.ObjectId(id);
 const isObjectId = (id: string) => Types.ObjectId.isValid(id);
 
@@ -641,6 +642,11 @@ export const orderRepository = {
       return Promise.resolve(null);
     }
 
+    const now = new Date();
+    const staleCheckoutClaimBefore = new Date(
+      now.getTime() - CHECKOUT_SESSION_CREATION_LEASE_MS,
+    );
+
     return OrderModel.findOneAndUpdate(
       {
         _id: toObjectId(orderId),
@@ -659,6 +665,27 @@ export const orderRepository = {
               { 'payment.providerPaymentId': { $exists: false } },
               { 'payment.providerPaymentId': null },
               { 'payment.status': 'failed' },
+              {
+                $and: [
+                  {
+                    'payment.providerPaymentId': /^checkout_creation:/,
+                  },
+                  {
+                    $or: [
+                      {
+                        'payment.checkoutSessionCreationClaimedAt': {
+                          $lt: staleCheckoutClaimBefore,
+                        },
+                      },
+                      {
+                        'payment.checkoutSessionCreationClaimedAt': {
+                          $exists: false,
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
             ],
           },
         ],
@@ -669,6 +696,7 @@ export const orderRepository = {
           'payment.provider': 'stripe',
           'payment.status': 'requires_payment',
           'payment.providerPaymentId': claimToken,
+          'payment.checkoutSessionCreationClaimedAt': now,
         },
         $unset: {
           checkoutUrl: '',
@@ -701,6 +729,9 @@ export const orderRepository = {
           'payment.providerPaymentId': sessionId,
           checkoutUrl,
         },
+        $unset: {
+          'payment.checkoutSessionCreationClaimedAt': '',
+        },
       },
       { new: true },
     ).exec();
@@ -729,6 +760,7 @@ export const orderRepository = {
           'payment.providerPaymentId': '',
           checkoutUrl: '',
           'payment.paidAt': '',
+          'payment.checkoutSessionCreationClaimedAt': '',
         },
       },
       { new: true },

@@ -216,6 +216,7 @@ describe('stripe webhook controller', () => {
     jest.mocked(stripeWebhookEventRepository.claim).mockResolvedValue({
       shouldProcess: false,
       isDuplicate: true,
+      duplicateState: 'processed',
     });
     mockConstructEvent.mockReturnValue({
       id: 'evt_test_123',
@@ -249,6 +250,39 @@ describe('stripe webhook controller', () => {
       received: true,
       duplicate: true,
     });
+  });
+
+  test('returns a retryable error for duplicate webhook events still being processed', async () => {
+    jest.mocked(stripeWebhookEventRepository.claim).mockResolvedValue({
+      shouldProcess: false,
+      isDuplicate: true,
+      duplicateState: 'processing',
+    });
+    mockConstructEvent.mockReturnValue({
+      id: 'evt_test_123',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_test_123',
+        },
+      },
+    });
+
+    const req = {
+      body: Buffer.from('{}'),
+      headers: {
+        'stripe-signature': 'valid-signature',
+      },
+    } as unknown as Request;
+    const res = mockResponse();
+    const next = jest.fn() as NextFunction;
+
+    await stripeWebhookHandler(req, res, next);
+
+    expect(markStripeCheckoutPaid).not.toHaveBeenCalled();
+    expect(stripeWebhookEventRepository.markProcessed).not.toHaveBeenCalled();
+    expect(res.status).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith(expect.any(ServiceError));
   });
 
   test('marks webhook events failed when order processing fails', async () => {

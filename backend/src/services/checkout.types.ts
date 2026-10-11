@@ -40,6 +40,7 @@ export type CheckoutOrderDocument = {
     amountCents: number;
     currency: string;
     paidAt?: Date;
+    checkoutSessionCreationClaimedAt?: Date;
   };
   __v?: number;
   createdAt: Date;

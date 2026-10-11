@@ -54,6 +54,7 @@ export interface Order {
     amountCents: number;
     currency: string;
     paidAt?: Date;
+    checkoutSessionCreationClaimedAt?: Date;
     providerPaidAt?: Date;
     requiresReview?: boolean;
     reviewReason?: PaymentReviewReason;
@@ -210,6 +211,7 @@ const orderSchema = new Schema<Order>(
         default: 'aud',
       },
       paidAt: Date,
+      checkoutSessionCreationClaimedAt: Date,
       providerPaidAt: Date,
       requiresReview: {
         type: Boolean,

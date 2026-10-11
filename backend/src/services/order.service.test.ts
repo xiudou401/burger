@@ -70,6 +70,7 @@ type CheckoutOrderTestDocument = {
     providerPaymentId?: string;
     status: string;
     paidAt?: Date;
+    checkoutSessionCreationClaimedAt?: Date;
   };
 };
 
@@ -110,6 +111,7 @@ describe('order service', () => {
         order.payment.status = 'requires_payment';
         order.payment.providerPaymentId = claimToken;
         order.payment.paidAt = undefined;
+        order.payment.checkoutSessionCreationClaimedAt = now;
         order.checkoutUrl = undefined;
         return order as never;
       });
@@ -117,6 +119,7 @@ describe('order service', () => {
       .mocked(orderRepository.markCheckoutSessionCreatedIfClaimed)
       .mockImplementation(async (_orderId, _claimToken, sessionId, url) => {
         order.payment.providerPaymentId = sessionId;
+        order.payment.checkoutSessionCreationClaimedAt = undefined;
         order.checkoutUrl = url;
         return order as never;
       });
@@ -125,6 +128,7 @@ describe('order service', () => {
       .mockImplementation(async () => {
         order.payment.status = 'failed';
         order.payment.providerPaymentId = undefined;
+        order.payment.checkoutSessionCreationClaimedAt = undefined;
         order.checkoutUrl = undefined;
         order.payment.paidAt = undefined;
         return order as never;

@@ -70,6 +70,13 @@ export const stripeWebhookHandler = async (
     );
 
     if (!claim.shouldProcess) {
+      if (claim.duplicateState === 'processing') {
+        throw new ServiceError(
+          'Stripe webhook event is already processing',
+          409,
+        );
+      }
+
       return res.status(200).json({ received: true, duplicate: true });
     }
 
