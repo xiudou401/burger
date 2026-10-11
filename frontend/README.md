@@ -6,16 +6,16 @@ frontend-specific development notes.
 
 ## Local Development
 
-Install dependencies and start the CRA dev server:
+Install dependencies and start the Vite dev server:
 
 ```bash
 npm install
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000). In development, relative
-`/api` requests are proxied to `http://localhost:5001` through the `proxy`
-setting in `package.json`.
+Open [http://localhost:5173](http://localhost:5173). In development,
+`VITE_API_URL` should point at the local backend origin, for example
+`http://localhost:5001`.
 
 ## Scripts
 
@@ -25,7 +25,7 @@ npm run typecheck
 npm run lint
 npm run format
 npm run format:check
-CI=true npm test -- --watchAll=false
+npm test
 npm run build
 ```
 

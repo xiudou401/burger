@@ -760,7 +760,9 @@ describe('order service', () => {
     });
 
     expect(orderRepository.save).not.toHaveBeenCalled();
-    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).not.toHaveBeenCalled();
+    expect(
+      orderRepository.markStripeCheckoutPaidIfUnpaid,
+    ).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
@@ -878,9 +880,9 @@ describe('order service', () => {
       markStripeCheckoutPaid(session),
     ]);
 
-    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledTimes(
-      2,
-    );
+    expect(
+      orderRepository.markStripeCheckoutPaidIfUnpaid,
+    ).toHaveBeenCalledTimes(2);
     expect(sendOrderConfirmationEmail).toHaveBeenCalledTimes(1);
     expect(firstResult.payment?.status).toBe('paid');
     expect(secondResult.payment?.status).toBe('paid');
@@ -965,11 +967,7 @@ describe('order service', () => {
 
     expect(
       orderRepository.markStripeCheckoutFailedIfNotPaid,
-    ).toHaveBeenCalledWith(
-      'cs_test_123',
-      'cancelled',
-      undefined,
-    );
+    ).toHaveBeenCalledWith('cs_test_123', 'cancelled', undefined);
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(result.payment?.status).toBe('cancelled');
     expect(result.cancellationReason).toBe('customer_abandoned_checkout');
@@ -1081,7 +1079,9 @@ describe('order service', () => {
     expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(orderRepository.save).not.toHaveBeenCalled();
-    expect(orderRepository.markStripeOrderFailedIfNotPaid).not.toHaveBeenCalled();
+    expect(
+      orderRepository.markStripeOrderFailedIfNotPaid,
+    ).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });

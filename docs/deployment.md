@@ -85,7 +85,7 @@ to dry run and can be switched to delete mode from the workflow input.
 
 Frontend variables should be configured on Vercel:
 
-- `REACT_APP_API_URL` when direct API calls should use a custom backend domain.
+- `VITE_API_URL` when direct API calls should use a custom backend domain.
 
 Infrastructure identifiers should use GitHub Actions variables or secrets
 instead of being hardcoded in workflow files.

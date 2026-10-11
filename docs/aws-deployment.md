@@ -31,7 +31,7 @@ Recommended split:
 
 ## Frontend: S3 + CloudFront
 
-Build the Create React App frontend:
+Build the Vite frontend:
 
 ```bash
 cd frontend
@@ -46,7 +46,7 @@ rather than making the bucket public.
 Upload the build output:
 
 ```bash
-aws s3 sync build/ s3://YOUR_FRONTEND_BUCKET --delete
+aws s3 sync dist/ s3://YOUR_FRONTEND_BUCKET --delete
 ```
 
 Create a CloudFront distribution:
@@ -167,7 +167,7 @@ resulting `whsec_...` value into `STRIPE_WEBHOOK_SECRET`.
 
 ## Deployment Checklist
 
-1. Build frontend and upload `frontend/build` to S3.
+1. Build frontend and upload `frontend/dist` to S3.
 2. Invalidate CloudFront cache.
 3. Build backend Docker image.
 4. Push image to ECR.

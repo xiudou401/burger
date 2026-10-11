@@ -233,9 +233,9 @@ Payments: Stripe
 OAuth: Google
 ```
 
-The frontend uses relative `/api` requests. In development, Create React App
-proxies them to the local backend. In production, Vercel rewrites `/api/*` to
-the Render backend.
+The frontend uses relative `/api` requests in production through Vercel
+rewrites. In local development, Vite reads `VITE_API_URL` so the frontend can
+call the local backend origin directly.
 
 ### Current Production Concerns
 

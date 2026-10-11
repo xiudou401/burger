@@ -156,9 +156,8 @@ export const markStripeOrderFailed = async (
     return toPublicOrder(order);
   }
 
-  const failedOrder = await orderRepository.markStripeOrderFailedIfNotPaid(
-    orderId,
-  );
+  const failedOrder =
+    await orderRepository.markStripeOrderFailedIfNotPaid(orderId);
 
   if (!failedOrder) {
     const latestOrder = await orderRepository.findById(orderId);

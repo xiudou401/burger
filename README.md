@@ -32,12 +32,12 @@ recent orders while staff manage orders and menu changes.
 
 | Area     | Stack                                                                             |
 | -------- | --------------------------------------------------------------------------------- |
-| Frontend | React 19, TypeScript, React Router, CSS Modules, Create React App                 |
+| Frontend | React 19, TypeScript, React Router, CSS Modules, Vite                             |
 | Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                       |
 | Database | MongoDB                                                                           |
 | Payments | Stripe Checkout, Stripe webhook signature verification                            |
 | Auth     | Email/password, Google OAuth, JWT access tokens, HttpOnly refresh-cookie sessions |
-| Testing  | Jest, React Testing Library, ts-jest                                              |
+| Testing  | Jest, Vitest, React Testing Library, ts-jest                                      |
 | Tooling  | Stripe CLI, npm scripts                                                           |
 
 ## System Architecture
@@ -285,7 +285,7 @@ cd frontend
 npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:5173](http://localhost:5173).
 
 ## Environment Configuration
 
@@ -304,7 +304,7 @@ S3 presigned URLs for admin image uploads when `AWS_REGION` and
 `S3_MENU_IMAGES_PUBLIC_BASE_URL` can override the default CloudFront domain,
 for example when moving to a custom CDN domain.
 
-The frontend should set `REACT_APP_API_URL` to the backend origin, for example
+The frontend should set `VITE_API_URL` to the backend origin, for example
 `https://burger-rmc0.onrender.com`, when WebSocket admin events are enabled.
 REST requests can still be routed through relative `/api` rewrites, but the
 Socket.IO client needs a stable backend origin for the realtime connection.
@@ -351,7 +351,7 @@ cd ../frontend
 npm run lint
 npm run typecheck
 npm run format:check
-CI=true npm test -- --watchAll=false
+npm test
 npm run build
 ```
 
