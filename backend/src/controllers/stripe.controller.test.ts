@@ -50,6 +50,7 @@ describe('stripe webhook controller', () => {
     jest.mocked(stripeWebhookEventRepository.claim).mockResolvedValue({
       shouldProcess: true,
       isDuplicate: false,
+      claimToken: 'claim_123',
     });
     jest
       .mocked(stripeWebhookEventRepository.markProcessed)
@@ -109,6 +110,7 @@ describe('stripe webhook controller', () => {
     });
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
       'evt_test_123',
+      'claim_123',
       '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);
@@ -169,6 +171,7 @@ describe('stripe webhook controller', () => {
     );
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
       'evt_test_123',
+      'claim_123',
       '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);
@@ -203,6 +206,7 @@ describe('stripe webhook controller', () => {
     );
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
       'evt_test_123',
+      'claim_123',
       '507f1f77bcf86cd799439012',
     );
     expect(res.status).toHaveBeenCalledWith(200);
@@ -273,6 +277,7 @@ describe('stripe webhook controller', () => {
 
     expect(stripeWebhookEventRepository.markFailed).toHaveBeenCalledWith(
       'evt_test_123',
+      'claim_123',
       error,
     );
     expect(stripeWebhookEventRepository.markProcessed).not.toHaveBeenCalled();

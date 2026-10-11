@@ -17,6 +17,8 @@ export type PaymentStatus =
   | 'cancelled'
   | 'refunded';
 
+export type PaymentReviewReason = 'stripe_paid_after_order_not_payable';
+
 export type CancellationReason =
   | 'payment_failed'
   | 'customer_abandoned_checkout'
@@ -52,6 +54,10 @@ export interface Order {
     amountCents: number;
     currency: string;
     paidAt?: Date;
+    providerPaidAt?: Date;
+    requiresReview?: boolean;
+    reviewReason?: PaymentReviewReason;
+    reviewCreatedAt?: Date;
   };
   __v?: number;
   createdAt: Date;
@@ -204,6 +210,16 @@ const orderSchema = new Schema<Order>(
         default: 'aud',
       },
       paidAt: Date,
+      providerPaidAt: Date,
+      requiresReview: {
+        type: Boolean,
+        default: false,
+      },
+      reviewReason: {
+        type: String,
+        enum: ['stripe_paid_after_order_not_payable'],
+      },
+      reviewCreatedAt: Date,
     },
   },
   { timestamps: true, optimisticConcurrency: true },

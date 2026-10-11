@@ -1,6 +1,18 @@
+import { randomUUID } from 'crypto';
 import { StripeWebhookEventModel } from '../models/stripe-webhook-event.model';
 
 const PROCESSING_LEASE_MS = 5 * 60 * 1000;
+
+type StripeWebhookEventClaim =
+  | {
+      shouldProcess: true;
+      isDuplicate: boolean;
+      claimToken: string;
+    }
+  | {
+      shouldProcess: false;
+      isDuplicate: true;
+    };
 
 const isMongoDuplicateKeyError = (error: unknown) => {
   if (!error || typeof error !== 'object') {
@@ -11,8 +23,12 @@ const isMongoDuplicateKeyError = (error: unknown) => {
 };
 
 export const stripeWebhookEventRepository = {
-  async claim(stripeEventId: string, eventType: string) {
+  async claim(
+    stripeEventId: string,
+    eventType: string,
+  ): Promise<StripeWebhookEventClaim> {
     const now = new Date();
+    const claimToken = randomUUID();
     const staleProcessingBefore = new Date(now.getTime() - PROCESSING_LEASE_MS);
 
     const reclaimed = await StripeWebhookEventModel.findOneAndUpdate(
@@ -30,6 +46,7 @@ export const stripeWebhookEventRepository = {
         $set: {
           eventType,
           status: 'processing',
+          processingClaimToken: claimToken,
           lastReceivedAt: now,
         },
         $inc: {
@@ -44,7 +61,7 @@ export const stripeWebhookEventRepository = {
     ).exec();
 
     if (reclaimed) {
-      return { shouldProcess: true, isDuplicate: true };
+      return { shouldProcess: true, isDuplicate: true, claimToken };
     }
 
     try {
@@ -52,11 +69,12 @@ export const stripeWebhookEventRepository = {
         stripeEventId,
         eventType,
         status: 'processing',
+        processingClaimToken: claimToken,
         attempts: 1,
         lastReceivedAt: now,
       });
 
-      return { shouldProcess: true, isDuplicate: false };
+      return { shouldProcess: true, isDuplicate: false, claimToken };
     } catch (error) {
       if (!isMongoDuplicateKeyError(error)) {
         throw error;
@@ -66,9 +84,9 @@ export const stripeWebhookEventRepository = {
     }
   },
 
-  markProcessed(stripeEventId: string, orderId?: string) {
+  markProcessed(stripeEventId: string, claimToken: string, orderId?: string) {
     return StripeWebhookEventModel.findOneAndUpdate(
-      { stripeEventId },
+      { stripeEventId, status: 'processing', processingClaimToken: claimToken },
       {
         $set: {
           status: 'processed',
@@ -77,21 +95,25 @@ export const stripeWebhookEventRepository = {
         },
         $unset: {
           lastError: '',
+          processingClaimToken: '',
         },
       },
     ).exec();
   },
 
-  markFailed(stripeEventId: string, error: unknown) {
+  markFailed(stripeEventId: string, claimToken: string, error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error';
 
     return StripeWebhookEventModel.findOneAndUpdate(
-      { stripeEventId },
+      { stripeEventId, status: 'processing', processingClaimToken: claimToken },
       {
         $set: {
           status: 'failed',
           lastError: message,
           lastReceivedAt: new Date(),
+        },
+        $unset: {
+          processingClaimToken: '',
         },
       },
     ).exec();

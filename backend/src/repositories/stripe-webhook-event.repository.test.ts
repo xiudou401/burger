@@ -24,13 +24,18 @@ describe('stripe webhook event repository', () => {
         'evt_test_123',
         'checkout.session.completed',
       ),
-    ).resolves.toEqual({ shouldProcess: true, isDuplicate: false });
+    ).resolves.toEqual({
+      shouldProcess: true,
+      isDuplicate: false,
+      claimToken: expect.any(String),
+    });
 
     expect(StripeWebhookEventModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
         stripeEventId: 'evt_test_123',
         eventType: 'checkout.session.completed',
         status: 'processing',
+        processingClaimToken: expect.any(String),
         attempts: 1,
       }),
     );
@@ -65,7 +70,11 @@ describe('stripe webhook event repository', () => {
         'evt_test_123',
         'checkout.session.completed',
       ),
-    ).resolves.toEqual({ shouldProcess: true, isDuplicate: true });
+    ).resolves.toEqual({
+      shouldProcess: true,
+      isDuplicate: true,
+      claimToken: expect.any(String),
+    });
 
     expect(StripeWebhookEventModel.findOneAndUpdate).toHaveBeenCalledWith(
       {
@@ -82,6 +91,7 @@ describe('stripe webhook event repository', () => {
         $set: expect.objectContaining({
           eventType: 'checkout.session.completed',
           status: 'processing',
+          processingClaimToken: expect.any(String),
           lastReceivedAt: expect.any(Date),
         }),
         $inc: {
@@ -110,7 +120,11 @@ describe('stripe webhook event repository', () => {
         'evt_test_123',
         'checkout.session.completed',
       ),
-    ).resolves.toEqual({ shouldProcess: true, isDuplicate: true });
+    ).resolves.toEqual({
+      shouldProcess: true,
+      isDuplicate: true,
+      claimToken: expect.any(String),
+    });
 
     const [query] = jest.mocked(StripeWebhookEventModel.findOneAndUpdate).mock
       .calls[0];
@@ -135,11 +149,16 @@ describe('stripe webhook event repository', () => {
 
     await stripeWebhookEventRepository.markProcessed(
       'evt_test_123',
+      'claim_123',
       '507f1f77bcf86cd799439012',
     );
 
     expect(StripeWebhookEventModel.findOneAndUpdate).toHaveBeenCalledWith(
-      { stripeEventId: 'evt_test_123' },
+      {
+        stripeEventId: 'evt_test_123',
+        status: 'processing',
+        processingClaimToken: 'claim_123',
+      },
       {
         $set: {
           status: 'processed',
@@ -148,6 +167,37 @@ describe('stripe webhook event repository', () => {
         },
         $unset: {
           lastError: '',
+          processingClaimToken: '',
+        },
+      },
+    );
+  });
+
+  test('marks only the currently claimed Stripe event failed', async () => {
+    jest.mocked(StripeWebhookEventModel.findOneAndUpdate).mockReturnValue({
+      exec: jest.fn().mockResolvedValue({}),
+    } as never);
+
+    await stripeWebhookEventRepository.markFailed(
+      'evt_test_123',
+      'claim_123',
+      new Error('boom'),
+    );
+
+    expect(StripeWebhookEventModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        stripeEventId: 'evt_test_123',
+        status: 'processing',
+        processingClaimToken: 'claim_123',
+      },
+      {
+        $set: {
+          status: 'failed',
+          lastError: 'boom',
+          lastReceivedAt: expect.any(Date),
+        },
+        $unset: {
+          processingClaimToken: '',
         },
       },
     );

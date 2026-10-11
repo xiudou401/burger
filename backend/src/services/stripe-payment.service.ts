@@ -84,13 +84,23 @@ export const markStripeCheckoutPaid = async (
   );
 
   if (!paidOrder) {
-    const latestOrder = await orderRepository.findByStripeSessionId(session.id);
+    const reviewOrder =
+      await orderRepository.markStripeCheckoutPaidRequiresReview(session.id);
+    const latestOrder =
+      reviewOrder ?? (await orderRepository.findByStripeSessionId(session.id));
 
     if (!latestOrder) {
       throw new ServiceError('Stripe order not found', 404);
     }
 
-    return toPublicOrder(latestOrder);
+    const publicOrder = toPublicOrder(latestOrder);
+
+    if (reviewOrder) {
+      emitOrderEvent('order:updated', publicOrder, String(reviewOrder.userId));
+      void emitCurrentAnalyticsAlerts();
+    }
+
+    return publicOrder;
   }
 
   const publicOrder = toPublicOrder(paidOrder);

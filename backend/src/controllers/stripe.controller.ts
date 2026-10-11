@@ -117,9 +117,17 @@ export const stripeWebhookHandler = async (
         }
       }
 
-      await stripeWebhookEventRepository.markProcessed(event.id, orderId);
+      await stripeWebhookEventRepository.markProcessed(
+        event.id,
+        claim.claimToken,
+        orderId,
+      );
     } catch (error) {
-      await stripeWebhookEventRepository.markFailed(event.id, error);
+      await stripeWebhookEventRepository.markFailed(
+        event.id,
+        claim.claimToken,
+        error,
+      );
       throw error;
     }
 

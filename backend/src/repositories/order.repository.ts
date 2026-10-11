@@ -554,6 +554,29 @@ export const orderRepository = {
     ).exec();
   },
 
+  markStripeCheckoutPaidRequiresReview(sessionId: string) {
+    return OrderModel.findOneAndUpdate(
+      {
+        'payment.provider': 'stripe',
+        'payment.providerPaymentId': sessionId,
+        $or: [
+          { status: { $ne: 'pending_payment' } },
+          { 'payment.status': { $ne: 'requires_payment' } },
+        ],
+        'payment.status': { $ne: 'paid' },
+      },
+      {
+        $set: {
+          'payment.providerPaidAt': new Date(),
+          'payment.requiresReview': true,
+          'payment.reviewReason': 'stripe_paid_after_order_not_payable',
+          'payment.reviewCreatedAt': new Date(),
+        },
+      },
+      { new: true },
+    ).exec();
+  },
+
   markStripeCheckoutFailedIfNotPaid(
     sessionId: string,
     paymentStatus: Extract<PaymentStatus, 'failed' | 'cancelled'>,
@@ -611,6 +634,105 @@ export const orderRepository = {
       userId: toObjectId(userId),
       checkoutIdempotencyKey: idempotencyKey,
     }).exec();
+  },
+
+  claimCheckoutSessionCreationIfPending(orderId: string, claimToken: string) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: 'pending_payment',
+        'payment.status': { $in: ['requires_payment', 'failed'] },
+        $and: [
+          {
+            $or: [
+              { checkoutUrl: { $exists: false } },
+              { checkoutUrl: null },
+              { 'payment.status': 'failed' },
+            ],
+          },
+          {
+            $or: [
+              { 'payment.providerPaymentId': { $exists: false } },
+              { 'payment.providerPaymentId': null },
+              { 'payment.status': 'failed' },
+            ],
+          },
+        ],
+      },
+      {
+        $set: {
+          status: 'pending_payment',
+          'payment.provider': 'stripe',
+          'payment.status': 'requires_payment',
+          'payment.providerPaymentId': claimToken,
+        },
+        $unset: {
+          checkoutUrl: '',
+          'payment.paidAt': '',
+        },
+      },
+      { new: true },
+    ).exec();
+  },
+
+  markCheckoutSessionCreatedIfClaimed(
+    orderId: string,
+    claimToken: string,
+    sessionId: string,
+    checkoutUrl: string,
+  ) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: 'pending_payment',
+        'payment.status': 'requires_payment',
+        'payment.providerPaymentId': claimToken,
+      },
+      {
+        $set: {
+          'payment.providerPaymentId': sessionId,
+          checkoutUrl,
+        },
+      },
+      { new: true },
+    ).exec();
+  },
+
+  markCheckoutSessionCreationFailedIfClaimed(
+    orderId: string,
+    claimToken: string,
+  ) {
+    if (!isObjectId(orderId)) {
+      return Promise.resolve(null);
+    }
+
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: 'pending_payment',
+        'payment.status': 'requires_payment',
+        'payment.providerPaymentId': claimToken,
+      },
+      {
+        $set: {
+          'payment.status': 'failed',
+        },
+        $unset: {
+          'payment.providerPaymentId': '',
+          checkoutUrl: '',
+          'payment.paidAt': '',
+        },
+      },
+      { new: true },
+    ).exec();
   },
 
   save<T extends { save: () => Promise<unknown> }>(order: T) {

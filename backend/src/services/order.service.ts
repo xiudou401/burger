@@ -40,6 +40,10 @@ export interface PublicOrder {
     amountCents: number;
     currency: string;
     paidAt?: Date;
+    providerPaidAt?: Date;
+    requiresReview?: boolean;
+    reviewReason?: string;
+    reviewCreatedAt?: Date;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -77,6 +81,10 @@ export const toPublicOrder = (order: {
     amountCents: number;
     currency: string;
     paidAt?: Date;
+    providerPaidAt?: Date;
+    requiresReview?: boolean;
+    reviewReason?: string;
+    reviewCreatedAt?: Date;
   };
   __v?: number;
   createdAt: Date;
@@ -112,6 +120,10 @@ export const toPublicOrder = (order: {
         amountCents: order.payment.amountCents,
         currency: order.payment.currency,
         paidAt: order.payment.paidAt,
+        providerPaidAt: order.payment.providerPaidAt,
+        requiresReview: order.payment.requiresReview,
+        reviewReason: order.payment.reviewReason,
+        reviewCreatedAt: order.payment.reviewCreatedAt,
       }
     : undefined,
   createdAt: order.createdAt,

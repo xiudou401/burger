@@ -44,7 +44,11 @@ jest.mock('../repositories/order.repository', () => ({
     findById: jest.fn(),
     findCheckoutByIdempotencyKey: jest.fn(),
     findByStripeSessionId: jest.fn(),
+    claimCheckoutSessionCreationIfPending: jest.fn(),
+    markCheckoutSessionCreatedIfClaimed: jest.fn(),
+    markCheckoutSessionCreationFailedIfClaimed: jest.fn(),
     markStripeCheckoutPaidIfUnpaid: jest.fn(),
+    markStripeCheckoutPaidRequiresReview: jest.fn(),
     markStripeCheckoutFailedIfNotPaid: jest.fn(),
     markStripeOrderFailedIfNotPaid: jest.fn(),
     listAll: jest.fn(),
@@ -57,6 +61,17 @@ jest.mock('../repositories/user.repository', () => ({
     findLeanById: jest.fn(),
   },
 }));
+
+type CheckoutOrderTestDocument = {
+  status: string;
+  checkoutUrl?: string;
+  payment: {
+    provider?: string;
+    providerPaymentId?: string;
+    status: string;
+    paidAt?: Date;
+  };
+};
 
 describe('order service', () => {
   const userId = '507f1f77bcf86cd799439011';
@@ -84,6 +99,37 @@ describe('order service', () => {
     quantity: 2,
     subtotalCents: 2400,
   } as const;
+  const mockCheckoutSessionClaim = <T extends CheckoutOrderTestDocument>(
+    order: T,
+  ) => {
+    jest
+      .mocked(orderRepository.claimCheckoutSessionCreationIfPending)
+      .mockImplementation(async (_orderId, claimToken) => {
+        order.status = 'pending_payment';
+        order.payment.provider = 'stripe';
+        order.payment.status = 'requires_payment';
+        order.payment.providerPaymentId = claimToken;
+        order.payment.paidAt = undefined;
+        order.checkoutUrl = undefined;
+        return order as never;
+      });
+    jest
+      .mocked(orderRepository.markCheckoutSessionCreatedIfClaimed)
+      .mockImplementation(async (_orderId, _claimToken, sessionId, url) => {
+        order.payment.providerPaymentId = sessionId;
+        order.checkoutUrl = url;
+        return order as never;
+      });
+    jest
+      .mocked(orderRepository.markCheckoutSessionCreationFailedIfClaimed)
+      .mockImplementation(async () => {
+        order.payment.status = 'failed';
+        order.payment.providerPaymentId = undefined;
+        order.checkoutUrl = undefined;
+        order.payment.paidAt = undefined;
+        return order as never;
+      });
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -94,6 +140,18 @@ describe('order service', () => {
     jest.mocked(orderRepository.save).mockResolvedValue(undefined as never);
     jest
       .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(null);
+    jest
+      .mocked(orderRepository.claimCheckoutSessionCreationIfPending)
+      .mockResolvedValue(null);
+    jest
+      .mocked(orderRepository.markCheckoutSessionCreatedIfClaimed)
+      .mockResolvedValue(null);
+    jest
+      .mocked(orderRepository.markCheckoutSessionCreationFailedIfClaimed)
+      .mockResolvedValue(null);
+    jest
+      .mocked(orderRepository.markStripeCheckoutPaidRequiresReview)
       .mockResolvedValue(null);
   });
 
@@ -201,6 +259,7 @@ describe('order service', () => {
     };
 
     jest.mocked(orderRepository.create).mockResolvedValue(order as never);
+    mockCheckoutSessionClaim(order);
     mockCreateSession.mockResolvedValue({
       id: 'cs_test_123',
       url: 'https://checkout.stripe.com/c/pay/cs_test_123',
@@ -264,7 +323,15 @@ describe('order service', () => {
     expect(order.checkoutUrl).toBe(
       'https://checkout.stripe.com/c/pay/cs_test_123',
     );
-    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(
+      orderRepository.markCheckoutSessionCreatedIfClaimed,
+    ).toHaveBeenCalledWith(
+      orderId,
+      expect.stringMatching(/^checkout_creation:/),
+      'cs_test_123',
+      'https://checkout.stripe.com/c/pay/cs_test_123',
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
     expect(checkout.checkoutUrl).toBe(
       'https://checkout.stripe.com/c/pay/cs_test_123',
     );
@@ -318,6 +385,56 @@ describe('order service', () => {
     expect(mockCreateSession).not.toHaveBeenCalled();
   });
 
+  test('does not reuse checkout URLs for paid orders', async () => {
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId,
+          nameAtPurchase: 'Classic Burger',
+          imageAtPurchase: '/img/burger.png',
+          priceCentsAtPurchase: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_paid',
+      status: 'confirmed',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: 'cs_test_paid',
+        status: 'paid',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(existingOrder as never);
+
+    await expect(
+      createCheckoutOrder(
+        userId,
+        [{ id: menuItemId, quantity: 2 }],
+        7,
+        idempotencyKey,
+      ),
+    ).rejects.toThrow('Order is already paid');
+
+    expect(validateCart).not.toHaveBeenCalled();
+    expect(mockCreateSession).not.toHaveBeenCalled();
+    expect(
+      orderRepository.claimCheckoutSessionCreationIfPending,
+    ).not.toHaveBeenCalled();
+  });
+
   test('continues a partially created checkout for the same idempotency key', async () => {
     const existingOrder = {
       _id: orderId,
@@ -351,6 +468,7 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.findCheckoutByIdempotencyKey)
       .mockResolvedValue(existingOrder as never);
+    mockCheckoutSessionClaim(existingOrder);
     mockCreateSession.mockResolvedValue({
       id: 'cs_test_resumed',
       url: 'https://checkout.stripe.com/c/pay/cs_test_resumed',
@@ -377,8 +495,65 @@ describe('order service', () => {
     expect(existingOrder.checkoutUrl).toBe(
       'https://checkout.stripe.com/c/pay/cs_test_resumed',
     );
-    expect(orderRepository.save).toHaveBeenCalledWith(existingOrder);
+    expect(orderRepository.save).not.toHaveBeenCalled();
     expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
+  });
+
+  test('returns a checkout URL created by a concurrent request when session creation claim is lost', async () => {
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [
+        {
+          menuItemId,
+          nameAtPurchase: 'Classic Burger',
+          imageAtPurchase: '/img/burger.png',
+          priceCentsAtPurchase: 1200,
+          quantity: 2,
+          subtotalCents: 2400,
+        },
+      ],
+      totalCents: 2400,
+      menuVersion: 7,
+      checkoutIdempotencyKey: idempotencyKey,
+      checkoutUrl: undefined as string | undefined,
+      status: 'pending_payment',
+      payment: {
+        provider: 'stripe',
+        providerPaymentId: undefined as string | undefined,
+        status: 'requires_payment',
+        amountCents: 2400,
+        currency: 'aud',
+      },
+      createdAt: now,
+      updatedAt: now,
+    };
+    const completedOrder = {
+      ...existingOrder,
+      checkoutUrl: 'https://checkout.stripe.com/c/pay/cs_test_concurrent',
+      payment: {
+        ...existingOrder.payment,
+        providerPaymentId: 'cs_test_concurrent',
+      },
+    };
+
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValueOnce(existingOrder as never)
+      .mockResolvedValueOnce(completedOrder as never);
+    jest
+      .mocked(orderRepository.claimCheckoutSessionCreationIfPending)
+      .mockResolvedValue(null);
+
+    const checkout = await createCheckoutOrder(
+      userId,
+      [{ id: menuItemId, quantity: 2 }],
+      7,
+      idempotencyKey,
+    );
+
+    expect(mockCreateSession).not.toHaveBeenCalled();
+    expect(checkout.checkoutUrl).toBe(completedOrder.checkoutUrl);
   });
 
   test('returns the existing checkout when order creation loses an idempotency race', async () => {
@@ -473,11 +648,14 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.findCheckoutByIdempotencyKey)
       .mockResolvedValue(existingOrder as never);
+    mockCheckoutSessionClaim(existingOrder);
     mockCreateSession.mockImplementation(async () => {
       expect(existingOrder.status).toBe('pending_payment');
       expect(existingOrder.payment.status).toBe('requires_payment');
       expect(existingOrder.payment.provider).toBe('stripe');
-      expect(existingOrder.payment.providerPaymentId).toBeUndefined();
+      expect(existingOrder.payment.providerPaymentId).toEqual(
+        expect.stringMatching(/^checkout_creation:/),
+      );
       expect(existingOrder.payment.paidAt).toBeUndefined();
 
       return {
@@ -499,7 +677,7 @@ describe('order service', () => {
     expect(existingOrder.checkoutUrl).toBe(
       'https://checkout.stripe.com/c/pay/cs_test_retry',
     );
-    expect(orderRepository.save).toHaveBeenCalledWith(existingOrder);
+    expect(orderRepository.save).not.toHaveBeenCalled();
     expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
   });
 
@@ -530,6 +708,7 @@ describe('order service', () => {
     };
 
     jest.mocked(orderRepository.create).mockResolvedValue(order as never);
+    mockCheckoutSessionClaim(order);
     mockCreateSession.mockRejectedValue(new Error('Stripe unavailable'));
 
     await expect(
@@ -542,7 +721,13 @@ describe('order service', () => {
     ).rejects.toThrow('Stripe unavailable');
 
     expect(order.payment.status).toBe('failed');
-    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(
+      orderRepository.markCheckoutSessionCreationFailedIfClaimed,
+    ).toHaveBeenCalledWith(
+      orderId,
+      expect.stringMatching(/^checkout_creation:/),
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
   });
 
   test('marks checkout orders as failed when Stripe returns no checkout URL', async () => {
@@ -572,6 +757,7 @@ describe('order service', () => {
     };
 
     jest.mocked(orderRepository.create).mockResolvedValue(order as never);
+    mockCheckoutSessionClaim(order);
     mockCreateSession.mockResolvedValue({
       id: 'cs_test_123',
       url: null,
@@ -587,8 +773,13 @@ describe('order service', () => {
     ).rejects.toThrow('Stripe checkout session has no redirect URL');
 
     expect(order.payment.status).toBe('failed');
-    expect(orderRepository.save).toHaveBeenCalledTimes(1);
-    expect(orderRepository.save).toHaveBeenCalledWith(order);
+    expect(
+      orderRepository.markCheckoutSessionCreationFailedIfClaimed,
+    ).toHaveBeenCalledWith(
+      orderId,
+      expect.stringMatching(/^checkout_creation:/),
+    );
+    expect(orderRepository.save).not.toHaveBeenCalled();
   });
 
   test('confirms paid orders, persists the change, and sends confirmation email', async () => {
@@ -770,6 +961,7 @@ describe('order service', () => {
 
   test('does not revive cancelled orders from late paid Stripe webhooks', async () => {
     const cancelledAt = new Date('2026-01-01T00:02:00.000Z');
+    const providerPaidAt = new Date('2026-01-01T00:03:00.000Z');
     const order = {
       _id: orderId,
       userId,
@@ -789,14 +981,26 @@ describe('order service', () => {
       createdAt: now,
       updatedAt: now,
     };
+    const reviewOrder = {
+      ...order,
+      payment: {
+        ...order.payment,
+        providerPaidAt,
+        requiresReview: true,
+        reviewReason: 'stripe_paid_after_order_not_payable',
+        reviewCreatedAt: providerPaidAt,
+      },
+    };
 
     jest
       .mocked(orderRepository.findByStripeSessionId)
-      .mockResolvedValueOnce(order as never)
       .mockResolvedValueOnce(order as never);
     jest
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValue(null);
+    jest
+      .mocked(orderRepository.markStripeCheckoutPaidRequiresReview)
+      .mockResolvedValue(reviewOrder as never);
 
     const result = await markStripeCheckoutPaid({
       id: 'cs_test_123',
@@ -811,9 +1015,17 @@ describe('order service', () => {
       orderId,
       'cs_test_123',
     );
+    expect(
+      orderRepository.markStripeCheckoutPaidRequiresReview,
+    ).toHaveBeenCalledWith('cs_test_123');
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('cancelled');
     expect(result.payment?.status).toBe('cancelled');
+    expect(result.payment?.providerPaidAt).toBe(providerPaidAt);
+    expect(result.payment?.requiresReview).toBe(true);
+    expect(result.payment?.reviewReason).toBe(
+      'stripe_paid_after_order_not_payable',
+    );
     expect(result.cancelledAt).toBe(cancelledAt);
   });
 

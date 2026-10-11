@@ -7,6 +7,7 @@ export interface StripeWebhookEvent {
   eventType: string;
   orderId?: string;
   status: StripeWebhookEventStatus;
+  processingClaimToken?: string;
   attempts: number;
   lastError?: string;
   processedAt?: Date;
@@ -38,6 +39,10 @@ const stripeWebhookEventSchema = new Schema<StripeWebhookEvent>(
       enum: ['processing', 'processed', 'failed'],
       required: true,
       default: 'processing',
+    },
+    processingClaimToken: {
+      type: String,
+      trim: true,
     },
     attempts: {
       type: Number,
