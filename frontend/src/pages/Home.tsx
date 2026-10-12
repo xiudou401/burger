@@ -41,7 +41,7 @@ const Home = () => {
     onCategoryChange,
     reload,
     retry,
-  } = useInfiniteMenuItems({ fetchMenuItems, limit: 4 });
+  } = useInfiniteMenuItems({ fetchMenuItems, limit: 8 });
 
   const menuVersion = useCartSelector((ctx) => ctx.menuVersion);
   const { hasMenuUpdate, acknowledgeMenuUpdate } =

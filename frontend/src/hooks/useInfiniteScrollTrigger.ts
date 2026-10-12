@@ -41,7 +41,7 @@ export const useInfiniteScrollTrigger = ({
       {
         root: listRef.current,
         threshold: 0.1,
-        rootMargin: '0px',
+        rootMargin: '360px 0px',
       },
     );
 
