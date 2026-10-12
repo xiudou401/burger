@@ -3,6 +3,7 @@ import { connectDB } from './config/db';
 import { env } from './config/env';
 import http from 'http';
 import { initializeRealtimeServer } from './services/realtime.service';
+import { startOutboxWorker } from './services/outbox.service';
 import { appLogger } from './utils/logger';
 
 const startServer = async () => {
@@ -11,6 +12,7 @@ const startServer = async () => {
     const server = http.createServer(app);
 
     initializeRealtimeServer(server);
+    startOutboxWorker();
 
     server.listen(Number(env.PORT), '0.0.0.0', () => {
       appLogger.info('server_started', {

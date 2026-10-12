@@ -132,6 +132,7 @@ export const toPublicOrder = (order: {
 export const sendOrderConfirmationIfPossible = async (
   userId: string,
   order: PublicOrder,
+  { throwOnFailure = false }: { throwOnFailure?: boolean } = {},
 ) => {
   const user = await userRepository.findLeanById(userId);
 
@@ -149,6 +150,10 @@ export const sendOrderConfirmationIfPossible = async (
       totalCents: order.totalCents,
     });
   } catch (error) {
+    if (throwOnFailure) {
+      throw error;
+    }
+
     appLogger.error('order_confirmation_email_failed', {
       orderId: order.id,
       userId: String(user._id),

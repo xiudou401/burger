@@ -5,6 +5,7 @@ import { sendOrderConfirmationEmail } from './email.service';
 import { validateCart } from './cart.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 import { emitOrderEvent } from './realtime.service';
+import { enqueueOrderPaidSideEffects } from './outbox.service';
 import { env } from '../config/env';
 import { recordAuditLog } from './audit-log.service';
 import {
@@ -46,6 +47,10 @@ jest.mock('./admin-alert.service', () => ({
 
 jest.mock('./realtime.service', () => ({
   emitOrderEvent: jest.fn(),
+}));
+
+jest.mock('./outbox.service', () => ({
+  enqueueOrderPaidSideEffects: jest.fn(),
 }));
 
 jest.mock('../repositories/order.repository', () => ({
@@ -154,6 +159,7 @@ describe('order service', () => {
     jest.mocked(userRepository.findLeanById).mockResolvedValue(null);
     jest.mocked(emitOrderEvent).mockImplementation(() => undefined);
     jest.mocked(emitCurrentAnalyticsAlerts).mockResolvedValue(undefined);
+    jest.mocked(enqueueOrderPaidSideEffects).mockResolvedValue(undefined);
     jest.mocked(orderRepository.save).mockResolvedValue(undefined as never);
     jest
       .mocked(orderRepository.findCheckoutByIdempotencyKey)
@@ -855,7 +861,7 @@ describe('order service', () => {
     });
   });
 
-  test('marks Stripe checkout sessions as paid and sends confirmation email', async () => {
+  test('marks Stripe checkout sessions as paid and enqueues confirmation side effects', async () => {
     const order = {
       _id: orderId,
       userId,
@@ -899,10 +905,6 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValue(paidOrder as never);
-    jest.mocked(userRepository.findLeanById).mockResolvedValue({
-      email: 'pat@example.com',
-    } as never);
-
     const result = await markStripeCheckoutPaid({
       id: 'cs_test_123',
       payment_status: 'paid',
@@ -917,15 +919,14 @@ describe('order service', () => {
       'cs_test_123',
     );
     expect(orderRepository.save).not.toHaveBeenCalled();
-    expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({ orderId, totalCents: 2400 }),
-    );
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.status).toBe('paid');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
 
-  test('does not fail paid Stripe webhooks when post-payment side effects fail', async () => {
+  test('does not emit post-payment side effects directly from paid Stripe webhooks', async () => {
     const order = {
       _id: orderId,
       userId,
@@ -968,16 +969,6 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValue(paidOrder as never);
-    jest
-      .mocked(userRepository.findLeanById)
-      .mockRejectedValue(new Error('User lookup unavailable') as never);
-    jest.mocked(emitOrderEvent).mockImplementation(() => {
-      throw new Error('Socket unavailable');
-    });
-    jest
-      .mocked(emitCurrentAnalyticsAlerts)
-      .mockRejectedValue(new Error('Analytics unavailable') as never);
-
     await expect(
       markStripeCheckoutPaid({
         id: 'cs_test_123',
@@ -998,14 +989,13 @@ describe('order service', () => {
     );
 
     expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalled();
-    expect(emitOrderEvent).toHaveBeenCalledWith(
-      'order:paid',
-      expect.objectContaining({ id: orderId }),
-      userId,
-    );
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
+    expect(emitOrderEvent).not.toHaveBeenCalled();
+    expect(emitCurrentAnalyticsAlerts).not.toHaveBeenCalled();
   });
 
-  test('does not resend confirmation email for repeated paid Stripe webhooks', async () => {
+  test('re-enqueues idempotent side effects for repeated paid Stripe webhooks', async () => {
     const paidAt = new Date('2026-01-01T00:01:00.000Z');
     const order = {
       _id: orderId,
@@ -1052,6 +1042,7 @@ describe('order service', () => {
       orderRepository.markStripeCheckoutPaidIfUnpaid,
     ).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(order);
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);
   });
@@ -1126,7 +1117,7 @@ describe('order service', () => {
     expect(result.cancelledAt).toBe(cancelledAt);
   });
 
-  test('sends one confirmation email when paid Stripe webhooks race on the same order', async () => {
+  test('enqueues one idempotent side effect when paid Stripe webhooks race on the same order', async () => {
     const unpaidOrder = {
       _id: orderId,
       userId,
@@ -1180,10 +1171,6 @@ describe('order service', () => {
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValueOnce(paidOrder as never)
       .mockResolvedValueOnce(null);
-    jest.mocked(userRepository.findLeanById).mockResolvedValue({
-      email: 'pat@example.com',
-    } as never);
-
     const [firstResult, secondResult] = await Promise.all([
       markStripeCheckoutPaid(session),
       markStripeCheckoutPaid(session),
@@ -1192,7 +1179,9 @@ describe('order service', () => {
     expect(
       orderRepository.markStripeCheckoutPaidIfUnpaid,
     ).toHaveBeenCalledTimes(2);
-    expect(sendOrderConfirmationEmail).toHaveBeenCalledTimes(1);
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(1);
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(firstResult.payment?.status).toBe('paid');
     expect(secondResult.payment?.status).toBe('paid');
   });

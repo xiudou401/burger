@@ -5,15 +5,12 @@ import type {
   PaymentStatus,
 } from '../models/order.model';
 import { orderRepository } from '../repositories/order.repository';
-import {
-  type PublicOrder,
-  sendOrderConfirmationIfPossible,
-  toPublicOrder,
-} from './order.service';
+import { type PublicOrder, toPublicOrder } from './order.service';
 import type { StripeCheckoutCompletedSession } from './checkout.types';
 import { emitOrderEvent } from './realtime.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 import { appLogger } from '../utils/logger';
+import { enqueueOrderPaidSideEffects } from './outbox.service';
 
 const isPaidOrder = (order: {
   status: OrderStatus;
@@ -106,6 +103,7 @@ export const markStripeCheckoutPaid = async (
     order.status === 'confirmed' && order.payment.status === 'paid';
 
   if (wasAlreadyPaid) {
+    await enqueueOrderPaidSideEffects(order);
     return toPublicOrder(order);
   }
 
@@ -139,18 +137,7 @@ export const markStripeCheckoutPaid = async (
   }
 
   const publicOrder = toPublicOrder(paidOrder);
-  await runStripePaymentSideEffect(
-    'stripe_order_confirmation_email_failed',
-    publicOrder.id,
-    () =>
-      sendOrderConfirmationIfPossible(String(paidOrder.userId), publicOrder),
-  );
-  void emitStripeOrderEventIfPossible(
-    'order:paid',
-    publicOrder,
-    String(paidOrder.userId),
-  );
-  void emitStripeAnalyticsAlertsIfPossible(publicOrder.id);
+  await enqueueOrderPaidSideEffects(paidOrder);
 
   return publicOrder;
 };
