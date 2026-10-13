@@ -24,6 +24,14 @@ recent orders while staff manage orders and menu changes.
   email verification, Google OAuth, and rate-limited auth routes.
 - Added backend cart quote validation, menu-version checks, and order snapshots
   so Stripe line items are created from server-validated checkout data.
+- Built an AI operations insight layer over deterministic MongoDB analytics,
+  including daily briefs, alert investigation, bounded tool calling, and
+  agent-run logging.
+- Added authenticated Socket.IO realtime flows for kitchen order operations,
+  customer order status updates, menu updates, and analytics alerts with
+  polling fallback only when realtime is unavailable.
+- Moved menu images to a private S3 origin served through CloudFront, with the
+  backend issuing presigned upload URLs and storing CDN URLs on menu items.
 - Deployed the live app with Vercel, Render, MongoDB Atlas, Resend, and Stripe,
   with an optional AWS deployment path documented for S3, CloudFront, ECR, ECS
   Fargate, and an Application Load Balancer.
@@ -32,27 +40,30 @@ recent orders while staff manage orders and menu changes.
 
 | Area     | Stack                                                                             |
 | -------- | --------------------------------------------------------------------------------- |
-| Frontend | React 19, TypeScript, React Router, CSS Modules, Vite                             |
+| Frontend | React 19, TypeScript, React Router, CSS Modules, Vite, Socket.IO client           |
 | Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                       |
 | Database | MongoDB                                                                           |
 | Payments | Stripe Checkout, Stripe webhook signature verification                            |
 | Auth     | Email/password, Google OAuth, JWT access tokens, HttpOnly refresh-cookie sessions |
+| AI/Ops   | OpenAI-compatible insight client, deterministic fallback, AgentRun logging        |
+| Assets   | AWS S3 private origin, CloudFront menu image CDN                                  |
 | Testing  | Jest, Vitest, React Testing Library, ts-jest                                      |
-| Tooling  | Stripe CLI, npm scripts                                                           |
+| Tooling  | Stripe CLI, npm scripts, GitHub Actions                                           |
 
 ## System Architecture
 
 ```text
 React customer app
   |-- REST API: menu, cart validation, checkout, profile orders
-  |-- Socket.IO: menu version updates, customer order status updates
+  |-- Socket.IO: menu updates, customer order status updates
   v
 Express API
   |-- Auth/RBAC: customer, staff, admin permissions
-  |-- Order state machine: pending_payment -> paid -> preparing -> ready -> completed
+  |-- Order state machine: pending_payment -> confirmed -> preparing -> ready -> completed
   |-- Stripe webhook reconciliation
   |-- MongoDB aggregation for dashboard analytics
-  |-- AI admin insight agent over verified backend data
+  |-- AI operations insight agent over verified backend data
+  |-- S3 presigned uploads and CloudFront image URLs
   v
 MongoDB Atlas
   |-- menu items
@@ -71,6 +82,7 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   version polling.
 - Realistic restaurant menu coverage across burgers, sides, drinks, desserts,
   and combos, including featured and sold-out availability states.
+- Menu images stored as CloudFront URLs backed by private S3 objects.
 - Backend cart validation so checkout totals are calculated server-side before
   order creation.
 - Stripe Checkout flow with signed webhook handling and order-snapshot line
@@ -80,6 +92,8 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   source of payment truth.
 - Authenticated WebSocket admin events for order and menu changes, allowing the
   staff dashboard to refresh without manual reloads.
+- Realtime kitchen board workflow for confirmed, preparing, ready, completed,
+  and cancelled orders.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
@@ -87,6 +101,8 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   availability updates.
 - Staff invitation flow with token validation.
 - Email workflows for verification, reset password, and order confirmation.
+- AI daily brief, analytics alerts, alert investigation, admin chat, and
+  read-only analytics tools for evidence-grounded operational recommendations.
 - Seed scripts for local menu and demo users.
 
 ## Frontend Highlights
@@ -122,6 +138,8 @@ attributed by `payment.paidAt`, while order-count and payment-status funnel
 metrics remain based on order creation time. Order item snapshots include
 `categoryAtPurchase` so historical category reporting is not affected by later
 menu edits, and lower-selling items include current menu items with zero sales.
+The dashboard also tracks attachment rates such as burger orders with sides or
+drinks, using item category snapshots instead of current menu category lookup.
 
 The dashboard also exposes deterministic analytics alerts for high cancellation
 rate, low paid-order rate, and revenue drops versus the previous period. Order
@@ -131,8 +149,14 @@ Admins can then investigate an alert with the AI insight agent, which reloads
 trusted analytics and active alert context before generating an evidence-based
 recommendation. Follow-up questions reuse the same grounded alert investigation
 endpoint instead of relying on unbounded chat memory. When a manager asks to see
-orders by status, the agent can call a restricted `getOrdersByStatus` tool that
-returns only operational order evidence, not customer private data.
+orders by status, the agent can call a restricted `getOrders` tool that returns
+only operational order evidence, not customer private data.
+
+The daily brief is productized for a restaurant owner rather than exposed as a
+generic model response. The backend combines deterministic daily metrics,
+active alerts, and model output into a structured `dailyBrief` payload with a
+headline, priority, focus areas, and next checks. This lets the dashboard show
+what deserves attention today without asking the owner to interpret raw charts.
 
 Local demos can run `ALLOW_DEMO_ORDER_SEED=true npm run seed:demo-orders`
 after seeding users and menu items to create realistic 30-day order history
@@ -154,7 +178,7 @@ use small payloads such as `order:paid`, `order:updated`, `order:cancelled`,
 Customer checkout
   -> Stripe Checkout
   -> signed Stripe webhook
-  -> backend marks order paid
+  -> backend marks order confirmed and payment paid
   -> order:paid emitted to admins and the order owner's user room
   -> Kitchen Board updates and customer order page updates
 
@@ -183,9 +207,9 @@ The admin dashboard includes an AI operations insight agent that turns verified
 analytics into operational attention, not unbounded chat. The backend first
 computes metrics with MongoDB aggregation, detects active alerts, and exposes
 restricted read-only tools such as `getPaymentStats`, `getItemPerformance`,
-and `getOrdersByStatus`. The model can then explain what happened, cite the
-evidence, describe a likely explanation only when the data supports it, and
-recommend what the manager should check next.
+`getOrders`, and `getAttachmentRates`. The model can then explain what
+happened, cite the evidence, describe a likely explanation only when the data
+supports it, and recommend what the manager should check next.
 
 ```text
 Orders in MongoDB
@@ -194,9 +218,17 @@ Orders in MongoDB
   -> selected read-only tools
   -> AI insight agent
   -> evidence-grounded operational attention cards
-  -> follow-up alert and order investigation
+  -> productized daily brief or alert investigation
+  -> follow-up alert, order, item, payment, and attachment-rate checks
   -> AgentRun logging for model, tool, latency, status, and cost estimate
 ```
+
+Cancellation alert investigation uses a bounded V2 workflow. It always starts
+with the analytics summary and cancelled order evidence, builds a cancellation
+breakdown, then records a `branchDecision` before selecting the next focused
+tool: payment outcome check, item/category concentration check, time-window
+check, or insufficient-signal. This keeps the agent explainable and prevents an
+unbounded autonomous loop.
 
 Each insight run is recorded in an `AgentRun` document with the agent name,
 prompt, selected backend tools, latency, status, and optional cost estimate.
