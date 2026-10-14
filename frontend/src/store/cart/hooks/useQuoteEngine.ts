@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { CartStoredItem, QuoteErrorAction } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
-import { getQuoteErrorState, isRemovedItemError } from '../utils/quote-error';
+import {
+  getQuoteErrorState,
+  isRemovedItemError,
+  isInvalidCartItemsError,
+} from '../utils/quote-error';
 import {
   getDisplayTotalCents,
   getQuoteUnitPriceChanges,
@@ -133,7 +137,7 @@ export const useQuoteEngine = ({
     try {
       await validateQuote();
     } catch (error) {
-      if (isRemovedItemError(error)) {
+      if (isRemovedItemError(error) || isInvalidCartItemsError(error)) {
         setQuoteValidationError(error);
         return;
       }

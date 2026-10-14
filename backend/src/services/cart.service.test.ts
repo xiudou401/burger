@@ -27,11 +27,11 @@ describe('cart service validation', () => {
     await expect(
       validateCart([{ id: itemId, quantity: 1 }], 7),
     ).rejects.toMatchObject({
-      message: `Menu item ${itemId} is no longer available`,
+      message: 'Some cart items are no longer available',
       statusCode: 400,
       details: {
-        code: 'MENU_ITEM_REMOVED',
-        itemId,
+        code: 'CART_ITEMS_INVALID',
+        items: [{ itemId, reason: 'removed' }],
       },
     });
   });

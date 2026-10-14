@@ -51,6 +51,10 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
     });
   };
   const handleQuoteErrorAction = () => {
+    if (quoteErrorAction?.type === 'removeItems') {
+      quoteErrorAction.itemIds.forEach(deleteItem);
+      return;
+    }
     if (quoteErrorAction?.type === 'removeItem') {
       deleteItem(quoteErrorAction.itemId);
       return;
@@ -118,9 +122,11 @@ const CartDetails = ({ open, onClose }: CartDetailsProps) => {
               <button type="button" onClick={handleQuoteErrorAction}>
                 {quoteErrorAction?.type === 'clearCart'
                   ? 'Clear cart'
-                  : quoteErrorAction?.type === 'removeItem'
-                    ? 'Remove item'
-                    : 'Retry'}
+                  : quoteErrorAction?.type === 'removeItems'
+                    ? 'Remove unavailable items'
+                    : quoteErrorAction?.type === 'removeItem'
+                      ? 'Remove item'
+                      : 'Retry'}
               </button>
             </div>
           )}

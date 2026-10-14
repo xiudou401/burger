@@ -19,7 +19,7 @@ export const isRemovedItemError = (error: unknown): error is ApiError =>
   error instanceof ApiError &&
   error.body.details?.code === MENU_ITEM_REMOVED_CODE;
 
-const isInvalidCartItemsError = (error: unknown): error is ApiError =>
+export const isInvalidCartItemsError = (error: unknown): error is ApiError =>
   error instanceof ApiError &&
   error.body.details?.code === CART_ITEMS_INVALID_CODE;
 
@@ -28,7 +28,15 @@ const getInvalidCartItems = (error: unknown) => {
 
   const items = error.body.details?.items;
 
-  return Array.isArray(items) ? (items as InvalidCartItem[]) : [];
+  return Array.isArray(items)
+    ? items.filter(
+        (item): item is InvalidCartItem =>
+          !!item &&
+          typeof item === 'object' &&
+          typeof item.itemId === 'string' &&
+          (item.reason === 'removed' || item.reason === 'sold_out'),
+      )
+    : [];
 };
 
 export const getRemovedItemId = (error: unknown) => {
@@ -156,9 +164,14 @@ export const getQuoteErrorState = (
   }
 
   if (isInvalidCartItemsError(error)) {
+    const itemIds = [
+      ...new Set(
+        getInvalidCartItems(error).map((item) => item.itemId as string),
+      ),
+    ];
     return {
       message: getInvalidCartItemsMessage(error, quote),
-      action: null,
+      action: itemIds.length ? { type: 'removeItems', itemIds } : null,
     };
   }
 

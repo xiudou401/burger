@@ -174,7 +174,7 @@ describe('getQuoteErrorState', () => {
     ).toEqual({
       message:
         'Sydney Club Burger, Cold Soft Drink are no longer available. Please review your cart.',
-      action: null,
+      action: { type: 'removeItems', itemIds: ['burger', 'drink'] },
     });
   });
 

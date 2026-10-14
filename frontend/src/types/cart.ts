@@ -24,6 +24,7 @@ export interface Quote {
 }
 
 export type QuoteErrorAction =
+  | { type: 'removeItems'; itemIds: string[] }
   | {
       type: 'removeItem';
       itemId: string;

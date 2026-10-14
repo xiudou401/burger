@@ -92,19 +92,6 @@ export const validateCart = async (
   });
 
   if (invalidItems.length > 0) {
-    const [firstInvalidItem] = invalidItems;
-
-    if (invalidItems.length === 1 && firstInvalidItem?.reason === 'removed') {
-      throw new ServiceError(
-        `Menu item ${firstInvalidItem.itemId} is no longer available`,
-        400,
-        {
-          code: 'MENU_ITEM_REMOVED',
-          itemId: firstInvalidItem.itemId,
-        },
-      );
-    }
-
     throw new ServiceError('Some cart items are no longer available', 400, {
       code: 'CART_ITEMS_INVALID',
       items: invalidItems,
