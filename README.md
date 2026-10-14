@@ -243,7 +243,6 @@ external AI spend.
 - Stripe runs in test mode and does not create real charges.
 - Google sign-in is available in the deployed app.
 - Email/password and Google sign-in are available in the current auth surface.
-- Apple sign-in is planned but not implemented yet.
 
 ## Screenshots
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const OAuthProviderSchema = z.enum(['google', 'apple']);
+export const OAuthProviderSchema = z.enum(['google']);
 
 export const OAuthModeSchema = z
   .enum(['login', 'signup', 'admin'])

@@ -36,7 +36,7 @@ const getOAuthErrorTarget = (
   return mode;
 };
 
-const getOAuthCallbackUrl = (provider: 'google' | 'apple') =>
+const getOAuthCallbackUrl = (provider: 'google') =>
   `${env.API_URL}/api/auth/oauth/${provider}/callback`;
 
 export const oauthStartHandler = (
@@ -77,14 +77,6 @@ export const oauthStartHandler = (
 
     return res.redirect(
       `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`,
-    );
-  }
-
-  if (provider === 'apple') {
-    return redirectWithError(
-      res,
-      'Apple sign in is planned but not implemented yet',
-      getOAuthErrorTarget(mode),
     );
   }
 
