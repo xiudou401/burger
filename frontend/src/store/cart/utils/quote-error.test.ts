@@ -91,6 +91,30 @@ describe('getQuoteErrorMessage', () => {
       'Sydney Club Burger is no longer available. Please remove it from your cart.',
     );
   });
+
+  it('uses item names for bulk invalid cart item errors', () => {
+    expect(
+      getQuoteErrorMessage(
+        new ApiError(400, {
+          message: 'Some cart items are no longer available',
+          details: {
+            code: 'CART_ITEMS_INVALID',
+            items: [
+              { itemId: 'burger', reason: 'removed' },
+              {
+                itemId: 'drink',
+                reason: 'sold_out',
+                name: 'Cold Soft Drink',
+              },
+            ],
+          },
+        }),
+        quote,
+      ),
+    ).toBe(
+      'Sydney Club Burger, Cold Soft Drink are no longer available. Please review your cart.',
+    );
+  });
 });
 
 describe('getRemovedItemId', () => {
@@ -129,6 +153,28 @@ describe('getQuoteErrorState', () => {
         type: 'removeItem',
         itemId: 'burger',
       },
+    });
+  });
+
+  it('returns a review message without auto-removing for bulk invalid cart items', () => {
+    expect(
+      getQuoteErrorState(
+        new ApiError(400, {
+          message: 'Some cart items are no longer available',
+          details: {
+            code: 'CART_ITEMS_INVALID',
+            items: [
+              { itemId: 'burger', reason: 'removed' },
+              { itemId: 'drink', reason: 'sold_out', name: 'Cold Soft Drink' },
+            ],
+          },
+        }),
+        quote,
+      ),
+    ).toEqual({
+      message:
+        'Sydney Club Burger, Cold Soft Drink are no longer available. Please review your cart.',
+      action: null,
     });
   });
 

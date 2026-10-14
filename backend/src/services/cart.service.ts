@@ -23,6 +23,17 @@ export interface ValidateCartResult {
   menuVersion: number;
 }
 
+type InvalidCartItem =
+  | {
+      itemId: string;
+      reason: 'removed';
+    }
+  | {
+      itemId: string;
+      reason: 'sold_out';
+      name: string;
+    };
+
 export const validateCart = async (
   items: CartStoredItem[],
   menuVersion: CartPayload['menuVersion'],
@@ -42,29 +53,33 @@ export const validateCart = async (
   );
 
   let totalCents = 0;
+  const invalidItems: InvalidCartItem[] = [];
+  const result: ValidatedCartMenuItem[] = [];
 
-  const result: ValidatedCartMenuItem[] = items.map((item) => {
+  items.forEach((item) => {
     const menuItem = menuItemMap.get(item.id);
 
     if (!menuItem) {
-      throw new ServiceError(
-        `Menu item ${item.id} is no longer available`,
-        400,
-        {
-          code: 'MENU_ITEM_REMOVED',
-          itemId: item.id,
-        },
-      );
+      invalidItems.push({
+        itemId: item.id,
+        reason: 'removed',
+      });
+      return;
     }
 
     if (menuItem.isAvailable === false) {
-      throw new ServiceError(`${menuItem.name} is currently sold out`, 400);
+      invalidItems.push({
+        itemId: item.id,
+        reason: 'sold_out',
+        name: menuItem.name,
+      });
+      return;
     }
 
     const subtotalCents = menuItem.priceCents * item.quantity;
     totalCents += subtotalCents;
 
-    return {
+    result.push({
       id: menuItem._id.toString(),
       name: menuItem.name,
       image: menuItem.image,
@@ -73,8 +88,28 @@ export const validateCart = async (
       isAvailable: menuItem.isAvailable ?? true,
       quantity: item.quantity,
       subtotalCents,
-    };
+    });
   });
+
+  if (invalidItems.length > 0) {
+    const [firstInvalidItem] = invalidItems;
+
+    if (invalidItems.length === 1 && firstInvalidItem?.reason === 'removed') {
+      throw new ServiceError(
+        `Menu item ${firstInvalidItem.itemId} is no longer available`,
+        400,
+        {
+          code: 'MENU_ITEM_REMOVED',
+          itemId: firstInvalidItem.itemId,
+        },
+      );
+    }
+
+    throw new ServiceError('Some cart items are no longer available', 400, {
+      code: 'CART_ITEMS_INVALID',
+      items: invalidItems,
+    });
+  }
 
   return {
     items: result,
