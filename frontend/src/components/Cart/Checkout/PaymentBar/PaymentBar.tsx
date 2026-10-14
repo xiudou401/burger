@@ -10,6 +10,8 @@ import { useToast } from '../../../UI/Toast/ToastContext';
 import { hasPermission } from '../../../../types/permissions';
 import { createCheckoutAttemptKey } from '../../../../utils/idempotency';
 import { getCheckoutErrorMessage } from '../checkout-utils';
+import { getQuoteUnitPriceChanges } from '../../../../store/cart/utils/quote-utils';
+import { getPriceUpdatedNotice } from '../../../../store/cart/utils/quote-notice';
 
 interface PaymentBarProps {
   totalCents: number;
@@ -93,6 +95,14 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
 
     try {
       const validatedQuote = await validateQuoteForUserAction();
+      const priceChangeNotice = getPriceUpdatedNotice(
+        getQuoteUnitPriceChanges(quote, validatedQuote),
+      );
+
+      if (priceChangeNotice) {
+        setMessage(priceChangeNotice);
+        return;
+      }
 
       const { checkoutUrl } = await createCheckoutOrder(
         items,

@@ -40,6 +40,18 @@ const validatedQuote = {
   ts: Date.now(),
 };
 
+const quotedMenuItem = {
+  id: 'menu-item-1',
+  name: 'Classic Burger',
+  description: 'Beef burger',
+  priceCents: 1200,
+  category: 'burger' as const,
+  isAvailable: true,
+  quantity: 2,
+  subtotalCents: 2400,
+  image: '/img/burger.png',
+};
+
 const validateQuoteForUserAction = vi.fn();
 
 const cartContext: CartContextValue = {
@@ -137,5 +149,35 @@ describe('PaymentBar', () => {
     await waitFor(() => {
       expect(createCheckoutOrder).toHaveBeenCalledTimes(1);
     });
+  });
+
+  test('stops checkout when the latest quote changes item prices', async () => {
+    validateQuoteForUserAction.mockResolvedValueOnce({
+      ...validatedQuote,
+      menuItems: [{ ...quotedMenuItem, priceCents: 1400 }],
+      totalCents: 2800,
+    });
+    vi.mocked(useCartSelector).mockImplementation((selector) =>
+      selector({
+        ...cartContext,
+        quote: {
+          ...validatedQuote,
+          menuItems: [quotedMenuItem],
+          totalCents: 2400,
+        },
+      }),
+    );
+
+    render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
+
+    expect(
+      await screen.findByText(
+        'Classic Burger price updated to $14.00. Please review before paying.',
+      ),
+    ).toBeInTheDocument();
+    expect(createCheckoutOrder).not.toHaveBeenCalled();
+    expect(window.location.assign).not.toHaveBeenCalled();
   });
 });
