@@ -3,7 +3,6 @@ import type { CartStoredItem, QuoteErrorAction } from '../../../types/cart';
 import { cartSignature } from '../utils/cart-signature';
 import {
   getQuoteErrorState,
-  isRemovedItemError,
   isInvalidCartItemsError,
 } from '../utils/quote-error';
 import {
@@ -137,7 +136,7 @@ export const useQuoteEngine = ({
     try {
       await validateQuote();
     } catch (error) {
-      if (isRemovedItemError(error) || isInvalidCartItemsError(error)) {
+      if (isInvalidCartItemsError(error)) {
         setQuoteValidationError(error);
         return;
       }

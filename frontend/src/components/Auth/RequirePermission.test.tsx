@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import RequireAdmin from './RequireAdmin';
+import RequirePermission from './RequirePermission';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { AuthContextValue } from '../../store/auth/auth-context';
 import type { User } from '../../types/auth';
@@ -33,14 +33,17 @@ const baseAuth: AuthContextValue = {
   isAuthLoading: false,
 };
 
-const renderGuard = (auth: Partial<AuthContextValue>) => {
+const renderGuard = (
+  auth: Partial<AuthContextValue>,
+  permission: 'view_orders' | 'manage_menu' = 'view_orders',
+) => {
   const authValue = { ...baseAuth, ...auth };
   vi.mocked(useAuth).mockImplementation((selector) => selector(authValue));
 
-  return render(<RequireAdmin />);
+  return render(<RequirePermission permission={permission} />);
 };
 
-describe('RequireAdmin', () => {
+describe('RequirePermission', () => {
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -57,6 +60,18 @@ describe('RequireAdmin', () => {
     renderGuard({ isAuthenticated: false });
 
     expect(screen.getByText('Navigate to /admin/login')).toBeInTheDocument();
+  });
+
+  test('redirects staff without menu permission to orders', async () => {
+    renderGuard({ isAuthenticated: true, user: user('staff') }, 'manage_menu');
+    expect(
+      await screen.findByText('Navigate to /admin/orders'),
+    ).toBeInTheDocument();
+  });
+
+  test('allows admins to manage the menu', async () => {
+    renderGuard({ isAuthenticated: true, user: user('admin') }, 'manage_menu');
+    expect(await screen.findByText('Admin orders')).toBeInTheDocument();
   });
 
   test('redirects customers away from admin routes', async () => {

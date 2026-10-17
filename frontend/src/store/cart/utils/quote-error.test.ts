@@ -1,10 +1,6 @@
 import { HTTP_STATUS } from '../../../api/http-status';
 import { ApiError } from '../../../api/request';
-import {
-  getQuoteErrorMessage,
-  getQuoteErrorState,
-  getRemovedItemId,
-} from './quote-error';
+import { getQuoteErrorMessage, getQuoteErrorState } from './quote-error';
 import type { Quote } from '../../../types/cart';
 
 const quote: Quote = {
@@ -70,11 +66,14 @@ describe('getQuoteErrorMessage', () => {
       getQuoteErrorMessage(
         new ApiError(400, {
           message: 'Item is no longer available',
-          details: { code: 'MENU_ITEM_REMOVED' },
+          details: {
+            code: 'CART_ITEMS_INVALID',
+            items: [{ itemId: 'unknown', reason: 'removed' }],
+          },
         }),
       ),
     ).toBe(
-      'An item in your cart is no longer available. Please review your cart.',
+      'Some items in your cart are no longer available. Please review your cart.',
     );
   });
 
@@ -83,12 +82,15 @@ describe('getQuoteErrorMessage', () => {
       getQuoteErrorMessage(
         new ApiError(400, {
           message: 'Item is no longer available',
-          details: { code: 'MENU_ITEM_REMOVED', itemId: 'burger' },
+          details: {
+            code: 'CART_ITEMS_INVALID',
+            items: [{ itemId: 'burger', reason: 'removed' }],
+          },
         }),
         quote,
       ),
     ).toBe(
-      'Sydney Club Burger is no longer available. Please remove it from your cart.',
+      'Sydney Club Burger is no longer available. Please review your cart.',
     );
   });
 
@@ -117,41 +119,25 @@ describe('getQuoteErrorMessage', () => {
   });
 });
 
-describe('getRemovedItemId', () => {
-  it('returns the removed item id from structured API details', () => {
-    expect(
-      getRemovedItemId(
-        new ApiError(400, {
-          message: 'Item is no longer available',
-          details: { code: 'MENU_ITEM_REMOVED', itemId: 'burger' },
-        }),
-      ),
-    ).toBe('burger');
-  });
-
-  it('returns null for other errors', () => {
-    expect(
-      getRemovedItemId(new ApiError(400, { message: 'Invalid cart' })),
-    ).toBeNull();
-  });
-});
-
 describe('getQuoteErrorState', () => {
   it('returns a message and remove action for removed menu items', () => {
     expect(
       getQuoteErrorState(
         new ApiError(400, {
           message: 'Item is no longer available',
-          details: { code: 'MENU_ITEM_REMOVED', itemId: 'burger' },
+          details: {
+            code: 'CART_ITEMS_INVALID',
+            items: [{ itemId: 'burger', reason: 'removed' }],
+          },
         }),
         quote,
       ),
     ).toEqual({
       message:
-        'Sydney Club Burger is no longer available. Please remove it from your cart.',
+        'Sydney Club Burger is no longer available. Please review your cart.',
       action: {
-        type: 'removeItem',
-        itemId: 'burger',
+        type: 'removeItems',
+        itemIds: ['burger'],
       },
     });
   });
