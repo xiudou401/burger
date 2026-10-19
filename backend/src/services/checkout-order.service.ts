@@ -120,7 +120,7 @@ const completeCheckoutOrder = async (
       );
     }
 
-    const completedOrder =
+    const orderWithCheckoutSession =
       await orderRepository.markCheckoutSessionCreatedIfClaimed(
         String(claimedOrder._id),
         claimToken,
@@ -128,7 +128,7 @@ const completeCheckoutOrder = async (
         session.url,
       );
 
-    if (!completedOrder) {
+    if (!orderWithCheckoutSession) {
       throw new ServiceError(
         'Checkout state changed while creating session',
         409,
@@ -136,7 +136,7 @@ const completeCheckoutOrder = async (
     }
 
     return {
-      order: toPublicOrder(completedOrder),
+      order: toPublicOrder(orderWithCheckoutSession),
       checkoutUrl: session.url,
     };
   } catch (error) {
