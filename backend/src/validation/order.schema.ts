@@ -4,6 +4,7 @@ import { ObjectIdSchema, paginationLimit } from './common.schema';
 
 export const CreateOrderSchema = CartPayloadSchema.extend({
   idempotencyKey: z.string().trim().uuid('Invalid checkout attempt'),
+  supersededCheckoutKeys: z.array(z.string().uuid()).max(20).optional(),
 }).strict();
 
 export const OrderStatusSchema = z.enum([

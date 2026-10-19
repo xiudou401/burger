@@ -14,6 +14,7 @@ import {
 import {
   createStripeCheckoutSession,
   retrieveStripeCheckoutSession,
+  expireStripeCheckoutSession,
 } from './stripe-checkout.service';
 import { emitOrderEvent } from './realtime.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
@@ -209,12 +210,95 @@ const completeExistingCheckoutOrder = (
   return completeCheckoutOrder(existingOrder, idempotencyKey);
 };
 
+const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
+  for (const key of new Set(keys)) {
+    const order = await orderRepository.findCheckoutByIdempotencyKey(
+      userId,
+      key,
+    );
+    if (!order) continue;
+    if (order.payment.status === 'paid' || order.status === 'confirmed') {
+      throw new ServiceError('Previous checkout is already paid', 409, {
+        code: 'ORDER_ALREADY_PAID',
+        orderId: String(order._id),
+      });
+    }
+    let sessionId = order.payment.providerPaymentId;
+    if (!sessionId?.startsWith('cs_')) {
+      if (order.status === 'cancelled') continue;
+      try {
+        // Reuse the original key and claim lease to recover an interrupted creator.
+        const recovered = await completeCheckoutOrder(order, key);
+        sessionId = recovered.order.payment?.providerPaymentId;
+      } catch (error) {
+        if (
+          error instanceof ServiceError &&
+          error.statusCode === 409 &&
+          !error.details?.code
+        ) {
+          throw new ServiceError(
+            'Previous checkout is still being prepared. Please retry shortly.',
+            409,
+            { code: 'CHECKOUT_PREPARING' },
+          );
+        }
+        throw error;
+      }
+      if (!sessionId?.startsWith('cs_')) {
+        throw new ServiceError(
+          'Previous checkout could not be recovered',
+          409,
+          { code: 'CHECKOUT_PREPARING' },
+        );
+      }
+    }
+    let session = await retrieveStripeCheckoutSession(sessionId);
+    if (session.status === 'open') {
+      try {
+        session = await expireStripeCheckoutSession(sessionId);
+      } catch (error) {
+        // Payment or another request may have won the race to close this Session.
+        session = await retrieveStripeCheckoutSession(sessionId);
+        if (session.status === 'open') throw error;
+      }
+    }
+    if (session.payment_status === 'paid' || session.status === 'complete') {
+      throw new ServiceError(
+        'Payment has been submitted. Please check your order.',
+        409,
+        { code: 'ORDER_ALREADY_PAID', orderId: String(order._id) },
+      );
+    }
+    if (session.status !== 'expired') {
+      throw new ServiceError(
+        'Could not close previous checkout. Please retry.',
+        409,
+        { code: 'CHECKOUT_PREPARING' },
+      );
+    }
+    const cancelled = await orderRepository.markStripeCheckoutFailedIfNotPaid(
+      sessionId,
+      'cancelled',
+      'duplicate_order',
+    );
+    if (cancelled) {
+      emitOrderEvent('order:cancelled', toPublicOrder(cancelled), userId);
+      void emitCurrentAnalyticsAlerts();
+    }
+  }
+};
+
 export const createCheckoutOrder = async (
   userId: string,
   items: CartStoredItem[],
   menuVersion: number,
   idempotencyKey: string,
+  supersededCheckoutKeys: string[] = [],
 ): Promise<CheckoutOrder> => {
+  if (supersededCheckoutKeys.includes(idempotencyKey)) {
+    throw new ServiceError('A checkout cannot replace itself', 400);
+  }
+  await closeSupersededCheckouts(userId, supersededCheckoutKeys);
   const existingOrder = await orderRepository.findCheckoutByIdempotencyKey(
     userId,
     idempotencyKey,

@@ -6,6 +6,7 @@ export const createCheckoutOrder = (
   items: CartStoredItem[],
   menuVersion: number,
   idempotencyKey: string,
+  supersededCheckoutKeys?: string[],
 ) => {
   return request<{ order: Order; checkoutUrl: string }>('/orders/checkout', {
     method: 'POST',
@@ -13,6 +14,7 @@ export const createCheckoutOrder = (
       items,
       menuVersion,
       idempotencyKey,
+      ...(supersededCheckoutKeys?.length ? { supersededCheckoutKeys } : {}),
     }),
   });
 };

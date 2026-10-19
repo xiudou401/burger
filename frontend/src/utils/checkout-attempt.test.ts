@@ -2,6 +2,8 @@ import {
   clearCheckoutAttempt,
   getCheckoutAttempt,
   readCheckoutAttempt,
+  getSupersededCheckoutKeys,
+  acknowledgeSupersededCheckouts,
 } from './checkout-attempt';
 
 const items = [{ id: 'burger', quantity: 2 }];
@@ -29,4 +31,18 @@ test('clears completed attempts and tolerates malformed storage', () => {
   expect(readCheckoutAttempt('user-a', items)).toBeNull();
   localStorage.setItem('checkout-attempt:user-a', 'invalid');
   expect(readCheckoutAttempt('user-a', items)).toBeNull();
+});
+
+test('retains old keys through cart changes and retries until acknowledged', () => {
+  const first = getCheckoutAttempt('user-a', items);
+  expect(readCheckoutAttempt('user-a', [])).toBeNull();
+  const second = getCheckoutAttempt('user-a', [{ id: 'fries', quantity: 1 }]);
+  expect(getSupersededCheckoutKeys('user-a')).toEqual([first]);
+  expect(getCheckoutAttempt('user-a', [{ id: 'fries', quantity: 1 }])).toBe(
+    second,
+  );
+  acknowledgeSupersededCheckouts('user-a', first);
+  expect(getSupersededCheckoutKeys('user-a')).toEqual([first]);
+  acknowledgeSupersededCheckouts('user-a', second);
+  expect(getSupersededCheckoutKeys('user-a')).toEqual([]);
 });

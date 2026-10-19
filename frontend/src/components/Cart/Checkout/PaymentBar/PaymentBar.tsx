@@ -12,6 +12,8 @@ import {
   getCheckoutAttempt,
   readCheckoutAttempt,
   clearCheckoutAttempt,
+  getSupersededCheckoutKeys,
+  acknowledgeSupersededCheckouts,
 } from '../../../../utils/checkout-attempt';
 import { ApiError } from '../../../../api/request';
 import { getCheckoutErrorMessage } from '../checkout-utils';
@@ -102,11 +104,15 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
         return;
       }
 
+      const attemptKey = getCheckoutAttempt(user.id, items);
+      const supersededKeys = getSupersededCheckoutKeys(user.id);
       const { checkoutUrl, order } = await createCheckoutOrder(
         items,
         validatedQuote?.menuVersion ?? menuVersion ?? 0,
-        getCheckoutAttempt(user.id, items),
+        attemptKey,
+        ...(supersededKeys.length ? [supersededKeys] : []),
       );
+      acknowledgeSupersededCheckouts(user.id, attemptKey);
       const reviewKey = JSON.stringify([
         order.id,
         order.items?.map((item) => [

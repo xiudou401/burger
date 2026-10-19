@@ -26,7 +26,7 @@ export const createCheckoutOrderHandler = async (
   }
 
   try {
-    const { items, menuVersion, idempotencyKey } =
+    const { items, menuVersion, idempotencyKey, supersededCheckoutKeys } =
       req.body as CreateOrderPayload;
 
     const checkout = await createCheckoutOrder(
@@ -34,6 +34,7 @@ export const createCheckoutOrderHandler = async (
       items,
       menuVersion,
       idempotencyKey,
+      supersededCheckoutKeys,
     );
 
     return res.status(201).json(checkout);

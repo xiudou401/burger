@@ -19,6 +19,7 @@ import { getPermissionsForRole } from '../types/permissions';
 
 const mockCreateSession = jest.fn();
 const mockRetrieveSession = jest.fn();
+const mockExpireSession = jest.fn();
 
 jest.mock('stripe', () =>
   jest.fn().mockImplementation(() => ({
@@ -26,6 +27,7 @@ jest.mock('stripe', () =>
       sessions: {
         create: mockCreateSession,
         retrieve: mockRetrieveSession,
+        expire: mockExpireSession,
       },
     },
   })),
@@ -154,6 +156,9 @@ describe('order service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockExpireSession
+      .mockReset()
+      .mockResolvedValue({ status: 'expired', payment_status: 'unpaid' });
     mockRetrieveSession.mockResolvedValue({
       status: 'open',
       payment_status: 'unpaid',
@@ -196,6 +201,76 @@ describe('order service', () => {
       createCheckoutOrder(userId, [], 7, idempotencyKey),
     ).rejects.toThrow(ServiceError);
     expect(orderRepository.create).not.toHaveBeenCalled();
+  });
+
+  test('expires the previous session before validating a replacement checkout', async () => {
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValueOnce({
+        _id: orderId,
+        userId,
+        status: 'pending_payment',
+        payment: { status: 'requires_payment', providerPaymentId: 'cs_old' },
+      } as never);
+    jest
+      .mocked(orderRepository.markStripeCheckoutFailedIfNotPaid)
+      .mockResolvedValueOnce(null);
+    jest
+      .mocked(validateCart)
+      .mockResolvedValueOnce({ items: [], totalCents: 0, menuVersion: 7 });
+    await expect(
+      createCheckoutOrder(userId, [], 7, idempotencyKey, ['old-key']),
+    ).rejects.toThrow('Cart is empty');
+    expect(mockExpireSession).toHaveBeenCalledWith('cs_old');
+    expect(
+      orderRepository.markStripeCheckoutFailedIfNotPaid,
+    ).toHaveBeenCalledWith('cs_old', 'cancelled', 'duplicate_order');
+    expect(mockExpireSession.mock.invocationCallOrder[0]).toBeLessThan(
+      jest.mocked(validateCart).mock.invocationCallOrder[0],
+    );
+  });
+
+  test('does not create another checkout when payment wins the expiration race', async () => {
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValueOnce({
+        _id: orderId,
+        userId,
+        status: 'pending_payment',
+        payment: { status: 'requires_payment', providerPaymentId: 'cs_old' },
+      } as never);
+    mockRetrieveSession
+      .mockResolvedValueOnce({ status: 'open' })
+      .mockResolvedValueOnce({ status: 'complete', payment_status: 'paid' });
+    mockExpireSession.mockRejectedValueOnce(new Error('Session is complete'));
+    await expect(
+      createCheckoutOrder(userId, [], 7, idempotencyKey, ['old-key']),
+    ).rejects.toMatchObject({
+      details: { code: 'ORDER_ALREADY_PAID', orderId },
+    });
+    expect(
+      orderRepository.markStripeCheckoutFailedIfNotPaid,
+    ).not.toHaveBeenCalled();
+    expect(orderRepository.create).not.toHaveBeenCalled();
+  });
+
+  test('waits when an older checkout is still being created', async () => {
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValueOnce({
+        _id: orderId,
+        userId,
+        status: 'pending_payment',
+        payment: {
+          status: 'requires_payment',
+          providerPaymentId: 'checkout_creation:old',
+        },
+      } as never);
+    await expect(
+      createCheckoutOrder(userId, [], 7, idempotencyKey, ['old-key']),
+    ).rejects.toMatchObject({ details: { code: 'CHECKOUT_PREPARING' } });
+    expect(validateCart).not.toHaveBeenCalled();
+    expect(mockCreateSession).not.toHaveBeenCalled();
   });
 
   test('lists admin orders with a cursor for the next page', async () => {

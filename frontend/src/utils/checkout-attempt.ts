@@ -13,10 +13,12 @@ export const readCheckoutAttempt = (
   try {
     const attempt = JSON.parse(raw);
     if (
-      typeof attempt.key === 'string' &&
-      attempt.signature === cartSignature(items)
+      typeof attempt?.key === 'string' &&
+      typeof attempt.signature === 'string'
     ) {
-      return attempt.key as string;
+      return attempt.signature === cartSignature(items)
+        ? (attempt.key as string)
+        : null;
     }
   } catch {
     // Discard malformed browser storage before creating a new attempt.
@@ -28,12 +30,41 @@ export const readCheckoutAttempt = (
 export const getCheckoutAttempt = (userId: string, items: CartStoredItem[]) => {
   const existing = readCheckoutAttempt(userId, items);
   if (existing) return existing;
+  const raw = localStorage.getItem(storageKey(userId));
+  const previous = raw ? JSON.parse(raw) : null;
+  const supersededKeys = previous
+    ? [...new Set([...(previous.supersededKeys ?? []), previous.key])]
+    : [];
   const key = createCheckoutAttemptKey();
   localStorage.setItem(
     storageKey(userId),
-    JSON.stringify({ key, signature: cartSignature(items) }),
+    JSON.stringify({ key, signature: cartSignature(items), supersededKeys }),
   );
   return key;
+};
+
+export const getSupersededCheckoutKeys = (userId: string): string[] => {
+  const raw = localStorage.getItem(storageKey(userId));
+  if (!raw) return [];
+  try {
+    const keys = JSON.parse(raw)?.supersededKeys;
+    return Array.isArray(keys)
+      ? keys.filter((key): key is string => typeof key === 'string')
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+export const acknowledgeSupersededCheckouts = (userId: string, key: string) => {
+  const raw = localStorage.getItem(storageKey(userId));
+  if (!raw) return;
+  const attempt = JSON.parse(raw);
+  if (attempt.key === key)
+    localStorage.setItem(
+      storageKey(userId),
+      JSON.stringify({ ...attempt, supersededKeys: [] }),
+    );
 };
 
 export const clearCheckoutAttempt = (userId: string) => {
