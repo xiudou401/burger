@@ -31,10 +31,4 @@ export const OAuthCallbackQuerySchema = z
   })
   .passthrough();
 
-export type OAuthProviderParamsPayload = z.infer<
-  typeof OAuthProviderParamsSchema
->;
 export type OAuthStartQueryPayload = z.infer<typeof OAuthStartQuerySchema>;
-export type OAuthCallbackQueryPayload = z.infer<
-  typeof OAuthCallbackQuerySchema
->;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import classes from './PaymentBar.module.css';
 import BottomActionBar from '../../BottomActionBar/BottomActionBar';

@@ -2,6 +2,7 @@
 .github
 docs
 frontend/build
+frontend/dist
 frontend/node_modules
 backend/dist
 backend/coverage

@@ -23,5 +23,4 @@ export const DisableCustomerSchema = z
   .strict();
 
 export type AdminCustomerQuery = z.infer<typeof AdminCustomerQuerySchema>;
-export type AdminCustomerParams = z.infer<typeof AdminCustomerParamsSchema>;
 export type DisableCustomerPayload = z.infer<typeof DisableCustomerSchema>;

@@ -1,4 +1,4 @@
-import React, { MouseEvent } from 'react';
+import { MouseEvent } from 'react';
 import classes from './Confirm.module.css';
 import Backdrop from '../Backdrop/Backdrop';
 

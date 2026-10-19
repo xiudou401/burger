@@ -10,17 +10,6 @@ export const getCartItemQuantity = (ctx: CartContextValue, id: string) =>
 
 export const getQuote = (ctx: CartContextValue) => ctx.quote;
 
-export const getQuoteError = (ctx: CartContextValue) => ctx.quoteError;
-
-export const getQuoteErrorAction = (ctx: CartContextValue) =>
-  ctx.quoteErrorAction;
-
-export const getQuoteNotice = (ctx: CartContextValue) => ctx.quoteNotice;
-
-export const getQuoteStale = (ctx: CartContextValue) => ctx.quoteStale;
-
-export const getQuoteMismatch = (ctx: CartContextValue) => ctx.quoteMismatch;
-
 export const getDisplayTotalCents = (ctx: CartContextValue) =>
   ctx.displayTotalCents;
 
