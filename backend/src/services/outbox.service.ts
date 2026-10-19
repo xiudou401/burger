@@ -38,7 +38,10 @@ const processOrderPaidEvent = async (payload: Record<string, unknown>) => {
     throw new Error('Outbox order not found');
   }
 
-  if (order.status !== 'confirmed' || order.payment.status !== 'paid') {
+  if (
+    !['confirmed', 'preparing', 'ready', 'completed'].includes(order.status) ||
+    order.payment.status !== 'paid'
+  ) {
     throw new Error('Outbox order is not paid');
   }
 

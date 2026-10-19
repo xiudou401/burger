@@ -12,8 +12,9 @@ import { formatOrderShortId, formatOrderStatus } from '../utils/order';
 import MenuImage from '../components/UI/MenuImage/MenuImage';
 import { useCartActions } from '../store/cart/hooks/useCartActions';
 import { clearPersistedCart } from '../store/cart/cart-reducer';
-import { clearCheckoutAttempt } from '../utils/checkout-attempt';
+import { finishPaidCheckoutAttempt } from '../utils/checkout-attempt';
 import { useAuth } from '../store/auth/hooks/useAuth';
+import { useCartSelector } from '../store/cart/hooks/useCartSelector';
 
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
@@ -29,21 +30,23 @@ const OrderDetails = () => {
   });
   const { clearCart } = useCartActions();
   const user = useAuth((ctx) => ctx.user);
+  const cartItems = useCartSelector((ctx) => ctx.items);
   const hasClearedConfirmedCartRef = useRef(false);
   const hasConfirmedPayment = Boolean(
     order && returnedFromSuccessfulPayment && isConfirmedStripeOrder(order),
   );
 
   useEffect(() => {
-    if (!hasConfirmedPayment || hasClearedConfirmedCartRef.current) {
+    if (!hasConfirmedPayment || !user || hasClearedConfirmedCartRef.current) {
       return;
     }
 
     hasClearedConfirmedCartRef.current = true;
-    if (user) clearCheckoutAttempt(user.id);
-    clearPersistedCart();
-    clearCart();
-  }, [clearCart, hasConfirmedPayment, user]);
+    if (finishPaidCheckoutAttempt(user.id, orderId, cartItems)) {
+      clearPersistedCart();
+      clearCart();
+    }
+  }, [clearCart, hasConfirmedPayment, user, orderId, cartItems]);
 
   return (
     <main className={classes.Page}>

@@ -41,18 +41,6 @@ const isStoredCartItem = (value: unknown): value is CartStoredItem => {
   );
 };
 
-const isSuccessfulPaymentReturn = () => {
-  if (typeof window === 'undefined') return false;
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const payment = searchParams.get('payment');
-
-  return (
-    payment === 'success' &&
-    ['/profile', '/payment/return'].includes(window.location.pathname)
-  );
-};
-
 export const clearPersistedCart = () => {
   localStorage.setItem(
     CART_STORAGE_KEY,
@@ -61,11 +49,6 @@ export const clearPersistedCart = () => {
 };
 
 export const loadCartState = (): CartState => {
-  if (isSuccessfulPaymentReturn()) {
-    clearPersistedCart();
-    return initialCartState;
-  }
-
   const stored = localStorage.getItem(CART_STORAGE_KEY);
   if (!stored) return initialCartState;
 

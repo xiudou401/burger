@@ -170,6 +170,26 @@ describe('orderRepository', () => {
     expect(doc.save).toHaveBeenCalled();
   });
 
+  test('accepts successful retries for the same session without confirming cancelled orders', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);
+    await orderRepository.markStripeCheckoutPaidIfUnpaid(orderId, 'cs_retry');
+    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'pending_payment',
+        'payment.providerPaymentId': 'cs_retry',
+        'payment.status': { $in: ['requires_payment', 'failed'] },
+      }),
+      expect.objectContaining({
+        $set: expect.objectContaining({
+          status: 'confirmed',
+          'payment.status': 'paid',
+        }),
+      }),
+      { new: true },
+    );
+  });
+
   test('allows stale checkout session creation claims to be reclaimed', async () => {
     const exec = jest.fn().mockResolvedValue(null);
     jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);

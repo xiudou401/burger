@@ -99,8 +99,7 @@ export const markStripeCheckoutPaid = async (
 
   assertStripeCheckoutMatchesOrder(session, order);
 
-  const wasAlreadyPaid =
-    order.status === 'confirmed' && order.payment.status === 'paid';
+  const wasAlreadyPaid = order.payment.status === 'paid';
 
   if (wasAlreadyPaid) {
     await enqueueOrderPaidSideEffects(order);

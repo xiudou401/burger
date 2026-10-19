@@ -4,6 +4,7 @@ import {
   readCheckoutAttempt,
   getSupersededCheckoutKeys,
   acknowledgeSupersededCheckouts,
+  finishPaidCheckoutAttempt,
 } from './checkout-attempt';
 
 const items = [{ id: 'burger', quantity: 2 }];
@@ -45,4 +46,33 @@ test('retains old keys through cart changes and retries until acknowledged', () 
   expect(getSupersededCheckoutKeys('user-a')).toEqual([first]);
   acknowledgeSupersededCheckouts('user-a', second);
   expect(getSupersededCheckoutKeys('user-a')).toEqual([]);
+});
+
+test('finishes only the matching paid order and unchanged cart', () => {
+  const key = getCheckoutAttempt('user-a', items);
+  acknowledgeSupersededCheckouts('user-a', key, 'order-a');
+  localStorage.setItem('CartItemsState', JSON.stringify(items));
+  expect(finishPaidCheckoutAttempt('user-a', 'order-b', items)).toBe(false);
+  expect(readCheckoutAttempt('user-a', items)).toBe(key);
+  expect(finishPaidCheckoutAttempt('user-a', 'order-a', items)).toBe(true);
+  expect(readCheckoutAttempt('user-a', items)).toBeNull();
+});
+
+test('preserves carts edited in another tab after paying', () => {
+  const key = getCheckoutAttempt('user-a', items);
+  acknowledgeSupersededCheckouts('user-a', key, 'order-a');
+  const newItems = [{ id: 'fries', quantity: 1 }];
+  localStorage.setItem('CartItemsState', JSON.stringify(newItems));
+  expect(finishPaidCheckoutAttempt('user-a', 'order-a', items)).toBe(false);
+  expect(JSON.parse(localStorage.getItem('CartItemsState')!)).toEqual(newItems);
+});
+
+test('an older paid order does not clear a newer checkout attempt', () => {
+  const oldKey = getCheckoutAttempt('user-a', items);
+  acknowledgeSupersededCheckouts('user-a', oldKey, 'order-a');
+  const newItems = [{ id: 'fries', quantity: 1 }];
+  const newKey = getCheckoutAttempt('user-a', newItems);
+  acknowledgeSupersededCheckouts('user-a', newKey, 'order-b');
+  expect(finishPaidCheckoutAttempt('user-a', 'order-a', newItems)).toBe(false);
+  expect(readCheckoutAttempt('user-a', newItems)).toBe(newKey);
 });

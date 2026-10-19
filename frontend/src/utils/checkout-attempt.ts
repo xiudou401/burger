@@ -56,17 +56,49 @@ export const getSupersededCheckoutKeys = (userId: string): string[] => {
   }
 };
 
-export const acknowledgeSupersededCheckouts = (userId: string, key: string) => {
+export const acknowledgeSupersededCheckouts = (
+  userId: string,
+  key: string,
+  orderId?: string,
+) => {
   const raw = localStorage.getItem(storageKey(userId));
   if (!raw) return;
   const attempt = JSON.parse(raw);
   if (attempt.key === key)
     localStorage.setItem(
       storageKey(userId),
-      JSON.stringify({ ...attempt, supersededKeys: [] }),
+      JSON.stringify({
+        ...attempt,
+        supersededKeys: [],
+        ...(orderId ? { orderId } : {}),
+      }),
     );
 };
 
 export const clearCheckoutAttempt = (userId: string) => {
   localStorage.removeItem(storageKey(userId));
+};
+
+export const finishPaidCheckoutAttempt = (
+  userId: string,
+  orderId: string,
+  items: CartStoredItem[],
+) => {
+  const raw = localStorage.getItem(storageKey(userId));
+  if (!raw) return false;
+  try {
+    const attempt = JSON.parse(raw);
+    if (attempt.orderId !== orderId) return false;
+    const storedItems = JSON.parse(
+      localStorage.getItem('CartItemsState') ?? 'null',
+    );
+    const matches =
+      attempt.signature === cartSignature(items) &&
+      Array.isArray(storedItems) &&
+      attempt.signature === cartSignature(storedItems);
+    clearCheckoutAttempt(userId);
+    return matches;
+  } catch {
+    return false;
+  }
 };

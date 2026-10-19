@@ -1,4 +1,4 @@
-import { initialCartState, loadCartState } from './cart-reducer';
+import { loadCartState } from './cart-reducer';
 import { MAX_CART_ITEM_QUANTITY } from './cart-logic';
 
 const setCartStorage = () => {
@@ -46,7 +46,7 @@ describe('loadCartState', () => {
     });
   });
 
-  test('clears persisted cart on the new payment return route', () => {
+  test('preserves cart until payment is verified on the payment return route', () => {
     setCartStorage();
     window.history.pushState(
       {},
@@ -54,11 +54,13 @@ describe('loadCartState', () => {
       '/payment/return?payment=success&orderId=order-1',
     );
 
-    expect(loadCartState()).toEqual(initialCartState);
-    expect(localStorage.getItem('CartItemsState')).toBe('[]');
+    expect(loadCartState().items).toEqual([{ id: 'meal-1', quantity: 2 }]);
+    expect(JSON.parse(localStorage.getItem('CartItemsState')!)).toEqual([
+      { id: 'meal-1', quantity: 2 },
+    ]);
   });
 
-  test('clears persisted cart on the legacy profile success route', () => {
+  test('does not trust success query parameters on the legacy route', () => {
     setCartStorage();
     window.history.pushState(
       {},
@@ -66,7 +68,6 @@ describe('loadCartState', () => {
       '/profile?payment=success&orderId=order-1',
     );
 
-    expect(loadCartState()).toEqual(initialCartState);
-    expect(localStorage.getItem('CartItemsState')).toBe('[]');
+    expect(loadCartState().items).toEqual([{ id: 'meal-1', quantity: 2 }]);
   });
 });

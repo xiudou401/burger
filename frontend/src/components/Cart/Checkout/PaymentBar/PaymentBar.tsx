@@ -112,7 +112,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
         attemptKey,
         ...(supersededKeys.length ? [supersededKeys] : []),
       );
-      acknowledgeSupersededCheckouts(user.id, attemptKey);
+      acknowledgeSupersededCheckouts(user.id, attemptKey, order.id);
       const reviewKey = JSON.stringify([
         order.id,
         order.items?.map((item) => [

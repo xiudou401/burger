@@ -542,7 +542,7 @@ export const orderRepository = {
         'payment.provider': 'stripe',
         'payment.providerPaymentId': sessionId,
         status: 'pending_payment',
-        'payment.status': 'requires_payment',
+        'payment.status': { $in: ['requires_payment', 'failed'] },
       },
       {
         $set: {

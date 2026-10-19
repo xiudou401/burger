@@ -99,45 +99,50 @@ describe('outbox service', () => {
     });
   });
 
-  test('processes a claimed paid order event and marks it processed', async () => {
-    jest.mocked(outboxEventRepository.claimNext).mockResolvedValue({
-      claimToken: '11111111-1111-4111-8111-111111111111',
-      event: {
-        _id: 'event-1',
-        eventType: 'order.paid',
-        eventKey: `order.paid:${orderId}`,
-        aggregateId: orderId,
-        status: 'processing',
-        payload: { orderId, userId },
-        attempts: 1,
-        availableAt: now,
-        createdAt: now,
-        updatedAt: now,
-      },
-    });
-    jest.mocked(orderRepository.findByIdLean).mockResolvedValue(order as never);
+  test.each(['confirmed', 'preparing', 'ready', 'completed'])(
+    'processes a paid order event in %s state',
+    async (status) => {
+      jest.mocked(outboxEventRepository.claimNext).mockResolvedValue({
+        claimToken: '11111111-1111-4111-8111-111111111111',
+        event: {
+          _id: 'event-1',
+          eventType: 'order.paid',
+          eventKey: `order.paid:${orderId}`,
+          aggregateId: orderId,
+          status: 'processing',
+          payload: { orderId, userId },
+          attempts: 1,
+          availableAt: now,
+          createdAt: now,
+          updatedAt: now,
+        },
+      });
+      jest
+        .mocked(orderRepository.findByIdLean)
+        .mockResolvedValue({ ...order, status } as never);
 
-    await expect(processNextOutboxEvent()).resolves.toBe(true);
+      await expect(processNextOutboxEvent()).resolves.toBe(true);
 
-    expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        email: 'pat@example.com',
-        orderId,
-        totalCents: 1200,
-      }),
-    );
-    expect(emitOrderEvent).toHaveBeenCalledWith(
-      'order:paid',
-      expect.objectContaining({ id: orderId }),
-      userId,
-    );
-    expect(emitCurrentAnalyticsAlerts).toHaveBeenCalled();
-    expect(outboxEventRepository.markProcessed).toHaveBeenCalledWith(
-      'event-1',
-      '11111111-1111-4111-8111-111111111111',
-    );
-    expect(outboxEventRepository.markFailed).not.toHaveBeenCalled();
-  });
+      expect(sendOrderConfirmationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'pat@example.com',
+          orderId,
+          totalCents: 1200,
+        }),
+      );
+      expect(emitOrderEvent).toHaveBeenCalledWith(
+        'order:paid',
+        expect.objectContaining({ id: orderId }),
+        userId,
+      );
+      expect(emitCurrentAnalyticsAlerts).toHaveBeenCalled();
+      expect(outboxEventRepository.markProcessed).toHaveBeenCalledWith(
+        'event-1',
+        '11111111-1111-4111-8111-111111111111',
+      );
+      expect(outboxEventRepository.markFailed).not.toHaveBeenCalled();
+    },
+  );
 
   test('marks the claimed event failed when a side effect fails', async () => {
     const error = new Error('Email unavailable');
