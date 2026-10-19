@@ -6,6 +6,7 @@ import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
 import type { CartContextValue } from '../../../../types/cart';
 import type { AuthContextValue } from '../../../../store/auth/auth-context';
+import { getCheckoutAttempt } from '../../../../utils/checkout-attempt';
 
 vi.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/', search: '' }),
@@ -91,6 +92,7 @@ const authContext = {
 describe('PaymentBar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     validateQuoteForUserAction.mockResolvedValue(validatedQuote);
     vi.mocked(useCartSelector).mockImplementation((selector) =>
       selector(cartContext),
@@ -149,6 +151,49 @@ describe('PaymentBar', () => {
     await waitFor(() => {
       expect(createCheckoutOrder).toHaveBeenCalledTimes(1);
     });
+  });
+
+  test('resumes a persisted attempt without requiring a new menu quote', async () => {
+    const key = getCheckoutAttempt('user-1', [cartItem]);
+    render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
+    await waitFor(() =>
+      expect(createCheckoutOrder).toHaveBeenCalledWith(
+        [cartItem],
+        cartContext.menuVersion,
+        key,
+      ),
+    );
+    expect(validateQuoteForUserAction).not.toHaveBeenCalled();
+  });
+
+  test('requires confirmation of the saved order quote before redirecting', async () => {
+    const key = getCheckoutAttempt('user-1', [cartItem]);
+    vi.mocked(createCheckoutOrder).mockResolvedValue({
+      checkoutUrl: 'https://checkout.stripe.test/session',
+      order: {
+        id: 'order-1',
+        totalCents: 2800,
+        items: [{ menuItemId: cartItem.id, priceCents: 1400, quantity: 2 }],
+      } as never,
+    });
+    render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
+    expect(
+      await screen.findByText(/Your saved checkout total is \$28.00/),
+    ).toBeInTheDocument();
+    expect(window.location.assign).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
+    await waitFor(() =>
+      expect(window.location.assign).toHaveBeenCalledWith(
+        'https://checkout.stripe.test/session',
+      ),
+    );
+    expect(createCheckoutOrder).toHaveBeenLastCalledWith(
+      [cartItem],
+      cartContext.menuVersion,
+      key,
+    );
   });
 
   test('stops checkout when the latest quote changes item prices', async () => {

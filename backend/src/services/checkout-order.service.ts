@@ -11,7 +11,10 @@ import {
   type CheckoutOrder,
   type CheckoutOrderDocument,
 } from './checkout.types';
-import { createStripeCheckoutSession } from './stripe-checkout.service';
+import {
+  createStripeCheckoutSession,
+  retrieveStripeCheckoutSession,
+} from './stripe-checkout.service';
 import { emitOrderEvent } from './realtime.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 
@@ -42,11 +45,16 @@ const isReusableCheckout = (
 
 const assertCheckoutCanBeStarted = (order: CheckoutOrderDocument) => {
   if (order.status === 'confirmed' || order.payment.status === 'paid') {
-    throw new ServiceError('Order is already paid', 409);
+    throw new ServiceError('Order is already paid', 409, {
+      code: 'ORDER_ALREADY_PAID',
+      orderId: String(order._id),
+    });
   }
 
   if (order.status === 'cancelled' || order.payment.status === 'cancelled') {
-    throw new ServiceError('Checkout is no longer available', 409);
+    throw new ServiceError('Checkout is no longer available', 409, {
+      code: 'CHECKOUT_ENDED',
+    });
   }
 
   if (
@@ -66,11 +74,36 @@ const getLatestCheckoutOrder = (
     idempotencyKey,
   );
 
+const assertStripeCheckoutOpen = async (order: CheckoutOrderDocument) => {
+  const sessionId = order.payment.providerPaymentId;
+  if (!sessionId?.startsWith('cs_')) {
+    throw new ServiceError('Checkout session is unavailable', 409, {
+      code: 'CHECKOUT_ENDED',
+    });
+  }
+  const session = await retrieveStripeCheckoutSession(sessionId);
+  if (session.payment_status === 'paid' || session.status === 'complete') {
+    throw new ServiceError(
+      'Payment has been submitted. Please check your order.',
+      409,
+      { code: 'ORDER_ALREADY_PAID', orderId: String(order._id) },
+    );
+  }
+  if (session.status !== 'open' || session.expires_at * 1000 <= Date.now()) {
+    throw new ServiceError(
+      'Checkout expired. Please review your cart and try again.',
+      409,
+      { code: 'CHECKOUT_ENDED' },
+    );
+  }
+};
+
 const completeCheckoutOrder = async (
   order: CheckoutOrderDocument,
   idempotencyKey: string,
 ): Promise<CheckoutOrder> => {
   if (isReusableCheckout(order)) {
+    await assertStripeCheckoutOpen(order);
     return {
       order: toPublicOrder(order),
       checkoutUrl: order.checkoutUrl,
@@ -90,6 +123,7 @@ const completeCheckoutOrder = async (
     const latestOrder = await getLatestCheckoutOrder(order, idempotencyKey);
 
     if (latestOrder && isReusableCheckout(latestOrder)) {
+      await assertStripeCheckoutOpen(latestOrder);
       return {
         order: toPublicOrder(latestOrder),
         checkoutUrl: latestOrder.checkoutUrl,
@@ -152,7 +186,26 @@ const completeCheckoutOrder = async (
 const completeExistingCheckoutOrder = (
   existingOrder: CheckoutOrderDocument,
   idempotencyKey: string,
+  items: CartStoredItem[],
 ) => {
+  const signature = (entries: Array<{ id: string; quantity: number }>) =>
+    entries
+      .map(({ id, quantity }) => `${id}:${quantity}`)
+      .sort()
+      .join('|');
+  if (
+    signature(items) !==
+    signature(
+      existingOrder.items.map((item) => ({
+        id: String(item.menuItemId),
+        quantity: item.quantity,
+      })),
+    )
+  ) {
+    throw new ServiceError('Checkout attempt does not match this cart', 409, {
+      code: 'CHECKOUT_CART_MISMATCH',
+    });
+  }
   return completeCheckoutOrder(existingOrder, idempotencyKey);
 };
 
@@ -168,7 +221,7 @@ export const createCheckoutOrder = async (
   );
 
   if (existingOrder) {
-    return completeExistingCheckoutOrder(existingOrder, idempotencyKey);
+    return completeExistingCheckoutOrder(existingOrder, idempotencyKey, items);
   }
 
   const validatedCart = await validateCart(items, menuVersion);
@@ -208,7 +261,7 @@ export const createCheckoutOrder = async (
       throw error;
     }
 
-    return completeExistingCheckoutOrder(racedOrder, idempotencyKey);
+    return completeExistingCheckoutOrder(racedOrder, idempotencyKey, items);
   }
 
   emitOrderEvent('order:created', toPublicOrder(order), String(order.userId));

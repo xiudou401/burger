@@ -12,6 +12,8 @@ import { formatOrderShortId, formatOrderStatus } from '../utils/order';
 import MenuImage from '../components/UI/MenuImage/MenuImage';
 import { useCartActions } from '../store/cart/hooks/useCartActions';
 import { clearPersistedCart } from '../store/cart/cart-reducer';
+import { clearCheckoutAttempt } from '../utils/checkout-attempt';
+import { useAuth } from '../store/auth/hooks/useAuth';
 
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
@@ -26,6 +28,7 @@ const OrderDetails = () => {
     confirmPayment: returnedFromSuccessfulPayment,
   });
   const { clearCart } = useCartActions();
+  const user = useAuth((ctx) => ctx.user);
   const hasClearedConfirmedCartRef = useRef(false);
   const hasConfirmedPayment = Boolean(
     order && returnedFromSuccessfulPayment && isConfirmedStripeOrder(order),
@@ -37,9 +40,10 @@ const OrderDetails = () => {
     }
 
     hasClearedConfirmedCartRef.current = true;
+    if (user) clearCheckoutAttempt(user.id);
     clearPersistedCart();
     clearCart();
-  }, [clearCart, hasConfirmedPayment]);
+  }, [clearCart, hasConfirmedPayment, user]);
 
   return (
     <main className={classes.Page}>

@@ -98,3 +98,6 @@ export const createStripeCheckoutSession = async (
     },
   );
 };
+
+export const retrieveStripeCheckoutSession = (sessionId: string) =>
+  getStripeClient().checkout.sessions.retrieve(sessionId);

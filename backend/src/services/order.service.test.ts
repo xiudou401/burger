@@ -18,12 +18,14 @@ import { listAllOrders, updateOrderStatus } from './order.service';
 import { getPermissionsForRole } from '../types/permissions';
 
 const mockCreateSession = jest.fn();
+const mockRetrieveSession = jest.fn();
 
 jest.mock('stripe', () =>
   jest.fn().mockImplementation(() => ({
     checkout: {
       sessions: {
         create: mockCreateSession,
+        retrieve: mockRetrieveSession,
       },
     },
   })),
@@ -152,6 +154,11 @@ describe('order service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRetrieveSession.mockResolvedValue({
+      status: 'open',
+      payment_status: 'unpaid',
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+    });
     env.STRIPE_SECRET_KEY = 'sk_test_123';
     env.FRONTEND_URL = 'http://localhost:3000';
     env.STRIPE_SUCCESS_URL = undefined;
@@ -405,6 +412,42 @@ describe('order service', () => {
     expect(checkout.order.id).toBe(orderId);
     expect(validateCart).not.toHaveBeenCalled();
     expect(orderRepository.create).not.toHaveBeenCalled();
+    expect(mockCreateSession).not.toHaveBeenCalled();
+  });
+
+  test('rejects changed carts and expired Stripe sessions for an existing attempt', async () => {
+    const existingOrder = {
+      _id: orderId,
+      userId,
+      items: [{ menuItemId, quantity: 2, subtotalCents: 2400 }],
+      status: 'pending_payment',
+      checkoutUrl: 'https://checkout.stripe.com/existing',
+      payment: { status: 'requires_payment', providerPaymentId: 'cs_existing' },
+    };
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue(existingOrder as never);
+    await expect(
+      createCheckoutOrder(
+        userId,
+        [{ id: menuItemId, quantity: 3 }],
+        7,
+        idempotencyKey,
+      ),
+    ).rejects.toMatchObject({ details: { code: 'CHECKOUT_CART_MISMATCH' } });
+    expect(mockRetrieveSession).not.toHaveBeenCalled();
+    mockRetrieveSession.mockResolvedValueOnce({
+      status: 'expired',
+      expires_at: 1,
+    });
+    await expect(
+      createCheckoutOrder(
+        userId,
+        [{ id: menuItemId, quantity: 2 }],
+        7,
+        idempotencyKey,
+      ),
+    ).rejects.toMatchObject({ details: { code: 'CHECKOUT_ENDED' } });
     expect(mockCreateSession).not.toHaveBeenCalled();
   });
 
