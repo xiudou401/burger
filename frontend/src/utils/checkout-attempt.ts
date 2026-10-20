@@ -4,10 +4,16 @@ import { createCheckoutAttemptKey } from './idempotency';
 
 const storageKey = (userId: string) => `checkout-attempt:${userId}`;
 
-export const readCheckoutAttempt = (
+interface StoredCheckoutAttempt {
+  key: string;
+  signature: string;
+  supersededKeys: string[];
+  orderId?: string;
+}
+
+const readStoredCheckoutAttempt = (
   userId: string,
-  items: CartStoredItem[],
-) => {
+): StoredCheckoutAttempt | null => {
   const raw = localStorage.getItem(storageKey(userId));
   if (!raw) return null;
   try {
@@ -16,9 +22,18 @@ export const readCheckoutAttempt = (
       typeof attempt?.key === 'string' &&
       typeof attempt.signature === 'string'
     ) {
-      return attempt.signature === cartSignature(items)
-        ? (attempt.key as string)
-        : null;
+      return {
+        key: attempt.key,
+        signature: attempt.signature,
+        supersededKeys: Array.isArray(attempt.supersededKeys)
+          ? attempt.supersededKeys.filter(
+              (key: unknown): key is string => typeof key === 'string',
+            )
+          : [],
+        ...(typeof attempt.orderId === 'string'
+          ? { orderId: attempt.orderId }
+          : {}),
+      };
     }
   } catch {
     // Discard malformed browser storage before creating a new attempt.
@@ -27,33 +42,31 @@ export const readCheckoutAttempt = (
   return null;
 };
 
+export const readCheckoutAttempt = (
+  userId: string,
+  items: CartStoredItem[],
+) => {
+  const attempt = readStoredCheckoutAttempt(userId);
+  return attempt?.signature === cartSignature(items) ? attempt.key : null;
+};
+
 export const getCheckoutAttempt = (userId: string, items: CartStoredItem[]) => {
-  const existing = readCheckoutAttempt(userId, items);
-  if (existing) return existing;
-  const raw = localStorage.getItem(storageKey(userId));
-  const previous = raw ? JSON.parse(raw) : null;
+  const previous = readStoredCheckoutAttempt(userId);
+  const signature = cartSignature(items);
+  if (previous?.signature === signature) return previous.key;
   const supersededKeys = previous
     ? [...new Set([...(previous.supersededKeys ?? []), previous.key])]
     : [];
   const key = createCheckoutAttemptKey();
   localStorage.setItem(
     storageKey(userId),
-    JSON.stringify({ key, signature: cartSignature(items), supersededKeys }),
+    JSON.stringify({ key, signature, supersededKeys }),
   );
   return key;
 };
 
 export const getSupersededCheckoutKeys = (userId: string): string[] => {
-  const raw = localStorage.getItem(storageKey(userId));
-  if (!raw) return [];
-  try {
-    const keys = JSON.parse(raw)?.supersededKeys;
-    return Array.isArray(keys)
-      ? keys.filter((key): key is string => typeof key === 'string')
-      : [];
-  } catch {
-    return [];
-  }
+  return readStoredCheckoutAttempt(userId)?.supersededKeys ?? [];
 };
 
 export const acknowledgeSupersededCheckouts = (
@@ -61,10 +74,8 @@ export const acknowledgeSupersededCheckouts = (
   key: string,
   orderId?: string,
 ) => {
-  const raw = localStorage.getItem(storageKey(userId));
-  if (!raw) return;
-  const attempt = JSON.parse(raw);
-  if (attempt.key === key)
+  const attempt = readStoredCheckoutAttempt(userId);
+  if (attempt?.key === key)
     localStorage.setItem(
       storageKey(userId),
       JSON.stringify({
@@ -84,11 +95,9 @@ export const finishPaidCheckoutAttempt = (
   orderId: string,
   items: CartStoredItem[],
 ) => {
-  const raw = localStorage.getItem(storageKey(userId));
-  if (!raw) return false;
+  const attempt = readStoredCheckoutAttempt(userId);
+  if (!attempt || attempt.orderId !== orderId) return false;
   try {
-    const attempt = JSON.parse(raw);
-    if (attempt.orderId !== orderId) return false;
     const storedItems = JSON.parse(
       localStorage.getItem('CartItemsState') ?? 'null',
     );
