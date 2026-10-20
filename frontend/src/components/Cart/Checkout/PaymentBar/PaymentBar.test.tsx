@@ -153,18 +153,18 @@ describe('PaymentBar', () => {
     });
   });
 
-  test('resumes a persisted attempt without requiring a new menu quote', async () => {
+  test('checks quote validity while reusing a persisted attempt', async () => {
     const key = getCheckoutAttempt('user-1', [cartItem]);
     render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
     await waitFor(() =>
       expect(createCheckoutOrder).toHaveBeenCalledWith(
         [cartItem],
-        cartContext.menuVersion,
+        validatedQuote.menuVersion,
         key,
       ),
     );
-    expect(validateQuoteForUserAction).not.toHaveBeenCalled();
+    expect(validateQuoteForUserAction).toHaveBeenCalledTimes(1);
   });
 
   test('requires confirmation of the saved order quote before redirecting', async () => {
@@ -191,7 +191,7 @@ describe('PaymentBar', () => {
     );
     expect(createCheckoutOrder).toHaveBeenLastCalledWith(
       [cartItem],
-      cartContext.menuVersion,
+      validatedQuote.menuVersion,
       key,
     );
   });

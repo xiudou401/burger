@@ -10,7 +10,6 @@ import { useToast } from '../../../UI/Toast/ToastContext';
 import { hasPermission } from '../../../../types/permissions';
 import {
   getCheckoutAttempt,
-  readCheckoutAttempt,
   clearCheckoutAttempt,
   getSupersededCheckoutKeys,
   acknowledgeSupersededCheckouts,
@@ -91,12 +90,9 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
 
     try {
       if (!user) return;
-      const existingAttempt = readCheckoutAttempt(user.id, items);
-      const validatedQuote = existingAttempt
-        ? quote
-        : await validateQuoteForUserAction();
+      const validatedQuote = await validateQuoteForUserAction();
       const priceChangeNotice = getPriceUpdatedNotice(
-        validatedQuote ? getQuoteUnitPriceChanges(quote, validatedQuote) : [],
+        getQuoteUnitPriceChanges(quote, validatedQuote),
       );
 
       if (priceChangeNotice) {
@@ -108,7 +104,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
       const supersededKeys = getSupersededCheckoutKeys(user.id);
       const { checkoutUrl, order } = await createCheckoutOrder(
         items,
-        validatedQuote?.menuVersion ?? menuVersion ?? 0,
+        validatedQuote.menuVersion,
         attemptKey,
         ...(supersededKeys.length ? [supersededKeys] : []),
       );
