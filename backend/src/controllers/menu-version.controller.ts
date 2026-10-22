@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { getMenuVersion } from '../services/menu.service';
 
 export const findMenuVersion = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ) => {

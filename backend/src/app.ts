@@ -58,7 +58,7 @@ app.use('/api/menu-version', menuVersionRoutes);
 app.use('/api/uploads', uploadRoutes);
 
 // 404 handler
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((_req: Request, _res: Response, next: NextFunction) => {
   next(new AppError('Route not found', 404));
 });
 

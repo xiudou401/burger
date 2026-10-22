@@ -6,7 +6,7 @@ import { toPublicUser } from '../utils/public-user';
 
 export const authenticate = async (
   req: Request,
-  res: Response,
+  _res: Response,
   next: NextFunction,
 ) => {
   try {

@@ -38,7 +38,7 @@ export const createStaffInviteHandler = async (
 };
 
 export const listStaffInvitesHandler = async (
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ) => {
