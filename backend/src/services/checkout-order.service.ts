@@ -99,7 +99,7 @@ const assertStripeCheckoutOpen = async (order: CheckoutOrderDocument) => {
   }
 };
 
-const completeCheckoutOrder = async (
+const prepareCheckout = async (
   order: CheckoutOrderDocument,
   idempotencyKey: string,
 ): Promise<CheckoutOrder> => {
@@ -207,7 +207,7 @@ const completeExistingCheckoutOrder = (
       code: 'CHECKOUT_CART_MISMATCH',
     });
   }
-  return completeCheckoutOrder(existingOrder, idempotencyKey);
+  return prepareCheckout(existingOrder, idempotencyKey);
 };
 
 const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
@@ -229,8 +229,8 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
       if (order.status === 'cancelled') continue;
       try {
         // Reuse the original key and claim lease to recover an interrupted creator.
-        const recovered = await completeCheckoutOrder(order, key);
-        sessionId = recovered.order.payment?.providerPaymentId;
+        const checkout = await prepareCheckout(order, key);
+        sessionId = checkout.order.payment?.providerPaymentId;
       } catch (error) {
         if (
           error instanceof ServiceError &&
@@ -365,5 +365,5 @@ export const createCheckoutOrder = async (
   emitOrderEvent('order:created', toPublicOrder(order), String(order.userId));
   void emitCurrentAnalyticsAlerts();
 
-  return completeCheckoutOrder(order, idempotencyKey);
+  return prepareCheckout(order, idempotencyKey);
 };
