@@ -246,7 +246,11 @@ describe('order service', () => {
     await expect(
       createCheckoutOrder(userId, [], 7, idempotencyKey, ['old-key']),
     ).rejects.toMatchObject({
-      details: { code: 'ORDER_ALREADY_PAID', orderId },
+      details: {
+        code: 'ORDER_ALREADY_PAID',
+        orderId,
+        supersededCheckoutKey: 'old-key',
+      },
     });
     expect(
       orderRepository.markStripeCheckoutFailedIfNotPaid,

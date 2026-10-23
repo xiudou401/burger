@@ -221,6 +221,7 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
       throw new ServiceError('Previous checkout is already paid', 409, {
         code: 'ORDER_ALREADY_PAID',
         orderId: String(order._id),
+        supersededCheckoutKey: key,
       });
     }
     let sessionId = order.payment.providerPaymentId;
@@ -231,6 +232,15 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
         const recovered = await completeCheckoutOrder(order, key);
         sessionId = recovered.order.payment?.providerPaymentId;
       } catch (error) {
+        if (
+          error instanceof ServiceError &&
+          error.details?.code === 'ORDER_ALREADY_PAID'
+        ) {
+          throw new ServiceError(error.message, error.statusCode, {
+            ...error.details,
+            supersededCheckoutKey: key,
+          });
+        }
         if (
           error instanceof ServiceError &&
           error.statusCode === 409 &&
@@ -266,7 +276,11 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
       throw new ServiceError(
         'Payment has been submitted. Please check your order.',
         409,
-        { code: 'ORDER_ALREADY_PAID', orderId: String(order._id) },
+        {
+          code: 'ORDER_ALREADY_PAID',
+          orderId: String(order._id),
+          supersededCheckoutKey: key,
+        },
       );
     }
     if (session.status !== 'expired') {

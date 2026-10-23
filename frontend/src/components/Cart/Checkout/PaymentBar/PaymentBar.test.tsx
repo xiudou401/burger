@@ -6,11 +6,18 @@ import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
 import type { CartContextValue } from '../../../../types/cart';
 import type { AuthContextValue } from '../../../../store/auth/auth-context';
-import { getCheckoutAttempt } from '../../../../utils/checkout-attempt';
+import {
+  getCheckoutAttempt,
+  getSupersededCheckoutKeys,
+  finishPaidCheckoutAttempt,
+} from '../../../../utils/checkout-attempt';
+import { ApiError } from '../../../../api/request';
+
+const { navigate } = vi.hoisted(() => ({ navigate: vi.fn() }));
 
 vi.mock('react-router-dom', () => ({
   useLocation: () => ({ pathname: '/', search: '' }),
-  useNavigate: () => vi.fn(),
+  useNavigate: () => navigate,
 }));
 
 vi.mock('../../../../api/orders', () => ({
@@ -194,6 +201,43 @@ describe('PaymentBar', () => {
       validatedQuote.menuVersion,
       key,
     );
+  });
+
+  test('can continue a changed cart after confirming an older paid checkout', async () => {
+    const oldKey = getCheckoutAttempt('user-1', [{ ...cartItem, quantity: 1 }]);
+    const currentKey = getCheckoutAttempt('user-1', [cartItem]);
+    vi.mocked(createCheckoutOrder).mockRejectedValueOnce(
+      new ApiError(409, {
+        message: 'Previous checkout is already paid',
+        details: {
+          code: 'ORDER_ALREADY_PAID',
+          orderId: 'order-old',
+          supersededCheckoutKey: oldKey,
+        },
+      }),
+    );
+    render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith('/orders/order-old', {
+        state: { returnedFromSuccessfulPayment: true },
+      }),
+    );
+    expect(getSupersededCheckoutKeys('user-1')).toEqual([oldKey]);
+    // The order page calls this only after fetching a confirmed payment.
+    expect(finishPaidCheckoutAttempt('user-1', 'order-old', [cartItem])).toBe(
+      false,
+    );
+    expect(getSupersededCheckoutKeys('user-1')).toEqual([]);
+    fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
+    await waitFor(() =>
+      expect(createCheckoutOrder).toHaveBeenLastCalledWith(
+        [cartItem],
+        validatedQuote.menuVersion,
+        currentKey,
+      ),
+    );
+    expect(window.location.assign).toHaveBeenCalled();
   });
 
   test('stops checkout when the latest quote changes item prices', async () => {

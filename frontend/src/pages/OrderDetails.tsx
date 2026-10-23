@@ -79,6 +79,11 @@ const OrderDetails = () => {
                     We have received your payment and your order is being
                     confirmed by the kitchen.
                   </p>
+                  {cartItems.length > 0 && (
+                    <Link className={classes.BackLink} to="/">
+                      Continue with your current cart
+                    </Link>
+                  )}
                 </section>
               ) : (
                 <section

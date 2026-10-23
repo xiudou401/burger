@@ -13,6 +13,7 @@ import {
   clearCheckoutAttempt,
   getSupersededCheckoutKeys,
   acknowledgeSupersededCheckouts,
+  rememberPaidSupersededCheckout,
 } from '../../../../utils/checkout-attempt';
 import { ApiError } from '../../../../api/request';
 import { getCheckoutErrorMessage } from '../checkout-utils';
@@ -138,6 +139,13 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
         const code = err.body.details?.code;
         if (code === 'ORDER_ALREADY_PAID') {
           const orderId = err.body.details?.orderId;
+          const supersededKey = err.body.details?.supersededCheckoutKey;
+          if (
+            typeof orderId === 'string' &&
+            typeof supersededKey === 'string'
+          ) {
+            rememberPaidSupersededCheckout(user.id, supersededKey, orderId);
+          }
           if (typeof orderId === 'string')
             navigate(`/orders/${orderId}`, {
               state: { returnedFromSuccessfulPayment: true },

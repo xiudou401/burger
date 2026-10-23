@@ -9,6 +9,7 @@ interface StoredCheckoutAttempt {
   signature: string;
   supersededKeys: string[];
   orderId?: string;
+  paidSuperseded?: { key: string; orderId: string };
 }
 
 const readStoredCheckoutAttempt = (
@@ -32,6 +33,15 @@ const readStoredCheckoutAttempt = (
           : [],
         ...(typeof attempt.orderId === 'string'
           ? { orderId: attempt.orderId }
+          : {}),
+        ...(typeof attempt.paidSuperseded?.key === 'string' &&
+        typeof attempt.paidSuperseded.orderId === 'string'
+          ? {
+              paidSuperseded: {
+                key: attempt.paidSuperseded.key,
+                orderId: attempt.paidSuperseded.orderId,
+              },
+            }
           : {}),
       };
     }
@@ -60,7 +70,14 @@ export const getCheckoutAttempt = (userId: string, items: CartStoredItem[]) => {
   const key = createCheckoutAttemptKey();
   localStorage.setItem(
     storageKey(userId),
-    JSON.stringify({ key, signature, supersededKeys }),
+    JSON.stringify({
+      key,
+      signature,
+      supersededKeys,
+      ...(previous?.paidSuperseded
+        ? { paidSuperseded: previous.paidSuperseded }
+        : {}),
+    }),
   );
   return key;
 };
@@ -90,12 +107,38 @@ export const clearCheckoutAttempt = (userId: string) => {
   localStorage.removeItem(storageKey(userId));
 };
 
+export const rememberPaidSupersededCheckout = (
+  userId: string,
+  key: string,
+  orderId: string,
+) => {
+  const attempt = readStoredCheckoutAttempt(userId);
+  if (!attempt?.supersededKeys.includes(key)) return;
+  localStorage.setItem(
+    storageKey(userId),
+    JSON.stringify({ ...attempt, paidSuperseded: { key, orderId } }),
+  );
+};
+
 export const finishPaidCheckoutAttempt = (
   userId: string,
   orderId: string,
   items: CartStoredItem[],
 ) => {
   const attempt = readStoredCheckoutAttempt(userId);
+  if (attempt?.paidSuperseded?.orderId === orderId) {
+    const { paidSuperseded, ...current } = attempt;
+    localStorage.setItem(
+      storageKey(userId),
+      JSON.stringify({
+        ...current,
+        supersededKeys: current.supersededKeys.filter(
+          (key) => key !== paidSuperseded.key,
+        ),
+      }),
+    );
+    return false;
+  }
   if (!attempt || attempt.orderId !== orderId) return false;
   try {
     const storedItems = JSON.parse(
