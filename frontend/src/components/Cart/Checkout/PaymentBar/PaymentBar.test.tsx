@@ -7,7 +7,7 @@ import { useToast } from '../../../UI/Toast/ToastContext';
 import type { CartContextValue } from '../../../../types/cart';
 import type { AuthContextValue } from '../../../../store/auth/auth-context';
 import {
-  getCheckoutAttempt,
+  getCheckoutAttemptKey,
   getSupersededCheckoutKeys,
   finishPaidCheckoutAttempt,
 } from '../../../../utils/checkout-attempt';
@@ -161,7 +161,7 @@ describe('PaymentBar', () => {
   });
 
   test('checks quote validity while reusing a persisted attempt', async () => {
-    const key = getCheckoutAttempt('user-1', [cartItem]);
+    const key = getCheckoutAttemptKey('user-1', [cartItem]);
     render(<PaymentBar totalCents={1200} onOrderComplete={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
     await waitFor(() =>
@@ -175,7 +175,7 @@ describe('PaymentBar', () => {
   });
 
   test('requires confirmation of the saved order quote before redirecting', async () => {
-    const key = getCheckoutAttempt('user-1', [cartItem]);
+    const key = getCheckoutAttemptKey('user-1', [cartItem]);
     vi.mocked(createCheckoutOrder).mockResolvedValue({
       checkoutUrl: 'https://checkout.stripe.test/session',
       order: {
@@ -204,8 +204,10 @@ describe('PaymentBar', () => {
   });
 
   test('can continue a changed cart after confirming an older paid checkout', async () => {
-    const oldKey = getCheckoutAttempt('user-1', [{ ...cartItem, quantity: 1 }]);
-    const currentKey = getCheckoutAttempt('user-1', [cartItem]);
+    const oldKey = getCheckoutAttemptKey('user-1', [
+      { ...cartItem, quantity: 1 },
+    ]);
+    const currentKey = getCheckoutAttemptKey('user-1', [cartItem]);
     vi.mocked(createCheckoutOrder).mockRejectedValueOnce(
       new ApiError(409, {
         message: 'Previous checkout is already paid',

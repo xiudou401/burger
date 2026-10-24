@@ -15,10 +15,10 @@ interface StoredCheckoutAttempt {
 const readStoredCheckoutAttempt = (
   userId: string,
 ): StoredCheckoutAttempt | null => {
-  const raw = localStorage.getItem(storageKey(userId));
-  if (!raw) return null;
+  const storedAttempt = localStorage.getItem(storageKey(userId));
+  if (!storedAttempt) return null;
   try {
-    const attempt = JSON.parse(raw);
+    const attempt = JSON.parse(storedAttempt);
     if (
       typeof attempt?.key === 'string' &&
       typeof attempt.signature === 'string'
@@ -60,7 +60,10 @@ export const readCheckoutAttempt = (
   return attempt?.signature === cartSignature(items) ? attempt.key : null;
 };
 
-export const getCheckoutAttempt = (userId: string, items: CartStoredItem[]) => {
+export const getCheckoutAttemptKey = (
+  userId: string,
+  items: CartStoredItem[],
+) => {
   const previous = readStoredCheckoutAttempt(userId);
   const signature = cartSignature(items);
   if (previous?.signature === signature) return previous.key;

@@ -9,7 +9,7 @@ import { useAuth } from '../../../../store/auth/hooks/useAuth';
 import { useToast } from '../../../UI/Toast/ToastContext';
 import { hasPermission } from '../../../../types/permissions';
 import {
-  getCheckoutAttempt,
+  getCheckoutAttemptKey,
   clearCheckoutAttempt,
   getSupersededCheckoutKeys,
   acknowledgeSupersededCheckouts,
@@ -101,7 +101,7 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
         return;
       }
 
-      const attemptKey = getCheckoutAttempt(user.id, items);
+      const attemptKey = getCheckoutAttemptKey(user.id, items);
       const supersededKeys = getSupersededCheckoutKeys(user.id);
       const { checkoutUrl, order } = await createCheckoutOrder(
         items,
