@@ -293,13 +293,6 @@ npm run seed:demo-users
 ALLOW_DEMO_ORDER_SEED=true npm run seed:demo-orders
 ```
 
-For an existing database created before integer money fields were introduced:
-
-```bash
-cd backend
-npm run migrate:money-cents
-```
-
 ### 4. Run the app
 
 Terminal 1:
