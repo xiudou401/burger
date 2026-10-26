@@ -112,8 +112,9 @@ export const markStripeCheckoutPaid = async (
   );
 
   if (!paidOrder) {
-    const reviewOrder =
-      await orderRepository.markStripeCheckoutPaidRequiresReview(session.id);
+    const reviewOrder = await orderRepository.flagStripePaymentForReview(
+      session.id,
+    );
     const latestOrder =
       reviewOrder ?? (await orderRepository.findByStripeSessionId(session.id));
 

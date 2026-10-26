@@ -555,7 +555,7 @@ export const orderRepository = {
     ).exec();
   },
 
-  markStripeCheckoutPaidRequiresReview(sessionId: string) {
+  flagStripePaymentForReview(sessionId: string) {
     return OrderModel.findOneAndUpdate(
       {
         'payment.provider': 'stripe',

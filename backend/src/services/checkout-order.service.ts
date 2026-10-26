@@ -184,7 +184,7 @@ const prepareCheckout = async (
   }
 };
 
-const completeExistingCheckoutOrder = (
+const resumeCheckout = (
   existingOrder: CheckoutOrderDocument,
   idempotencyKey: string,
   items: CartStoredItem[],
@@ -319,7 +319,7 @@ export const createCheckoutOrder = async (
   );
 
   if (existingOrder) {
-    return completeExistingCheckoutOrder(existingOrder, idempotencyKey, items);
+    return resumeCheckout(existingOrder, idempotencyKey, items);
   }
 
   const validatedCart = await validateCart(items, menuVersion);
@@ -359,7 +359,7 @@ export const createCheckoutOrder = async (
       throw error;
     }
 
-    return completeExistingCheckoutOrder(racedOrder, idempotencyKey, items);
+    return resumeCheckout(racedOrder, idempotencyKey, items);
   }
 
   emitOrderEvent('order:created', toPublicOrder(order), String(order.userId));

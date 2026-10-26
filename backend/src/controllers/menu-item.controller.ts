@@ -3,7 +3,7 @@ import { ServiceError } from '../errors/ServiceError';
 import {
   createMenuItem,
   deleteMenuItem,
-  findAllMenuItems,
+  listMenuItems,
   updateMenuItem,
 } from '../services/menu-item.service';
 import type {
@@ -20,7 +20,7 @@ export const getMenuItems = async (
   try {
     const query = req.query as unknown as MenuItemQueryPayload;
 
-    const menuItemsResponse = await findAllMenuItems(query);
+    const menuItemsResponse = await listMenuItems(query);
 
     res.status(200).json(menuItemsResponse);
   } catch (error) {

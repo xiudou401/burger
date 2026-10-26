@@ -67,7 +67,7 @@ jest.mock('../repositories/order.repository', () => ({
     markCheckoutSessionCreatedIfClaimed: jest.fn(),
     markCheckoutSessionCreationFailedIfClaimed: jest.fn(),
     markStripeCheckoutPaidIfUnpaid: jest.fn(),
-    markStripeCheckoutPaidRequiresReview: jest.fn(),
+    flagStripePaymentForReview: jest.fn(),
     markStripeCheckoutFailedIfNotPaid: jest.fn(),
     markStripeOrderFailedIfNotPaid: jest.fn(),
     listAll: jest.fn(),
@@ -186,7 +186,7 @@ describe('order service', () => {
       .mocked(orderRepository.markCheckoutSessionCreationFailedIfClaimed)
       .mockResolvedValue(null);
     jest
-      .mocked(orderRepository.markStripeCheckoutPaidRequiresReview)
+      .mocked(orderRepository.flagStripePaymentForReview)
       .mockResolvedValue(null);
   });
 
@@ -1209,7 +1209,7 @@ describe('order service', () => {
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValue(null);
     jest
-      .mocked(orderRepository.markStripeCheckoutPaidRequiresReview)
+      .mocked(orderRepository.flagStripePaymentForReview)
       .mockResolvedValue(reviewOrder as never);
 
     const result = await markStripeCheckoutPaid({
@@ -1225,9 +1225,9 @@ describe('order service', () => {
       orderId,
       'cs_test_123',
     );
-    expect(
-      orderRepository.markStripeCheckoutPaidRequiresReview,
-    ).toHaveBeenCalledWith('cs_test_123');
+    expect(orderRepository.flagStripePaymentForReview).toHaveBeenCalledWith(
+      'cs_test_123',
+    );
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('cancelled');
     expect(result.payment?.status).toBe('cancelled');

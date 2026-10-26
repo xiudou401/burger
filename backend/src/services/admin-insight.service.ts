@@ -1064,7 +1064,7 @@ const buildChatFallbackInsights = ({
   return buildFallbackInsights(analytics);
 };
 
-export const buildAdminInsightSystemPromptForTest = () => {
+export const buildAdminInsightSystemPrompt = () => {
   return [
     'You are Burger Club AI Operations Insight Agent.',
     'Use only the provided analytics summary.',
@@ -1143,7 +1143,7 @@ const buildDisplayOrderEvidence = (
     updatedAt: order.updatedAt,
   }));
 
-export const buildAdminInsightUserPromptForTest = ({
+export const buildAdminInsightUserPrompt = ({
   question,
   analytics,
   alert,
@@ -1232,8 +1232,8 @@ export const openAiAdminInsightClient: AdminInsightModelClient = async (
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: buildAdminInsightSystemPromptForTest() },
-        { role: 'user', content: buildAdminInsightUserPromptForTest(input) },
+        { role: 'system', content: buildAdminInsightSystemPrompt() },
+        { role: 'user', content: buildAdminInsightUserPrompt(input) },
       ],
     }),
   });

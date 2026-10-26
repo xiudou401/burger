@@ -76,7 +76,7 @@ const toPublicMenuItem = (menuItem: {
   comboItemIds: (menuItem.comboItemIds ?? []).map(String),
 });
 
-export const findAllMenuItems = async (query: MenuItemQuery = {}) => {
+export const listMenuItems = async (query: MenuItemQuery = {}) => {
   try {
     const {
       keyword,

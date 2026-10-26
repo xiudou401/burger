@@ -6,7 +6,7 @@ import { recordAuditLog } from './audit-log.service';
 import {
   createMenuItem,
   deleteMenuItem,
-  findAllMenuItems,
+  listMenuItems,
   updateMenuItem,
 } from './menu-item.service';
 
@@ -60,7 +60,7 @@ describe('menu item service', () => {
   });
 
   test('escapes search keywords before building regex queries', async () => {
-    await findAllMenuItems({ keyword: '.*burger?' });
+    await listMenuItems({ keyword: '.*burger?' });
 
     const expectedQuery = {
       $or: [
@@ -80,7 +80,7 @@ describe('menu item service', () => {
       .mocked(getMenuVersion)
       .mockRejectedValue(new ServiceError('Menu version unavailable', 503));
 
-    await expect(findAllMenuItems()).rejects.toMatchObject({
+    await expect(listMenuItems()).rejects.toMatchObject({
       message: 'Menu version unavailable',
       statusCode: 503,
     });
@@ -92,7 +92,7 @@ describe('menu item service', () => {
       .mocked(menuItemRepository.findPage)
       .mockRejectedValue(new Error('Database failed'));
 
-    await expect(findAllMenuItems()).rejects.toMatchObject({
+    await expect(listMenuItems()).rejects.toMatchObject({
       message: 'Could not load menu items. Please try again later.',
       statusCode: 500,
     });

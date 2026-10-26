@@ -5,8 +5,8 @@ import {
   getAdminDailyBrief,
 } from './admin-dashboard.service';
 import {
-  buildAdminInsightSystemPromptForTest,
-  buildAdminInsightUserPromptForTest,
+  buildAdminInsightSystemPrompt,
+  buildAdminInsightUserPrompt,
   chatWithAdminInsightAgent,
   generateAdminDailyBrief,
   generateAdminInsights,
@@ -333,9 +333,9 @@ describe('admin insight service', () => {
   });
 
   test('prompts the model to use AUD display values instead of raw cents', () => {
-    const systemPrompt = buildAdminInsightSystemPromptForTest();
+    const systemPrompt = buildAdminInsightSystemPrompt();
     const userPrompt = JSON.parse(
-      buildAdminInsightUserPromptForTest({
+      buildAdminInsightUserPrompt({
         question: 'What should we improve?',
         analytics: analyticsSummary,
       }),
