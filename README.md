@@ -17,7 +17,8 @@ recent orders while staff manage orders and menu changes.
   with AUD cents-based pricing, customer checkout, staff workflows, and deployed
   live demo.
 - Implemented Stripe Checkout with webhook signature verification and
-  idempotent order payment updates so payment state is controlled by trusted
+  idempotent order payment updates, persisted checkout attempts, and a MongoDB
+  outbox worker for payment notifications. Payment state comes from trusted
   backend events instead of frontend return URLs.
 - Designed an authentication flow with JWT access tokens, HttpOnly refresh
   cookies, refresh-token rotation, CSRF origin/header checks, password hashing,
@@ -61,6 +62,7 @@ Express API
   |-- Auth/RBAC: customer, staff, admin permissions
   |-- Order state machine: pending_payment -> confirmed -> preparing -> ready -> completed
   |-- Stripe webhook reconciliation
+  |-- Outbox worker for paid-order email and realtime notifications
   |-- MongoDB aggregation for dashboard analytics
   |-- AI operations insight agent over verified backend data
   |-- S3 presigned uploads and CloudFront image URLs
@@ -70,16 +72,17 @@ MongoDB Atlas
   |-- order snapshots
   |-- users, sessions, staff invites
   |-- audit logs and agent runs
+  |-- webhook claims and outbox events
 
-Stripe Checkout -> signed webhook -> Express -> MongoDB -> Socket.IO events
+Stripe Checkout -> signed webhook -> Express -> MongoDB -> outbox worker -> email / Socket.IO
 Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin events
 ```
 
 ## Core Features
 
 - Sydney-local restaurant ordering experience with AUD pricing.
-- Categorized menu feed with search, availability states, pagination, and menu
-  version polling.
+- Categorized infinite-scroll menu feed with search, availability states,
+  pagination, realtime menu versions, and polling fallback.
 - Realistic restaurant menu coverage across burgers, sides, drinks, desserts,
   and combos, including featured and sold-out availability states.
 - Menu images stored as CloudFront URLs backed by private S3 objects.
@@ -88,6 +91,9 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
 - Stripe Checkout flow with signed webhook handling and order-snapshot line
   items.
 - Payment lifecycle updates for success, failed, cancelled, and repeated webhook events.
+- Checkout recovery across reloads using per-user persisted idempotency keys;
+  changed carts send previous attempt keys so the backend can close older
+  unpaid Stripe Sessions before preparing a replacement.
 - Order history and payment-return handling that treats Stripe webhooks as the
   source of payment truth.
 - Authenticated WebSocket admin events for order and menu changes, allowing the
@@ -120,6 +126,12 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   conflict handling and price-change notices.
 - Local cart persistence so customers can leave and return without losing their
   basket.
+- Checkout reuses a valid cart quote and refreshes it when necessary. Price
+  changes pause payment for review; restored checkouts retain their original
+  order snapshot and require review if it differs from the displayed quote.
+- Confirmed payments clear only the matching saved checkout and unchanged cart,
+  preserving newer carts and attempts. An older paid checkout is acknowledged
+  on its order page before the customer continues with their current cart.
 - Role-aware customer/admin routing and auth state managed through a dedicated
   auth provider.
 
@@ -179,7 +191,9 @@ Customer checkout
   -> Stripe Checkout
   -> signed Stripe webhook
   -> backend marks order confirmed and payment paid
-  -> order:paid emitted to admins and the order owner's user room
+  -> backend enqueues an order.paid outbox event
+  -> worker sends the confirmation email and emits order:paid
+  -> admins and the order owner's user room receive the update
   -> Kitchen Board updates and customer order page updates
 
 Staff Kitchen Board
@@ -258,22 +272,29 @@ external AI spend.
 
 ### 1. Install dependencies
 
-```bash
-cd backend
-npm install
+Run these commands from the repository root. Node.js 22 and a running local
+MongoDB instance or MongoDB Atlas connection are required.
 
-cd ../frontend
-npm install
+```bash
+npm --prefix shared ci
+npm --prefix shared run build
+npm --prefix backend ci
+npm --prefix frontend ci
 ```
 
 ### 2. Configure environment variables
 
 ```bash
 cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
 Update `backend/.env` with your MongoDB URI and a `JWT_SECRET` containing at
 least 32 characters. Add Stripe test keys when testing the payment flow.
+The examples use `http://localhost:5173` for the frontend and
+`http://localhost:5001` for the API. Keep `FRONTEND_URL`, `TRUSTED_ORIGINS`, and
+Stripe return URLs aligned with the frontend origin; `VITE_API_URL` should be
+the backend origin without `/api`.
 
 For local Stripe webhooks, run this in a separate terminal:
 
@@ -340,10 +361,12 @@ in [`docs/aws-deployment.md`](docs/aws-deployment.md) for deploying the frontend
 to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
 Load Balancer.
 
-The repository also includes an optional GitHub Actions workflow for deploying
-the AWS stack. The workflow is manual-only and intended for learning or
-practising AWS deployment, so paid resources such as an Application Load
-Balancer or running ECS tasks are only created or updated intentionally.
+The manual `Deploy AWS` GitHub Actions workflow supports `frontend` (default),
+`backend`, or `both`. Frontend deployment uploads `frontend/dist` to S3 and
+invalidates CloudFront. Backend deployment pushes a Docker image to ECR and
+updates an existing ECS service and task definition. Provision the required
+AWS resources separately; this workflow does not create an ALB, VPC, or ECS
+service. Running ECS tasks and an ALB incur costs independently of workflow runs.
 
 ## Technical Design Docs
 
@@ -425,8 +448,9 @@ backend.
 Menu images are stored as CloudFront HTTPS URLs on each menu item. S3 keeps the
 original image objects, CloudFront serves public image traffic, and the Vercel
 frontend renders the URL returned by the backend. Render only signs uploads and
-never stores image files on its local filesystem. Local static images are kept
-only as development or legacy fallback assets.
+never stores image files on its local filesystem. Menu image source backups live
+in `docs/assets/menu-image-originals`; they are outside `frontend/public` and
+are not included in the frontend build.
 
 All monetary values are stored and transferred as integer AUD cents
 (`priceCents`, `subtotalCents`, `totalCents`, and `amountCents`). Stripe receives
