@@ -7,12 +7,12 @@ import {
   type OrderStatus,
 } from '../models/order.model';
 import { ServiceError } from '../errors/ServiceError';
+import { TTL_MS } from '../config/ttl';
 
 type RepositoryOrderItem = Omit<Order['items'][number], 'menuItemId'> & {
   menuItemId: string;
 };
 
-const CHECKOUT_SESSION_CREATION_LEASE_MS = 5 * 60 * 1000;
 const toObjectId = (id: string) => new Types.ObjectId(id);
 const isObjectId = (id: string) => Types.ObjectId.isValid(id);
 
@@ -644,7 +644,7 @@ export const orderRepository = {
 
     const now = new Date();
     const staleCheckoutClaimBefore = new Date(
-      now.getTime() - CHECKOUT_SESSION_CREATION_LEASE_MS,
+      now.getTime() - TTL_MS.CHECKOUT_SESSION_CREATION_LEASE,
     );
 
     return OrderModel.findOneAndUpdate(

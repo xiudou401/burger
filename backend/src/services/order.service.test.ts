@@ -261,13 +261,14 @@ describe('order service', () => {
   test('waits when an older checkout is still being created', async () => {
     jest
       .mocked(orderRepository.findCheckoutByIdempotencyKey)
-      .mockResolvedValueOnce({
+      .mockResolvedValue({
         _id: orderId,
         userId,
         status: 'pending_payment',
         payment: {
           status: 'requires_payment',
           providerPaymentId: 'checkout_creation:old',
+          checkoutSessionCreationClaimedAt: new Date(),
         },
       } as never);
     await expect(
@@ -275,6 +276,84 @@ describe('order service', () => {
     ).rejects.toMatchObject({ details: { code: 'CHECKOUT_PREPARING' } });
     expect(validateCart).not.toHaveBeenCalled();
     expect(mockCreateSession).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    [
+      'active claim',
+      'checkout_creation:active',
+      new Date(),
+      'CHECKOUT_PREPARING',
+    ],
+    [
+      'expired claim',
+      'checkout_creation:expired',
+      new Date(0),
+      'CHECKOUT_UNAVAILABLE',
+    ],
+    [
+      'claim without a timestamp',
+      'checkout_creation:legacy',
+      undefined,
+      'CHECKOUT_UNAVAILABLE',
+    ],
+    [
+      'session without a URL',
+      'cs_incomplete',
+      undefined,
+      'CHECKOUT_UNAVAILABLE',
+    ],
+  ])(
+    'reports the correct checkout state for %s after losing a claim',
+    async (_label, providerPaymentId, claimedAt, code) => {
+      const existing = {
+        _id: orderId,
+        userId,
+        items: [{ menuItemId, quantity: 2 }],
+        status: 'pending_payment',
+        payment: {
+          status: 'requires_payment',
+          providerPaymentId,
+          checkoutSessionCreationClaimedAt: claimedAt,
+        },
+      };
+      jest
+        .mocked(orderRepository.findCheckoutByIdempotencyKey)
+        .mockResolvedValue(existing as never);
+      await expect(
+        createCheckoutOrder(
+          userId,
+          [{ id: menuItemId, quantity: 2 }],
+          7,
+          idempotencyKey,
+        ),
+      ).rejects.toMatchObject({ statusCode: 409, details: { code } });
+      expect(mockCreateSession).not.toHaveBeenCalled();
+    },
+  );
+
+  test('reports a missing order instead of a busy checkout after losing a claim', async () => {
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValueOnce({
+        _id: orderId,
+        userId,
+        items: [{ menuItemId, quantity: 2 }],
+        status: 'pending_payment',
+        payment: { status: 'requires_payment' },
+      } as never)
+      .mockResolvedValueOnce(null);
+    await expect(
+      createCheckoutOrder(
+        userId,
+        [{ id: menuItemId, quantity: 2 }],
+        7,
+        idempotencyKey,
+      ),
+    ).rejects.toMatchObject({
+      statusCode: 404,
+      details: { code: 'ORDER_NOT_FOUND' },
+    });
   });
 
   test('lists admin orders with a cursor for the next page', async () => {

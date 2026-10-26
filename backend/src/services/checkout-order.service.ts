@@ -5,6 +5,7 @@ import {
   ValidatedCartMenuItem,
 } from './cart.service';
 import { ServiceError } from '../errors/ServiceError';
+import { TTL_MS } from '../config/ttl';
 import { orderRepository } from '../repositories/order.repository';
 import { toPublicOrder } from './order.service';
 import {
@@ -99,6 +100,15 @@ const assertStripeCheckoutOpen = async (order: CheckoutOrderDocument) => {
   }
 };
 
+const hasActiveCheckoutClaim = (order: CheckoutOrderDocument) => {
+  const claimedAt = order.payment.checkoutSessionCreationClaimedAt;
+  return Boolean(
+    order.payment.providerPaymentId?.startsWith('checkout_creation:') &&
+    claimedAt &&
+    claimedAt.getTime() >= Date.now() - TTL_MS.CHECKOUT_SESSION_CREATION_LEASE,
+  );
+};
+
 const prepareCheckout = async (
   order: CheckoutOrderDocument,
   idempotencyKey: string,
@@ -123,7 +133,13 @@ const prepareCheckout = async (
   if (!claimedOrder) {
     const latestOrder = await getLatestCheckoutOrder(order, idempotencyKey);
 
-    if (latestOrder && isReusableCheckout(latestOrder)) {
+    if (!latestOrder) {
+      throw new ServiceError('Order not found', 404, {
+        code: 'ORDER_NOT_FOUND',
+      });
+    }
+
+    if (isReusableCheckout(latestOrder)) {
       await assertStripeCheckoutOpen(latestOrder);
       return {
         order: toPublicOrder(latestOrder),
@@ -131,11 +147,21 @@ const prepareCheckout = async (
       };
     }
 
-    if (latestOrder) {
-      assertCheckoutCanBeStarted(latestOrder);
+    assertCheckoutCanBeStarted(latestOrder);
+
+    if (hasActiveCheckoutClaim(latestOrder)) {
+      throw new ServiceError(
+        'Checkout is already being prepared. Please retry shortly.',
+        409,
+        { code: 'CHECKOUT_PREPARING' },
+      );
     }
 
-    throw new ServiceError('Checkout is already being prepared', 409);
+    throw new ServiceError(
+      'Checkout could not be prepared. Please try again.',
+      409,
+      { code: 'CHECKOUT_UNAVAILABLE' },
+    );
   }
 
   try {
@@ -243,8 +269,7 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
         }
         if (
           error instanceof ServiceError &&
-          error.statusCode === 409 &&
-          !error.details?.code
+          error.details?.code === 'CHECKOUT_PREPARING'
         ) {
           throw new ServiceError(
             'Previous checkout is still being prepared. Please retry shortly.',
@@ -258,7 +283,7 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
         throw new ServiceError(
           'Previous checkout could not be recovered',
           409,
-          { code: 'CHECKOUT_PREPARING' },
+          { code: 'CHECKOUT_UNAVAILABLE' },
         );
       }
     }

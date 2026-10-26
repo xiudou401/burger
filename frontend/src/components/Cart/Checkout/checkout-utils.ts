@@ -12,7 +12,14 @@ export const getCheckoutErrorMessage = (
   quote?: Quote | null,
 ) => {
   if (error instanceof ApiError) {
-    if (error.body.details?.code === 'CHECKOUT_PREPARING') return error.message;
+    if (
+      [
+        'CHECKOUT_PREPARING',
+        'CHECKOUT_UNAVAILABLE',
+        'ORDER_NOT_FOUND',
+      ].includes(String(error.body.details?.code))
+    )
+      return error.message;
     if (error.statusCode === HTTP_STATUS.CONFLICT) {
       return 'Some menu items have changed. Please review your cart before checkout.';
     }
