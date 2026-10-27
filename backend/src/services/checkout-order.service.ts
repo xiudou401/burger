@@ -67,7 +67,7 @@ const assertCheckoutCanBeStarted = (order: CheckoutOrderDocument) => {
   }
 };
 
-const getLatestCheckoutOrder = (
+const reloadCheckoutOrder = (
   order: CheckoutOrderDocument,
   idempotencyKey: string,
 ) =>
@@ -131,7 +131,7 @@ const prepareCheckout = async (
     );
 
   if (!claimedOrder) {
-    const latestOrder = await getLatestCheckoutOrder(order, idempotencyKey);
+    const latestOrder = await reloadCheckoutOrder(order, idempotencyKey);
 
     if (!latestOrder) {
       throw new ServiceError('Order not found', 404, {
@@ -158,7 +158,7 @@ const prepareCheckout = async (
     }
 
     throw new ServiceError(
-      'Checkout could not be prepared. Please try again.',
+      'Unable to start payment. Please try again.',
       409,
       { code: 'CHECKOUT_UNAVAILABLE' },
     );
