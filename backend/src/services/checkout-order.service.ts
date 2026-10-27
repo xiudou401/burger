@@ -157,11 +157,9 @@ const prepareCheckout = async (
       );
     }
 
-    throw new ServiceError(
-      'Unable to start payment. Please try again.',
-      409,
-      { code: 'CHECKOUT_UNAVAILABLE' },
-    );
+    throw new ServiceError('Unable to start payment. Please try again.', 409, {
+      code: 'CHECKOUT_UNAVAILABLE',
+    });
   }
 
   try {
