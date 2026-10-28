@@ -16,6 +16,7 @@
     "seed:menu-items": "ts-node scripts/seedMenuItems.ts",
     "seed:demo-users": "ts-node scripts/seedDemoUsers.ts",
     "seed:demo-orders": "ts-node scripts/seedDemoOrders.ts",
+    "seed:demo-month": "ts-node scripts/seedDemoMonth.ts",
     "benchmark:password": "ts-node scripts/benchmarkPassword.ts",
     "cleanup:menu-images": "ts-node scripts/cleanupOrphanMenuImages.ts",
     "localize:meals": "npm run localize:menu-items",

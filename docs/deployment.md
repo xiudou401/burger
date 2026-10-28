@@ -2,7 +2,23 @@
 
 ## Production Topology
 
-The current production deployment uses:
+The selected production deployment is AWS:
+
+- Frontend: private S3 bucket served by CloudFront.
+- API: CloudFront `/api/*` behavior to an ALB and ECS Fargate service.
+- Public frontend: https://www.sydneyburger.com (apex also serves the app).
+- Public API: https://api.sydneyburger.com/api/health.
+- Menu images: private S3 bucket served by a separate CloudFront distribution.
+- MongoDB Atlas, Resend, Stripe and Google OAuth remain external services.
+
+See `aws-deployment.md` for the recovery and custom-domain cutover record.
+The apex, www and api domains were verified on AWS with HTTPS on 28 October
+2026. Runtime frontend/API callback settings now use www/api.sydneyburger.com.
+OAuth initiation, cancellation return and credentialed CORS were verified.
+The owner also confirmed successful Google login and refresh persistence on
+the final configuration. Payment flows still need separate confirmation.
+
+The older Vercel/Render topology below is retained as a reference:
 
 - Vercel for the React frontend.
 - Render for the Express API.
@@ -110,14 +126,14 @@ Local development can use Stripe CLI:
 stripe listen --forward-to localhost:5001/api/stripe/webhook
 ```
 
-## Optional AWS Path
+## AWS Deployment Procedure
 
 The repository also documents an AWS deployment path in
 `docs/aws-deployment.md`. That path uses S3 + CloudFront for the frontend and
 ECR + ECS Fargate + ALB for the backend.
 
-The AWS workflow is optional. The live portfolio deployment can stay on Vercel
-and Render.
+AWS is the selected live deployment. The Vercel/Render settings above are
+historical reference and should not be used for the AWS release workflow.
 
 ## Operational Checks
 

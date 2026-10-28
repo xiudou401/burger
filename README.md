@@ -1,15 +1,31 @@
-# Burger Club
+# Sydney Burger (Burger Club)
 
-Burger Club is a Sydney-focused full-stack restaurant ordering platform. It
+Sydney Burger is an independently built full-stack restaurant ordering portfolio
+project, branded Burger Club in the application. It
 models a realistic local burger shop workflow: customers browse an AUD menu,
 validate cart totals against the backend, pay with Stripe Checkout, and track
 recent orders while staff manage orders and menu changes.
 
-- **Live Demo:** [https://burger-vert.vercel.app](https://burger-vert.vercel.app)
-- **Backend API:** [https://burger-rmc0.onrender.com](https://burger-rmc0.onrender.com)
+- **Live Demo (AWS):** [https://www.sydneyburger.com](https://www.sydneyburger.com)
+- **Backend API (AWS):** [https://api.sydneyburger.com/api/health](https://api.sydneyburger.com/api/health)
 
-> **Note:** The backend is hosted on Render's free tier, so the first request
-> may take a few seconds while the service wakes up.
+> **Demo, not a trading business:** Stripe is in test mode. Analytics includes
+> explicitly marked synthetic orders and simulated revenue, not commercial
+> customers or sales. Staff and admin views require authorised access; local
+> seed credentials are not published live-demo credentials.
+
+## Project Walkthrough
+
+1. **Customer:** browse the menu, build a cart, validate current prices, enter
+   test-mode Checkout, and view order history.
+2. **Staff:** manage orders through the kitchen workflow and maintain menu
+   availability using role-based permissions.
+3. **Admin:** inspect sales, product mix, payment outcomes and cancellations
+   over 7 or 30 days, then generate an AI brief or ask a follow-up question.
+
+The core engineering work connects these workflows: server-owned pricing,
+payment reconciliation, session recovery, realtime updates, analytics and
+bounded AI explanations. See the screenshots below for restricted admin views.
 
 ## Portfolio Highlights
 
@@ -26,30 +42,30 @@ recent orders while staff manage orders and menu changes.
 - Added backend cart quote validation, menu-version checks, and order snapshots
   so Stripe line items are created from server-validated checkout data.
 - Built an AI operations insight layer over deterministic MongoDB analytics,
-  including daily briefs, alert investigation, bounded tool calling, and
-  agent-run logging.
+  including daily briefs, alert investigation, backend-selected read-only
+  tools, and agent-run logging. Real `gpt-4o-mini` responses have been verified
+  against the deployed demo dataset.
 - Added authenticated Socket.IO realtime flows for kitchen order operations,
   customer order status updates, menu updates, and analytics alerts with
   polling fallback only when realtime is unavailable.
 - Moved menu images to a private S3 origin served through CloudFront, with the
   backend issuing presigned upload URLs and storing CDN URLs on menu items.
-- Deployed the live app with Vercel, Render, MongoDB Atlas, Resend, and Stripe,
-  with an optional AWS deployment path documented for S3, CloudFront, ECR, ECS
-  Fargate, and an Application Load Balancer.
+- Deployed the live app on S3, CloudFront, ECR and ECS Fargate behind an
+  Application Load Balancer, with MongoDB Atlas, Resend and Stripe integrations.
 
 ## Tech Stack
 
-| Area     | Stack                                                                             |
-| -------- | --------------------------------------------------------------------------------- |
-| Frontend | React 19, TypeScript, React Router, CSS Modules, Vite, Socket.IO client           |
-| Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                       |
-| Database | MongoDB                                                                           |
-| Payments | Stripe Checkout, Stripe webhook signature verification                            |
-| Auth     | Email/password, Google OAuth, JWT access tokens, HttpOnly refresh-cookie sessions |
-| AI/Ops   | OpenAI-compatible insight client, deterministic fallback, AgentRun logging        |
-| Assets   | AWS S3 private origin, CloudFront menu image CDN                                  |
-| Testing  | Jest, Vitest, React Testing Library, ts-jest                                      |
-| Tooling  | Stripe CLI, npm scripts, GitHub Actions                                           |
+| Area     | Stack                                                                                 |
+| -------- | ------------------------------------------------------------------------------------- |
+| Frontend | React 19, TypeScript, React Router, CSS Modules, Vite, Socket.IO client               |
+| Backend  | Node.js, Express, TypeScript, Mongoose, Zod                                           |
+| Database | MongoDB                                                                               |
+| Payments | Stripe Checkout, Stripe webhook signature verification                                |
+| Auth     | Email/password, Google OAuth, JWT access tokens, HttpOnly refresh-cookie sessions     |
+| AI/Ops   | OpenAI gpt-4o-mini, Zod response validation, deterministic fallback, AgentRun logging |
+| Assets   | AWS S3 private origin, CloudFront menu image CDN                                      |
+| Testing  | Jest, Vitest, React Testing Library, ts-jest                                          |
+| Tooling  | Stripe CLI, npm scripts, GitHub Actions                                               |
 
 ## System Architecture
 
@@ -225,6 +241,11 @@ restricted read-only tools such as `getPaymentStats`, `getItemPerformance`,
 happened, cite the evidence, describe a likely explanation only when the data
 supports it, and recommend what the manager should check next.
 
+Tool selection is application-controlled, not an unrestricted model-driven
+agent loop. The backend calculates the metrics; the model explains them. A
+recorded model name and tool list make the execution inspectable, but do not
+by themselves prove every generated explanation is correct.
+
 ```text
 Orders in MongoDB
   -> deterministic aggregation tools
@@ -255,8 +276,33 @@ external AI spend.
 ## Live Demo Notes
 
 - Stripe runs in test mode and does not create real charges.
-- Google sign-in is available in the deployed app.
-- Email/password and Google sign-in are available in the current auth surface.
+- Google sign-in and session persistence after refresh were manually verified
+  on the official www/api domains.
+- On 28 October 2026, 392 marked synthetic orders were added for the preceding
+  30 complete Sydney dates. All 84 pre-existing orders were preserved; repeat
+  application inserted and modified nothing. See the
+  [dataset record](docs/demo-month-dataset-2026-10-28.md) for its boundaries.
+- AI monthly analysis, daily briefs and an admin follow-up were verified using
+  `gpt-4o-mini`. These demonstrate analysis of a portfolio dataset, not real
+  business performance or proven causes of customer behaviour.
+- Full signed Stripe Checkout-to-order reconciliation, email delivery and
+  authenticated realtime notification flows were not reverified in the latest
+  production check. Unit tests are not a substitute for those integration checks.
+- One live AI brief exceeded the four-card response limit and was rejected by
+  schema validation; a retry succeeded. Tighter provider output constraints
+  remain a known reliability improvement, not a completed fix.
+
+## Verification Snapshot
+
+The backend suite passed 240 tests across 44 suites on 28 October 2026, including
+six tests for the deterministic monthly dataset. Backend type checking, lint
+and formatting checks passed. Unit tests explicitly disable the real AI key.
+
+AWS ECS revision 108 completed a stable rollout and the official API health
+endpoint returned HTTP 200. The API key is injected from AWS Secrets Manager,
+not embedded in the frontend or plaintext task-definition environment.
+See the [production check record](docs/production-check-2026-10-28.md) for
+verified results and outstanding integration checks.
 
 ## Screenshots
 
@@ -267,6 +313,14 @@ external AI spend.
 | Admin menu management                                     | Kitchen order board                                       |
 | --------------------------------------------------------- | --------------------------------------------------------- |
 | ![Admin menu management](docs/screenshots/admin-menu.png) | ![Kitchen order board](docs/screenshots/admin-orders.png) |
+
+### AI Operations Follow-Up
+
+Actual admin result over synthetic orders: model, selected tools, latency and
+metric-backed attention cards. Recommendations remain hypotheses to check,
+not proof of a checkout or payment-system defect.
+
+![AI operations follow-up showing gpt-4o-mini, payment and order tools, and cancellation evidence](docs/screenshots/ai-operations-insights.png)
 
 ## Local Setup
 
@@ -350,14 +404,14 @@ S3 presigned URLs for admin image uploads when `AWS_REGION` and
 for example when moving to a custom CDN domain.
 
 The frontend should set `VITE_API_URL` to the backend origin, for example
-`https://burger-rmc0.onrender.com`, when WebSocket admin events are enabled.
+`https://api.sydneyburger.com`, when WebSocket admin events are enabled.
 REST requests can still be routed through relative `/api` rewrites, but the
 Socket.IO client needs a stable backend origin for the realtime connection.
 
-## Optional AWS Deployment
+## AWS Deployment
 
-The current live demo uses Vercel and Render. An optional AWS path is documented
-in [`docs/aws-deployment.md`](docs/aws-deployment.md) for deploying the frontend
+The live demo uses AWS. The deployment is documented
+in [`docs/aws-deployment.md`](docs/aws-deployment.md), with the frontend
 to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
 Load Balancer.
 
@@ -409,8 +463,8 @@ Run `npm run format` in either project to format its source files, or
 
 ```mermaid
 flowchart TD
-  user["Customer / Staff / Admin"] --> frontend["React frontend<br/>Vercel"]
-  frontend -->|"/api requests"| api["Express API<br/>Render"]
+  user["Customer / Staff / Admin"] --> frontend["React frontend<br/>S3 + CloudFront"]
+  frontend -->|"/api and /socket.io requests via ALB"| api["Express API<br/>ECS Fargate"]
   api --> mongo["MongoDB Atlas"]
   api --> stripe["Stripe Checkout<br/>+ Webhooks"]
   api --> resend["Resend Email"]
@@ -419,7 +473,7 @@ flowchart TD
   cloudfront["CloudFront CDN<br/>menu images"] --> s3Images
   frontend -->|menu image URLs| cloudfront
 
-  github["GitHub Actions<br/>optional AWS deploy"] --> aws["AWS S3 + CloudFront<br/>ECR + ECS Fargate"]
+  github["GitHub Actions<br/>AWS deploy"] --> aws["AWS S3 + CloudFront<br/>ECR + ECS Fargate"]
 ```
 
 The frontend is split around pages, domain stores, API clients, and reusable UI
@@ -446,8 +500,8 @@ routes the user to the relevant order page; order status is read back from the
 backend.
 
 Menu images are stored as CloudFront HTTPS URLs on each menu item. S3 keeps the
-original image objects, CloudFront serves public image traffic, and the Vercel
-frontend renders the URL returned by the backend. Render only signs uploads and
+original image objects, CloudFront serves public image traffic, and the React
+frontend renders the URL returned by the backend. The ECS API signs uploads and
 never stores image files on its local filesystem. Menu image source backups live
 in `docs/assets/menu-image-originals`; they are outside `frontend/public` and
 are not included in the frontend build.
@@ -456,10 +510,12 @@ All monetary values are stored and transferred as integer AUD cents
 (`priceCents`, `subtotalCents`, `totalCents`, and `amountCents`). Stripe receives
 the validated integer `priceCents` value directly as its minor-unit amount.
 
-## Demo Accounts
+## Local Demo Accounts
 
-The deployed live demo can use the accounts below. For local development, run
-`npm run seed:demo-users` in `backend` first.
+For local development only, run `npm run seed:demo-users` in `backend` first.
+The seed refuses to run in production. These credentials do not grant access
+to the deployed admin console; do not enable predictable seed passwords in a
+public environment. Live administrator access is managed separately.
 
 | Role     | Email                      | Password      |
 | -------- | -------------------------- | ------------- |
