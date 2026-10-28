@@ -905,6 +905,47 @@ describe('order service', () => {
     expect(checkout.checkoutUrl).toBe(existingOrder.checkoutUrl);
   });
 
+  test.each([undefined, 'checkout_creation:old-token', 'invalid-id'])(
+    'does not reuse a checkout URL with invalid session ID %s',
+    async (providerPaymentId) => {
+      const order = {
+        _id: orderId,
+        userId,
+        items: [{ menuItemId, quantity: 2 }],
+        totalCents: 2400,
+        menuVersion: 7,
+        status: 'pending_payment',
+        checkoutUrl: 'https://checkout.stripe.com/stale',
+        payment: {
+          provider: 'stripe',
+          status: 'requires_payment',
+          providerPaymentId,
+          amountCents: 2400,
+          currency: 'aud',
+        },
+        createdAt: now,
+        updatedAt: now,
+      };
+      jest
+        .mocked(orderRepository.findCheckoutByIdempotencyKey)
+        .mockResolvedValue(order as never);
+      jest
+        .mocked(orderRepository.claimCheckoutSessionCreationIfPending)
+        .mockResolvedValue(null);
+
+      await expect(
+        createCheckoutOrder(
+          userId,
+          [{ id: menuItemId, quantity: 2 }],
+          7,
+          idempotencyKey,
+        ),
+      ).rejects.toMatchObject({ details: { code: 'CHECKOUT_UNAVAILABLE' } });
+      expect(mockRetrieveSession).not.toHaveBeenCalled();
+      expect(mockCreateSession).not.toHaveBeenCalled();
+    },
+  );
+
   test('marks checkout orders as failed when Stripe session creation fails', async () => {
     jest.mocked(validateCart).mockResolvedValue({
       items: [validatedMeal],

@@ -222,7 +222,10 @@ describe('PaymentBar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pay with Stripe' }));
     await waitFor(() =>
       expect(navigate).toHaveBeenCalledWith('/orders/order-old', {
-        state: { returnedFromSuccessfulPayment: true },
+        state: {
+          returnedFromSuccessfulPayment: true,
+          returnedFromPaidSupersededCheckout: true,
+        },
       }),
     );
     expect(getSupersededCheckoutKeys('user-1')).toEqual([oldKey]);

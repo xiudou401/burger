@@ -42,6 +42,7 @@ const isReusableCheckout = (
   order: CheckoutOrderDocument,
 ): order is CheckoutOrderDocument & { checkoutUrl: string } =>
   Boolean(order.checkoutUrl) &&
+  Boolean(order.payment.providerPaymentId?.startsWith('cs_')) &&
   order.status === 'pending_payment' &&
   order.payment.status === 'requires_payment';
 
@@ -55,7 +56,7 @@ const assertCheckoutCanBeStarted = (order: CheckoutOrderDocument) => {
 
   if (order.status === 'cancelled' || order.payment.status === 'cancelled') {
     throw new ServiceError('Checkout is no longer available', 409, {
-      code: 'CHECKOUT_ENDED',
+      code: 'CHECKOUT_UNAVAILABLE',
     });
   }
 

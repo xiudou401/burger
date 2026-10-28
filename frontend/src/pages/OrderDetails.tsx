@@ -19,6 +19,9 @@ import { useCartSelector } from '../store/cart/hooks/useCartSelector';
 const OrderDetails = () => {
   const { orderId = '' } = useParams();
   const location = useLocation();
+  const returnedFromPaidSupersededCheckout =
+    (location.state as { returnedFromPaidSupersededCheckout?: boolean } | null)
+      ?.returnedFromPaidSupersededCheckout === true;
   const returnedFromSuccessfulPayment =
     (
       location.state as {
@@ -73,15 +76,23 @@ const OrderDetails = () => {
                 <section className={classes.Confirmation} role="status">
                   <p className={classes.ConfirmationEyebrow}>Order confirmed</p>
                   <h1 className={classes.ConfirmationTitle}>
-                    Payment received
+                    {returnedFromPaidSupersededCheckout
+                      ? 'Your previous order was already paid'
+                      : 'Payment received'}
                   </h1>
                   <p className={classes.ConfirmationText}>
-                    We have received your payment and your order is being
-                    confirmed by the kitchen.
+                    {returnedFromPaidSupersededCheckout
+                      ? 'The items below belong to your previous order, not your updated cart.'
+                      : 'We have received your payment and your order is being confirmed by the kitchen.'}
+                    {returnedFromPaidSupersededCheckout &&
+                      cartItems.length > 0 &&
+                      ' Your updated cart is still available. Review it before starting another payment.'}
                   </p>
                   {cartItems.length > 0 && (
                     <Link className={classes.BackLink} to="/">
-                      Continue with your current cart
+                      {returnedFromPaidSupersededCheckout
+                        ? 'Continue with updated cart'
+                        : 'Continue with your current cart'}
                     </Link>
                   )}
                 </section>

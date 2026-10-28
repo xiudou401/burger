@@ -148,7 +148,12 @@ const PaymentBar = ({ totalCents, onOrderComplete }: PaymentBarProps) => {
           }
           if (typeof orderId === 'string')
             navigate(`/orders/${orderId}`, {
-              state: { returnedFromSuccessfulPayment: true },
+              state: {
+                returnedFromSuccessfulPayment: true,
+                ...(typeof supersededKey === 'string'
+                  ? { returnedFromPaidSupersededCheckout: true }
+                  : {}),
+              },
             });
           return;
         }
