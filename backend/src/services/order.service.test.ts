@@ -946,6 +946,31 @@ describe('order service', () => {
     },
   );
 
+  test('keeps cancelled checkout errors classified as CHECKOUT_ENDED', async () => {
+    jest
+      .mocked(orderRepository.findCheckoutByIdempotencyKey)
+      .mockResolvedValue({
+        _id: orderId,
+        userId,
+        items: [{ menuItemId, quantity: 2 }],
+        status: 'cancelled',
+        payment: { status: 'cancelled' },
+      } as never);
+
+    await expect(
+      createCheckoutOrder(
+        userId,
+        [{ id: menuItemId, quantity: 2 }],
+        7,
+        idempotencyKey,
+      ),
+    ).rejects.toMatchObject({ details: { code: 'CHECKOUT_ENDED' } });
+    expect(
+      orderRepository.claimCheckoutSessionCreationIfPending,
+    ).not.toHaveBeenCalled();
+    expect(mockCreateSession).not.toHaveBeenCalled();
+  });
+
   test('marks checkout orders as failed when Stripe session creation fails', async () => {
     jest.mocked(validateCart).mockResolvedValue({
       items: [validatedMeal],

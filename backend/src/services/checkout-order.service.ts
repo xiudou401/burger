@@ -56,7 +56,7 @@ const assertCheckoutCanBeStarted = (order: CheckoutOrderDocument) => {
 
   if (order.status === 'cancelled' || order.payment.status === 'cancelled') {
     throw new ServiceError('Checkout is no longer available', 409, {
-      code: 'CHECKOUT_UNAVAILABLE',
+      code: 'CHECKOUT_ENDED',
     });
   }
 
@@ -81,7 +81,7 @@ const assertStripeCheckoutOpen = async (order: CheckoutOrderDocument) => {
   const sessionId = order.payment.providerPaymentId;
   if (!sessionId?.startsWith('cs_')) {
     throw new ServiceError('Checkout session is unavailable', 409, {
-      code: 'CHECKOUT_ENDED',
+      code: 'CHECKOUT_UNAVAILABLE',
     });
   }
   const session = await retrieveStripeCheckoutSession(sessionId);
