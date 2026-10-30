@@ -2,7 +2,7 @@ export { createCheckoutOrder } from './checkout-order.service';
 export {
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
-  markStripeOrderFailed,
+  markStripePaymentFailed,
 } from './stripe-payment.service';
 export type {
   CheckoutOrder,

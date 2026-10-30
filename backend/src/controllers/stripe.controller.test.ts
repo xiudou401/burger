@@ -4,7 +4,7 @@ import { ServiceError } from '../errors/ServiceError';
 import {
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
-  markStripeOrderFailed,
+  markStripePaymentFailed,
 } from '../services/checkout.service';
 import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
 import { stripeWebhookHandler } from './stripe.controller';
@@ -22,7 +22,7 @@ jest.mock('stripe', () =>
 jest.mock('../services/checkout.service', () => ({
   markStripeCheckoutFailed: jest.fn(),
   markStripeCheckoutPaid: jest.fn(),
-  markStripeOrderFailed: jest.fn(),
+  markStripePaymentFailed: jest.fn(),
 }));
 
 jest.mock('../repositories/stripe-webhook-event.repository', () => ({
@@ -201,7 +201,7 @@ describe('stripe webhook controller', () => {
 
     await stripeWebhookHandler(req, res, next);
 
-    expect(markStripeOrderFailed).toHaveBeenCalledWith(
+    expect(markStripePaymentFailed).toHaveBeenCalledWith(
       '507f1f77bcf86cd799439012',
     );
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(

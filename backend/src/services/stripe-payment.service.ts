@@ -184,7 +184,7 @@ export const markStripeCheckoutFailed = async (
   return publicOrder;
 };
 
-export const markStripeOrderFailed = async (
+export const markStripePaymentFailed = async (
   orderId: string,
 ): Promise<PublicOrder> => {
   const order = await orderRepository.findById(orderId);
@@ -198,7 +198,7 @@ export const markStripeOrderFailed = async (
   }
 
   const failedOrder =
-    await orderRepository.markStripeOrderFailedIfNotPaid(orderId);
+    await orderRepository.markStripePaymentFailedIfPending(orderId);
 
   if (!failedOrder) {
     const latestOrder = await orderRepository.findById(orderId);

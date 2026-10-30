@@ -12,9 +12,9 @@ import {
   createCheckoutOrder,
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
-  markStripeOrderFailed,
+  markStripePaymentFailed,
 } from './checkout.service';
-import { listAllOrders, updateOrderStatus } from './order.service';
+import { listAdminOrders, updateOrderStatus } from './order.service';
 import { getPermissionsForRole } from '../types/permissions';
 
 const mockCreateSession = jest.fn();
@@ -69,7 +69,7 @@ jest.mock('../repositories/order.repository', () => ({
     markStripeCheckoutPaidIfUnpaid: jest.fn(),
     flagStripePaymentForReview: jest.fn(),
     markStripeCheckoutFailedIfNotPaid: jest.fn(),
-    markStripeOrderFailedIfNotPaid: jest.fn(),
+    markStripePaymentFailedIfPending: jest.fn(),
     listAll: jest.fn(),
     save: jest.fn(),
   },
@@ -390,7 +390,7 @@ describe('order service', () => {
       .mocked(orderRepository.listAll)
       .mockResolvedValueOnce([firstOrder, extraOrder] as never);
 
-    const result = await listAllOrders({ limit: 1 });
+    const result = await listAdminOrders({ limit: 1 });
 
     expect(orderRepository.listAll).toHaveBeenCalledWith(2, undefined);
     expect(result.orders).toHaveLength(1);
@@ -398,7 +398,7 @@ describe('order service', () => {
 
     jest.mocked(orderRepository.listAll).mockResolvedValueOnce([] as never);
 
-    await listAllOrders({ limit: 1, cursor: result.nextCursor ?? undefined });
+    await listAdminOrders({ limit: 1, cursor: result.nextCursor ?? undefined });
 
     expect(orderRepository.listAll).toHaveBeenLastCalledWith(
       2,
@@ -1604,14 +1604,14 @@ describe('order service', () => {
       },
     };
     jest
-      .mocked(orderRepository.markStripeOrderFailedIfNotPaid)
+      .mocked(orderRepository.markStripePaymentFailedIfPending)
       .mockResolvedValue(failedOrder as never);
 
-    const result = await markStripeOrderFailed(orderId);
+    const result = await markStripePaymentFailed(orderId);
 
-    expect(orderRepository.markStripeOrderFailedIfNotPaid).toHaveBeenCalledWith(
-      orderId,
-    );
+    expect(
+      orderRepository.markStripePaymentFailedIfPending,
+    ).toHaveBeenCalledWith(orderId);
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(result.payment?.status).toBe('failed');
   });
@@ -1639,13 +1639,13 @@ describe('order service', () => {
 
     jest.mocked(orderRepository.findById).mockResolvedValue(order as never);
 
-    const result = await markStripeOrderFailed(orderId);
+    const result = await markStripePaymentFailed(orderId);
 
     expect(order.status).toBe('confirmed');
     expect(order.payment.status).toBe('paid');
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(
-      orderRepository.markStripeOrderFailedIfNotPaid,
+      orderRepository.markStripePaymentFailedIfPending,
     ).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.paidAt).toBe(paidAt);

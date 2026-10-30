@@ -227,7 +227,7 @@ const decodeAdminOrderCursor = (
   }
 };
 
-export const listAllOrders = async ({
+export const listAdminOrders = async ({
   limit = 20,
   cursor,
 }: {

@@ -5,7 +5,7 @@ import { ServiceError } from '../errors/ServiceError';
 import {
   markStripeCheckoutFailed,
   markStripeCheckoutPaid,
-  markStripeOrderFailed,
+  markStripePaymentFailed,
   type StripeCheckoutCompletedSession,
 } from '../services/checkout.service';
 import { stripeWebhookEventRepository } from '../repositories/stripe-webhook-event.repository';
@@ -120,7 +120,7 @@ export const stripeWebhookHandler = async (
         orderId = getOrderIdFromPaymentIntent(paymentIntent);
 
         if (orderId) {
-          await markStripeOrderFailed(orderId);
+          await markStripePaymentFailed(orderId);
         }
       }
 

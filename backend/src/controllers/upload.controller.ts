@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { createMenuImageUpload } from '../services/upload.service';
+import { createMenuImageUploadUrl } from '../services/upload.service';
 import type { MenuImageUploadPayload } from '../validation/upload.schema';
 
 export const createMenuImageUploadHandler = async (
@@ -8,7 +8,7 @@ export const createMenuImageUploadHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const upload = await createMenuImageUpload(
+    const upload = await createMenuImageUploadUrl(
       req.body as MenuImageUploadPayload,
     );
 

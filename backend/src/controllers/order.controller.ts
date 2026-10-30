@@ -3,7 +3,7 @@ import { ServiceError } from '../errors/ServiceError';
 import {
   getOrderById,
   getOrderForUser,
-  listAllOrders,
+  listAdminOrders,
   listOrdersForUser,
   updateOrderStatus,
 } from '../services/order.service';
@@ -89,7 +89,7 @@ export const listAdminOrdersHandler = async (
   try {
     const { limit, cursor } =
       req.query as unknown as ListAdminOrdersQueryPayload;
-    const result = await listAllOrders({ limit, cursor });
+    const result = await listAdminOrders({ limit, cursor });
 
     return res.status(200).json(result);
   } catch (error) {

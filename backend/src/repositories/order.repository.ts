@@ -606,7 +606,7 @@ export const orderRepository = {
     ).exec();
   },
 
-  markStripeOrderFailedIfNotPaid(orderId: string) {
+  markStripePaymentFailedIfPending(orderId: string) {
     if (!isObjectId(orderId)) {
       return Promise.resolve(null);
     }

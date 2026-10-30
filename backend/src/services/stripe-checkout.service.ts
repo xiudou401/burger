@@ -3,16 +3,16 @@ import { env } from '../config/env';
 import { ServiceError } from '../errors/ServiceError';
 import type { CheckoutOrderDocument } from './checkout.types';
 
-let stripeClient: ReturnType<typeof getStripeClientInstance> | null = null;
+let stripeClient: ReturnType<typeof createStripeClient> | null = null;
 
-const getStripeClientInstance = () => new Stripe(env.STRIPE_SECRET_KEY ?? '');
+const createStripeClient = () => new Stripe(env.STRIPE_SECRET_KEY ?? '');
 
 const getStripeClient = () => {
   if (!env.STRIPE_SECRET_KEY) {
     throw new ServiceError('Stripe is not configured', 503);
   }
 
-  stripeClient = stripeClient ?? getStripeClientInstance();
+  stripeClient = stripeClient ?? createStripeClient();
 
   return stripeClient;
 };

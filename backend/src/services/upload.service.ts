@@ -46,7 +46,7 @@ const buildPublicImageUrl = (key: string) => {
   return new URL(key, baseUrl).toString();
 };
 
-export const createMenuImageUpload = async (
+export const createMenuImageUploadUrl = async (
   payload: MenuImageUploadPayload,
 ) => {
   if (!env.S3_MENU_IMAGES_BUCKET) {
