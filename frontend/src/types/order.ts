@@ -20,7 +20,6 @@ export interface Order {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amountCents: number;
     currency: string;
     paidAt?: string;
   };

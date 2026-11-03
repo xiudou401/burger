@@ -51,7 +51,6 @@ export interface Order {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amountCents: number;
     currency: string;
     paidAt?: Date;
     checkoutSessionCreationClaimedAt?: Date;
@@ -193,15 +192,6 @@ const orderSchema = new Schema<Order>(
         ],
         required: true,
         default: 'unpaid',
-      },
-      amountCents: {
-        type: Number,
-        required: true,
-        min: 0,
-        validate: {
-          validator: Number.isSafeInteger,
-          message: 'Payment amountCents must be an integer',
-        },
       },
       currency: {
         type: String,

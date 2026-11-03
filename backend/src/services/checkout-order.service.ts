@@ -365,7 +365,6 @@ export const createCheckoutOrder = async (
       payment: {
         provider: 'stripe',
         status: 'requires_payment',
-        amountCents: validatedCart.totalCents,
         currency: 'aud',
       },
     });

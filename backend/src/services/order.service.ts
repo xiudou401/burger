@@ -37,7 +37,6 @@ export interface PublicOrder {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amountCents: number;
     currency: string;
     paidAt?: Date;
     providerPaidAt?: Date;
@@ -78,7 +77,6 @@ export const toPublicOrder = (order: {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amountCents: number;
     currency: string;
     paidAt?: Date;
     providerPaidAt?: Date;
@@ -117,7 +115,6 @@ export const toPublicOrder = (order: {
         provider: order.payment.provider,
         providerPaymentId: order.payment.providerPaymentId,
         status: order.payment.status,
-        amountCents: order.payment.amountCents,
         currency: order.payment.currency,
         paidAt: order.payment.paidAt,
         providerPaidAt: order.payment.providerPaidAt,
@@ -318,11 +315,9 @@ export const updateOrderStatus = async (
   if (nextStatus === 'confirmed') {
     order.payment = order.payment ?? {
       status: 'unpaid',
-      amountCents: order.totalCents,
       currency: 'aud',
     };
     order.payment.status = 'paid';
-    order.payment.amountCents = order.totalCents;
     order.payment.paidAt = order.payment.paidAt ?? new Date();
   }
 

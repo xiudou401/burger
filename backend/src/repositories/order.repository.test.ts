@@ -148,7 +148,6 @@ describe('orderRepository', () => {
         status: 'pending_payment',
         payment: {
           status: 'unpaid',
-          amountCents: 2400,
           currency: 'aud',
         },
       }),

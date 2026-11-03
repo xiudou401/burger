@@ -37,7 +37,6 @@ export type CheckoutOrderDocument = {
     provider?: 'stripe';
     providerPaymentId?: string;
     status: PaymentStatus;
-    amountCents: number;
     currency: string;
     paidAt?: Date;
     checkoutSessionCreationClaimedAt?: Date;

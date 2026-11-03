@@ -507,7 +507,7 @@ in `docs/assets/menu-image-originals`; they are outside `frontend/public` and
 are not included in the frontend build.
 
 All monetary values are stored and transferred as integer AUD cents
-(`priceCents`, `subtotalCents`, `totalCents`, and `amountCents`). Stripe receives
+(`priceCents`, `subtotalCents`, and `totalCents`). Stripe receives
 the validated integer `priceCents` value directly as its minor-unit amount.
 
 ## Local Demo Accounts

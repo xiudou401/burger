@@ -373,7 +373,7 @@ describe('order service', () => {
       status: 'confirmed',
       payment: {
         status: 'paid',
-        amountCents: 1200,
+        amountCents: 9999,
         currency: 'aud',
       },
       createdAt: now,
@@ -394,6 +394,8 @@ describe('order service', () => {
 
     expect(orderRepository.listAll).toHaveBeenCalledWith(2, undefined);
     expect(result.orders).toHaveLength(1);
+    expect(result.orders[0].totalCents).toBe(1200);
+    expect(result.orders[0].payment).not.toHaveProperty('amountCents');
     expect(result.nextCursor).toEqual(expect.any(String));
 
     jest.mocked(orderRepository.listAll).mockResolvedValueOnce([] as never);
@@ -438,7 +440,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -482,7 +483,6 @@ describe('order service', () => {
         payment: {
           provider: 'stripe',
           status: 'requires_payment',
-          amountCents: 2400,
           currency: 'aud',
         },
       }),
@@ -548,7 +548,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_existing',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -632,7 +631,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_paid',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -682,7 +680,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -746,7 +743,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -809,7 +805,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_existing',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -861,7 +856,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_failed',
         status: 'failed',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: now,
       },
@@ -920,7 +914,6 @@ describe('order service', () => {
           provider: 'stripe',
           status: 'requires_payment',
           providerPaymentId,
-          amountCents: 2400,
           currency: 'aud',
         },
         createdAt: now,
@@ -989,7 +982,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1038,7 +1030,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: undefined as string | undefined,
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1090,7 +1081,6 @@ describe('order service', () => {
       status: 'pending_payment',
       payment: {
         status: 'unpaid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -1148,7 +1138,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: undefined as Date | undefined,
       },
@@ -1213,7 +1202,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1283,7 +1271,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt,
       },
@@ -1330,7 +1317,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'cancelled',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1404,7 +1390,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1465,7 +1450,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1503,7 +1487,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1552,7 +1535,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt,
       },
@@ -1588,7 +1570,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
       createdAt: now,
@@ -1629,7 +1610,6 @@ describe('order service', () => {
         provider: 'stripe',
         providerPaymentId: 'cs_test_123',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt,
       },
@@ -1670,7 +1650,6 @@ describe('order service', () => {
       __v: 2,
       payment: {
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
       },
     } as never);
@@ -1699,7 +1678,6 @@ describe('order service', () => {
       payment: {
         provider: 'stripe',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: now,
       },
@@ -1725,7 +1703,6 @@ describe('order service', () => {
       status: 'pending_payment',
       payment: {
         status: 'unpaid',
-        amountCents: 2400,
         currency: 'aud',
       },
     } as never);
@@ -1747,7 +1724,6 @@ describe('order service', () => {
       payment: {
         provider: 'stripe',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: now,
       },
@@ -1786,7 +1762,6 @@ describe('order service', () => {
         payment: {
           provider: 'stripe',
           status: 'paid',
-          amountCents: 2400,
           currency: 'aud',
           paidAt: now,
         },
@@ -1830,7 +1805,6 @@ describe('order service', () => {
       payment: {
         provider: 'stripe',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: now,
       },
@@ -1857,7 +1831,6 @@ describe('order service', () => {
       payment: {
         provider: 'stripe',
         status: 'paid',
-        amountCents: 2400,
         currency: 'aud',
         paidAt: now,
       },
@@ -1880,7 +1853,6 @@ describe('order service', () => {
       payment: {
         provider: 'stripe',
         status: 'requires_payment',
-        amountCents: 2400,
         currency: 'aud',
       },
     } as never);

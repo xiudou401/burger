@@ -205,7 +205,6 @@ const createDemoOrder = ({
       provider: 'stripe' as const,
       providerPaymentId: `cs_demo_${index}`,
       status: pattern.paymentStatus,
-      amountCents: totalCents,
       currency: 'aud',
       paidAt,
     },

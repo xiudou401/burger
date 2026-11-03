@@ -65,7 +65,6 @@ describe('outbox service', () => {
       provider: 'stripe',
       providerPaymentId: 'cs_test_123',
       status: 'paid',
-      amountCents: 1200,
       currency: 'aud',
       paidAt: now,
     },

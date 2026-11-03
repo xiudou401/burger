@@ -74,7 +74,7 @@ describe('synthetic monthly orders', () => {
       expect(order.totalCents).toBe(
         order.items.reduce((sum, item) => sum + item.subtotalCents, 0),
       );
-      expect(order.payment.amountCents).toBe(order.totalCents);
+      expect(order.payment).not.toHaveProperty('amountCents');
       expect(Number.isSafeInteger(order.totalCents)).toBe(true);
       expect(['completed', 'cancelled']).toContain(order.status);
       expect(order.cancelledAt !== undefined).toBe(

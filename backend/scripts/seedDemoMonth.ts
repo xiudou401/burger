@@ -123,7 +123,6 @@ export const buildDemoMonthOrders = ({
               : staffCancelled
                 ? 'refunded'
                 : 'paid',
-          amountCents: totalCents,
           currency: 'aud',
           paidAt:
             !abandoned && !paymentFailed
