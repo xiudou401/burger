@@ -103,16 +103,6 @@ export const stripeWebhookHandler = async (
         );
       }
 
-      if (event.type === 'checkout.session.async_payment_failed') {
-        const session = event.data.object as {
-          id: string;
-          metadata?: Record<string, string> | null;
-          client_reference_id?: string | null;
-        };
-        orderId = getOrderIdFromCheckoutSession(session);
-        await markStripeCheckoutFailed(session.id, 'failed');
-      }
-
       if (event.type === 'payment_intent.payment_failed') {
         const paymentIntent = event.data.object as {
           metadata?: Record<string, string>;
