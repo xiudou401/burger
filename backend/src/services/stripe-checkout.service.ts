@@ -78,6 +78,7 @@ export const createStripeCheckoutSession = async (
   return getStripeClient().checkout.sessions.create(
     {
       mode: 'payment',
+      payment_method_types: ['card'],
       client_reference_id: orderId,
       line_items: order.items.map(toStripeLineItem),
       metadata: {

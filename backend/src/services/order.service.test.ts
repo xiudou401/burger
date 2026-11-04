@@ -490,6 +490,7 @@ describe('order service', () => {
     expect(mockCreateSession).toHaveBeenCalledWith(
       expect.objectContaining({
         mode: 'payment',
+        payment_method_types: ['card'],
         client_reference_id: orderId,
         line_items: [
           expect.objectContaining({
