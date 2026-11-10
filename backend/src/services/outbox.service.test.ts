@@ -143,6 +143,28 @@ describe('outbox service', () => {
     },
   );
 
+  test('finishes a cancelled order notification without sending or retrying it', async () => {
+    jest.mocked(outboxEventRepository.claimNext).mockResolvedValue({
+      claimToken: 'claim-1',
+      event: {
+        _id: 'event-1',
+        eventType: 'order.paid',
+        payload: { orderId, userId },
+      },
+    } as never);
+    jest
+      .mocked(orderRepository.findByIdLean)
+      .mockResolvedValue({ ...order, status: 'cancelled' } as never);
+    await expect(processNextOutboxEvent()).resolves.toBe(true);
+    expect(outboxEventRepository.markProcessed).toHaveBeenCalledWith(
+      'event-1',
+      'claim-1',
+    );
+    expect(outboxEventRepository.markFailed).not.toHaveBeenCalled();
+    expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
+    expect(emitOrderEvent).not.toHaveBeenCalled();
+  });
+
   test('marks the claimed event failed when a side effect fails', async () => {
     const error = new Error('Email unavailable');
 

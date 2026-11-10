@@ -179,6 +179,7 @@ describe('orderRepository', () => {
     );
 
     expect(OrderModel.find).toHaveBeenCalledWith({
+      cancellationReason: { $ne: 'archived_test_checkout' },
       'payment.status': 'paid',
       'payment.paidAt': {
         $gte: start,
@@ -263,6 +264,30 @@ describe('orderRepository', () => {
           'payment.status': 'paid',
         }),
       }),
+      { new: true },
+    );
+  });
+
+  test('records an archived test payment without promoting it to the kitchen', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);
+    await orderRepository.markStripeCheckoutPaidIfUnpaid(
+      orderId,
+      'cs_test_old',
+      true,
+    );
+    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'pending_payment',
+        'payment.providerPaymentId': 'cs_test_old',
+      }),
+      {
+        $set: expect.objectContaining({
+          status: 'cancelled',
+          'payment.status': 'paid',
+          cancellationReason: 'archived_test_checkout',
+        }),
+      },
       { new: true },
     );
   });
@@ -381,6 +406,7 @@ describe('orderRepository', () => {
           $match: {
             'payment.paidAt': { $gte: start, $lt: end },
             'payment.status': 'paid',
+            cancellationReason: { $ne: 'archived_test_checkout' },
           },
         },
       ]),

@@ -16,6 +16,7 @@ import {
 } from '../utils/order-date';
 import {
   formatOrderShortId,
+  getAdminOrderPaymentNotice,
   formatOrderStatus,
   getOrderStatusVariant,
 } from '../utils/order';
@@ -125,8 +126,9 @@ const AdminOrders = () => {
     changeStatus,
   } = useAdminOrdersPage(view, view === 'past' ? dateRange : {});
 
-  const renderOrderCard = (order: Order, isCompact = false) =>
-    !isCompact ? (
+  const renderOrderCard = (order: Order, isCompact = false) => {
+    const paymentNotice = getAdminOrderPaymentNotice(order, now);
+    return !isCompact ? (
       <KitchenOrderTicket
         key={order.id}
         order={order}
@@ -169,12 +171,9 @@ const AdminOrders = () => {
                 {formatOrderDateTime(order.createdAt, 'Order time unavailable')}
               </time>
             </p>
-            {order.status === 'cancelled' &&
-              order.payment?.status === 'paid' && (
-                <p className={classes.PaymentWarning}>
-                  Paid - arrange refund separately
-                </p>
-              )}
+            {paymentNotice && (
+              <p className={classes.PaymentWarning}>{paymentNotice}</p>
+            )}
           </div>
           <strong className={classes.Total}>
             {formatCurrency(order.totalCents)}
@@ -191,6 +190,7 @@ const AdminOrders = () => {
         </ul>
       </article>
     );
+  };
 
   return (
     <AdminLayout

@@ -6,13 +6,18 @@ import classes from './OrderDetails.module.css';
 import { useAdminOrderDetailsPage } from './hooks/useAdminOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
 import { formatOrderDateTime } from '../utils/order-date';
-import { formatOrderShortId, formatOrderStatus } from '../utils/order';
+import {
+  formatOrderShortId,
+  formatOrderStatus,
+  getAdminOrderPaymentNotice,
+} from '../utils/order';
 import MenuImage from '../components/UI/MenuImage/MenuImage';
 
 const AdminOrderDetails = () => {
   const { orderId = '' } = useParams();
   const { order, isLoading, error, refresh } =
     useAdminOrderDetailsPage(orderId);
+  const paymentNotice = order && getAdminOrderPaymentNotice(order);
   const location = useLocation();
   const returnTo = location.state?.ordersReturnTo;
 
@@ -83,12 +88,23 @@ const AdminOrderDetails = () => {
                 Cancelled: {formatOrderDateTime(order.cancelledAt)}
               </p>
             )}
-            {order.status === 'cancelled' &&
-              order.payment?.status === 'paid' && (
-                <AdminStatusText tone="error">
-                  Paid - arrange refund separately
-                </AdminStatusText>
-              )}
+            {order.payment?.requiresReview && order.payment.providerPaidAt && (
+              <p className={classes.Meta}>
+                Stripe recorded payment:{' '}
+                {formatOrderDateTime(order.payment.providerPaidAt)}
+              </p>
+            )}
+            {paymentNotice && (
+              <AdminStatusText
+                tone={
+                  order.cancellationReason === 'archived_test_checkout'
+                    ? undefined
+                    : 'error'
+                }
+              >
+                {paymentNotice}
+              </AdminStatusText>
+            )}
           </section>
 
           <section className={classes.Card}>

@@ -8,6 +8,8 @@ export interface CheckoutOrder {
 
 export interface StripeCheckoutCompletedSession {
   id: string;
+  created?: number;
+  livemode?: boolean;
   payment_status?: string | null;
   amount_total?: number | null;
   currency?: string | null;

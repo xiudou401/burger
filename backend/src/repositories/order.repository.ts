@@ -252,6 +252,7 @@ export const orderRepository = {
 
   listPaidBetween(start: Date, end: Date) {
     return OrderModel.find({
+      cancellationReason: { $ne: 'archived_test_checkout' },
       'payment.status': 'paid',
       'payment.paidAt': {
         $gte: start,
@@ -287,6 +288,7 @@ export const orderRepository = {
           paidOrders: [
             {
               $match: {
+                cancellationReason: { $ne: 'archived_test_checkout' },
                 'payment.status': 'paid',
                 'payment.paidAt': { $gte: start, $lt: end },
               },
@@ -371,6 +373,7 @@ export const orderRepository = {
     return OrderModel.aggregate<OrderAnalyticsCategorySale>([
       {
         $match: {
+          cancellationReason: { $ne: 'archived_test_checkout' },
           'payment.paidAt': { $gte: start, $lt: end },
           'payment.status': 'paid',
         },
@@ -411,6 +414,7 @@ export const orderRepository = {
         $match: {
           'payment.paidAt': { $gte: start, $lt: end },
           'payment.status': 'paid',
+          cancellationReason: { $ne: 'archived_test_checkout' },
         },
       },
       { $unwind: '$items' },
@@ -468,6 +472,7 @@ export const orderRepository = {
               $match: {
                 'payment.paidAt': { $gte: start, $lt: end },
                 'payment.status': 'paid',
+                cancellationReason: { $ne: 'archived_test_checkout' },
               },
             },
             {
@@ -591,7 +596,11 @@ export const orderRepository = {
     }).exec();
   },
 
-  markStripeCheckoutPaidIfUnpaid(orderId: string, sessionId: string) {
+  markStripeCheckoutPaidIfUnpaid(
+    orderId: string,
+    sessionId: string,
+    archiveTestCheckout = false,
+  ) {
     if (!isObjectId(orderId)) {
       return Promise.resolve(null);
     }
@@ -606,9 +615,15 @@ export const orderRepository = {
       },
       {
         $set: {
-          status: 'confirmed',
+          status: archiveTestCheckout ? 'cancelled' : 'confirmed',
           'payment.status': 'paid',
           'payment.paidAt': new Date(),
+          ...(archiveTestCheckout
+            ? {
+                cancellationReason: 'archived_test_checkout',
+                cancelledAt: new Date(),
+              }
+            : {}),
         },
       },
       { new: true },
