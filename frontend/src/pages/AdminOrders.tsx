@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminLoadMore from '../components/Admin/AdminLoadMore';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
@@ -8,11 +8,11 @@ import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
 import { formatCurrency } from '../utils/currency';
-import { formatMediumDateTime } from '../utils/date';
 import {
   formatOrderDay,
   orderDayKey,
   orderDateRange,
+  formatOrderDateTime,
 } from '../utils/order-date';
 import {
   formatOrderShortId,
@@ -45,15 +45,60 @@ const getOrdersByStatus = (orders: Order[], status: OrderStatus) =>
   orders.filter((order) => order.status === status);
 
 const AdminOrders = () => {
-  const [activeView, setActiveView] = useState('Kitchen');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const selectedView = searchParams.get('view');
+  const activeView =
+    selectedView === 'past'
+      ? 'Past orders'
+      : selectedView === 'awaiting_payment'
+        ? 'Awaiting payment'
+        : 'Kitchen';
+  const setActiveView = (title: string) => {
+    setSearchParams((current) => {
+      current.set(
+        'view',
+        title === 'Past orders'
+          ? 'past'
+          : title === 'Awaiting payment'
+            ? 'awaiting_payment'
+            : 'kitchen',
+      );
+      return current;
+    });
+  };
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [now, setNow] = useState(Date.now);
-  const [fromDate, setFromDate] = useState('');
-  const [throughDate, setThroughDate] = useState('');
-  const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>(
-    {},
+  const [fromDate, setFromDate] = useState(searchParams.get('from') ?? '');
+  const [throughDate, setThroughDate] = useState(
+    searchParams.get('through') ?? '',
   );
+  let dateRange: { from?: string; to?: string } = {};
+  try {
+    dateRange = orderDateRange(
+      searchParams.get('from') ?? '',
+      searchParams.get('through') ?? '',
+    );
+  } catch {
+    /* Ignore malformed URL filters. */
+  }
+  const applyDateFilters = (clear = false) => {
+    setSearchParams((current) => {
+      if (!clear && fromDate) current.set('from', fromDate);
+      else current.delete('from');
+      if (!clear && throughDate) current.set('through', throughDate);
+      else current.delete('through');
+      return current;
+    });
+  };
   const [dateError, setDateError] = useState('');
+  const appliedFrom = searchParams.get('from') ?? '';
+  const appliedThrough = searchParams.get('through') ?? '';
+  useEffect(() => {
+    setFromDate(appliedFrom);
+    setThroughDate(appliedThrough);
+    setDateError('');
+  }, [appliedFrom, appliedThrough]);
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
@@ -69,6 +114,7 @@ const AdminOrders = () => {
     isLoading,
     isLoadingMore,
     error,
+    hasUpdates,
     updatingOrderIds,
     connectionStatus,
     isOnline,
@@ -101,6 +147,7 @@ const AdminOrders = () => {
               <Link
                 className={classes.OrderId}
                 to={`/admin/orders/${order.id}`}
+                state={{ ordersReturnTo: location.pathname + location.search }}
               >
                 #{formatOrderShortId(order.id)}
               </Link>
@@ -119,10 +166,7 @@ const AdminOrders = () => {
                   orderDayKey(order.createdAt) ? order.createdAt : undefined
                 }
               >
-                {formatMediumDateTime(
-                  order.createdAt,
-                  'Order time unavailable',
-                )}
+                {formatOrderDateTime(order.createdAt, 'Order time unavailable')}
               </time>
             </p>
             {order.status === 'cancelled' &&
@@ -186,6 +230,11 @@ const AdminOrders = () => {
       )}
       {isLoading && <AdminStatusText>Loading orders...</AdminStatusText>}
       {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
+      {hasUpdates && (
+        <AdminStatusText>
+          Orders may have changed. Refresh to load the latest orders.
+        </AdminStatusText>
+      )}
       {!isOnline && (
         <AdminStatusText tone="error">
           Offline. Order updates are paused. Displayed orders may be out of
@@ -249,7 +298,8 @@ const AdminOrders = () => {
             onSubmit={(event) => {
               event.preventDefault();
               try {
-                setDateRange(orderDateRange(fromDate, throughDate));
+                orderDateRange(fromDate, throughDate);
+                applyDateFilters();
                 setDateError('');
               } catch (err) {
                 setDateError(
@@ -282,7 +332,7 @@ const AdminOrders = () => {
               onClick={() => {
                 setFromDate('');
                 setThroughDate('');
-                setDateRange({});
+                applyDateFilters(true);
                 setDateError('');
               }}
             >

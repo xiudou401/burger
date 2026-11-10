@@ -25,6 +25,7 @@ export const useAdminOrdersPage = (
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [hasUpdates, setHasUpdates] = useState(false);
   const [updatingOrderIds, setUpdatingOrderIds] = useState<string[]>([]);
   const updatesInFlightRef = useRef(new Set<string>());
   const [connectionStatus, setConnectionStatus] = useState<
@@ -78,6 +79,7 @@ export const useAdminOrdersPage = (
           append ? [...current, ...res.orders] : res.orders,
         );
         setNextCursor(res.nextCursor);
+        if (!append) setHasUpdates(false);
       } catch (err) {
         if (requestId !== loadRequestIdRef.current) return;
 
@@ -109,13 +111,17 @@ export const useAdminOrdersPage = (
       loadControllerRef.current?.abort();
       loadControllerRef.current = null;
     };
-  }, [loadOrders]);
+  }, [loadOrders, view]);
 
   useEffect(() => {
     let refreshTimeout: number | null = null;
     let fallbackTimer: number | null = null;
     let isDisposed = false;
     let fallbackActive = false;
+    const refreshAutomatically = () => {
+      if (view === 'kitchen') void loadOrders();
+      else setHasUpdates(true);
+    };
     setConnectionStatus(navigator.onLine ? 'connecting' : 'offline');
 
     const clearFallbackPolling = () => {
@@ -135,7 +141,7 @@ export const useAdminOrdersPage = (
       const tick = () => {
         if (isDisposed || !fallbackActive) return;
 
-        void loadOrders();
+        refreshAutomatically();
         if (fallbackActive) {
           fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
         }
@@ -151,13 +157,17 @@ export const useAdminOrdersPage = (
       }
 
       refreshTimeout = window.setTimeout(() => {
-        void loadOrders();
+        refreshAutomatically();
       }, 300);
     };
 
     const socket = connectAdminRealtime({
       onOrderEvent: () => {
         if (isDisposed) return;
+        if (view !== 'kitchen') {
+          setHasUpdates(true);
+          return;
+        }
         // Refresh full records, including version and cancellation metadata.
         loadRequestIdRef.current += 1;
         loadControllerRef.current?.abort();
@@ -167,7 +177,7 @@ export const useAdminOrdersPage = (
         if (isDisposed) return;
         clearFallbackPolling();
         setConnectionStatus('live');
-        void loadOrders();
+        refreshAutomatically();
       },
       onDisconnected: () => {
         if (isDisposed) return;
@@ -183,7 +193,7 @@ export const useAdminOrdersPage = (
     const onOnline = () => {
       setIsOnline(true);
       setConnectionStatus(socket?.connected ? 'live' : 'reconnecting');
-      void loadOrders();
+      refreshAutomatically();
     };
     window.addEventListener('offline', onOffline);
     window.addEventListener('online', onOnline);
@@ -205,7 +215,7 @@ export const useAdminOrdersPage = (
       window.removeEventListener('online', onOnline);
       socket?.disconnect();
     };
-  }, [loadOrders]);
+  }, [loadOrders, view]);
 
   const loadMore = () => {
     if (!nextCursor || isLoadingMore) return;
@@ -261,6 +271,7 @@ export const useAdminOrdersPage = (
     isLoading,
     isLoadingMore,
     error,
+    hasUpdates,
     updatingOrderIds,
     connectionStatus,
     isOnline,

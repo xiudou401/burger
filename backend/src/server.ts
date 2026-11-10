@@ -4,6 +4,7 @@ import { env } from './config/env';
 import http from 'http';
 import { initializeRealtimeServer } from './services/realtime.service';
 import { startOutboxWorker } from './services/outbox.service';
+import { startStripeReconciliationWorker } from './services/stripe-reconciliation.service';
 import { appLogger } from './utils/logger';
 
 const startServer = async () => {
@@ -13,6 +14,7 @@ const startServer = async () => {
 
     initializeRealtimeServer(server);
     startOutboxWorker();
+    startStripeReconciliationWorker();
 
     server.listen(Number(env.PORT), '0.0.0.0', () => {
       appLogger.info('server_started', {

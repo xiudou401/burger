@@ -40,12 +40,17 @@ const makeOrder = (status: OrderStatus): Order => ({
   updatedAt: '2026-01-01T00:00:00Z',
 });
 
-const renderOrders = (orders: Order[], allowCancellation = false) => {
+const renderOrders = (
+  orders: Order[],
+  allowCancellation = false,
+  initialEntry = '/admin/orders',
+) => {
   vi.mocked(useAdminOrdersPage).mockReturnValue({
     orders,
     isLoading: false,
     isLoadingMore: false,
     error: null,
+    hasUpdates: false,
     updatingOrderIds: [],
     connectionStatus: 'live',
     isOnline: true,
@@ -63,11 +68,29 @@ const renderOrders = (orders: Order[], allowCancellation = false) => {
     changeStatus: vi.fn(),
   });
   render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <AdminOrders />
     </MemoryRouter>,
   );
 };
+
+test('restores the history view and applied dates from the URL', () => {
+  renderOrders(
+    [makeOrder('completed')],
+    false,
+    '/admin/orders?view=past&from=2026-01-01&through=2026-01-02',
+  );
+  expect(screen.getByRole('tab', { name: 'Past orders' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  expect(screen.getByLabelText('From date')).toHaveValue('2026-01-01');
+  expect(screen.getByLabelText('To date')).toHaveValue('2026-01-02');
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {
+    from: '2025-12-31T13:00:00.000Z',
+    to: '2026-01-02T13:00:00.000Z',
+  });
+});
 
 test('separates awaiting payment and past orders from the kitchen lanes', () => {
   renderOrders(
@@ -149,8 +172,8 @@ test('groups historical orders by placement date and applies or clears a date ra
   });
   fireEvent.click(screen.getByRole('button', { name: 'Apply dates' }));
   expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {
-    from: new Date(2026, 0, 1).toISOString(),
-    to: new Date(2026, 0, 3).toISOString(),
+    from: '2025-12-31T13:00:00.000Z',
+    to: '2026-01-02T13:00:00.000Z',
   });
   fireEvent.click(screen.getByRole('button', { name: 'All dates' }));
   expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {});

@@ -6,7 +6,7 @@ import AdminButton from '../components/Admin/AdminButton';
 import type { Order, OrderStatus } from '../types/order';
 import { formatOrderShortId, getOrderActionLabel } from '../utils/order';
 import { formatKitchenPlacedAt } from '../utils/order-date';
-import { formatMediumDateTime } from '../utils/date';
+import { formatOrderDateTime } from '../utils/order-date';
 import classes from './AdminOrders.module.css';
 
 const WAIT_WARNING_MINUTES = 15;
@@ -102,7 +102,7 @@ const KitchenOrderTicket = ({
         Placed{' '}
         <time
           dateTime={hasAge ? order.createdAt : undefined}
-          title={formatMediumDateTime(order.createdAt)}
+          title={formatOrderDateTime(order.createdAt)}
         >
           {formatKitchenPlacedAt(order.createdAt, now)}
         </time>

@@ -197,6 +197,17 @@ records can be snapshot-backfilled by adding
 
 ## Realtime Operations Flow
 
+The backend also starts a Stripe reconciliation worker when a Stripe secret
+key is configured. It runs immediately and every five minutes, checking up to
+25 orders per tick with a rotating ID cursor. Pending checkouts at least 15
+minutes old are checked against Stripe: paid sessions use the existing order,
+amount and currency validation; expired unpaid sessions are cancelled.
+Open sessions and failed lookups are not cancelled. Fake demo IDs, missing
+Session IDs and interrupted creation locks require separate investigation.
+A persistent retry marker keeps paid reconciliation eligible if the Outbox
+enqueue fails. This worker only runs while the backend process is running;
+it supplements Webhooks rather than replacing them.
+
 The backend exposes Socket.IO channels for public menu subscribers,
 authenticated customers, and authenticated staff/admin users. Realtime events
 use small payloads such as `order:paid`, `order:updated`, `order:cancelled`,
