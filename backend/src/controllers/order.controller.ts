@@ -87,9 +87,9 @@ export const listAdminOrdersHandler = async (
   next: NextFunction,
 ) => {
   try {
-    const { limit, cursor, view } =
+    const { limit, cursor, view, from, to } =
       req.query as unknown as ListAdminOrdersQueryPayload;
-    const result = await listAdminOrders({ limit, cursor, view });
+    const result = await listAdminOrders({ limit, cursor, view, from, to });
 
     return res.status(200).json(result);
   } catch (error) {

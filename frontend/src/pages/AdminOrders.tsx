@@ -8,7 +8,12 @@ import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './AdminOrders.module.css';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
 import { formatCurrency } from '../utils/currency';
-import { formatShortDateTime } from '../utils/date';
+import { formatMediumDateTime } from '../utils/date';
+import {
+  formatOrderDay,
+  orderDayKey,
+  orderDateRange,
+} from '../utils/order-date';
 import {
   formatOrderShortId,
   formatOrderStatus,
@@ -43,6 +48,12 @@ const AdminOrders = () => {
   const [activeView, setActiveView] = useState('Kitchen');
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [now, setNow] = useState(Date.now);
+  const [fromDate, setFromDate] = useState('');
+  const [throughDate, setThroughDate] = useState('');
+  const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>(
+    {},
+  );
+  const [dateError, setDateError] = useState('');
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
@@ -66,7 +77,7 @@ const AdminOrders = () => {
     refresh,
     loadMore,
     changeStatus,
-  } = useAdminOrdersPage(view);
+  } = useAdminOrdersPage(view, view === 'past' ? dateRange : {});
 
   const renderOrderCard = (order: Order, isCompact = false) =>
     !isCompact ? (
@@ -102,7 +113,17 @@ const AdminOrders = () => {
               </AdminStatusBadge>
             </div>
             <p className={classes.OrderDate}>
-              {formatShortDateTime(order.createdAt)}
+              Placed{' '}
+              <time
+                dateTime={
+                  orderDayKey(order.createdAt) ? order.createdAt : undefined
+                }
+              >
+                {formatMediumDateTime(
+                  order.createdAt,
+                  'Order time unavailable',
+                )}
+              </time>
             </p>
             {order.status === 'cancelled' &&
               order.payment?.status === 'paid' && (
@@ -173,7 +194,11 @@ const AdminOrders = () => {
       )}
 
       {!isLoading && orders.length === 0 && !error && (
-        <AdminStatusText>No orders yet.</AdminStatusText>
+        <AdminStatusText>
+          {view === 'past' && (dateRange.from || dateRange.to)
+            ? 'No orders match the selected dates.'
+            : 'No orders yet.'}
+        </AdminStatusText>
       )}
 
       <div className={classes.ViewTabs} role="tablist" aria-label="Order views">
@@ -215,6 +240,54 @@ const AdminOrders = () => {
         role="tabpanel"
         aria-labelledby={`order-view-${['Kitchen', ...SECONDARY_ORDER_GROUPS.map((group) => group.title)].indexOf(activeView)}`}
       >
+        {view === 'past' && (
+          <form
+            className={classes.DateFilters}
+            onSubmit={(event) => {
+              event.preventDefault();
+              try {
+                setDateRange(orderDateRange(fromDate, throughDate));
+                setDateError('');
+              } catch (err) {
+                setDateError(
+                  err instanceof Error
+                    ? err.message
+                    : 'Choose valid order dates.',
+                );
+              }
+            }}
+          >
+            <label>
+              Placed from
+              <input
+                type="date"
+                value={fromDate}
+                onChange={(event) => setFromDate(event.target.value)}
+              />
+            </label>
+            <label>
+              Placed through
+              <input
+                type="date"
+                value={throughDate}
+                onChange={(event) => setThroughDate(event.target.value)}
+              />
+            </label>
+            <button type="submit">Apply dates</button>
+            <button
+              type="button"
+              onClick={() => {
+                setFromDate('');
+                setThroughDate('');
+                setDateRange({});
+                setDateError('');
+              }}
+            >
+              All dates
+            </button>
+            {dateError && <p role="alert">{dateError}</p>}
+          </form>
+        )}
         {activeView === 'Kitchen' && (
           <div className={classes.Board}>
             {KITCHEN_COLUMNS.map((column) => {
@@ -247,14 +320,36 @@ const AdminOrders = () => {
           const groupOrders = orders.filter((order) =>
             group.statuses.includes(order.status),
           );
+          const days = new Map<string, Order[]>();
+          for (const order of groupOrders) {
+            const key = orderDayKey(order.createdAt) ?? 'unknown';
+            days.set(key, [...(days.get(key) ?? []), order]);
+          }
           return (
             <section className={classes.RecentSection} key={group.title}>
               <div className={classes.RecentHeader}>
                 <h2 className={classes.RecentTitle}>{group.title}</h2>
                 <span className={classes.LaneCount}>{groupOrders.length}</span>
               </div>
-              <div className={classes.RecentGrid}>
-                {groupOrders.map((order) => renderOrderCard(order, true))}
+              {view === 'past' ? (
+                [...days].map(([key, dayOrders]) => (
+                  <section className={classes.DayGroup} key={key}>
+                    <h3>
+                      <time dateTime={key === 'unknown' ? undefined : key}>
+                        {formatOrderDay(dayOrders[0].createdAt, now)}
+                      </time>
+                    </h3>
+                    <div className={classes.RecentGrid}>
+                      {dayOrders.map((order) => renderOrderCard(order, true))}
+                    </div>
+                  </section>
+                ))
+              ) : (
+                <div className={classes.RecentGrid}>
+                  {groupOrders.map((order) => renderOrderCard(order, true))}
+                </div>
+              )}
+              <div>
                 {groupOrders.length === 0 && (
                   <AdminStatusText>No orders in this view.</AdminStatusText>
                 )}

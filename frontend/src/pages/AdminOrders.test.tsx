@@ -136,6 +136,26 @@ test('supports keyboard switching and shows empty views', () => {
   expect(screen.getByText('No orders in this view.')).toBeInTheDocument();
 });
 
+test('groups historical orders by placement date and applies or clears a date range', () => {
+  renderOrders([makeOrder('completed'), makeOrder('cancelled')]);
+  fireEvent.click(screen.getByRole('tab', { name: 'Past orders' }));
+  expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
+  expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);
+  fireEvent.change(screen.getByLabelText('Placed from'), {
+    target: { value: '2026-01-01' },
+  });
+  fireEvent.change(screen.getByLabelText('Placed through'), {
+    target: { value: '2026-01-02' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Apply dates' }));
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {
+    from: new Date(2026, 0, 1).toISOString(),
+    to: new Date(2026, 0, 3).toISOString(),
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'All dates' }));
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {});
+});
+
 test('confirms paid order cancellation and submits the selected reason', () => {
   const portal = document.createElement('div');
   portal.id = 'backdrop-root';

@@ -377,6 +377,19 @@ describe('order service', () => {
     expect(orderRepository.listAll).not.toHaveBeenCalled();
   });
 
+  test('passes placement bounds to the paginated history query', async () => {
+    jest.mocked(orderRepository.listAll).mockResolvedValueOnce([] as never);
+    const from = '2026-11-08T13:00:00.000Z';
+    const to = '2026-11-09T13:00:00.000Z';
+    await listAdminOrders({ view: 'past', from, to });
+    expect(orderRepository.listAll).toHaveBeenCalledWith(
+      21,
+      undefined,
+      'past',
+      { start: new Date(from), end: new Date(to) },
+    );
+  });
+
   test('lists admin orders with a cursor for the next page', async () => {
     const firstOrder = {
       _id: orderId,

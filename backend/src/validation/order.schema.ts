@@ -50,11 +50,22 @@ export const ListMyOrdersQuerySchema = z
 
 export const ListAdminOrdersQuerySchema = z
   .object({
+    from: z.iso.datetime({ offset: true }).optional(),
+    to: z.iso.datetime({ offset: true }).optional(),
     limit: paginationLimit(20, 100),
     cursor: z.string().trim().max(200).optional(),
     view: z.enum(['all', 'kitchen', 'awaiting_payment', 'past']).default('all'),
   })
-  .strict();
+  .strict()
+  .refine(
+    (value) =>
+      !value.from || !value.to || new Date(value.from) < new Date(value.to),
+    'The date range must end after it starts',
+  )
+  .refine(
+    (value) => value.view !== 'kitchen' || (!value.from && !value.to),
+    'Kitchen orders cannot be hidden by a date filter',
+  );
 
 export const OrderParamsSchema = z
   .object({

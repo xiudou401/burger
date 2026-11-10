@@ -50,6 +50,25 @@ test('emphasizes age and fulfillment action without showing kitchen prices', () 
   expect(props.onAdvance).toHaveBeenCalledWith('completed');
 });
 
+test('renders the original placement timestamp and includes a date for overnight tickets', () => {
+  const { container, rerender, props } = renderTicket();
+  expect(container.querySelector('time')).toHaveAttribute(
+    'datetime',
+    order.createdAt,
+  );
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  rerender(
+    <MemoryRouter>
+      <KitchenOrderTicket
+        {...props}
+        order={{ ...order, createdAt: yesterday.toISOString() }}
+      />
+    </MemoryRouter>,
+  );
+  expect(container.querySelector('time')?.textContent).toContain('2026');
+});
+
 test('only disables the ticket that is submitting or offline', () => {
   const { rerender, props } = renderTicket({ isUpdating: true });
   expect(screen.getByRole('button', { name: 'Updating...' })).toBeDisabled();

@@ -115,6 +115,7 @@ export const orderRepository = {
     limit: number,
     cursor?: OrderCursor,
     view: 'all' | 'awaiting_payment' | 'past' = 'all',
+    range: OrderQueryRange = {},
   ) {
     const query = cursor
       ? {
@@ -134,7 +135,16 @@ export const orderRepository = {
         : view === 'past'
           ? { status: { $in: ['completed', 'cancelled'] as OrderStatus[] } }
           : {};
-    return OrderModel.find({ ...query, ...statusFilter })
+    const dateFilter =
+      range.start || range.end
+        ? {
+            createdAt: {
+              ...(range.start ? { $gte: range.start } : {}),
+              ...(range.end ? { $lt: range.end } : {}),
+            },
+          }
+        : {};
+    return OrderModel.find({ ...query, ...statusFilter, ...dateFilter })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit)
       .lean()
