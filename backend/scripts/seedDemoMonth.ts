@@ -139,7 +139,48 @@ export const buildDemoMonthOrders = ({
   return orders;
 };
 
-export const seedDemoMonth = async (apply: boolean) => {
+export const buildDemoKitchenOrders = (
+  input: Parameters<typeof buildDemoMonthOrders>[0],
+): DemoOrder[] => {
+  const { now } = input;
+  const local = dateParts(now);
+  const dateKey = `${local.year}-${String(local.month).padStart(2, '0')}-${String(local.day).padStart(2, '0')}`;
+  const statuses = [
+    'confirmed',
+    'preparing',
+    'ready',
+    'pending_payment',
+  ] as const;
+  return buildDemoMonthOrders(input)
+    .slice(0, 12)
+    .map((sample, index) => {
+      const status = statuses[Math.floor(index / 3)];
+      const createdAt = new Date(now.getTime() - (45 - index * 3) * 60_000);
+      return {
+        ...sample,
+        checkoutIdempotencyKey: `${DEMO_MONTH_PREFIX}kitchen-${dateKey}-${index}`,
+        status,
+        cancellationReason: undefined,
+        cancelledAt: undefined,
+        payment: {
+          provider: 'stripe',
+          providerPaymentId: `demo_month_kitchen_${dateKey}_${index}`,
+          status: status === 'pending_payment' ? 'requires_payment' : 'paid',
+          currency: 'aud',
+          paidAt:
+            status === 'pending_payment'
+              ? undefined
+              : new Date(createdAt.getTime() + 60_000),
+        },
+        createdAt,
+        updatedAt: new Date(
+          Math.min(now.getTime(), createdAt.getTime() + 2 * 60_000),
+        ),
+      };
+    });
+};
+
+export const seedDemoMonth = async (apply: boolean, includeKitchen = false) => {
   if (apply && process.env.ALLOW_DEMO_ORDER_SEED !== 'true') {
     throw new Error(
       'Set ALLOW_DEMO_ORDER_SEED=true to permit synthetic order inserts',
@@ -164,12 +205,16 @@ export const seedDemoMonth = async (apply: boolean) => {
       throw new Error(
         'An existing disabled demo customer is required; no accounts will be created or changed',
       );
-    const orders = buildDemoMonthOrders({
+    const input = {
       now: new Date(),
       userId: customer._id,
       menuItems,
       menuVersion,
-    });
+    };
+    const orders = [
+      ...buildDemoMonthOrders(input),
+      ...(includeKitchen ? buildDemoKitchenOrders(input) : []),
+    ];
     for (const order of orders) await new OrderModel(order).validate();
     const keys = orders.map((order) => order.checkoutIdempotencyKey);
     const existing = await OrderModel.countDocuments({
@@ -187,6 +232,7 @@ export const seedDemoMonth = async (apply: boolean) => {
         Math.max(...orders.map((order) => order.createdAt.getTime())),
       ).toISOString(),
       planned: orders.length,
+      kitchenSamples: includeKitchen ? 12 : 0,
       alreadyPresent: existing,
       paid: orders.filter((order) => order.payment.status === 'paid').length,
       cancelled: orders.filter((order) => order.status === 'cancelled').length,
@@ -227,7 +273,10 @@ export const seedDemoMonth = async (apply: boolean) => {
 };
 
 if (require.main === module) {
-  seedDemoMonth(process.argv.includes('--apply'))
+  seedDemoMonth(
+    process.argv.includes('--apply'),
+    process.argv.includes('--include-kitchen'),
+  )
     .then((summary) => console.log(JSON.stringify(summary)))
     .catch(() => {
       console.error(

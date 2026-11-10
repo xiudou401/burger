@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import {
   buildDemoMonthOrders,
+  buildDemoKitchenOrders,
   DEMO_MONTH_PREFIX,
 } from '../scripts/seedDemoMonth';
 import type { MenuItem, MenuItemCategory } from './models/menu-item.model';
@@ -33,6 +34,31 @@ const businessDate = (date: Date) =>
   }).format(date);
 
 describe('synthetic monthly orders', () => {
+  it('adds safe, repeatable kitchen samples without live checkout links', () => {
+    const orders = buildDemoKitchenOrders(input);
+    expect(orders).toHaveLength(12);
+    expect(buildDemoKitchenOrders(input)).toEqual(orders);
+    for (const status of [
+      'confirmed',
+      'preparing',
+      'ready',
+      'pending_payment',
+    ]) {
+      expect(orders.filter((order) => order.status === status)).toHaveLength(3);
+    }
+    for (const order of orders) {
+      expect(order.checkoutIdempotencyKey).toContain(
+        `${DEMO_MONTH_PREFIX}kitchen-`,
+      );
+      expect(order.payment.providerPaymentId).toMatch(/^demo_month_kitchen_/);
+      expect(order.checkoutUrl).toBeUndefined();
+      expect(order.createdAt.getTime()).toBeLessThan(input.now.getTime());
+      expect(order.cancellationReason).toBeUndefined();
+      expect(order.payment.status).toBe(
+        order.status === 'pending_payment' ? 'requires_payment' : 'paid',
+      );
+    }
+  });
   it('covers exactly the previous 30 complete Sydney dates, including yesterday', () => {
     const orders = buildDemoMonthOrders(input);
     const dates = [

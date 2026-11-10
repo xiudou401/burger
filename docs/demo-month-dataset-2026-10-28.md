@@ -45,6 +45,24 @@ The date window is the preceding 30 complete Sydney dates, excluding today.
 Tests cover daylight saving, unique deterministic keys, integer money totals,
 historical terminal states, the intended anomaly, and invalid inputs.
 
+### Optional Kitchen Samples
+
+To preview or insert an additional 12 recent synthetic orders alongside the
+30-day history:
+
+```sh
+npm run seed:demo-month -- --include-kitchen
+ALLOW_DEMO_ORDER_SEED=true npm run seed:demo-month -- --include-kitchen --apply
+```
+
+This adds three orders each in confirmed, preparing, ready and pending_payment.
+They use date-scoped `demo-month-v1-kitchen-` keys, fake `demo_month_kitchen_`
+provider IDs and no checkout URLs. Repeating the command on the same Sydney
+date preserves existing records, including samples staff have advanced or
+cancelled. These samples affect dashboard totals but never charge a card or
+enqueue email tasks. This option is separate from the historical batch
+recorded above; omission retains the original history-only behavior.
+
 ## Real Model Verification
 
 The existing application service functions were invoked as a maintenance
