@@ -67,17 +67,30 @@ test('only cancels a session confirmed expired and unpaid by Stripe', async () =
   );
 });
 
-test('paid sessions use the existing validation and durable outbox recovery path', async () => {
+const capturedCharge = {
+  status: 'succeeded',
+  captured: true,
+  created: 1788645600,
+};
+
+test('paid sessions use the original charge timestamp and durable outbox recovery path', async () => {
   const session = {
     id: 'cs_test_order-A',
     status: 'complete',
     payment_status: 'paid',
+    payment_intent: { latest_charge: capturedCharge },
   };
   jest
     .mocked(retrieveStripeCheckoutSession)
     .mockResolvedValue(session as never);
   await reconcileStripeCheckouts();
-  expect(markStripeCheckoutPaid).toHaveBeenCalledWith(session);
+  expect(retrieveStripeCheckoutSession).toHaveBeenCalledWith(session.id, {
+    expand: ['payment_intent.latest_charge'],
+  });
+  expect(markStripeCheckoutPaid).toHaveBeenCalledWith(
+    session,
+    new Date(1788645600000),
+  );
   expect(
     orderRepository.setStripeReconciliationRequired,
   ).toHaveBeenNthCalledWith(1, 'order-A', session.id, true);
@@ -88,15 +101,26 @@ test('paid sessions use the existing validation and durable outbox recovery path
 });
 
 test('keeps the retry marker when validation or outbox enqueue fails', async () => {
-  jest
-    .mocked(retrieveStripeCheckoutSession)
-    .mockResolvedValue({ payment_status: 'paid' } as never);
+  jest.mocked(retrieveStripeCheckoutSession).mockResolvedValue({
+    payment_status: 'paid',
+    payment_intent: { latest_charge: capturedCharge },
+  } as never);
   jest.mocked(markStripeCheckoutPaid).mockRejectedValue(new Error('failed'));
   await reconcileStripeCheckouts();
   expect(orderRepository.setStripeReconciliationRequired).toHaveBeenCalledTimes(
     1,
   );
   expect(markStripeCheckoutFailed).not.toHaveBeenCalled();
+});
+
+test('does not substitute the worker time when a paid session has no captured charge', async () => {
+  jest
+    .mocked(retrieveStripeCheckoutSession)
+    .mockResolvedValue({ payment_status: 'paid' } as never);
+  await reconcileStripeCheckouts();
+  expect(markStripeCheckoutPaid).not.toHaveBeenCalled();
+  expect(markStripeCheckoutFailed).not.toHaveBeenCalled();
+  expect(appLogger.error).toHaveBeenCalled();
 });
 
 test('a lookup failure does not cancel an order or prevent later candidates', async () => {

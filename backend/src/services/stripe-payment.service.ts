@@ -92,6 +92,7 @@ const assertStripeCheckoutMatchesOrder = (
 
 export const markStripeCheckoutPaid = async (
   session: StripeCheckoutCompletedSession,
+  paidAt: Date,
 ): Promise<PublicOrder> => {
   const order = await orderRepository.findByStripeSessionId(session.id);
 
@@ -100,6 +101,9 @@ export const markStripeCheckoutPaid = async (
   }
 
   assertStripeCheckoutMatchesOrder(session, order);
+  if (!Number.isFinite(paidAt.getTime()) || paidAt.getTime() <= 0) {
+    throw new ServiceError('Invalid Stripe payment timestamp', 400);
+  }
 
   const wasAlreadyPaid = order.payment.status === 'paid';
 
@@ -112,20 +116,17 @@ export const markStripeCheckoutPaid = async (
     session.livemode === false &&
     typeof session.created === 'number' &&
     session.created * 1000 <= Date.now() - HISTORICAL_TEST_CHECKOUT_AGE_MS;
-  const paidOrder = archiveTestCheckout
-    ? await orderRepository.markStripeCheckoutPaidIfUnpaid(
-        String(order._id),
-        session.id,
-        true,
-      )
-    : await orderRepository.markStripeCheckoutPaidIfUnpaid(
-        String(order._id),
-        session.id,
-      );
+  const paidOrder = await orderRepository.markStripeCheckoutPaidIfUnpaid(
+    String(order._id),
+    session.id,
+    paidAt,
+    archiveTestCheckout,
+  );
 
   if (!paidOrder) {
     const reviewOrder = await orderRepository.flagStripePaymentForReview(
       session.id,
+      paidAt,
     );
     const latestOrder =
       reviewOrder ?? (await orderRepository.findByStripeSessionId(session.id));

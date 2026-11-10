@@ -162,8 +162,11 @@ const zonedMidnightToUtc = ({
 }) => {
   const utcGuess = new Date(Date.UTC(year, month - 1, day));
   const offsetMs = getTimeZoneOffsetMs(utcGuess, timeZone);
-
-  return new Date(utcGuess.getTime() - offsetMs);
+  const midnightGuess = new Date(utcGuess.getTime() - offsetMs);
+  // UTC midnight can already be on the other side of Sydney's DST change.
+  return new Date(
+    utcGuess.getTime() - getTimeZoneOffsetMs(midnightGuess, timeZone),
+  );
 };
 
 const startOfBusinessToday = (now = new Date()) => {

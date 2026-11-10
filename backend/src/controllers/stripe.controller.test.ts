@@ -64,6 +64,7 @@ describe('stripe webhook controller', () => {
     mockConstructEvent.mockReturnValue({
       id: 'evt_test_123',
       type: 'checkout.session.completed',
+      created: 1788645600,
       data: {
         object: {
           id: 'cs_test_123',
@@ -98,16 +99,19 @@ describe('stripe webhook controller', () => {
       'evt_test_123',
       'checkout.session.completed',
     );
-    expect(markStripeCheckoutPaid).toHaveBeenCalledWith({
-      id: 'cs_test_123',
-      payment_status: 'paid',
-      amount_total: 2400,
-      currency: 'aud',
-      metadata: {
-        orderId: '507f1f77bcf86cd799439012',
+    expect(markStripeCheckoutPaid).toHaveBeenCalledWith(
+      {
+        id: 'cs_test_123',
+        payment_status: 'paid',
+        amount_total: 2400,
+        currency: 'aud',
+        metadata: {
+          orderId: '507f1f77bcf86cd799439012',
+        },
+        client_reference_id: '507f1f77bcf86cd799439012',
       },
-      client_reference_id: '507f1f77bcf86cd799439012',
-    });
+      new Date(1788645600000),
+    );
     expect(stripeWebhookEventRepository.markProcessed).toHaveBeenCalledWith(
       'evt_test_123',
       'claim_123',
