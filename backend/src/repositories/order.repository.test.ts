@@ -269,6 +269,11 @@ describe('orderRepository', () => {
           'payment.status': 'paid',
           'payment.paidAt': paidAt,
         }),
+        $unset: {
+          'payment.requiresReview': '',
+          'payment.reviewReason': '',
+          'payment.reviewCreatedAt': '',
+        },
       }),
       { new: true },
     );
@@ -288,14 +293,35 @@ describe('orderRepository', () => {
         status: 'pending_payment',
         'payment.providerPaymentId': 'cs_test_old',
       }),
-      {
+      expect.objectContaining({
         $set: expect.objectContaining({
           status: 'cancelled',
           'payment.status': 'paid',
           cancellationReason: 'archived_test_checkout',
         }),
-      },
+      }),
       { new: true },
+    );
+  });
+
+  test('flags an unverified charge only while the same checkout is pending', async () => {
+    const exec = jest.fn().mockResolvedValue({ modifiedCount: 1 });
+    jest.mocked(OrderModel.updateOne).mockReturnValue({ exec } as never);
+    await orderRepository.flagUnverifiedStripeCharge(orderId, 'cs_test_paid');
+    expect(OrderModel.updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({
+        _id: new Types.ObjectId(orderId),
+        status: 'pending_payment',
+        'payment.providerPaymentId': 'cs_test_paid',
+        'payment.requiresReview': { $ne: true },
+      }),
+      {
+        $set: {
+          'payment.requiresReview': true,
+          'payment.reviewReason': 'stripe_paid_charge_unverified',
+          'payment.reviewCreatedAt': expect.any(Date),
+        },
+      },
     );
   });
 
@@ -313,6 +339,7 @@ describe('orderRepository', () => {
         _id: expect.any(Types.ObjectId),
         status: 'pending_payment',
         'payment.status': { $in: ['requires_payment', 'failed'] },
+        'payment.reviewReason': { $ne: 'stripe_paid_charge_unverified' },
         $and: expect.arrayContaining([
           expect.objectContaining({
             $or: expect.arrayContaining([

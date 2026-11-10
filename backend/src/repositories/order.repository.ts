@@ -626,8 +626,33 @@ export const orderRepository = {
               }
             : {}),
         },
+        $unset: {
+          'payment.requiresReview': '',
+          'payment.reviewReason': '',
+          'payment.reviewCreatedAt': '',
+        },
       },
       { new: true },
+    ).exec();
+  },
+
+  flagUnverifiedStripeCharge(orderId: string, sessionId: string) {
+    return OrderModel.updateOne(
+      {
+        _id: toObjectId(orderId),
+        status: 'pending_payment',
+        'payment.provider': 'stripe',
+        'payment.providerPaymentId': sessionId,
+        'payment.status': { $in: ['requires_payment', 'failed'] },
+        'payment.requiresReview': { $ne: true },
+      },
+      {
+        $set: {
+          'payment.requiresReview': true,
+          'payment.reviewReason': 'stripe_paid_charge_unverified',
+          'payment.reviewCreatedAt': new Date(),
+        },
+      },
     ).exec();
   },
 
@@ -728,6 +753,7 @@ export const orderRepository = {
         _id: toObjectId(orderId),
         status: 'pending_payment',
         'payment.status': { $in: ['requires_payment', 'failed'] },
+        'payment.reviewReason': { $ne: 'stripe_paid_charge_unverified' },
         $and: [
           {
             $or: [

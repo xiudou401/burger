@@ -23,6 +23,20 @@ test('shows late Stripe payment review even without local paid status', () => {
   ).toMatch(/Stripe recorded a payment/);
 });
 
+test('distinguishes unverified Stripe payment from ordinary pending payment', () => {
+  expect(
+    getAdminOrderPaymentNotice({
+      ...order,
+      payment: {
+        status: 'requires_payment',
+        currency: 'aud',
+        requiresReview: true,
+        reviewReason: 'stripe_paid_charge_unverified',
+      },
+    }),
+  ).toBe('Stripe reports payment - charge verification pending');
+});
+
 test('does not suggest a refund for an archived test payment', () => {
   expect(
     getAdminOrderPaymentNotice({

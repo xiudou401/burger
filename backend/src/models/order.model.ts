@@ -17,7 +17,9 @@ export type PaymentStatus =
   | 'cancelled'
   | 'refunded';
 
-export type PaymentReviewReason = 'stripe_paid_after_order_not_payable';
+export type PaymentReviewReason =
+  | 'stripe_paid_after_order_not_payable'
+  | 'stripe_paid_charge_unverified';
 
 export type CancellationReason =
   | 'archived_test_checkout'
@@ -213,7 +215,10 @@ const orderSchema = new Schema<Order>(
       },
       reviewReason: {
         type: String,
-        enum: ['stripe_paid_after_order_not_payable'],
+        enum: [
+          'stripe_paid_after_order_not_payable',
+          'stripe_paid_charge_unverified',
+        ],
       },
       reviewCreatedAt: Date,
     },
