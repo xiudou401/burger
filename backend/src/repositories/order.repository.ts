@@ -102,7 +102,20 @@ export const orderRepository = {
       .exec();
   },
 
-  listAll(limit: number, cursor?: OrderCursor) {
+  listKitchen() {
+    return OrderModel.find({
+      status: { $in: ['confirmed', 'preparing', 'ready'] },
+    })
+      .sort({ createdAt: 1, _id: 1 })
+      .lean()
+      .exec();
+  },
+
+  listAll(
+    limit: number,
+    cursor?: OrderCursor,
+    view: 'all' | 'awaiting_payment' | 'past' = 'all',
+  ) {
     const query = cursor
       ? {
           $or: [
@@ -115,7 +128,13 @@ export const orderRepository = {
         }
       : {};
 
-    return OrderModel.find(query)
+    const statusFilter =
+      view === 'awaiting_payment'
+        ? { status: 'pending_payment' as const }
+        : view === 'past'
+          ? { status: { $in: ['completed', 'cancelled'] as OrderStatus[] } }
+          : {};
+    return OrderModel.find({ ...query, ...statusFilter })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit)
       .lean()

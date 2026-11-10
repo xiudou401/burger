@@ -89,6 +89,29 @@ describe('orderRepository', () => {
     expect(query.limit).toHaveBeenCalledWith(5);
   });
 
+  test('loads every active kitchen order oldest first without a page limit', async () => {
+    const query = chain([]);
+    query.sort.mockReturnValue({ lean: query.lean } as never);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+    await orderRepository.listKitchen();
+    expect(OrderModel.find).toHaveBeenCalledWith({
+      status: { $in: ['confirmed', 'preparing', 'ready'] },
+    });
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: 1, _id: 1 });
+    expect(query.limit).not.toHaveBeenCalled();
+  });
+
+  test.each([
+    ['awaiting_payment', 'pending_payment'],
+    ['past', { $in: ['completed', 'cancelled'] }],
+  ] as const)('filters %s before pagination', async (view, status) => {
+    const query = chain([]);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+    await orderRepository.listAll(51, undefined, view);
+    expect(OrderModel.find).toHaveBeenCalledWith({ status });
+    expect(query.limit).toHaveBeenCalledWith(51);
+  });
+
   test('lists paid orders by paidAt range', async () => {
     const query = chain([]);
     const start = new Date('2026-09-20T00:00:00.000Z');

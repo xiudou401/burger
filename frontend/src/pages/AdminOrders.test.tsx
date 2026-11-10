@@ -29,7 +29,7 @@ const makeOrder = (status: OrderStatus): Order => ({
   updatedAt: '2026-01-01T00:00:00Z',
 });
 
-const renderOrders = (orders: Order[]) => {
+const renderOrders = (orders: Order[], allowCancellation = false) => {
   vi.mocked(useAdminOrdersPage).mockReturnValue({
     orders,
     isLoading: false,
@@ -39,7 +39,7 @@ const renderOrders = (orders: Order[]) => {
     hasMoreOrders: false,
     nextStatuses: {
       pending_payment: [],
-      confirmed: [],
+      confirmed: allowCancellation ? ['preparing', 'cancelled'] : [],
       preparing: [],
       ready: [],
       completed: [],
@@ -121,4 +121,38 @@ test('supports keyboard switching and shows empty views', () => {
   });
   expect(screen.getByRole('tab', { name: 'Awaiting payment' })).toHaveFocus();
   expect(screen.getByText('No orders in this view.')).toBeInTheDocument();
+});
+
+test('confirms paid order cancellation and submits the selected reason', () => {
+  const portal = document.createElement('div');
+  portal.id = 'backdrop-root';
+  document.body.appendChild(portal);
+  renderOrders(
+    [
+      {
+        ...makeOrder('confirmed'),
+        payment: { status: 'paid', currency: 'aud' },
+      },
+    ],
+    true,
+  );
+  const state = vi.mocked(useAdminOrdersPage).mock.results.at(-1)!.value;
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel order' }));
+  expect(state.changeStatus).not.toHaveBeenCalled();
+  expect(
+    screen.getByText(
+      'This order is paid. Arrange any refund separately in Stripe.',
+    ),
+  ).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Cancellation reason'), {
+    target: { value: 'item_unavailable' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Confirm cancellation' }));
+  expect(state.changeStatus).toHaveBeenCalledWith(
+    'confirmed',
+    'cancelled',
+    0,
+    'item_unavailable',
+  );
+  portal.remove();
 });

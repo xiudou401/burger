@@ -12,6 +12,7 @@ export type AdminRealtimeOrderEventName =
 
 export interface OrderRealtimeEvent {
   orderId: string;
+  version?: number;
   status: OrderStatus;
   paymentStatus?: PaymentStatus;
   updatedAt: string;

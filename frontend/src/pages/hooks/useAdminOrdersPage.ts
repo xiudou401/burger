@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { fetchAdminOrders, updateOrderStatus } from '../../api/orders';
 import {
-  connectAdminRealtime,
-  type AdminRealtimeOrderEventName,
-  type OrderRealtimeEvent,
-} from '../../api/realtime';
+  fetchAdminOrders,
+  updateOrderStatus,
+  type AdminOrdersView,
+} from '../../api/orders';
+import { connectAdminRealtime } from '../../api/realtime';
 import { HTTP_STATUS } from '../../api/http-status';
 import { ApiError } from '../../api/request';
 import { useAuth } from '../../store/auth/hooks/useAuth';
@@ -14,40 +14,7 @@ import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 const ORDER_PAGE_LIMIT = 50;
 const REALTIME_FALLBACK_POLL_MS = 30_000;
 
-const applyRealtimeOrderEvent = (
-  orders: Order[],
-  eventName: AdminRealtimeOrderEventName,
-  payload: OrderRealtimeEvent,
-) => {
-  let didUpdate = false;
-
-  const nextOrders = orders.map((order) => {
-    if (order.id !== payload.orderId) {
-      return order;
-    }
-
-    didUpdate = true;
-
-    return {
-      ...order,
-      status: payload.status,
-      updatedAt: payload.updatedAt,
-      payment: order.payment
-        ? {
-            ...order.payment,
-            status: payload.paymentStatus ?? order.payment.status,
-          }
-        : order.payment,
-    };
-  });
-
-  return {
-    orders: nextOrders,
-    needsRefresh: eventName === 'order:created' || !didUpdate,
-  };
-};
-
-export const useAdminOrdersPage = () => {
+export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
   const user = useAuth((ctx) => ctx.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,13 +22,11 @@ export const useAdminOrdersPage = () => {
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const ordersRef = useRef<Order[]>([]);
+  const updateInFlightRef = useRef(false);
+  const viewRef = useRef(view);
+  viewRef.current = view;
   const loadRequestIdRef = useRef(0);
   const loadControllerRef = useRef<AbortController | null>(null);
-
-  useEffect(() => {
-    ordersRef.current = orders;
-  }, [orders]);
 
   const loadOrders = useCallback(
     async ({
@@ -93,6 +58,7 @@ export const useAdminOrdersPage = () => {
           limit: ORDER_PAGE_LIMIT,
           cursor,
           signal: controller.signal,
+          view,
         });
 
         if (requestId !== loadRequestIdRef.current) return;
@@ -119,10 +85,12 @@ export const useAdminOrdersPage = () => {
         }
       }
     },
-    [],
+    [view],
   );
 
   useEffect(() => {
+    setOrders([]);
+    setNextCursor(null);
     void loadOrders();
 
     return () => {
@@ -165,6 +133,7 @@ export const useAdminOrdersPage = () => {
     };
 
     const scheduleRefresh = () => {
+      if (isDisposed) return;
       if (refreshTimeout !== null) {
         window.clearTimeout(refreshTimeout);
       }
@@ -175,21 +144,15 @@ export const useAdminOrdersPage = () => {
     };
 
     const socket = connectAdminRealtime({
-      onOrderEvent: (eventName, payload) => {
-        const result = applyRealtimeOrderEvent(
-          ordersRef.current,
-          eventName,
-          payload,
-        );
-
-        ordersRef.current = result.orders;
-        setOrders(result.orders);
-
-        if (result.needsRefresh) {
-          scheduleRefresh();
-        }
+      onOrderEvent: () => {
+        if (isDisposed) return;
+        // Refresh full records, including version and cancellation metadata.
+        loadRequestIdRef.current += 1;
+        loadControllerRef.current?.abort();
+        scheduleRefresh();
       },
       onConnected: () => {
+        if (isDisposed) return;
         clearFallbackPolling();
         void loadOrders();
       },
@@ -228,41 +191,18 @@ export const useAdminOrdersPage = () => {
     version: number,
     cancellationReason?: CancellationReason,
   ) => {
-    const previousOrders = orders;
-
+    if (updateInFlightRef.current) return;
+    updateInFlightRef.current = true;
+    const submittedView = view;
     setUpdatingOrderId(orderId);
     setError(null);
-    setOrders((current) =>
-      current.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              status,
-              ...(status === 'cancelled'
-                ? {
-                    cancellationReason: cancellationReason ?? 'staff_cancelled',
-                    cancelledAt: new Date().toISOString(),
-                  }
-                : {}),
-              version: order.version + 1,
-              updatedAt: new Date().toISOString(),
-            }
-          : order,
-      ),
-    );
 
     try {
-      const res = await updateOrderStatus(
-        orderId,
-        status,
-        version,
-        cancellationReason,
-      );
-      setOrders((current) =>
-        current.map((order) => (order.id === orderId ? res.order : order)),
-      );
+      await updateOrderStatus(orderId, status, version, cancellationReason);
+      if (viewRef.current === submittedView) await loadOrders();
     } catch (err) {
-      setOrders(previousOrders);
+      if (viewRef.current !== submittedView) return;
+      await loadOrders();
 
       const requestId =
         err instanceof ApiError && err.requestId
@@ -270,13 +210,14 @@ export const useAdminOrdersPage = () => {
           : '';
       const message =
         err instanceof ApiError && err.statusCode === HTTP_STATUS.CONFLICT
-          ? `This order was updated by someone else. Refresh orders and try again.${requestId}`
+          ? `This order changed. Review its latest status before trying again.${requestId}`
           : err instanceof Error
             ? `${err.message}${requestId}`
             : 'Could not update order';
 
       setError(message);
     } finally {
+      updateInFlightRef.current = false;
       setUpdatingOrderId(null);
     }
   };

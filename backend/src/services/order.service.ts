@@ -227,13 +227,22 @@ const decodeAdminOrderCursor = (
 export const listAdminOrders = async ({
   limit = 20,
   cursor,
+  view = 'all',
 }: {
   limit?: number;
   cursor?: string;
+  view?: 'all' | 'kitchen' | 'awaiting_payment' | 'past';
 } = {}): Promise<PaginatedPublicOrders> => {
+  if (view === 'kitchen') {
+    const orders = await orderRepository.listKitchen();
+    return { orders: orders.map(toPublicOrder), nextCursor: null };
+  }
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
   const decodedCursor = decodeAdminOrderCursor(cursor);
-  const orders = await orderRepository.listAll(safeLimit + 1, decodedCursor);
+  const orders =
+    view === 'all'
+      ? await orderRepository.listAll(safeLimit + 1, decodedCursor)
+      : await orderRepository.listAll(safeLimit + 1, decodedCursor, view);
   const hasMore = orders.length > safeLimit;
   const visibleOrders = orders.slice(0, safeLimit).map(toPublicOrder);
 

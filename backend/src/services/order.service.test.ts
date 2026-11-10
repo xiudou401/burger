@@ -71,6 +71,7 @@ jest.mock('../repositories/order.repository', () => ({
     markStripeCheckoutFailedIfNotPaid: jest.fn(),
     markStripePaymentFailedIfPending: jest.fn(),
     listAll: jest.fn(),
+    listKitchen: jest.fn(),
     save: jest.fn(),
   },
 }));
@@ -354,6 +355,26 @@ describe('order service', () => {
       statusCode: 404,
       details: { code: 'ORDER_NOT_FOUND' },
     });
+  });
+
+  test('returns all kitchen orders without applying the history page limit', async () => {
+    const records = Array.from({ length: 60 }, (_, index) => ({
+      _id: String(index),
+      items: [],
+      totalCents: 1200,
+      menuVersion: 1,
+      status: 'confirmed',
+      payment: { status: 'paid', currency: 'aud' },
+      createdAt: now,
+      updatedAt: now,
+    }));
+    jest
+      .mocked(orderRepository.listKitchen)
+      .mockResolvedValue(records as never);
+    const result = await listAdminOrders({ view: 'kitchen', limit: 1 });
+    expect(result.orders).toHaveLength(60);
+    expect(result.nextCursor).toBeNull();
+    expect(orderRepository.listAll).not.toHaveBeenCalled();
   });
 
   test('lists admin orders with a cursor for the next page', async () => {

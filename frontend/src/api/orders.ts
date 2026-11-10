@@ -27,20 +27,25 @@ export const fetchOrder = (orderId: string) => {
   return request<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}`);
 };
 
+export type AdminOrdersView = 'kitchen' | 'awaiting_payment' | 'past';
+
 interface FetchAdminOrdersParams {
   limit?: number;
   cursor?: string | null;
   signal?: AbortSignal;
+  view?: AdminOrdersView;
 }
 
 export const fetchAdminOrders = ({
   limit = 20,
   cursor,
   signal,
+  view,
 }: FetchAdminOrdersParams = {}) => {
   const query = new URLSearchParams({ limit: String(limit) });
 
   if (cursor) query.set('cursor', cursor);
+  if (view) query.set('view', view);
 
   return request<{ orders: Order[]; nextCursor: string | null }>(
     `/orders/admin/all?${query.toString()}`,

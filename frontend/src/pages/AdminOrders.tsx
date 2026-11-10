@@ -17,6 +17,8 @@ import {
   getOrderStatusVariant,
 } from '../utils/order';
 import type { Order, OrderStatus } from '../types/order';
+import type { AdminOrdersView } from '../api/orders';
+import AdminCancelOrderDialog from './AdminCancelOrderDialog';
 
 const KITCHEN_COLUMNS: Array<{
   title: string;
@@ -40,6 +42,13 @@ const getOrdersByStatus = (orders: Order[], status: OrderStatus) =>
 
 const AdminOrders = () => {
   const [activeView, setActiveView] = useState('Kitchen');
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const view: AdminOrdersView =
+    activeView === 'Kitchen'
+      ? 'kitchen'
+      : activeView === 'Awaiting payment'
+        ? 'awaiting_payment'
+        : 'past';
   const {
     orders,
     isLoading,
@@ -51,7 +60,7 @@ const AdminOrders = () => {
     refresh,
     loadMore,
     changeStatus,
-  } = useAdminOrdersPage();
+  } = useAdminOrdersPage(view);
 
   const renderOrderCard = (order: Order, isCompact = false) => (
     <article className={classes.OrderCard} key={order.id}>
@@ -72,6 +81,11 @@ const AdminOrders = () => {
           <p className={classes.OrderDate}>
             {formatShortDateTime(order.createdAt)}
           </p>
+          {order.status === 'cancelled' && order.payment?.status === 'paid' && (
+            <p className={classes.PaymentWarning}>
+              Paid - arrange refund separately
+            </p>
+          )}
         </div>
         <strong className={classes.Total}>
           {formatCurrency(order.totalCents)}
@@ -93,16 +107,13 @@ const AdminOrders = () => {
             <AdminButton
               variant={status === 'cancelled' ? 'danger' : 'primary'}
               size="compact"
-              disabled={updatingOrderId === order.id}
+              disabled={updatingOrderId !== null}
               key={status}
               type="button"
               onClick={() =>
-                changeStatus(
-                  order.id,
-                  status,
-                  order.version,
-                  status === 'cancelled' ? 'staff_cancelled' : undefined,
-                )
+                status === 'cancelled'
+                  ? setOrderToCancel(order)
+                  : changeStatus(order.id, status, order.version)
               }
             >
               {getOrderActionLabel(order.status, status)}
@@ -118,6 +129,21 @@ const AdminOrders = () => {
       title="Orders"
       action={<AdminRefreshButton onClick={refresh} />}
     >
+      {orderToCancel && (
+        <AdminCancelOrderDialog
+          order={orderToCancel}
+          onClose={() => setOrderToCancel(null)}
+          onConfirm={(reason) => {
+            void changeStatus(
+              orderToCancel.id,
+              'cancelled',
+              orderToCancel.version,
+              reason,
+            );
+            setOrderToCancel(null);
+          }}
+        />
+      )}
       {isLoading && <AdminStatusText>Loading orders...</AdminStatusText>}
       {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
 

@@ -197,6 +197,7 @@
   background: transparent;
   color: #625747;
   font: inherit;
+  font-size: var(--font-body);
   font-weight: 800;
   cursor: pointer;
 }
@@ -209,4 +210,31 @@
 .ViewTabs button:focus-visible {
   outline: 2rem solid #bd0017;
   outline-offset: -2rem;
+}
+.CancelReason {
+  display: grid;
+  gap: 8rem;
+  margin-top: 16rem;
+  font-weight: 700;
+  font-size: var(--font-body);
+}
+
+.CancelText {
+  font-size: var(--font-body);
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.CancelReason select {
+  padding: 10rem;
+  font: inherit;
+  border: 1rem solid #d9c296;
+  border-radius: 4rem;
+  background: white;
+}
+
+.PaymentWarning {
+  color: #a01919;
+  font-size: 14rem;
+  font-weight: 700;
 }

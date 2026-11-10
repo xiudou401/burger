@@ -20,6 +20,7 @@ type OrderRealtimeEvent =
 
 interface OrderEventPayload {
   orderId: string;
+  version: number;
   status: PublicOrder['status'];
   paymentStatus?: PaymentStatus;
   updatedAt: Date;
@@ -137,6 +138,7 @@ export const initializeRealtimeServer = (server: HttpServer) => {
 
 const toOrderPayload = (order: PublicOrder): OrderEventPayload => ({
   orderId: order.id,
+  version: order.version,
   status: order.status,
   paymentStatus: order.payment?.status,
   updatedAt: order.updatedAt,
