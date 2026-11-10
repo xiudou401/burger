@@ -251,7 +251,12 @@ describe('orderRepository', () => {
   test('accepts successful retries for the same session without confirming cancelled orders', async () => {
     const exec = jest.fn().mockResolvedValue(null);
     jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);
-    await orderRepository.markStripeCheckoutPaidIfUnpaid(orderId, 'cs_retry');
+    const paidAt = new Date('2026-04-05T01:30:00Z');
+    await orderRepository.markStripeCheckoutPaidIfUnpaid(
+      orderId,
+      'cs_retry',
+      paidAt,
+    );
     expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
         status: 'pending_payment',
@@ -262,6 +267,7 @@ describe('orderRepository', () => {
         $set: expect.objectContaining({
           status: 'confirmed',
           'payment.status': 'paid',
+          'payment.paidAt': paidAt,
         }),
       }),
       { new: true },
@@ -274,6 +280,7 @@ describe('orderRepository', () => {
     await orderRepository.markStripeCheckoutPaidIfUnpaid(
       orderId,
       'cs_test_old',
+      new Date('2026-04-05T01:30:00Z'),
       true,
     );
     expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(

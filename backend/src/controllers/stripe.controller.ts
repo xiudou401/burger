@@ -86,7 +86,7 @@ export const stripeWebhookHandler = async (
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as StripeCheckoutCompletedSession;
         orderId = getOrderIdFromCheckoutSession(session);
-        await markStripeCheckoutPaid(session);
+        await markStripeCheckoutPaid(session, new Date(event.created * 1000));
       }
 
       if (event.type === 'checkout.session.expired') {

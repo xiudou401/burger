@@ -100,8 +100,10 @@ export const createStripeCheckoutSession = async (
   );
 };
 
-export const retrieveStripeCheckoutSession = (sessionId: string) =>
-  getStripeClient().checkout.sessions.retrieve(sessionId);
+export const retrieveStripeCheckoutSession = (
+  sessionId: string,
+  params?: { expand: string[] },
+) => getStripeClient().checkout.sessions.retrieve(sessionId, params);
 
 export const expireStripeCheckoutSession = (sessionId: string) =>
   getStripeClient().checkout.sessions.expire(sessionId);

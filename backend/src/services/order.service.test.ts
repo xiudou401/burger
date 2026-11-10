@@ -1196,18 +1196,23 @@ describe('order service', () => {
     jest
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValue(paidOrder as never);
-    const result = await markStripeCheckoutPaid({
-      id: 'cs_test_123',
-      payment_status: 'paid',
-      amount_total: 2400,
-      currency: 'aud',
-      metadata: { orderId },
-      client_reference_id: orderId,
-    });
+    const result = await markStripeCheckoutPaid(
+      {
+        id: 'cs_test_123',
+        payment_status: 'paid',
+        amount_total: 2400,
+        currency: 'aud',
+        metadata: { orderId },
+        client_reference_id: orderId,
+      },
+      paidAt,
+    );
 
     expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledWith(
       orderId,
       'cs_test_123',
+      paidAt,
+      false,
     );
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
@@ -1243,23 +1248,22 @@ describe('order service', () => {
       jest
         .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
         .mockResolvedValue(paid as never);
-      const result = await markStripeCheckoutPaid({
-        id: 'cs_test_123',
-        livemode,
-        created: Math.floor(Date.now() / 1000) - ageDays * 86400,
-        payment_status: 'paid',
-        amount_total: 2400,
-        currency: 'aud',
-        metadata: { orderId },
-        client_reference_id: orderId,
-      });
+      const result = await markStripeCheckoutPaid(
+        {
+          id: 'cs_test_123',
+          livemode,
+          created: Math.floor(Date.now() / 1000) - ageDays * 86400,
+          payment_status: 'paid',
+          amount_total: 2400,
+          currency: 'aud',
+          metadata: { orderId },
+          client_reference_id: orderId,
+        },
+        now,
+      );
       expect(
         orderRepository.markStripeCheckoutPaidIfUnpaid,
-      ).toHaveBeenCalledWith(
-        orderId,
-        'cs_test_123',
-        ...(archive ? [true] : []),
-      );
+      ).toHaveBeenCalledWith(orderId, 'cs_test_123', expect.any(Date), archive);
       expect(result.status).toBe(archive ? 'cancelled' : 'confirmed');
       expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(
         archive ? 0 : 1,
@@ -1310,14 +1314,17 @@ describe('order service', () => {
       .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
       .mockResolvedValue(paidOrder as never);
     await expect(
-      markStripeCheckoutPaid({
-        id: 'cs_test_123',
-        payment_status: 'paid',
-        amount_total: 2400,
-        currency: 'aud',
-        metadata: { orderId },
-        client_reference_id: orderId,
-      }),
+      markStripeCheckoutPaid(
+        {
+          id: 'cs_test_123',
+          payment_status: 'paid',
+          amount_total: 2400,
+          currency: 'aud',
+          metadata: { orderId },
+          client_reference_id: orderId,
+        },
+        paidAt,
+      ),
     ).resolves.toEqual(
       expect.objectContaining({
         status: 'confirmed',
@@ -1367,14 +1374,17 @@ describe('order service', () => {
       .mocked(orderRepository.findByStripeSessionId)
       .mockResolvedValue(order as never);
 
-    const result = await markStripeCheckoutPaid({
-      id: 'cs_test_123',
-      payment_status: 'paid',
-      amount_total: 2400,
-      currency: 'aud',
-      metadata: { orderId },
-      client_reference_id: orderId,
-    });
+    const result = await markStripeCheckoutPaid(
+      {
+        id: 'cs_test_123',
+        payment_status: 'paid',
+        amount_total: 2400,
+        currency: 'aud',
+        metadata: { orderId },
+        client_reference_id: orderId,
+      },
+      now,
+    );
 
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(
@@ -1428,21 +1438,27 @@ describe('order service', () => {
       .mocked(orderRepository.flagStripePaymentForReview)
       .mockResolvedValue(reviewOrder as never);
 
-    const result = await markStripeCheckoutPaid({
-      id: 'cs_test_123',
-      payment_status: 'paid',
-      amount_total: 2400,
-      currency: 'aud',
-      metadata: { orderId },
-      client_reference_id: orderId,
-    });
+    const result = await markStripeCheckoutPaid(
+      {
+        id: 'cs_test_123',
+        payment_status: 'paid',
+        amount_total: 2400,
+        currency: 'aud',
+        metadata: { orderId },
+        client_reference_id: orderId,
+      },
+      providerPaidAt,
+    );
 
     expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledWith(
       orderId,
       'cs_test_123',
+      providerPaidAt,
+      false,
     );
     expect(orderRepository.flagStripePaymentForReview).toHaveBeenCalledWith(
       'cs_test_123',
+      providerPaidAt,
     );
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('cancelled');
@@ -1509,8 +1525,8 @@ describe('order service', () => {
       .mockResolvedValueOnce(paidOrder as never)
       .mockResolvedValueOnce(null);
     const [firstResult, secondResult] = await Promise.all([
-      markStripeCheckoutPaid(session),
-      markStripeCheckoutPaid(session),
+      markStripeCheckoutPaid(session, now),
+      markStripeCheckoutPaid(session, now),
     ]);
 
     expect(
@@ -1546,14 +1562,17 @@ describe('order service', () => {
       .mockResolvedValue(order as never);
 
     await expect(
-      markStripeCheckoutPaid({
-        id: 'cs_test_123',
-        payment_status: 'paid',
-        amount_total: 1200,
-        currency: 'aud',
-        metadata: { orderId },
-        client_reference_id: orderId,
-      }),
+      markStripeCheckoutPaid(
+        {
+          id: 'cs_test_123',
+          payment_status: 'paid',
+          amount_total: 1200,
+          currency: 'aud',
+          metadata: { orderId },
+          client_reference_id: orderId,
+        },
+        now,
+      ),
     ).rejects.toThrow('Stripe checkout amount does not match order');
 
     expect(orderRepository.save).not.toHaveBeenCalled();

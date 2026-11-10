@@ -599,6 +599,7 @@ export const orderRepository = {
   markStripeCheckoutPaidIfUnpaid(
     orderId: string,
     sessionId: string,
+    paidAt: Date,
     archiveTestCheckout = false,
   ) {
     if (!isObjectId(orderId)) {
@@ -617,7 +618,7 @@ export const orderRepository = {
         $set: {
           status: archiveTestCheckout ? 'cancelled' : 'confirmed',
           'payment.status': 'paid',
-          'payment.paidAt': new Date(),
+          'payment.paidAt': paidAt,
           ...(archiveTestCheckout
             ? {
                 cancellationReason: 'archived_test_checkout',
@@ -630,7 +631,7 @@ export const orderRepository = {
     ).exec();
   },
 
-  flagStripePaymentForReview(sessionId: string) {
+  flagStripePaymentForReview(sessionId: string, paidAt: Date) {
     return OrderModel.findOneAndUpdate(
       {
         'payment.provider': 'stripe',
@@ -643,7 +644,7 @@ export const orderRepository = {
       },
       {
         $set: {
-          'payment.providerPaidAt': new Date(),
+          'payment.providerPaidAt': paidAt,
           'payment.requiresReview': true,
           'payment.reviewReason': 'stripe_paid_after_order_not_payable',
           'payment.reviewCreatedAt': new Date(),

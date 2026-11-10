@@ -163,6 +163,24 @@ describe('admin dashboard service', () => {
     );
   });
 
+  test.each([
+    ['2026-04-05T02:00:00Z', '2026-04-04T13:00:00Z', '2026-04-05T14:00:00Z'],
+    ['2026-10-04T02:00:00Z', '2026-10-03T14:00:00Z', '2026-10-04T13:00:00Z'],
+  ])(
+    'uses Sydney midnight on DST transition days (%s)',
+    async (now, start, end) => {
+      await getAdminDashboardSummary(new Date(now));
+      expect(orderRepository.listCreatedBetween).toHaveBeenCalledWith(
+        new Date(start),
+        new Date(end),
+      );
+      expect(orderRepository.listPaidBetween).toHaveBeenCalledWith(
+        new Date(start),
+        new Date(end),
+      );
+    },
+  );
+
   test('summarizes analytics from MongoDB aggregation results', async () => {
     const now = new Date('2026-09-20T12:00:00.000Z');
 

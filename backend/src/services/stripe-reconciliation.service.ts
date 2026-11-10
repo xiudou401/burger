@@ -1,4 +1,5 @@
 import { env } from '../config/env';
+import { ServiceError } from '../errors/ServiceError';
 import { orderRepository } from '../repositories/order.repository';
 import { retrieveStripeCheckoutSession } from './stripe-checkout.service';
 import {
@@ -24,15 +25,31 @@ export const reconcileStripeCheckouts = async (
     const sessionId = order.payment.providerPaymentId;
     if (!sessionId || !/^cs_(test|live)_/.test(sessionId)) continue;
     try {
-      const session = await retrieveStripeCheckoutSession(sessionId);
+      const session = await retrieveStripeCheckoutSession(sessionId, {
+        expand: ['payment_intent.latest_charge'],
+      });
       if (session.payment_status === 'paid') {
+        const intent = session.payment_intent;
+        const charge =
+          typeof intent === 'object' ? intent?.latest_charge : null;
+        if (
+          !charge ||
+          typeof charge === 'string' ||
+          charge.status !== 'succeeded' ||
+          !charge.captured
+        ) {
+          throw new ServiceError(
+            'Captured Stripe charge unavailable for reconciliation',
+            503,
+          );
+        }
         // Keep a durable retry marker across the paid-update/outbox-write boundary.
         await orderRepository.setStripeReconciliationRequired(
           orderId,
           sessionId,
           true,
         );
-        await markStripeCheckoutPaid(session);
+        await markStripeCheckoutPaid(session, new Date(charge.created * 1000));
         await orderRepository.setStripeReconciliationRequired(
           orderId,
           sessionId,
