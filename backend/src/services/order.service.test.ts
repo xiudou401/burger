@@ -1217,6 +1217,56 @@ describe('order service', () => {
     expect(result.payment?.paidAt).toBe(paidAt);
   });
 
+  test.each([
+    [false, 8, true],
+    [false, 1, false],
+    [true, 8, false],
+  ])(
+    'archives only old test payments (live=%s, age=%s days)',
+    async (livemode, ageDays, archive) => {
+      const pending = {
+        _id: orderId,
+        userId,
+        items: [],
+        totalCents: 2400,
+        status: 'pending_payment',
+        payment: { status: 'requires_payment', currency: 'aud' },
+      };
+      const paid = {
+        ...pending,
+        status: archive ? 'cancelled' : 'confirmed',
+        payment: { ...pending.payment, status: 'paid' },
+      };
+      jest
+        .mocked(orderRepository.findByStripeSessionId)
+        .mockResolvedValue(pending as never);
+      jest
+        .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+        .mockResolvedValue(paid as never);
+      const result = await markStripeCheckoutPaid({
+        id: 'cs_test_123',
+        livemode,
+        created: Math.floor(Date.now() / 1000) - ageDays * 86400,
+        payment_status: 'paid',
+        amount_total: 2400,
+        currency: 'aud',
+        metadata: { orderId },
+        client_reference_id: orderId,
+      });
+      expect(
+        orderRepository.markStripeCheckoutPaidIfUnpaid,
+      ).toHaveBeenCalledWith(
+        orderId,
+        'cs_test_123',
+        ...(archive ? [true] : []),
+      );
+      expect(result.status).toBe(archive ? 'cancelled' : 'confirmed');
+      expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(
+        archive ? 0 : 1,
+      );
+    },
+  );
+
   test('does not emit post-payment side effects directly from paid Stripe webhooks', async () => {
     const order = {
       _id: orderId,

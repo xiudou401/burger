@@ -12,6 +12,8 @@ import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 import { appLogger } from '../utils/logger';
 import { enqueueOrderPaidSideEffects } from './outbox.service';
 
+const HISTORICAL_TEST_CHECKOUT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+
 const isPaidOrder = (order: {
   status: OrderStatus;
   payment: {
@@ -102,14 +104,24 @@ export const markStripeCheckoutPaid = async (
   const wasAlreadyPaid = order.payment.status === 'paid';
 
   if (wasAlreadyPaid) {
-    await enqueueOrderPaidSideEffects(order);
+    if (order.status !== 'cancelled') await enqueueOrderPaidSideEffects(order);
     return toPublicOrder(order);
   }
 
-  const paidOrder = await orderRepository.markStripeCheckoutPaidIfUnpaid(
-    String(order._id),
-    session.id,
-  );
+  const archiveTestCheckout =
+    session.livemode === false &&
+    typeof session.created === 'number' &&
+    session.created * 1000 <= Date.now() - HISTORICAL_TEST_CHECKOUT_AGE_MS;
+  const paidOrder = archiveTestCheckout
+    ? await orderRepository.markStripeCheckoutPaidIfUnpaid(
+        String(order._id),
+        session.id,
+        true,
+      )
+    : await orderRepository.markStripeCheckoutPaidIfUnpaid(
+        String(order._id),
+        session.id,
+      );
 
   if (!paidOrder) {
     const reviewOrder = await orderRepository.flagStripePaymentForReview(
@@ -137,7 +149,13 @@ export const markStripeCheckoutPaid = async (
   }
 
   const publicOrder = toPublicOrder(paidOrder);
-  await enqueueOrderPaidSideEffects(paidOrder);
+  if (!archiveTestCheckout) await enqueueOrderPaidSideEffects(paidOrder);
+  else
+    void emitStripeOrderEventIfPossible(
+      'order:cancelled',
+      publicOrder,
+      String(paidOrder.userId),
+    );
 
   return publicOrder;
 };

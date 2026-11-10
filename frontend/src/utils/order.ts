@@ -1,4 +1,20 @@
-import type { OrderStatus } from '../types/order';
+import type { Order, OrderStatus } from '../types/order';
+
+export const getAdminOrderPaymentNotice = (order: Order, now = Date.now()) => {
+  if (order.cancellationReason === 'archived_test_checkout')
+    return 'Archived test checkout - no real charge';
+  if (order.payment?.requiresReview)
+    return 'Stripe recorded a payment - review before taking action';
+  if (order.status === 'cancelled' && order.payment?.status === 'paid')
+    return 'Paid - arrange refund separately';
+  if (
+    order.status === 'pending_payment' &&
+    now - Date.parse(order.createdAt) >= 15 * 60 * 1000 &&
+    !/^cs_(test|live)_/.test(order.payment?.providerPaymentId ?? '')
+  )
+    return 'Stripe checkout not found - review payment';
+  return null;
+};
 
 export type StatusBadgeVariant = 'neutral' | 'success' | 'warning' | 'danger';
 

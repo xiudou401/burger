@@ -20,6 +20,7 @@ export type PaymentStatus =
 export type PaymentReviewReason = 'stripe_paid_after_order_not_payable';
 
 export type CancellationReason =
+  | 'archived_test_checkout'
   | 'payment_failed'
   | 'customer_abandoned_checkout'
   | 'staff_cancelled'
@@ -164,6 +165,7 @@ const orderSchema = new Schema<Order>(
       enum: [
         'payment_failed',
         'customer_abandoned_checkout',
+        'archived_test_checkout',
         'staff_cancelled',
         'item_unavailable',
         'duplicate_order',

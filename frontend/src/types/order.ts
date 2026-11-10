@@ -22,6 +22,8 @@ export interface Order {
     status: PaymentStatus;
     currency: string;
     paidAt?: string;
+    providerPaidAt?: string;
+    requiresReview?: boolean;
   };
   createdAt: string;
   updatedAt: string;
@@ -36,6 +38,7 @@ export type OrderStatus =
   | 'cancelled';
 
 export type CancellationReason =
+  | 'archived_test_checkout'
   | 'payment_failed'
   | 'customer_abandoned_checkout'
   | 'staff_cancelled'

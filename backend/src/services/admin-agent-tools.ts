@@ -37,6 +37,7 @@ const PaymentStatusSchema = z.enum([
 ]);
 
 const CancellationReasonSchema = z.enum([
+  'archived_test_checkout',
   'payment_failed',
   'customer_abandoned_checkout',
   'staff_cancelled',
