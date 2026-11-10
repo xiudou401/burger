@@ -24,6 +24,7 @@ export interface Order {
     paidAt?: string;
     providerPaidAt?: string;
     requiresReview?: boolean;
+    reviewReason?: string;
   };
   createdAt: string;
   updatedAt: string;

@@ -165,7 +165,40 @@ describe('outbox service', () => {
     expect(emitOrderEvent).not.toHaveBeenCalled();
   });
 
-  test('marks the claimed event failed when a side effect fails', async () => {
+  test.each(['realtime', 'analytics'])(
+    'does not retry email when %s fails after sending',
+    async (sideEffect) => {
+      const error = new Error('Notification unavailable');
+      jest.mocked(outboxEventRepository.claimNext).mockResolvedValue({
+        claimToken: 'claim-1',
+        event: {
+          _id: 'event-1',
+          eventType: 'order.paid',
+          payload: { orderId, userId },
+        },
+      } as never);
+      jest
+        .mocked(orderRepository.findByIdLean)
+        .mockResolvedValue(order as never);
+      if (sideEffect === 'realtime') {
+        jest.mocked(emitOrderEvent).mockImplementationOnce(() => {
+          throw error;
+        });
+      } else {
+        jest.mocked(emitCurrentAnalyticsAlerts).mockRejectedValueOnce(error);
+      }
+      await expect(processNextOutboxEvent()).resolves.toBe(true);
+      expect(sendOrderConfirmationEmail).toHaveBeenCalledTimes(1);
+      expect(emitCurrentAnalyticsAlerts).toHaveBeenCalledTimes(1);
+      expect(outboxEventRepository.markProcessed).toHaveBeenCalledWith(
+        'event-1',
+        'claim-1',
+      );
+      expect(outboxEventRepository.markFailed).not.toHaveBeenCalled();
+    },
+  );
+
+  test('marks the claimed event failed when sending email fails', async () => {
     const error = new Error('Email unavailable');
 
     jest.mocked(outboxEventRepository.claimNext).mockResolvedValue({

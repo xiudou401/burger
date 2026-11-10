@@ -15,6 +15,7 @@ jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
     listStripeReconciliationCandidates: jest.fn(),
     setStripeReconciliationRequired: jest.fn(),
+    flagUnverifiedStripeCharge: jest.fn(),
   },
 }));
 jest.mock('./stripe-checkout.service', () => ({
@@ -113,12 +114,16 @@ test('keeps the retry marker when validation or outbox enqueue fails', async () 
   expect(markStripeCheckoutFailed).not.toHaveBeenCalled();
 });
 
-test('does not substitute the worker time when a paid session has no captured charge', async () => {
+test('flags a paid session for review without inventing a payment time', async () => {
   jest
     .mocked(retrieveStripeCheckoutSession)
     .mockResolvedValue({ payment_status: 'paid' } as never);
   await reconcileStripeCheckouts();
   expect(markStripeCheckoutPaid).not.toHaveBeenCalled();
+  expect(orderRepository.flagUnverifiedStripeCharge).toHaveBeenCalledWith(
+    'order-A',
+    'cs_test_order-A',
+  );
   expect(markStripeCheckoutFailed).not.toHaveBeenCalled();
   expect(appLogger.error).toHaveBeenCalled();
 });
@@ -136,6 +141,7 @@ test('a lookup failure does not cancel an order or prevent later candidates', as
     } as never);
   await reconcileStripeCheckouts();
   expect(markStripeCheckoutFailed).toHaveBeenCalledTimes(1);
+  expect(orderRepository.flagUnverifiedStripeCharge).not.toHaveBeenCalled();
   expect(markStripeCheckoutFailed).toHaveBeenCalledWith(
     'cs_test_order-B',
     'cancelled',

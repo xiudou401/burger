@@ -36,8 +36,11 @@ export const reconcileStripeCheckouts = async (
           !charge ||
           typeof charge === 'string' ||
           charge.status !== 'succeeded' ||
-          !charge.captured
+          !charge.captured ||
+          !Number.isFinite(charge.created) ||
+          charge.created <= 0
         ) {
+          await orderRepository.flagUnverifiedStripeCharge(orderId, sessionId);
           throw new ServiceError(
             'Captured Stripe charge unavailable for reconciliation',
             503,
