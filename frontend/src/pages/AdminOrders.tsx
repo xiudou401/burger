@@ -37,8 +37,8 @@ const SECONDARY_ORDER_GROUPS: Array<{
   title: string;
   statuses: OrderStatus[];
 }> = [
-  { title: 'Awaiting payment', statuses: ['pending_payment'] },
   { title: 'Past orders', statuses: ['completed', 'cancelled'] },
+  { title: 'Awaiting payment', statuses: ['pending_payment'] },
 ];
 
 const getOrdersByStatus = (orders: Order[], status: OrderStatus) =>
@@ -212,6 +212,9 @@ const AdminOrders = () => {
               aria-selected={activeView === title}
               tabIndex={activeView === title ? 0 : -1}
               key={title}
+              className={
+                title === 'Awaiting payment' ? classes.SecondaryTab : undefined
+              }
               onClick={() => setActiveView(title)}
               onKeyDown={(event) => {
                 const nextIndex =
@@ -258,7 +261,7 @@ const AdminOrders = () => {
             }}
           >
             <label>
-              Placed from
+              From date
               <input
                 type="date"
                 value={fromDate}
@@ -266,7 +269,7 @@ const AdminOrders = () => {
               />
             </label>
             <label>
-              Placed through
+              To date
               <input
                 type="date"
                 value={throughDate}

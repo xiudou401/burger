@@ -270,6 +270,11 @@
   border-bottom-color: #bd0017;
 }
 
+.ViewTabs button.SecondaryTab {
+  margin-left: auto;
+  font-weight: 500;
+}
+
 .ViewTabs button:focus-visible {
   outline: 2rem solid #bd0017;
   outline-offset: -2rem;
