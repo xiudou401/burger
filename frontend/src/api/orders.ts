@@ -30,6 +30,8 @@ export const fetchOrder = (orderId: string) => {
 export type AdminOrdersView = 'kitchen' | 'awaiting_payment' | 'past';
 
 interface FetchAdminOrdersParams {
+  from?: string;
+  to?: string;
   limit?: number;
   cursor?: string | null;
   signal?: AbortSignal;
@@ -41,11 +43,15 @@ export const fetchAdminOrders = ({
   cursor,
   signal,
   view,
+  from,
+  to,
 }: FetchAdminOrdersParams = {}) => {
   const query = new URLSearchParams({ limit: String(limit) });
 
   if (cursor) query.set('cursor', cursor);
   if (view) query.set('view', view);
+  if (from) query.set('from', from);
+  if (to) query.set('to', to);
 
   return request<{ orders: Order[]; nextCursor: string | null }>(
     `/orders/admin/all?${query.toString()}`,

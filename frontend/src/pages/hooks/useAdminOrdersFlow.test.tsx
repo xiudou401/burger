@@ -34,6 +34,34 @@ beforeEach(() => {
   });
 });
 
+test('resets pagination when date filters change and retains the range on load more', async () => {
+  vi.mocked(fetchAdminOrders).mockResolvedValue({
+    orders: [order],
+    nextCursor: 'page-2',
+  });
+  const { result, rerender } = renderHook(
+    ({ from }) => useAdminOrdersPage('past', { from }),
+    {
+      initialProps: { from: '2026-01-01T00:00:00Z' },
+    },
+  );
+  await waitFor(() => expect(result.current.hasMoreOrders).toBe(true));
+  await act(async () => result.current.loadMore());
+  expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+    expect.objectContaining({ cursor: 'page-2', from: '2026-01-01T00:00:00Z' }),
+  );
+  rerender({ from: '2026-02-01T00:00:00Z' });
+  await waitFor(() =>
+    expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cursor: undefined,
+        from: '2026-02-01T00:00:00Z',
+      }),
+    ),
+  );
+  await waitFor(() => expect(result.current.orders).toHaveLength(1));
+});
+
 test('queries the selected view and refreshes complete versions after realtime changes', async () => {
   const { result, rerender } = renderHook(
     ({ view }) => useAdminOrdersPage(view),

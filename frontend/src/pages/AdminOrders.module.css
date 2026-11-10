@@ -52,9 +52,9 @@
 
 .OrderCard {
   min-width: 0;
-  padding: 16rem;
-  border: 1rem solid #ead8b5;
-  border-radius: 8rem;
+  padding: 16px;
+  border: 1px solid #ead8b5;
+  border-radius: 8px;
   background: #fff;
   box-shadow: 0 10rem 26rem rgba(68, 40, 0, 0.07);
 }
@@ -63,12 +63,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12rem;
+  gap: 12px;
 }
 
 .OrderId {
   color: #292929;
-  font-size: 21rem;
+  font-size: 21px;
   font-weight: 900;
   text-decoration: none;
 }
@@ -81,36 +81,85 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8rem;
+  gap: 8px;
 }
 
 .OrderDate {
-  margin: 6rem 0 0;
+  margin: 6px 0 0;
   color: #7a6954;
-  font-size: 14rem;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.TicketPlaced {
+  margin: 4px 0 0;
+  color: #635c50;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.DateFilters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+.DateFilters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.DateFilters input,
+.DateFilters button {
+  min-height: 40px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d9c296;
+  border-radius: 4px;
+  background: #fff;
+  color: #292929;
+  font: inherit;
+}
+.DateFilters button {
+  cursor: pointer;
+}
+.DateFilters p {
+  flex-basis: 100%;
+  color: #a01919;
+  margin: 0;
+}
+.DayGroup h3 {
+  margin: 0;
+  padding: 16px 12px 0;
+  font-size: 16px;
+  color: #514b43;
 }
 
 .Total {
   flex: 0 0 auto;
   color: #bd0017;
-  font-size: 20rem;
+  font-size: 20px;
 }
 
 .ItemList {
   display: grid;
-  gap: 8rem;
-  margin: 16rem 0 0;
+  gap: 8px;
+  margin: 16px 0 0;
   padding: 0;
   list-style: none;
 }
 
 .ItemLine {
   display: grid;
-  grid-template-columns: 36rem minmax(0, 1fr);
-  gap: 8rem;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 8px;
   align-items: start;
   color: #292929;
-  font-size: 17rem;
+  font-size: 17px;
   font-weight: 800;
 }
 
@@ -146,17 +195,30 @@
 }
 
 .RecentSection {
-  margin-top: 18rem;
-  border: 1rem solid #ead8b5;
-  border-radius: 8rem;
+  margin-top: 18px;
+  border: 1px solid #ead8b5;
+  border-radius: 8px;
   background: rgba(255, 251, 243, 0.72);
 }
 
 .RecentGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260rem, 1fr));
-  gap: 12rem;
-  padding: 12rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+.RecentHeader {
+  min-height: 52px;
+  padding: 8px 16px;
+}
+.RecentTitle {
+  font-size: 18px;
+}
+.RecentHeader .LaneCount {
+  min-width: 32px;
+  height: 28px;
+  font-size: 14px;
 }
 
 @media (max-width: 980px) {
@@ -171,7 +233,7 @@
   }
 
   .Total {
-    font-size: 19rem;
+    font-size: 19px;
   }
 
   .Actions {

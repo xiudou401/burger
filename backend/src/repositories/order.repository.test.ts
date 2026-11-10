@@ -89,6 +89,25 @@ describe('orderRepository', () => {
     expect(query.limit).toHaveBeenCalledWith(5);
   });
 
+  test('intersects placement dates with the status and cursor before paginating', async () => {
+    const query = chain([]);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+    const start = new Date('2026-11-01T00:00:00Z');
+    const end = new Date('2026-11-11T00:00:00Z');
+    await orderRepository.listAll(21, { id: orderId, createdAt: end }, 'past', {
+      start,
+      end,
+    });
+    expect(OrderModel.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: { $in: ['completed', 'cancelled'] },
+        createdAt: { $gte: start, $lt: end },
+        $or: expect.any(Array),
+      }),
+    );
+    expect(query.limit).toHaveBeenCalledWith(21);
+  });
+
   test('loads every active kitchen order oldest first without a page limit', async () => {
     const query = chain([]);
     query.sort.mockReturnValue({ lean: query.lean } as never);

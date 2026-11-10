@@ -14,7 +14,11 @@ import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 const ORDER_PAGE_LIMIT = 50;
 const REALTIME_FALLBACK_POLL_MS = 30_000;
 
-export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
+export const useAdminOrdersPage = (
+  view: AdminOrdersView = 'kitchen',
+  range: { from?: string; to?: string } = {},
+) => {
+  const { from, to } = range;
   const user = useAuth((ctx) => ctx.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -27,8 +31,9 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
     'connecting' | 'live' | 'reconnecting' | 'offline'
   >(navigator.onLine ? 'connecting' : 'offline');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const viewRef = useRef(view);
-  viewRef.current = view;
+  const queryKey = `${view}:${from ?? ''}:${to ?? ''}`;
+  const viewRef = useRef(queryKey);
+  viewRef.current = queryKey;
   const loadRequestIdRef = useRef(0);
   const loadControllerRef = useRef<AbortController | null>(null);
 
@@ -63,6 +68,8 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
           cursor,
           signal: controller.signal,
           view,
+          ...(from ? { from } : {}),
+          ...(to ? { to } : {}),
         });
 
         if (requestId !== loadRequestIdRef.current) return;
@@ -89,7 +96,7 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
         }
       }
     },
-    [view],
+    [view, from, to],
   );
 
   useEffect(() => {
@@ -218,7 +225,7 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
   ) => {
     if (updatesInFlightRef.current.has(orderId) || !navigator.onLine) return;
     updatesInFlightRef.current.add(orderId);
-    const submittedView = view;
+    const submittedView = queryKey;
     setUpdatingOrderIds((current) => [...current, orderId]);
     setError(null);
 

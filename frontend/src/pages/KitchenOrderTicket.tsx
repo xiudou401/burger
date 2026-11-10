@@ -5,6 +5,8 @@ import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
 import AdminButton from '../components/Admin/AdminButton';
 import type { Order, OrderStatus } from '../types/order';
 import { formatOrderShortId, getOrderActionLabel } from '../utils/order';
+import { formatKitchenPlacedAt } from '../utils/order-date';
+import { formatMediumDateTime } from '../utils/date';
 import classes from './AdminOrders.module.css';
 
 const WAIT_WARNING_MINUTES = 15;
@@ -96,6 +98,15 @@ const KitchenOrderTicket = ({
           </div>
         )}
       </div>
+      <p className={classes.TicketPlaced}>
+        Placed{' '}
+        <time
+          dateTime={hasAge ? order.createdAt : undefined}
+          title={formatMediumDateTime(order.createdAt)}
+        >
+          {formatKitchenPlacedAt(order.createdAt, now)}
+        </time>
+      </p>
       <p
         className={`${classes.TicketAge} ${longWait ? classes.LongWait : ''}`}
         title="Time since the order was placed"
