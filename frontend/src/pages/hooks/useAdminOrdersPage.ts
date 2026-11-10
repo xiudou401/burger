@@ -21,8 +21,12 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const updateInFlightRef = useRef(false);
+  const [updatingOrderIds, setUpdatingOrderIds] = useState<string[]>([]);
+  const updatesInFlightRef = useRef(new Set<string>());
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connecting' | 'live' | 'reconnecting' | 'offline'
+  >(navigator.onLine ? 'connecting' : 'offline');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const viewRef = useRef(view);
   viewRef.current = view;
   const loadRequestIdRef = useRef(0);
@@ -105,6 +109,7 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
     let fallbackTimer: number | null = null;
     let isDisposed = false;
     let fallbackActive = false;
+    setConnectionStatus(navigator.onLine ? 'connecting' : 'offline');
 
     const clearFallbackPolling = () => {
       fallbackActive = false;
@@ -154,12 +159,30 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
       onConnected: () => {
         if (isDisposed) return;
         clearFallbackPolling();
+        setConnectionStatus('live');
         void loadOrders();
       },
-      onDisconnected: startFallbackPolling,
+      onDisconnected: () => {
+        if (isDisposed) return;
+        setConnectionStatus(navigator.onLine ? 'reconnecting' : 'offline');
+        startFallbackPolling();
+      },
     });
 
+    const onOffline = () => {
+      setIsOnline(false);
+      setConnectionStatus('offline');
+    };
+    const onOnline = () => {
+      setIsOnline(true);
+      setConnectionStatus(socket?.connected ? 'live' : 'reconnecting');
+      void loadOrders();
+    };
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online', onOnline);
+
     if (!socket) {
+      setConnectionStatus(navigator.onLine ? 'reconnecting' : 'offline');
       startFallbackPolling();
     }
 
@@ -171,6 +194,8 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
       }
 
       clearFallbackPolling();
+      window.removeEventListener('offline', onOffline);
+      window.removeEventListener('online', onOnline);
       socket?.disconnect();
     };
   }, [loadOrders]);
@@ -191,10 +216,10 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
     version: number,
     cancellationReason?: CancellationReason,
   ) => {
-    if (updateInFlightRef.current) return;
-    updateInFlightRef.current = true;
+    if (updatesInFlightRef.current.has(orderId) || !navigator.onLine) return;
+    updatesInFlightRef.current.add(orderId);
     const submittedView = view;
-    setUpdatingOrderId(orderId);
+    setUpdatingOrderIds((current) => [...current, orderId]);
     setError(null);
 
     try {
@@ -217,8 +242,8 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
 
       setError(message);
     } finally {
-      updateInFlightRef.current = false;
-      setUpdatingOrderId(null);
+      updatesInFlightRef.current.delete(orderId);
+      setUpdatingOrderIds((current) => current.filter((id) => id !== orderId));
     }
   };
 
@@ -229,7 +254,9 @@ export const useAdminOrdersPage = (view: AdminOrdersView = 'kitchen') => {
     isLoading,
     isLoadingMore,
     error,
-    updatingOrderId,
+    updatingOrderIds,
+    connectionStatus,
+    isOnline,
     hasMoreOrders: nextCursor !== null,
     nextStatuses,
     refresh,

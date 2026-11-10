@@ -98,5 +98,52 @@ test('keeps server state during submission and refreshes instead of rolling back
   expect(result.current.orders).toHaveLength(2);
   expect(result.current.orders[0].version).toBe(5);
   expect(result.current.error).toContain('Review its latest status');
-  expect(result.current.updatingOrderId).toBeNull();
+  expect(result.current.updatingOrderIds).toEqual([]);
+});
+
+test('tracks connection state and pauses mutations while offline', async () => {
+  const { result } = renderHook(() => useAdminOrdersPage());
+  await waitFor(() => expect(result.current.orders).toHaveLength(1));
+  const handlers = vi.mocked(connectAdminRealtime).mock.calls.at(-1)![0]!;
+  act(() => handlers.onConnected?.());
+  expect(result.current.connectionStatus).toBe('live');
+  act(() => handlers.onDisconnected?.());
+  expect(result.current.connectionStatus).toBe('reconnecting');
+  const online = vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+  act(() => window.dispatchEvent(new Event('offline')));
+  expect(result.current.connectionStatus).toBe('offline');
+  await act(async () => {
+    await result.current.changeStatus(order.id, 'preparing', 3);
+  });
+  expect(updateOrderStatus).not.toHaveBeenCalled();
+  online.mockReturnValue(true);
+  act(() => window.dispatchEvent(new Event('online')));
+  expect(result.current.isOnline).toBe(true);
+  online.mockRestore();
+});
+
+test('allows different orders to submit independently but blocks a duplicate on one order', async () => {
+  const resolvers: Array<(value: { order: Order }) => void> = [];
+  vi.mocked(updateOrderStatus).mockImplementation(
+    () => new Promise((resolve) => resolvers.push(resolve)),
+  );
+  const { result } = renderHook(() => useAdminOrdersPage());
+  await waitFor(() => expect(result.current.orders).toHaveLength(1));
+  let first!: Promise<void>;
+  let second!: Promise<void>;
+  act(() => {
+    first = result.current.changeStatus('order-A', 'preparing', 3);
+    second = result.current.changeStatus('order-B', 'preparing', 3);
+  });
+  await act(async () => {
+    await result.current.changeStatus('order-A', 'preparing', 3);
+  });
+  expect(updateOrderStatus).toHaveBeenCalledTimes(2);
+  expect(result.current.updatingOrderIds).toEqual(['order-A', 'order-B']);
+  await act(async () => {
+    resolvers[0]({ order });
+    resolvers[1]({ order });
+    await Promise.all([first, second]);
+  });
+  expect(result.current.updatingOrderIds).toEqual([]);
 });

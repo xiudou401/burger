@@ -197,7 +197,8 @@
   background: transparent;
   color: #625747;
   font: inherit;
-  font-size: var(--font-body);
+  font-size: 16px;
+  min-height: 44px;
   font-weight: 800;
   cursor: pointer;
 }
@@ -237,4 +238,166 @@
   color: #a01919;
   font-size: 14rem;
   font-weight: 700;
+}
+
+.PageActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ConnectionStatus {
+  max-width: 240px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: #8a4714;
+}
+
+.Live {
+  color: #176840;
+}
+
+.Board {
+  gap: 16px;
+}
+.Board .LaneHeader {
+  min-height: 58px;
+  padding: 8px 16px;
+}
+.Board .LaneTitle {
+  font-size: 20px;
+}
+.Board .LaneCount {
+  min-width: 32px;
+  height: 30px;
+  font-size: 15px;
+}
+.Board .LaneBody {
+  padding: 12px;
+  gap: 12px;
+}
+.Board .EmptyLane {
+  font-size: 16px;
+  min-height: 80px;
+}
+
+.KitchenTicket {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #d9d4ca;
+  border-radius: 6px;
+  background: #fff;
+  color: #292929;
+}
+
+.TicketHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+}
+.TicketId {
+  font-size: 21px;
+  font-weight: 900;
+  color: #292929;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.TicketId:focus-visible,
+.MoreButton:focus-visible,
+.TicketMenuPanel button:focus-visible {
+  outline: 2px solid #bd0017;
+  outline-offset: 2px;
+}
+.TicketAge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #635c50;
+}
+.LongWait {
+  color: #91430c;
+}
+.TicketItems {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.TicketItems li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 8px;
+  font-size: 18px;
+  line-height: 1.4;
+}
+.TicketItems strong {
+  color: #bd0017;
+  font-size: 20px;
+}
+.TicketItems span {
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+.TicketAction {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+.TicketMenu {
+  position: relative;
+  flex: 0 0 44px;
+}
+.MoreButton {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #dedbd5;
+  border-radius: 6px;
+  background: #fff;
+  color: #514b43;
+  font-size: 20px;
+  cursor: pointer;
+}
+.MoreButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.TicketMenuPanel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 5;
+  width: 180px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid #dedbd5;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px #0002;
+}
+.TicketMenuPanel button {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #a01919;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.TicketMenuPanel button:hover {
+  background: #fff0ef;
 }

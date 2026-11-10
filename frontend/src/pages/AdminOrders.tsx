@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
-import AdminButton from '../components/Admin/AdminButton';
 import AdminLoadMore from '../components/Admin/AdminLoadMore';
 import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import AdminStatusBadge from '../components/Admin/AdminStatusBadge';
@@ -13,12 +12,12 @@ import { formatShortDateTime } from '../utils/date';
 import {
   formatOrderShortId,
   formatOrderStatus,
-  getOrderActionLabel,
   getOrderStatusVariant,
 } from '../utils/order';
 import type { Order, OrderStatus } from '../types/order';
 import type { AdminOrdersView } from '../api/orders';
 import AdminCancelOrderDialog from './AdminCancelOrderDialog';
+import KitchenOrderTicket from './KitchenOrderTicket';
 
 const KITCHEN_COLUMNS: Array<{
   title: string;
@@ -43,6 +42,11 @@ const getOrdersByStatus = (orders: Order[], status: OrderStatus) =>
 const AdminOrders = () => {
   const [activeView, setActiveView] = useState('Kitchen');
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
   const view: AdminOrdersView =
     activeView === 'Kitchen'
       ? 'kitchen'
@@ -54,7 +58,9 @@ const AdminOrders = () => {
     isLoading,
     isLoadingMore,
     error,
-    updatingOrderId,
+    updatingOrderIds,
+    connectionStatus,
+    isOnline,
     hasMoreOrders,
     nextStatuses,
     refresh,
@@ -62,72 +68,85 @@ const AdminOrders = () => {
     changeStatus,
   } = useAdminOrdersPage(view);
 
-  const renderOrderCard = (order: Order, isCompact = false) => (
-    <article className={classes.OrderCard} key={order.id}>
-      <div className={classes.OrderTop}>
-        <div>
-          <div className={classes.OrderMetaLine}>
-            <Link className={classes.OrderId} to={`/admin/orders/${order.id}`}>
-              #{formatOrderShortId(order.id)}
-            </Link>
-            <AdminStatusBadge
-              variant={getOrderStatusVariant(order.status, {
-                completedVariant: 'neutral',
-              })}
-            >
-              {formatOrderStatus(order.status)}
-            </AdminStatusBadge>
-          </div>
-          <p className={classes.OrderDate}>
-            {formatShortDateTime(order.createdAt)}
-          </p>
-          {order.status === 'cancelled' && order.payment?.status === 'paid' && (
-            <p className={classes.PaymentWarning}>
-              Paid - arrange refund separately
+  const renderOrderCard = (order: Order, isCompact = false) =>
+    !isCompact ? (
+      <KitchenOrderTicket
+        key={order.id}
+        order={order}
+        now={now}
+        nextStatuses={nextStatuses[order.status]}
+        isUpdating={updatingOrderIds.includes(order.id)}
+        isOnline={isOnline}
+        onAdvance={(status) => {
+          void changeStatus(order.id, status, order.version);
+        }}
+        onCancel={() => setOrderToCancel(order)}
+      />
+    ) : (
+      <article className={classes.OrderCard} key={order.id}>
+        <div className={classes.OrderTop}>
+          <div>
+            <div className={classes.OrderMetaLine}>
+              <Link
+                className={classes.OrderId}
+                to={`/admin/orders/${order.id}`}
+              >
+                #{formatOrderShortId(order.id)}
+              </Link>
+              <AdminStatusBadge
+                variant={getOrderStatusVariant(order.status, {
+                  completedVariant: 'neutral',
+                })}
+              >
+                {formatOrderStatus(order.status)}
+              </AdminStatusBadge>
+            </div>
+            <p className={classes.OrderDate}>
+              {formatShortDateTime(order.createdAt)}
             </p>
-          )}
+            {order.status === 'cancelled' &&
+              order.payment?.status === 'paid' && (
+                <p className={classes.PaymentWarning}>
+                  Paid - arrange refund separately
+                </p>
+              )}
+          </div>
+          <strong className={classes.Total}>
+            {formatCurrency(order.totalCents)}
+          </strong>
         </div>
-        <strong className={classes.Total}>
-          {formatCurrency(order.totalCents)}
-        </strong>
-      </div>
 
-      <ul className={classes.ItemList}>
-        {order.items.map((item) => (
-          <li className={classes.ItemLine} key={item.menuItemId}>
-            <span className={classes.ItemQuantity}>{item.quantity}x</span>
-            <span className={classes.ItemName}>{item.name}</span>
-          </li>
-        ))}
-      </ul>
-
-      {!isCompact && nextStatuses[order.status].length > 0 && (
-        <div className={classes.Actions}>
-          {nextStatuses[order.status].map((status) => (
-            <AdminButton
-              variant={status === 'cancelled' ? 'danger' : 'primary'}
-              size="compact"
-              disabled={updatingOrderId !== null}
-              key={status}
-              type="button"
-              onClick={() =>
-                status === 'cancelled'
-                  ? setOrderToCancel(order)
-                  : changeStatus(order.id, status, order.version)
-              }
-            >
-              {getOrderActionLabel(order.status, status)}
-            </AdminButton>
+        <ul className={classes.ItemList}>
+          {order.items.map((item) => (
+            <li className={classes.ItemLine} key={item.menuItemId}>
+              <span className={classes.ItemQuantity}>{item.quantity}x</span>
+              <span className={classes.ItemName}>{item.name}</span>
+            </li>
           ))}
-        </div>
-      )}
-    </article>
-  );
+        </ul>
+      </article>
+    );
 
   return (
     <AdminLayout
       title="Orders"
-      action={<AdminRefreshButton onClick={refresh} />}
+      action={
+        <div className={classes.PageActions}>
+          <span
+            role="status"
+            className={`${classes.ConnectionStatus} ${connectionStatus === 'live' ? classes.Live : ''}`}
+          >
+            {connectionStatus === 'live'
+              ? 'Live'
+              : connectionStatus === 'offline'
+                ? 'Offline'
+                : connectionStatus === 'connecting'
+                  ? 'Connecting...'
+                  : 'Reconnecting - polling every 30s'}
+          </span>
+          <AdminRefreshButton onClick={refresh} />
+        </div>
+      }
     >
       {orderToCancel && (
         <AdminCancelOrderDialog
@@ -146,6 +165,12 @@ const AdminOrders = () => {
       )}
       {isLoading && <AdminStatusText>Loading orders...</AdminStatusText>}
       {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
+      {!isOnline && (
+        <AdminStatusText tone="error">
+          Offline. Order updates are paused. Displayed orders may be out of
+          date.
+        </AdminStatusText>
+      )}
 
       {!isLoading && orders.length === 0 && !error && (
         <AdminStatusText>No orders yet.</AdminStatusText>

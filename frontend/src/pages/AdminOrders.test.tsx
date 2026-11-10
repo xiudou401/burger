@@ -7,7 +7,18 @@ import AdminOrders from './AdminOrders';
 
 vi.mock('./hooks/useAdminOrdersPage', () => ({ useAdminOrdersPage: vi.fn() }));
 vi.mock('../components/Admin/AdminLayout', () => ({
-  default: ({ children }: { children: ReactNode }) => <main>{children}</main>,
+  default: ({
+    children,
+    action,
+  }: {
+    children: ReactNode;
+    action?: ReactNode;
+  }) => (
+    <main>
+      {action}
+      {children}
+    </main>
+  ),
 }));
 
 const makeOrder = (status: OrderStatus): Order => ({
@@ -35,7 +46,9 @@ const renderOrders = (orders: Order[], allowCancellation = false) => {
     isLoading: false,
     isLoadingMore: false,
     error: null,
-    updatingOrderId: null,
+    updatingOrderIds: [],
+    connectionStatus: 'live',
+    isOnline: true,
     hasMoreOrders: false,
     nextStatuses: {
       pending_payment: [],
@@ -137,6 +150,10 @@ test('confirms paid order cancellation and submits the selected reason', () => {
     true,
   );
   const state = vi.mocked(useAdminOrdersPage).mock.results.at(-1)!.value;
+  expect(
+    screen.queryByRole('button', { name: 'Cancel order' }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: /Options for order/ }));
   fireEvent.click(screen.getByRole('button', { name: 'Cancel order' }));
   expect(state.changeStatus).not.toHaveBeenCalled();
   expect(
