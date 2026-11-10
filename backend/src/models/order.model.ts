@@ -53,6 +53,7 @@ export interface Order {
     status: PaymentStatus;
     currency: string;
     paidAt?: Date;
+    reconciliationRequired?: boolean;
     checkoutSessionCreationClaimedAt?: Date;
     providerPaidAt?: Date;
     requiresReview?: boolean;
@@ -171,6 +172,7 @@ const orderSchema = new Schema<Order>(
     },
     cancelledAt: Date,
     payment: {
+      reconciliationRequired: Boolean,
       provider: {
         type: String,
         enum: ['stripe'],

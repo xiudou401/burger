@@ -10,6 +10,7 @@ jest.mock('../models/order.model', () => ({
     findOneAndUpdate: jest.fn(),
     findById: jest.fn(),
     aggregate: jest.fn(),
+    updateOne: jest.fn(),
   },
 }));
 
@@ -29,6 +30,41 @@ describe('orderRepository', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  test('scans old Stripe checkouts and unfinished reconciliation markers with a stable cursor', async () => {
+    const query = chain([]);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+    const before = new Date('2026-11-10T00:00:00Z');
+    await orderRepository.listStripeReconciliationCandidates(before, orderId);
+    expect(OrderModel.find).toHaveBeenCalledWith({
+      'payment.provider': 'stripe',
+      'payment.providerPaymentId': /^cs_(test|live)_/,
+      $or: [
+        { status: 'pending_payment', createdAt: { $lte: before } },
+        { 'payment.reconciliationRequired': true },
+      ],
+      _id: { $gt: new Types.ObjectId(orderId) },
+    });
+    expect(query.sort).toHaveBeenCalledWith({ _id: 1 });
+    expect(query.limit).toHaveBeenCalledWith(25);
+  });
+
+  test('does not mark a replacement Stripe session with an old reconciliation result', async () => {
+    const exec = jest.fn().mockResolvedValue({ modifiedCount: 0 });
+    jest.mocked(OrderModel.updateOne).mockReturnValue({ exec } as never);
+    await orderRepository.setStripeReconciliationRequired(
+      orderId,
+      'cs_test_old',
+      false,
+    );
+    expect(OrderModel.updateOne).toHaveBeenCalledWith(
+      {
+        _id: new Types.ObjectId(orderId),
+        'payment.providerPaymentId': 'cs_test_old',
+      },
+      { $set: { 'payment.reconciliationRequired': false } },
+    );
   });
 
   test('lists user orders sorted newest first with a limit', async () => {

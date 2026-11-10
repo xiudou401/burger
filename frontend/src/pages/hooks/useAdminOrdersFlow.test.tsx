@@ -34,6 +34,34 @@ beforeEach(() => {
   });
 });
 
+test('keeps loaded history when realtime events arrive until explicitly refreshed', async () => {
+  vi.mocked(fetchAdminOrders)
+    .mockResolvedValueOnce({ orders: [order], nextCursor: 'next' })
+    .mockResolvedValueOnce({
+      orders: [{ ...order, id: 'order-B' }],
+      nextCursor: null,
+    });
+  const { result } = renderHook(() => useAdminOrdersPage('past'));
+  await waitFor(() => expect(result.current.hasMoreOrders).toBe(true));
+  await act(async () => result.current.loadMore());
+  await waitFor(() => expect(result.current.orders).toHaveLength(2));
+  const calls = vi.mocked(fetchAdminOrders).mock.calls.length;
+  const handlers = vi.mocked(connectAdminRealtime).mock.calls.at(-1)![0]!;
+  act(() =>
+    handlers.onOrderEvent?.('order:updated', {
+      orderId: order.id,
+      status: 'completed',
+      version: 4,
+      updatedAt: order.updatedAt,
+    }),
+  );
+  expect(result.current.hasUpdates).toBe(true);
+  expect(result.current.orders).toHaveLength(2);
+  expect(fetchAdminOrders).toHaveBeenCalledTimes(calls);
+  await act(async () => result.current.refresh());
+  expect(result.current.hasUpdates).toBe(false);
+});
+
 test('resets pagination when date filters change and retains the range on load more', async () => {
   vi.mocked(fetchAdminOrders).mockResolvedValue({
     orders: [order],

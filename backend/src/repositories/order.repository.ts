@@ -66,6 +66,37 @@ export interface OrderAnalyticsAttachmentRate {
 }
 
 export const orderRepository = {
+  listStripeReconciliationCandidates(
+    before: Date,
+    afterId?: string,
+    limit = 25,
+  ) {
+    return OrderModel.find({
+      'payment.provider': 'stripe',
+      'payment.providerPaymentId': /^cs_(test|live)_/,
+      $or: [
+        { status: 'pending_payment', createdAt: { $lte: before } },
+        { 'payment.reconciliationRequired': true },
+      ],
+      ...(afterId ? { _id: { $gt: toObjectId(afterId) } } : {}),
+    })
+      .sort({ _id: 1 })
+      .limit(limit)
+      .lean()
+      .exec();
+  },
+
+  setStripeReconciliationRequired(
+    orderId: string,
+    sessionId: string,
+    required: boolean,
+  ) {
+    return OrderModel.updateOne(
+      { _id: toObjectId(orderId), 'payment.providerPaymentId': sessionId },
+      { $set: { 'payment.reconciliationRequired': required } },
+    ).exec();
+  },
+
   create(data: {
     userId: string;
     items: RepositoryOrderItem[];
@@ -628,7 +659,7 @@ export const orderRepository = {
         'payment.provider': 'stripe',
         'payment.providerPaymentId': sessionId,
         status: 'pending_payment',
-        'payment.status': 'requires_payment',
+        'payment.status': { $in: ['requires_payment', 'failed'] },
       },
       { $set: set },
       { new: true },

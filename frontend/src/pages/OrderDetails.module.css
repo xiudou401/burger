@@ -114,6 +114,16 @@
   margin-bottom: 20rem;
 }
 
+.PaymentSummary {
+  margin-bottom: 16px;
+}
+
+.PaymentSummary p {
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
 .CardTitle {
   margin: 0;
   color: #292929;

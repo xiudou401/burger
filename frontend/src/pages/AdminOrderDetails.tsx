@@ -1,20 +1,35 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import AdminRefreshButton from '../components/Admin/AdminRefreshButton';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminStatusText from '../components/Admin/AdminStatusText';
 import classes from './OrderDetails.module.css';
 import { useAdminOrderDetailsPage } from './hooks/useAdminOrderDetailsPage';
 import { formatCurrency } from '../utils/currency';
-import { formatMediumDateTime } from '../utils/date';
+import { formatOrderDateTime } from '../utils/order-date';
 import { formatOrderShortId, formatOrderStatus } from '../utils/order';
 import MenuImage from '../components/UI/MenuImage/MenuImage';
 
 const AdminOrderDetails = () => {
   const { orderId = '' } = useParams();
-  const { order, isLoading, error } = useAdminOrderDetailsPage(orderId);
+  const { order, isLoading, error, refresh } =
+    useAdminOrderDetailsPage(orderId);
+  const location = useLocation();
+  const returnTo = location.state?.ordersReturnTo;
 
   return (
-    <AdminLayout title="Order details">
-      <Link className={classes.BackLink} to="/admin/orders">
+    <AdminLayout
+      title="Order details"
+      action={<AdminRefreshButton onClick={refresh} />}
+    >
+      <Link
+        className={classes.BackLink}
+        to={
+          typeof returnTo === 'string' &&
+          /^\/admin\/orders(?:\?|$)/.test(returnTo)
+            ? returnTo
+            : '/admin/orders'
+        }
+      >
         Back to orders
       </Link>
 
@@ -34,15 +49,47 @@ const AdminOrderDetails = () => {
               <p className={classes.Eyebrow}>
                 Order #{formatOrderShortId(order.id)}
               </p>
-              <h2 className={classes.Title}>Kitchen ticket</h2>
+              <h2 className={classes.Title}>Order summary</h2>
               <p className={classes.Meta}>
-                {formatMediumDateTime(order.createdAt)}
+                {formatOrderDateTime(order.createdAt)}
               </p>
             </div>
             <div className={classes.Status}>
               {formatOrderStatus(order.status)}
             </div>
           </header>
+          <section
+            className={`${classes.Card} ${classes.PaymentSummary}`}
+            aria-label="Payment and cancellation"
+          >
+            <h2 className={classes.CardTitle}>Payment</h2>
+            <p className={classes.Meta}>
+              Payment status:{' '}
+              {order.payment?.status.replaceAll('_', ' ') ?? 'Unavailable'}
+            </p>
+            {order.payment?.paidAt && (
+              <p className={classes.Meta}>
+                Paid: {formatOrderDateTime(order.payment.paidAt)}
+              </p>
+            )}
+            {order.cancellationReason && (
+              <p className={classes.Meta}>
+                Cancellation reason:{' '}
+                {order.cancellationReason.replaceAll('_', ' ')}
+              </p>
+            )}
+            {order.cancelledAt && (
+              <p className={classes.Meta}>
+                Cancelled: {formatOrderDateTime(order.cancelledAt)}
+              </p>
+            )}
+            {order.status === 'cancelled' &&
+              order.payment?.status === 'paid' && (
+                <AdminStatusText tone="error">
+                  Paid - arrange refund separately
+                </AdminStatusText>
+              )}
+          </section>
 
           <section className={classes.Card}>
             <div className={classes.CardHeader}>

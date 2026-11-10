@@ -6,6 +6,7 @@ export const useAdminOrderDetailsPage = (orderId: string) => {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (!orderId) {
@@ -41,11 +42,12 @@ export const useAdminOrderDetailsPage = (orderId: string) => {
     return () => {
       cancelled = true;
     };
-  }, [orderId]);
+  }, [orderId, refreshKey]);
 
   return {
     order,
     isLoading,
     error,
+    refresh: () => setRefreshKey((current) => current + 1),
   };
 };
