@@ -42,4 +42,28 @@ describe('menu image cleanup service', () => {
 
     expect(getMenuImageKeyFromUrl('/img/meals/1.png')).toBeNull();
   });
+
+  it('never treats catalog assets as orphan uploads', async () => {
+    const send = jest.fn().mockResolvedValue({
+      Contents: [
+        { Key: 'menu-images/catalog/burger.png', LastModified: new Date(0) },
+        { Key: 'menu-images/2026/orphan.png', LastModified: new Date(0) },
+      ],
+    });
+    jest.doMock('@aws-sdk/client-s3', () => ({
+      ...jest.requireActual('@aws-sdk/client-s3'),
+      S3Client: jest.fn().mockImplementation(() => ({ send })),
+    }));
+    const find = () => ({
+      select: () => ({ lean: () => ({ exec: async () => [] }) }),
+    });
+    jest.doMock('../models/menu-item.model', () => ({
+      MenuItemModel: { find },
+    }));
+    jest.doMock('../models/order.model', () => ({ OrderModel: { find } }));
+    const { cleanupOrphanMenuImages } =
+      await import('./menu-image-cleanup.service');
+    const result = await cleanupOrphanMenuImages();
+    expect(result.orphanKeys).toEqual(['menu-images/2026/orphan.png']);
+  });
 });

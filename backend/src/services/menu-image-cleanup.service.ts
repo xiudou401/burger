@@ -156,6 +156,7 @@ export const cleanupOrphanMenuImages = async ({
   const orphanKeys = objects
     .filter((object) => {
       if (!object.Key || !object.LastModified) return false;
+      if (object.Key.startsWith('menu-images/catalog/')) return false;
       if (object.LastModified > cutoff) return false;
 
       return !referencedKeys.has(object.Key);

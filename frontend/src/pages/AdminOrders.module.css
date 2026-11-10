@@ -182,3 +182,31 @@
     flex: 1 1 100%;
   }
 }
+.ViewTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rem;
+  margin-bottom: 16rem;
+  border-bottom: 1rem solid #ead8b5;
+}
+
+.ViewTabs button {
+  padding: 12rem 16rem;
+  border: 0;
+  border-bottom: 3rem solid transparent;
+  background: transparent;
+  color: #625747;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.ViewTabs button[aria-selected='true'] {
+  color: #292929;
+  border-bottom-color: #bd0017;
+}
+
+.ViewTabs button:focus-visible {
+  outline: 2rem solid #bd0017;
+  outline-offset: -2rem;
+}
