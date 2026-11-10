@@ -132,7 +132,7 @@ test('supports keyboard switching and shows empty views', () => {
   fireEvent.keyDown(screen.getByRole('tab', { name: 'Kitchen' }), {
     key: 'ArrowRight',
   });
-  expect(screen.getByRole('tab', { name: 'Awaiting payment' })).toHaveFocus();
+  expect(screen.getByRole('tab', { name: 'Past orders' })).toHaveFocus();
   expect(screen.getByText('No orders in this view.')).toBeInTheDocument();
 });
 
@@ -141,10 +141,10 @@ test('groups historical orders by placement date and applies or clears a date ra
   fireEvent.click(screen.getByRole('tab', { name: 'Past orders' }));
   expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
   expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);
-  fireEvent.change(screen.getByLabelText('Placed from'), {
+  fireEvent.change(screen.getByLabelText('From date'), {
     target: { value: '2026-01-01' },
   });
-  fireEvent.change(screen.getByLabelText('Placed through'), {
+  fireEvent.change(screen.getByLabelText('To date'), {
     target: { value: '2026-01-02' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Apply dates' }));
