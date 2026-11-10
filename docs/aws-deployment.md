@@ -52,11 +52,11 @@ and HTTP 200 with `{"status":"ok"}` for api `/api/health`.
 Backend task revision 106 is stable and the CloudFront health endpoint returns
 HTTP 200. The saved traffic DNS records in Porkbun are:
 
-| Type | Host | Target | TTL |
-| --- | --- | --- | --- |
+| Type  | Host         | Target                          | TTL |
+| ----- | ------------ | ------------------------------- | --- |
 | ALIAS | root (blank) | `d37gxrym542prf.cloudfront.net` | 600 |
-| CNAME | www | `d37gxrym542prf.cloudfront.net` | 600 |
-| CNAME | api | `d37gxrym542prf.cloudfront.net` | 600 |
+| CNAME | www          | `d37gxrym542prf.cloudfront.net` | 600 |
+| CNAME | api          | `d37gxrym542prf.cloudfront.net` | 600 |
 
 The root ALIAS replaced the old Vercel A record. The www/api CNAMEs point to
 CloudFront. Authoritative DNS confirmed both CNAMEs; ordinary HTTPS requests
@@ -103,10 +103,10 @@ The replacement certificate above is now issued. These validation CNAMEs were
 added in Porkbun (Host is relative to
 `sydneyburger.com`):
 
-| Host | Target |
-| --- | --- |
+| Host                                    | Target                                                              |
+| --------------------------------------- | ------------------------------------------------------------------- |
 | `_451bffcbcff6488e0c14df344854da2d.www` | `_ee014b926dfd96de77c235d441e0933b.wzccmgtwzk.acm-validations.aws.` |
-| `_06526133814db237a6f9fa5244df224d` | `_9361b1890b59a790c7ccd2e357d19d54.wzccmgtwzk.acm-validations.aws.` |
+| `_06526133814db237a6f9fa5244df224d`     | `_9361b1890b59a790c7ccd2e357d19d54.wzccmgtwzk.acm-validations.aws.` |
 | `_2dcf3fd94e9ae797fcc0b830d03ad1ae.api` | `_800f7f18596829ba812991ff65b7bdb1.wzccmgtwzk.acm-validations.aws.` |
 
 Keep the validation records for automatic certificate renewal.
@@ -340,16 +340,22 @@ resulting `whsec_...` value into `STRIPE_WEBHOOK_SECRET`.
 ## Continuous Deployment
 
 The GitHub Actions workflow at `.github/workflows/deploy.yml` deploys the
-release commit after the `CI` workflow succeeds on `main`. It can also be run
-manually from the Actions page.
+tested release commit after a push-triggered `CI` workflow succeeds on the
+latest `main` commit. Pull request CI never triggers a production release.
+Older automatic releases are skipped, and production deployments are serialized
+without interrupting a running deployment. It can also be run manually from
+`main` on the Actions page, selecting frontend, backend or both; the selected
+commit must already have passed push CI.
 
 The workflow:
 
 1. Authenticates to AWS through GitHub OIDC with short-lived credentials.
-2. Builds the frontend, syncs it to S3, and invalidates CloudFront.
-3. Builds an ARM64 backend image tagged with the Git commit SHA.
-4. Pushes both the immutable SHA tag and `latest` to ECR.
-5. Registers a new ECS task definition revision and updates the ECS service.
+2. Builds an ARM64 backend image tagged with the tested Git commit SHA.
+3. Pushes both the immutable SHA tag and `latest` to ECR.
+4. Registers a new ECS task definition revision, updates the ECS service and
+   waits for service stability.
+5. Builds the frontend, syncs it to S3, and invalidates CloudFront. If backend
+   deployment fails, frontend publication does not proceed.
 
 The IAM role trusts only the `production` GitHub environment in this
 repository. Its trust and deployment policies are versioned under

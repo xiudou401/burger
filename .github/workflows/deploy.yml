@@ -1,6 +1,10 @@
 name: Deploy AWS
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
     inputs:
       target:
@@ -15,7 +19,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write
+  actions: read
 
 concurrency:
   group: aws-production
@@ -32,13 +36,55 @@ env:
   ECS_TASK_DEFINITION: burger-club-api
   ECR_REPOSITORY: burger-club-api
   FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
-  IMAGE_TAG: ${{ github.sha }}
+  IMAGE_TAG: ${{ github.event.workflow_run.head_sha || github.sha }}
+  DEPLOY_TARGET: ${{ github.event_name == 'workflow_run' && 'both' || inputs.target }}
 
 jobs:
+  release:
+    name: Check release eligibility
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - name: Verify CI and skip superseded automatic releases
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          if [[ "$TRIGGER" == "workflow_run" ]]; then
+            latest=$(gh api "repos/${GH_REPO}/git/ref/heads/main" --jq '.object.sha')
+            if [[ "$latest" != "$IMAGE_TAG" ]]; then
+              echo "Skipping superseded release $IMAGE_TAG; main is $latest."
+              echo "deploy=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          else
+            conclusion=$(gh api "repos/${GH_REPO}/actions/workflows/ci.yml/runs?head_sha=${IMAGE_TAG}&event=push&per_page=1" --jq '.workflow_runs[0].conclusion')
+            if [[ "$conclusion" != "success" ]]; then
+              echo "::error::The selected main commit must pass CI before deployment."
+              exit 1
+            fi
+          fi
+          echo "deploy=true" >> "$GITHUB_OUTPUT"
+
   deploy:
     name: Deploy AWS
+    needs: release
+    if: needs.release.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      id-token: write
 
     steps:
       - name: Checkout release commit
@@ -63,45 +109,24 @@ jobs:
           allowed-account-ids: ${{ env.AWS_ACCOUNT_ID }}
           role-session-name: burger-club-${{ github.run_id }}
 
-      - name: Build frontend
-        if: ${{ inputs.target == 'frontend' || inputs.target == 'both' }}
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
-        run: |
-          npm --prefix shared ci
-          npm --prefix shared run build
-          npm --prefix frontend ci
-          npm --prefix frontend run build
-
-      - name: Upload frontend to S3
-        if: ${{ inputs.target == 'frontend' || inputs.target == 'both' }}
-        run: aws s3 sync frontend/dist/ "s3://${FRONTEND_BUCKET}" --delete
-
-      - name: Invalidate CloudFront cache
-        if: ${{ inputs.target == 'frontend' || inputs.target == 'both' }}
-        run: |
-          aws cloudfront create-invalidation \
-            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
-            --paths "/*"
-
       - name: Setup Docker Buildx
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Login to Amazon ECR
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Apply ECR lifecycle policy
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         run: |
           aws ecr put-lifecycle-policy \
             --repository-name "${ECR_REPOSITORY}" \
             --lifecycle-policy-text file://infrastructure/aws/ecr-lifecycle-policy.json
 
       - name: Build and push backend image
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -115,7 +140,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Download current ECS task definition
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         run: |
           aws ecs describe-task-definition \
             --task-definition "${ECS_TASK_DEFINITION}" \
@@ -123,7 +148,7 @@ jobs:
             > task-definition.json
 
       - name: Render backend image in task definition
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         id: render-task-definition
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -132,10 +157,31 @@ jobs:
           image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:sha-${{ env.IMAGE_TAG }}
 
       - name: Deploy ECS task definition
-        if: ${{ inputs.target == 'backend' || inputs.target == 'both' }}
+        if: ${{ env.DEPLOY_TARGET == 'backend' || env.DEPLOY_TARGET == 'both' }}
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
           task-definition: ${{ steps.render-task-definition.outputs.task-definition }}
           cluster: ${{ env.ECS_CLUSTER }}
           service: ${{ env.ECS_SERVICE }}
           wait-for-service-stability: true
+
+      - name: Build frontend
+        if: ${{ env.DEPLOY_TARGET == 'frontend' || env.DEPLOY_TARGET == 'both' }}
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+        run: |
+          npm --prefix shared ci
+          npm --prefix shared run build
+          npm --prefix frontend ci
+          npm --prefix frontend run build
+
+      - name: Upload frontend to S3
+        if: ${{ env.DEPLOY_TARGET == 'frontend' || env.DEPLOY_TARGET == 'both' }}
+        run: aws s3 sync frontend/dist/ "s3://${FRONTEND_BUCKET}" --delete
+
+      - name: Invalidate CloudFront cache
+        if: ${{ env.DEPLOY_TARGET == 'frontend' || env.DEPLOY_TARGET == 'both' }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --paths "/*"

@@ -415,8 +415,13 @@ in [`docs/aws-deployment.md`](docs/aws-deployment.md), with the frontend
 to S3 + CloudFront and the backend to ECS Fargate through ECR and an Application
 Load Balancer.
 
-The manual `Deploy AWS` GitHub Actions workflow supports `frontend` (default),
-`backend`, or `both`. Frontend deployment uploads `frontend/dist` to S3 and
+The `Deploy AWS` GitHub Actions workflow automatically deploys both services
+after the push-triggered `CI` workflow succeeds on the latest `main` commit.
+It deploys that tested commit, waits for ECS stability, then publishes the
+frontend. Failed CI and superseded automatic releases do not deploy.
+The manual entry point on `main` still supports `frontend` (default), `backend`,
+or `both`, and requires successful CI for the selected commit.
+Frontend deployment uploads `frontend/dist` to S3 and
 invalidates CloudFront. Backend deployment pushes a Docker image to ECR and
 updates an existing ECS service and task definition. Provision the required
 AWS resources separately; this workflow does not create an ALB, VPC, or ECS
