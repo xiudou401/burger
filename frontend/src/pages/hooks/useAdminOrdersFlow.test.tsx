@@ -34,6 +34,71 @@ beforeEach(() => {
   });
 });
 
+test('uses the latest committed filters even when refresh was saved before the change', async () => {
+  const { result, rerender } = renderHook(
+    ({ from }) => useAdminOrdersPage('past', { from }),
+    { initialProps: { from: '2026-01-01T00:00:00Z' } },
+  );
+  await waitFor(() => expect(result.current.orders).toHaveLength(1));
+  const savedRefresh = result.current.refresh;
+  rerender({ from: '2026-02-01T00:00:00Z' });
+  await waitFor(() => expect(result.current.isLoading).toBe(false));
+  await act(async () => savedRefresh());
+  expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      view: 'past',
+      from: '2026-02-01T00:00:00Z',
+    }),
+  );
+});
+
+test('ignores stale responses and does not let their cleanup clear a newer request', async () => {
+  const resolvers: Array<
+    (value: { orders: Order[]; nextCursor: string | null }) => void
+  > = [];
+  vi.mocked(fetchAdminOrders).mockImplementation(
+    () => new Promise((resolve) => resolvers.push(resolve)),
+  );
+  const { result } = renderHook(() => useAdminOrdersPage());
+  const firstSignal = vi.mocked(fetchAdminOrders).mock.calls[0][0]?.signal;
+  act(() => result.current.refresh());
+  expect(firstSignal?.aborted).toBe(true);
+  await act(async () => resolvers[0]({ orders: [order], nextCursor: null }));
+  expect(result.current.orders).toEqual([]);
+  expect(result.current.isLoading).toBe(true);
+  act(() => result.current.refresh());
+  expect(vi.mocked(fetchAdminOrders).mock.calls[1][0]?.signal?.aborted).toBe(
+    true,
+  );
+  await act(async () => {
+    resolvers[1]({ orders: [order], nextCursor: null });
+    resolvers[2]({ orders: [{ ...order, version: 9 }], nextCursor: null });
+  });
+  expect(result.current.orders[0].version).toBe(9);
+  expect(result.current.isLoading).toBe(false);
+});
+
+test('aborts on filter changes and ignores stale failures after unmount', async () => {
+  const rejectors: Array<(error: Error) => void> = [];
+  vi.mocked(fetchAdminOrders).mockImplementation(
+    () => new Promise((_, reject) => rejectors.push(reject)),
+  );
+  const { result, rerender, unmount } = renderHook(
+    ({ from }) => useAdminOrdersPage('past', { from }),
+    { initialProps: { from: '2026-01-01T00:00:00Z' } },
+  );
+  const firstSignal = vi.mocked(fetchAdminOrders).mock.calls[0][0]?.signal;
+  rerender({ from: '2026-02-01T00:00:00Z' });
+  expect(firstSignal?.aborted).toBe(true);
+  await act(async () => rejectors[0](new Error('Old failure')));
+  expect(result.current.error).toBeNull();
+  expect(result.current.isLoading).toBe(true);
+  const secondSignal = vi.mocked(fetchAdminOrders).mock.calls[1][0]?.signal;
+  unmount();
+  expect(secondSignal?.aborted).toBe(true);
+  await act(async () => rejectors[1](new Error('Unmounted')));
+});
+
 test('keeps loaded history when realtime events arrive until explicitly refreshed', async () => {
   vi.mocked(fetchAdminOrders)
     .mockResolvedValueOnce({ orders: [order], nextCursor: 'next' })
