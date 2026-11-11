@@ -390,6 +390,19 @@ describe('order service', () => {
     );
   });
 
+  test('search ignores the selected view and dates rather than hiding matching orders', async () => {
+    jest.mocked(orderRepository.listAll).mockResolvedValueOnce([] as never);
+    await listAdminOrders({
+      view: 'kitchen',
+      search: '2a094d',
+      from: '2026-11-08T13:00:00Z',
+    });
+    expect(orderRepository.listAll).toHaveBeenCalledWith(21, undefined, 'all', {
+      search: '2a094d',
+    });
+    expect(orderRepository.listKitchen).not.toHaveBeenCalled();
+  });
+
   test('lists admin orders with a cursor for the next page', async () => {
     const firstOrder = {
       _id: orderId,

@@ -5,6 +5,58 @@
   align-items: start;
 }
 
+.OrderSearch {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-width: 480px;
+  font-size: 16px;
+}
+
+.OrderSearch label {
+  font-weight: 700;
+}
+
+.SearchControls {
+  display: flex;
+  gap: 8px;
+}
+
+.SearchControls input {
+  min-width: 0;
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  font: inherit;
+  background: #fff;
+}
+
+.SearchControls button {
+  flex: 0 0 44px;
+  min-height: 44px;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  background: #fff;
+  color: #292929;
+  cursor: pointer;
+}
+
+.SearchControls button[type='submit'] {
+  background: #ffbd20;
+}
+
+.OrderSearch p {
+  margin: 0;
+  color: #bd0017;
+}
+
+.SearchControls :focus-visible {
+  outline: 2px solid #bd0017;
+  outline-offset: 2px;
+}
+
 .Lane {
   min-width: 0;
   border: 1rem solid #ead8b5;

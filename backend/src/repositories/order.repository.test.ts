@@ -32,6 +32,39 @@ describe('orderRepository', () => {
     jest.clearAllMocks();
   });
 
+  test('searches the short ID suffix across orders with stable pagination', async () => {
+    const query = chain([]);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+    await orderRepository.listAll(
+      26,
+      { createdAt: new Date('2026-01-01T00:00:00Z'), id: orderId },
+      'all',
+      { search: 'a094df' },
+    );
+    expect(OrderModel.find).toHaveBeenCalledWith(
+      expect.objectContaining({
+        $or: expect.any(Array),
+        $expr: {
+          $regexMatch: { input: { $toString: '$_id' }, regex: 'a094df$' },
+        },
+      }),
+    );
+    expect(jest.mocked(OrderModel.find).mock.calls[0][0]).not.toHaveProperty(
+      'status',
+    );
+    expect(query.sort).toHaveBeenCalledWith({ createdAt: -1, _id: -1 });
+    expect(query.limit).toHaveBeenCalledWith(26);
+  });
+
+  test('uses the exact ObjectId for a full order number', async () => {
+    const query = chain([]);
+    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
+    await orderRepository.listAll(26, undefined, 'all', { search: orderId });
+    expect(OrderModel.find).toHaveBeenCalledWith({
+      _id: new Types.ObjectId(orderId),
+    });
+  });
+
   test('scans old Stripe checkouts and unfinished reconciliation markers with a stable cursor', async () => {
     const query = chain([]);
     jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);

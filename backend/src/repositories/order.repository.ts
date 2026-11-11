@@ -27,6 +27,7 @@ interface AnalyticsRange {
 }
 
 interface OrderQueryRange {
+  search?: string;
   start?: Date;
   end?: Date;
 }
@@ -175,7 +176,24 @@ export const orderRepository = {
             },
           }
         : {};
-    return OrderModel.find({ ...query, ...statusFilter, ...dateFilter })
+    const searchFilter = range.search
+      ? range.search.length === 24
+        ? { _id: toObjectId(range.search) }
+        : {
+            $expr: {
+              $regexMatch: {
+                input: { $toString: '$_id' },
+                regex: `${range.search}$`,
+              },
+            },
+          }
+      : {};
+    return OrderModel.find({
+      ...query,
+      ...statusFilter,
+      ...dateFilter,
+      ...searchFilter,
+    })
       .sort({ createdAt: -1, _id: -1 })
       .limit(limit)
       .lean()

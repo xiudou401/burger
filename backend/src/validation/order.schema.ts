@@ -50,6 +50,19 @@ export const ListMyOrdersQuerySchema = z
 
 export const ListAdminOrdersQuerySchema = z
   .object({
+    search: z
+      .string()
+      .trim()
+      .transform((value) => value.replace(/^#/, '').toLowerCase())
+      .pipe(
+        z
+          .string()
+          .regex(
+            /^(?:[a-f0-9]{6}|[a-f0-9]{24})$/,
+            'Enter a 6-character or full 24-character order number',
+          ),
+      )
+      .optional(),
     from: z.iso.datetime({ offset: true }).optional(),
     to: z.iso.datetime({ offset: true }).optional(),
     limit: paginationLimit(20, 100),

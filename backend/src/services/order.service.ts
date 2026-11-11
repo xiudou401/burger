@@ -225,33 +225,39 @@ const decodeAdminOrderCursor = (
 };
 
 export const listAdminOrders = async ({
+  search,
   limit = 20,
   cursor,
   view = 'all',
   from,
   to,
 }: {
+  search?: string;
   limit?: number;
   cursor?: string;
   view?: 'all' | 'kitchen' | 'awaiting_payment' | 'past';
   from?: string;
   to?: string;
 } = {}): Promise<PaginatedPublicOrders> => {
-  if (view === 'kitchen') {
+  if (!search && view === 'kitchen') {
     const orders = await orderRepository.listKitchen();
     return { orders: orders.map(toPublicOrder), nextCursor: null };
   }
   const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 100);
   const decodedCursor = decodeAdminOrderCursor(cursor);
-  const orders =
-    from || to
-      ? await orderRepository.listAll(safeLimit + 1, decodedCursor, view, {
+  const listView = view === 'kitchen' ? 'all' : view;
+  const orders = search
+    ? await orderRepository.listAll(safeLimit + 1, decodedCursor, 'all', {
+        search,
+      })
+    : from || to
+      ? await orderRepository.listAll(safeLimit + 1, decodedCursor, listView, {
           start: from ? new Date(from) : undefined,
           end: to ? new Date(to) : undefined,
         })
       : view === 'all'
         ? await orderRepository.listAll(safeLimit + 1, decodedCursor)
-        : await orderRepository.listAll(safeLimit + 1, decodedCursor, view);
+        : await orderRepository.listAll(safeLimit + 1, decodedCursor, listView);
   const hasMore = orders.length > safeLimit;
   const visibleOrders = orders.slice(0, safeLimit).map(toPublicOrder);
 
