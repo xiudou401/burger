@@ -32,6 +32,19 @@ describe('orderRepository', () => {
     jest.clearAllMocks();
   });
 
+  test.each(['completed', 'cancelled'] as const)(
+    'filters %s before pagination',
+    async (view) => {
+      const query = chain([]);
+      jest
+        .mocked(OrderModel.find)
+        .mockReturnValue({ sort: query.sort } as never);
+      await orderRepository.listAll(26, undefined, view);
+      expect(OrderModel.find).toHaveBeenCalledWith({ status: view });
+      expect(query.limit).toHaveBeenCalledWith(26);
+    },
+  );
+
   test('searches the short ID suffix across orders with stable pagination', async () => {
     const query = chain([]);
     jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
@@ -308,7 +321,7 @@ describe('orderRepository', () => {
           'payment.reviewCreatedAt': '',
         },
       }),
-      { new: true },
+      { returnDocument: 'after' },
     );
   });
 
@@ -333,7 +346,7 @@ describe('orderRepository', () => {
           cancellationReason: 'archived_test_checkout',
         }),
       }),
-      { new: true },
+      { returnDocument: 'after' },
     );
   });
 
@@ -407,7 +420,7 @@ describe('orderRepository', () => {
           'payment.checkoutSessionCreationClaimedAt': expect.any(Date),
         }),
       }),
-      { new: true },
+      { returnDocument: 'after' },
     );
   });
 

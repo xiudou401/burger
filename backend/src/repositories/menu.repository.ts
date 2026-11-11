@@ -13,7 +13,7 @@ export const menuRepository = {
         $set: { updatedAt: new Date() },
         $setOnInsert: { _id: 'main' },
       },
-      { new: true, upsert: true, projection: { version: 1 } },
+      { returnDocument: 'after', upsert: true, projection: { version: 1 } },
     )
       .lean()
       .exec();

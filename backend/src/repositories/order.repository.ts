@@ -146,7 +146,12 @@ export const orderRepository = {
   listAll(
     limit: number,
     cursor?: OrderCursor,
-    view: 'all' | 'awaiting_payment' | 'past' = 'all',
+    view:
+      | 'all'
+      | 'awaiting_payment'
+      | 'past'
+      | 'completed'
+      | 'cancelled' = 'all',
     range: OrderQueryRange = {},
   ) {
     const query = cursor
@@ -166,7 +171,9 @@ export const orderRepository = {
         ? { status: 'pending_payment' as const }
         : view === 'past'
           ? { status: { $in: ['completed', 'cancelled'] as OrderStatus[] } }
-          : {};
+          : view === 'completed' || view === 'cancelled'
+            ? { status: view }
+            : {};
     const dateFilter =
       range.start || range.end
         ? {
@@ -650,7 +657,7 @@ export const orderRepository = {
           'payment.reviewCreatedAt': '',
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 
@@ -693,7 +700,7 @@ export const orderRepository = {
           'payment.reviewCreatedAt': new Date(),
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 
@@ -721,7 +728,7 @@ export const orderRepository = {
         'payment.status': { $in: ['requires_payment', 'failed'] },
       },
       { $set: set },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 
@@ -741,7 +748,7 @@ export const orderRepository = {
           'payment.status': 'failed',
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 
@@ -823,7 +830,7 @@ export const orderRepository = {
           'payment.paidAt': '',
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 
@@ -853,7 +860,7 @@ export const orderRepository = {
           'payment.checkoutSessionCreationClaimedAt': '',
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 
@@ -883,7 +890,7 @@ export const orderRepository = {
           'payment.checkoutSessionCreationClaimedAt': '',
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 

@@ -27,7 +27,13 @@ export const fetchOrder = (orderId: string) => {
   return request<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}`);
 };
 
-export type AdminOrdersView = 'all' | 'kitchen' | 'awaiting_payment' | 'past';
+export type AdminOrdersView =
+  | 'all'
+  | 'kitchen'
+  | 'awaiting_payment'
+  | 'past'
+  | 'completed'
+  | 'cancelled';
 
 interface FetchAdminOrdersParams {
   search?: string;

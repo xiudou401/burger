@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, expect, jest, test } from '@jest/globals';
 
+jest.mock('dotenv', () => ({ config: jest.fn() }));
+
 const ORIGINAL_ENV = process.env;
 
 const baseEnv = {

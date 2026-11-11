@@ -13,6 +13,43 @@
   font-size: 16px;
 }
 
+.HistoryDates {
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.HistoryState {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.HistoryState select {
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #c5c5c5;
+  border-radius: 4px;
+  background: #fff;
+  color: #292929;
+  font: inherit;
+}
+
+.HistoryDates summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.HistoryDates summary:focus-visible {
+  outline: 2px solid #bd0017;
+  outline-offset: 2px;
+}
+
 .OrderSearch label {
   font-weight: 700;
 }
@@ -320,11 +357,6 @@
 .ViewTabs button[aria-selected='true'] {
   color: #292929;
   border-bottom-color: #bd0017;
-}
-
-.ViewTabs button.SecondaryTab {
-  margin-left: auto;
-  font-weight: 500;
 }
 
 .ViewTabs button:focus-visible {

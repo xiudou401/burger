@@ -67,7 +67,16 @@ export const ListAdminOrdersQuerySchema = z
     to: z.iso.datetime({ offset: true }).optional(),
     limit: paginationLimit(20, 100),
     cursor: z.string().trim().max(200).optional(),
-    view: z.enum(['all', 'kitchen', 'awaiting_payment', 'past']).default('all'),
+    view: z
+      .enum([
+        'all',
+        'kitchen',
+        'awaiting_payment',
+        'past',
+        'completed',
+        'cancelled',
+      ])
+      .default('all'),
   })
   .strict()
   .refine(

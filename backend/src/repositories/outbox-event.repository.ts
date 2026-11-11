@@ -65,7 +65,7 @@ export const outboxEventRepository = {
           processedAt: '',
         },
       },
-      { new: true, sort: { availableAt: 1, createdAt: 1 } },
+      { returnDocument: 'after', sort: { availableAt: 1, createdAt: 1 } },
     )
       .lean<OutboxEvent>()
       .exec();

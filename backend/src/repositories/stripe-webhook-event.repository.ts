@@ -58,7 +58,7 @@ export const stripeWebhookEventRepository = {
           processedAt: '',
         },
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
 
     if (reclaimed) {

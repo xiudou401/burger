@@ -67,7 +67,7 @@ export const menuItemRepository = {
     >,
   ) {
     return MenuItemModel.findByIdAndUpdate(menuItemId, data, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).exec();
   },

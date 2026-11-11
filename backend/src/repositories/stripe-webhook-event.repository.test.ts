@@ -141,7 +141,7 @@ describe('stripe webhook event repository', () => {
           processedAt: '',
         },
       }),
-      { new: true },
+      { returnDocument: 'after' },
     );
     expect(StripeWebhookEventModel.create).not.toHaveBeenCalled();
   });

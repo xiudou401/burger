@@ -55,7 +55,7 @@ describe('authSessionRepository', () => {
         rotatedAt: now,
         lastUsedAt: now,
       },
-      { new: true },
+      { returnDocument: 'after' },
     );
     expect(select).toHaveBeenCalledWith('+refreshTokenHash');
     expect(exec).toHaveBeenCalled();
@@ -98,7 +98,7 @@ describe('authSessionRepository', () => {
         familyId: 'family-1',
         replacedBySessionId: expect.any(Types.ObjectId),
       },
-      { new: true },
+      { returnDocument: 'after' },
     );
   });
 
