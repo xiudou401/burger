@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   fetchAdminOrders,
   updateOrderStatus,
@@ -13,6 +20,11 @@ import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
 
 const ORDER_PAGE_LIMIT = 50;
 const REALTIME_FALLBACK_POLL_MS = 30_000;
+
+type InFlightEntry = {
+  promise: Promise<void>;
+  controller: AbortController;
+};
 
 export const useAdminOrdersPage = (
   view: AdminOrdersView = 'kitchen',
@@ -33,25 +45,41 @@ export const useAdminOrdersPage = (
   >(navigator.onLine ? 'connecting' : 'offline');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const queryKey = `${view}:${from ?? ''}:${to ?? ''}`;
-  const viewRef = useRef(queryKey);
-  viewRef.current = queryKey;
-  const loadRequestIdRef = useRef(0);
-  const loadControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+  const inFlightRef = useRef<InFlightEntry | null>(null);
+  const latestRef = useRef({ view, from, to, queryKey });
+
+  useLayoutEffect(() => {
+    latestRef.current = { view, from, to, queryKey };
+  }, [view, from, to, queryKey]);
+
+  const cancelOrdersRequest = useCallback(() => {
+    requestIdRef.current += 1;
+    inFlightRef.current?.controller.abort();
+    inFlightRef.current = null;
+  }, []);
 
   const loadOrders = useCallback(
-    async ({
+    ({
       cursor,
       append = false,
     }: {
       cursor?: string | null;
       append?: boolean;
-    } = {}) => {
-      loadControllerRef.current?.abort();
-
+    } = {}): Promise<void> => {
+      const {
+        view: snapshotView,
+        from: snapshotFrom,
+        to: snapshotTo,
+        queryKey: snapshotQueryKey,
+      } = latestRef.current;
+      inFlightRef.current?.controller.abort();
       const controller = new AbortController();
-      const requestId = loadRequestIdRef.current + 1;
-      loadRequestIdRef.current = requestId;
-      loadControllerRef.current = controller;
+      const requestId = ++requestIdRef.current;
+      const isRequestActive = () =>
+        !controller.signal.aborted &&
+        requestId === requestIdRef.current &&
+        snapshotQueryKey === latestRef.current.queryKey;
 
       if (append) {
         setIsLoading(false);
@@ -63,42 +91,45 @@ export const useAdminOrdersPage = (
 
       setError(null);
 
-      try {
-        const res = await fetchAdminOrders({
-          limit: ORDER_PAGE_LIMIT,
-          cursor,
-          signal: controller.signal,
-          view,
-          ...(from ? { from } : {}),
-          ...(to ? { to } : {}),
-        });
+      let promise!: Promise<void>;
+      promise = (async () => {
+        try {
+          const res = await fetchAdminOrders({
+            limit: ORDER_PAGE_LIMIT,
+            cursor,
+            signal: controller.signal,
+            view: snapshotView,
+            ...(snapshotFrom ? { from: snapshotFrom } : {}),
+            ...(snapshotTo ? { to: snapshotTo } : {}),
+          });
 
-        if (requestId !== loadRequestIdRef.current) return;
+          if (!isRequestActive()) return;
 
-        setOrders((current) =>
-          append ? [...current, ...res.orders] : res.orders,
-        );
-        setNextCursor(res.nextCursor);
-        if (!append) setHasUpdates(false);
-      } catch (err) {
-        if (requestId !== loadRequestIdRef.current) return;
+          setOrders((current) =>
+            append ? [...current, ...res.orders] : res.orders,
+          );
+          setNextCursor(res.nextCursor);
+          if (!append) setHasUpdates(false);
+        } catch (err) {
+          if (!isRequestActive()) return;
 
-        setError(err instanceof Error ? err.message : 'Could not load orders');
-      } finally {
-        if (loadControllerRef.current === controller) {
-          loadControllerRef.current = null;
+          setError(
+            err instanceof Error ? err.message : 'Could not load orders',
+          );
+        } finally {
+          if (inFlightRef.current?.promise === promise) {
+            inFlightRef.current = null;
+            if (isRequestActive()) {
+              setIsLoading(false);
+              setIsLoadingMore(false);
+            }
+          }
         }
-
-        if (requestId !== loadRequestIdRef.current) return;
-
-        if (append) {
-          setIsLoadingMore(false);
-        } else {
-          setIsLoading(false);
-        }
-      }
+      })();
+      inFlightRef.current = { promise, controller };
+      return promise;
     },
-    [view, from, to],
+    [],
   );
 
   useEffect(() => {
@@ -106,12 +137,8 @@ export const useAdminOrdersPage = (
     setNextCursor(null);
     void loadOrders();
 
-    return () => {
-      loadRequestIdRef.current += 1;
-      loadControllerRef.current?.abort();
-      loadControllerRef.current = null;
-    };
-  }, [loadOrders, view]);
+    return cancelOrdersRequest;
+  }, [loadOrders, cancelOrdersRequest, queryKey]);
 
   useEffect(() => {
     let refreshTimeout: number | null = null;
@@ -169,8 +196,7 @@ export const useAdminOrdersPage = (
           return;
         }
         // Refresh full records, including version and cancellation metadata.
-        loadRequestIdRef.current += 1;
-        loadControllerRef.current?.abort();
+        cancelOrdersRequest();
         scheduleRefresh();
       },
       onConnected: () => {
@@ -215,7 +241,7 @@ export const useAdminOrdersPage = (
       window.removeEventListener('online', onOnline);
       socket?.disconnect();
     };
-  }, [loadOrders, view]);
+  }, [loadOrders, cancelOrdersRequest, view]);
 
   const loadMore = () => {
     if (!nextCursor || isLoadingMore) return;
@@ -235,15 +261,15 @@ export const useAdminOrdersPage = (
   ) => {
     if (updatesInFlightRef.current.has(orderId) || !navigator.onLine) return;
     updatesInFlightRef.current.add(orderId);
-    const submittedView = queryKey;
+    const submittedView = latestRef.current.queryKey;
     setUpdatingOrderIds((current) => [...current, orderId]);
     setError(null);
 
     try {
       await updateOrderStatus(orderId, status, version, cancellationReason);
-      if (viewRef.current === submittedView) await loadOrders();
+      if (latestRef.current.queryKey === submittedView) await loadOrders();
     } catch (err) {
-      if (viewRef.current !== submittedView) return;
+      if (latestRef.current.queryKey !== submittedView) return;
       await loadOrders();
 
       const requestId =
