@@ -28,8 +28,17 @@ export const useAdminMenuPage = () => {
   const isEditing = useMemo(() => !!editingMenuItemId, [editingMenuItemId]);
 
   const loadMenuItems = useCallback(async (signal: AbortSignal) => {
-    const res = await fetchMenuItems({ page: 1, limit: 100, signal });
-    return res.items;
+    const items = new Map<string, MenuItem>();
+    let page = 1;
+    let totalPages = 1;
+    do {
+      signal.throwIfAborted();
+      const res = await fetchMenuItems({ page, limit: 100, signal });
+      for (const item of res.items) items.set(item.id, item);
+      totalPages = res.totalPages;
+      page += 1;
+    } while (page <= totalPages);
+    return [...items.values()];
   }, []);
 
   const {

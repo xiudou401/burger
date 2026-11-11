@@ -11,6 +11,11 @@ import {
 } from './menu-item.service';
 
 jest.mock('./menu.service', () => ({
+  mutateMenu: jest.fn(async (write) => {
+    const result = await write({});
+    await bumpMenuVersion();
+    return result;
+  }),
   bumpMenuVersion: jest.fn(),
   getMenuVersion: jest.fn(),
 }));

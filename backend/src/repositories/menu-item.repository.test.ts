@@ -80,7 +80,7 @@ describe('menuItemRepository', () => {
         category: 'burger',
         isAvailable: true,
       },
-      { returnDocument: 'after', runValidators: true },
+      { returnDocument: 'after', runValidators: true, session: undefined },
     );
     expect(exec).toHaveBeenCalled();
   });

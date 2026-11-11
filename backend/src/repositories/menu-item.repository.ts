@@ -1,4 +1,4 @@
-import type { SortOrder } from 'mongoose';
+import type { ClientSession, SortOrder } from 'mongoose';
 import { MenuItemModel, type MenuItem } from '../models/menu-item.model';
 
 export type MenuItemQuery = Record<string, unknown>;
@@ -28,8 +28,8 @@ export const menuItemRepository = {
     }).lean();
   },
 
-  findById(menuItemId: string) {
-    return MenuItemModel.findById(menuItemId).lean().exec();
+  findById(menuItemId: string, session?: ClientSession) {
+    return MenuItemModel.findById(menuItemId, null, { session }).lean().exec();
   },
 
   findAllForAnalytics() {
@@ -50,7 +50,10 @@ export const menuItemRepository = {
       | 'category'
       | 'isAvailable'
     >,
+    session?: ClientSession,
   ) {
+    if (session)
+      return MenuItemModel.create([data], { session }).then(([item]) => item);
     return MenuItemModel.create(data);
   },
 
@@ -65,14 +68,16 @@ export const menuItemRepository = {
       | 'category'
       | 'isAvailable'
     >,
+    session?: ClientSession,
   ) {
     return MenuItemModel.findByIdAndUpdate(menuItemId, data, {
       returnDocument: 'after',
       runValidators: true,
+      session,
     }).exec();
   },
 
-  deleteById(menuItemId: string) {
-    return MenuItemModel.findByIdAndDelete(menuItemId).exec();
+  deleteById(menuItemId: string, session?: ClientSession) {
+    return MenuItemModel.findByIdAndDelete(menuItemId, { session }).exec();
   },
 };

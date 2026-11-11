@@ -114,8 +114,8 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   source of payment truth.
 - Authenticated WebSocket admin events for order and menu changes, allowing the
   staff dashboard to refresh without manual reloads.
-- Realtime kitchen board workflow for confirmed, preparing, ready, completed,
-  and cancelled orders.
+- Realtime kitchen board with New, Preparing, and Ready queues, plus a separate
+  order history view for completed, cancelled, and awaiting-payment orders.
 - Customer authentication with Google OAuth and refresh-token recovery.
 - Production security headers, API rate limiting, and stricter authentication
   throttling.
@@ -150,6 +150,24 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   on its order page before the customer continues with their current cart.
 - Role-aware customer/admin routing and auth state managed through a dedicated
   auth provider.
+
+## Admin Order Console
+
+- **Kitchen:** touch-friendly New, Preparing, and Ready queues, ordered oldest
+  first. Staff advance orders with Start preparing, Mark ready, and Complete
+  order. Status updates validate the current order version to prevent stale
+  actions from overwriting another staff member's changes.
+- **Order history:** defaults to completed orders placed today in the Sydney
+  store timezone. A compact toolbar combines order search, separate Completed,
+  Cancelled, and Awaiting payment filters, and an expandable date range.
+  Historical results are grouped by placement date; older results load on demand.
+- **Order search:** accepts the six-character displayed order number or a full
+  24-character order ID. Searches cover all statuses and dates, independently
+  of the history filters. Clearing search restores the selected view and date
+  range. Kitchen search stays collapsed until opened.
+- **Payment review:** awaiting-payment records remain outside the kitchen
+  queues. Payment warnings surface records needing investigation rather than
+  treating every old unpaid order as safe to cancel.
 
 ## Admin Analytics Foundation
 
@@ -338,7 +356,9 @@ not proof of a checkout or payment-system defect.
 ### 1. Install dependencies
 
 Run these commands from the repository root. Node.js 22 and a running local
-MongoDB instance or MongoDB Atlas connection are required.
+MongoDB replica set or MongoDB Atlas connection are required. Menu mutations
+and menu-version increments commit in one transaction; standalone MongoDB
+without transaction support is not supported for menu management.
 
 ```bash
 npm --prefix shared ci
