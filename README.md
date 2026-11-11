@@ -213,6 +213,24 @@ records can be snapshot-backfilled by adding
 `categoryAtPurchase`, `payment.paidAt`, `cancellationReason`, and
 `cancelledAt` fields from existing order and menu data.
 
+The `Refresh Demo Orders` workflow appends 12-24 randomized synthetic orders
+around 09:00 Sydney time each day, including three kitchen samples (New,
+Preparing, and Ready) and completed/cancelled samples. Earlier orders are
+retained; this daily task never deletes or replaces them.
+Two UTC schedules and a Sydney-hour guard handle daylight saving; GitHub
+Actions scheduling can be delayed. Scheduled workflows must be on `main`.
+The workflow requires the production `MONGO_URI` secret and an existing disabled
+`customer@burgerclub.test` account. Manual runs default to a dry run.
+
+`ALLOW_DEMO_ORDER_SEED=true npm run seed:demo-month -- --daily --apply`
+performs the same append. A transaction checks the dedicated account's
+`demo-daily-v1-YYYY-MM-DD-` keys before inserting, so rerunning for the same
+Sydney date does not append another random batch. Daily mode rejects
+`--replace`. The separate manual historical replacement mode remains explicit
+and is not used by the scheduled task. No Stripe payments, emails, or realtime
+events are triggered; refresh an already-open console to see new data. Synthetic sales affect
+the demo analytics and must not be interpreted as commercial revenue.
+
 ## Realtime Operations Flow
 
 The backend also starts a Stripe reconciliation worker when a Stripe secret

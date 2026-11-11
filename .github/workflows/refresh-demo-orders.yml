@@ -1,0 +1,68 @@
+name: Refresh Demo Orders
+
+on:
+  schedule:
+    # Sydney 09:00 is 22:00 UTC in summer and 23:00 UTC in winter.
+    - cron: '0 22,23 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Preview without appending synthetic orders
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-demo-orders
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      JWT_SECRET: demo-refresh-placeholder-secret-at-least-32-characters
+      ALLOW_DEMO_ORDER_SEED: 'true'
+    steps:
+      - name: Check Sydney schedule
+        id: schedule
+        env:
+          MANUAL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          node -e 'const fs = require("fs"); const hour = new Intl.DateTimeFormat("en-AU", { timeZone: "Australia/Sydney", hour: "2-digit", hourCycle: "h23" }).format(new Date()); fs.appendFileSync(process.env.GITHUB_OUTPUT, `run=${process.env.MANUAL === "true" || hour === "09"}\n`);'
+      - name: Checkout
+        if: steps.schedule.outputs.run == 'true'
+        uses: actions/checkout@v6
+      - name: Setup Node.js
+        if: steps.schedule.outputs.run == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            shared/package-lock.json
+            backend/package-lock.json
+      - name: Validate database configuration
+        if: steps.schedule.outputs.run == 'true'
+        run: test -n "$MONGO_URI" || { echo '::error::MONGO_URI secret is required'; exit 1; }
+      - name: Install and build
+        if: steps.schedule.outputs.run == 'true'
+        run: |
+          npm --prefix shared ci
+          npm --prefix shared run build
+          npm --prefix backend ci
+      - name: Append today's synthetic orders
+        if: steps.schedule.outputs.run == 'true'
+        working-directory: backend
+        env:
+          PREVIEW: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          if [[ "$PREVIEW" == "true" ]]; then
+            npm run seed:demo-month -- --daily
+          else
+            npm run seed:demo-month -- --daily --apply
+          fi

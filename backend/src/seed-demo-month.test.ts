@@ -3,6 +3,8 @@ import {
   buildDemoMonthOrders,
   buildDemoKitchenOrders,
   DEMO_MONTH_PREFIX,
+  demoOrderReplacementFilter,
+  buildDemoDailyOrders,
 } from '../scripts/seedDemoMonth';
 import type { MenuItem, MenuItemCategory } from './models/menu-item.model';
 
@@ -34,6 +36,57 @@ const businessDate = (date: Date) =>
   }).format(date);
 
 describe('synthetic monthly orders', () => {
+  it('builds a random daily batch with stable date keys and no real payments', () => {
+    const small = buildDemoDailyOrders(input, () => 0);
+    const large = buildDemoDailyOrders(input, () => 0.99);
+    expect(small).toHaveLength(12);
+    expect(large).toHaveLength(24);
+    expect(small.map((order) => order.checkoutIdempotencyKey)).toEqual(
+      large.slice(0, 12).map((order) => order.checkoutIdempotencyKey),
+    );
+    expect(small.slice(0, 3).map((order) => order.status)).toEqual([
+      'confirmed',
+      'preparing',
+      'ready',
+    ]);
+    for (const order of [...small, ...large]) {
+      expect(businessDate(order.createdAt)).toBe('2026-10-28');
+      expect(order.createdAt.getTime()).toBeLessThanOrEqual(
+        input.now.getTime(),
+      );
+      expect(order.payment.providerPaymentId).toMatch(/^demo_daily_/);
+      expect(order.checkoutUrl).toBeUndefined();
+      expect(order.totalCents).toBe(
+        order.items.reduce((sum, item) => sum + item.subtotalCents, 0),
+      );
+    }
+    expect(small[0].totalCents).not.toBe(large[0].totalCents);
+  });
+
+  it('keeps midnight manual batches on the current Sydney date', () => {
+    const now = new Date('2026-10-27T13:02:00Z');
+    for (const order of buildDemoDailyOrders({ ...input, now }, () => 0.99)) {
+      expect(businessDate(order.createdAt)).toBe('2026-10-28');
+      expect(order.createdAt.getTime()).toBeLessThanOrEqual(now.getTime());
+    }
+  });
+  it('requires the dedicated user and matching synthetic key/provider markers for replacement', () => {
+    const filter = demoOrderReplacementFilter(input.userId);
+    expect(filter.userId).toBe(input.userId);
+    const matches = (key: string, provider: string) =>
+      filter.$or.some(
+        (clause) =>
+          clause.checkoutIdempotencyKey.test(key) &&
+          clause['payment.providerPaymentId'].test(provider),
+      );
+    expect(
+      matches('demo-month-v1-2026-11-12-00', 'demo_month_2026-11-12_0'),
+    ).toBe(true);
+    expect(matches('demo-order-1', 'cs_demo_1')).toBe(true);
+    expect(matches('demo-month-v1-2026-11-12-00', 'cs_test_real')).toBe(false);
+    expect(matches('real-checkout-key', 'demo_month_1')).toBe(false);
+    expect(matches('demo-order-1', 'demo_month_1')).toBe(false);
+  });
   it('adds safe, repeatable kitchen samples without live checkout links', () => {
     const orders = buildDemoKitchenOrders(input);
     expect(orders).toHaveLength(12);
