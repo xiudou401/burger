@@ -74,6 +74,40 @@ const renderOrders = (
   );
 };
 
+test('searches all statuses by order number and clears back to the original view', () => {
+  renderOrders([
+    makeOrder('confirmed'),
+    makeOrder('cancelled'),
+    makeOrder('pending_payment'),
+  ]);
+  fireEvent.change(screen.getByLabelText('Order number'), {
+    target: { value: '#2A094D' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Search orders' }));
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('all', {
+    search: '2a094d',
+  });
+  const results = screen.getByRole('region', { name: 'Order search results' });
+  expect(within(results).getByText('confirmed meal')).toBeInTheDocument();
+  expect(within(results).getByText('cancelled meal')).toBeInTheDocument();
+  expect(within(results).getByText('pending_payment meal')).toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Start preparing' }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Clear order search' }));
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('kitchen', {});
+});
+
+test('rejects invalid order searches before sending them to the backend', () => {
+  renderOrders([]);
+  fireEvent.change(screen.getByLabelText('Order number'), {
+    target: { value: '.*' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Search orders' }));
+  expect(screen.getByRole('alert')).toHaveTextContent('Enter a 6-character');
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('kitchen', {});
+});
+
 test('restores the history view and applied dates from the URL', () => {
   renderOrders(
     [makeOrder('completed')],

@@ -155,6 +155,33 @@ test('resets pagination when date filters change and retains the range on load m
   await waitFor(() => expect(result.current.orders).toHaveLength(1));
 });
 
+test('retains order search on pagination and resets the list when the search changes', async () => {
+  vi.mocked(fetchAdminOrders).mockResolvedValue({
+    orders: [order],
+    nextCursor: 'page-2',
+  });
+  const { result, rerender } = renderHook(
+    ({ search }) => useAdminOrdersPage('all', { search }),
+    { initialProps: { search: '2a094d' } },
+  );
+  await waitFor(() => expect(result.current.hasMoreOrders).toBe(true));
+  await act(async () => result.current.loadMore());
+  expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      view: 'all',
+      search: '2a094d',
+      cursor: 'page-2',
+    }),
+  );
+  rerender({ search: 'abcdef' });
+  await waitFor(() =>
+    expect(fetchAdminOrders).toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: 'abcdef', cursor: undefined }),
+    ),
+  );
+  await waitFor(() => expect(result.current.orders).toHaveLength(1));
+});
+
 test('queries the selected view and refreshes complete versions after realtime changes', async () => {
   const { result, rerender } = renderHook(
     ({ view }) => useAdminOrdersPage(view),

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import AdminLayout from '../components/Admin/AdminLayout';
 import AdminLoadMore from '../components/Admin/AdminLoadMore';
@@ -48,6 +50,13 @@ const getOrdersByStatus = (orders: Order[], status: OrderStatus) =>
 const AdminOrders = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const appliedSearch = searchParams.get('search') ?? '';
+  const [searchInput, setSearchInput] = useState(appliedSearch);
+  const [searchError, setSearchError] = useState('');
+  useEffect(() => {
+    setSearchInput(appliedSearch);
+    setSearchError('');
+  }, [appliedSearch]);
   const selectedView = searchParams.get('view');
   const activeView =
     selectedView === 'past'
@@ -57,6 +66,7 @@ const AdminOrders = () => {
         : 'Kitchen';
   const setActiveView = (title: string) => {
     setSearchParams((current) => {
+      current.delete('search');
       current.set(
         'view',
         title === 'Past orders'
@@ -104,8 +114,9 @@ const AdminOrders = () => {
     const timer = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(timer);
   }, []);
-  const view: AdminOrdersView =
-    activeView === 'Kitchen'
+  const view: AdminOrdersView = appliedSearch
+    ? 'all'
+    : activeView === 'Kitchen'
       ? 'kitchen'
       : activeView === 'Awaiting payment'
         ? 'awaiting_payment'
@@ -124,7 +135,14 @@ const AdminOrders = () => {
     refresh,
     loadMore,
     changeStatus,
-  } = useAdminOrdersPage(view, view === 'past' ? dateRange : {});
+  } = useAdminOrdersPage(
+    view,
+    appliedSearch
+      ? { search: appliedSearch }
+      : view === 'past'
+        ? dateRange
+        : {},
+  );
 
   const renderOrderCard = (order: Order, isCompact = false) => {
     const paymentNotice = getAdminOrderPaymentNotice(order, now);
@@ -244,15 +262,92 @@ const AdminOrders = () => {
 
       {!isLoading && orders.length === 0 && !error && (
         <AdminStatusText>
-          {view === 'past' && (dateRange.from || dateRange.to)
-            ? 'No orders match the selected dates.'
-            : 'No orders yet.'}
+          {appliedSearch
+            ? 'No matching orders found.'
+            : view === 'past' && (dateRange.from || dateRange.to)
+              ? 'No orders match the selected dates.'
+              : 'No orders yet.'}
         </AdminStatusText>
       )}
 
-      <div className={classes.ViewTabs} role="tablist" aria-label="Order views">
-        {['Kitchen', ...SECONDARY_ORDER_GROUPS.map((group) => group.title)].map(
-          (title, index, views) => (
+      <form
+        className={classes.OrderSearch}
+        role="search"
+        aria-label="Order search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const search = searchInput.trim().replace(/^#/, '').toLowerCase();
+          if (!/^(?:[a-f0-9]{6}|[a-f0-9]{24})$/.test(search)) {
+            setSearchError(
+              'Enter a 6-character or full 24-character order number.',
+            );
+            return;
+          }
+          setSearchError('');
+          setSearchParams((current) => {
+            current.set('search', search);
+            return current;
+          });
+        }}
+      >
+        <label htmlFor="order-number-search">Order number</label>
+        <div className={classes.SearchControls}>
+          <input
+            id="order-number-search"
+            type="search"
+            value={searchInput}
+            maxLength={25}
+            placeholder="#2A094D"
+            autoComplete="off"
+            spellCheck={false}
+            aria-invalid={Boolean(searchError)}
+            aria-describedby={searchError ? 'order-search-error' : undefined}
+            onChange={(event) => {
+              setSearchInput(event.target.value);
+              setSearchError('');
+            }}
+          />
+          <button
+            type="submit"
+            aria-label="Search orders"
+            title="Search orders"
+          >
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
+          </button>
+          {(appliedSearch || searchInput) && (
+            <button
+              type="button"
+              aria-label="Clear order search"
+              title="Clear order search"
+              onClick={() => {
+                setSearchInput('');
+                setSearchError('');
+                setSearchParams((current) => {
+                  current.delete('search');
+                  return current;
+                });
+              }}
+            >
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
+        </div>
+        {searchError && (
+          <p id="order-search-error" role="alert">
+            {searchError}
+          </p>
+        )}
+      </form>
+      {!appliedSearch && (
+        <div
+          className={classes.ViewTabs}
+          role="tablist"
+          aria-label="Order views"
+        >
+          {[
+            'Kitchen',
+            ...SECONDARY_ORDER_GROUPS.map((group) => group.title),
+          ].map((title, index, views) => (
             <button
               type="button"
               role="tab"
@@ -284,14 +379,31 @@ const AdminOrders = () => {
             >
               {title}
             </button>
-          ),
-        )}
-      </div>
+          ))}
+        </div>
+      )}
       <div
         id="order-view-panel"
-        role="tabpanel"
-        aria-labelledby={`order-view-${['Kitchen', ...SECONDARY_ORDER_GROUPS.map((group) => group.title)].indexOf(activeView)}`}
+        role={appliedSearch ? 'region' : 'tabpanel'}
+        aria-label={appliedSearch ? 'Order search results' : undefined}
+        aria-labelledby={
+          appliedSearch
+            ? undefined
+            : `order-view-${['Kitchen', ...SECONDARY_ORDER_GROUPS.map((group) => group.title)].indexOf(activeView)}`
+        }
       >
+        {appliedSearch && (
+          <section className={classes.RecentSection}>
+            <div className={classes.RecentHeader}>
+              <h2 className={classes.RecentTitle}>
+                Results for #{appliedSearch.toUpperCase()}
+              </h2>
+            </div>
+            <div className={classes.RecentGrid}>
+              {orders.map((order) => renderOrderCard(order, true))}
+            </div>
+          </section>
+        )}
         {view === 'past' && (
           <form
             className={classes.DateFilters}
@@ -341,7 +453,7 @@ const AdminOrders = () => {
             {dateError && <p role="alert">{dateError}</p>}
           </form>
         )}
-        {activeView === 'Kitchen' && (
+        {!appliedSearch && activeView === 'Kitchen' && (
           <div className={classes.Board}>
             {KITCHEN_COLUMNS.map((column) => {
               const columnOrders = getOrdersByStatus(orders, column.status);
@@ -369,7 +481,7 @@ const AdminOrders = () => {
         )}
 
         {SECONDARY_ORDER_GROUPS.map((group) => {
-          if (activeView !== group.title) return null;
+          if (appliedSearch || activeView !== group.title) return null;
           const groupOrders = orders.filter((order) =>
             group.statuses.includes(order.status),
           );

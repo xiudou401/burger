@@ -28,9 +28,9 @@ type InFlightEntry = {
 
 export const useAdminOrdersPage = (
   view: AdminOrdersView = 'kitchen',
-  range: { from?: string; to?: string } = {},
+  range: { from?: string; to?: string; search?: string } = {},
 ) => {
-  const { from, to } = range;
+  const { from, to, search } = range;
   const user = useAuth((ctx) => ctx.user);
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,14 +44,14 @@ export const useAdminOrdersPage = (
     'connecting' | 'live' | 'reconnecting' | 'offline'
   >(navigator.onLine ? 'connecting' : 'offline');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const queryKey = `${view}:${from ?? ''}:${to ?? ''}`;
+  const queryKey = `${view}:${from ?? ''}:${to ?? ''}:${search ?? ''}`;
   const requestIdRef = useRef(0);
   const inFlightRef = useRef<InFlightEntry | null>(null);
-  const latestRef = useRef({ view, from, to, queryKey });
+  const latestRef = useRef({ view, from, to, search, queryKey });
 
   useLayoutEffect(() => {
-    latestRef.current = { view, from, to, queryKey };
-  }, [view, from, to, queryKey]);
+    latestRef.current = { view, from, to, search, queryKey };
+  }, [view, from, to, search, queryKey]);
 
   const cancelOrdersRequest = useCallback(() => {
     requestIdRef.current += 1;
@@ -71,6 +71,7 @@ export const useAdminOrdersPage = (
         view: snapshotView,
         from: snapshotFrom,
         to: snapshotTo,
+        search: snapshotSearch,
         queryKey: snapshotQueryKey,
       } = latestRef.current;
       inFlightRef.current?.controller.abort();
@@ -101,6 +102,7 @@ export const useAdminOrdersPage = (
             view: snapshotView,
             ...(snapshotFrom ? { from: snapshotFrom } : {}),
             ...(snapshotTo ? { to: snapshotTo } : {}),
+            ...(snapshotSearch ? { search: snapshotSearch } : {}),
           });
 
           if (!isRequestActive()) return;
