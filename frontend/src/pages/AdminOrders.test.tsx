@@ -81,6 +81,8 @@ test('searches all statuses by order number and clears back to the original view
     makeOrder('cancelled'),
     makeOrder('pending_payment'),
   ]);
+  expect(screen.getByLabelText('Order number')).not.toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Open order search' }));
   fireEvent.change(screen.getByLabelText('Order number'), {
     target: { value: '#2A094D' },
   });
@@ -101,6 +103,7 @@ test('searches all statuses by order number and clears back to the original view
 
 test('rejects invalid order searches before sending them to the backend', () => {
   renderOrders([]);
+  fireEvent.click(screen.getByRole('button', { name: 'Open order search' }));
   fireEvent.change(screen.getByLabelText('Order number'), {
     target: { value: '.*' },
   });
@@ -235,9 +238,9 @@ test('separates awaiting payment and past orders from the kitchen lanes', () => 
   fireEvent.change(screen.getByLabelText('Order status'), {
     target: { value: 'pending_payment' },
   });
-  const awaiting = screen
-    .getByRole('heading', { name: 'Order history' })
-    .closest('section')!;
+  const awaiting = screen.getByRole('region', {
+    name: 'Order history results',
+  });
   expect(
     within(awaiting).getByText('pending_payment meal'),
   ).toBeInTheDocument();
@@ -247,9 +250,7 @@ test('separates awaiting payment and past orders from the kitchen lanes', () => 
   fireEvent.change(screen.getByLabelText('Order status'), {
     target: { value: 'completed' },
   });
-  const past = screen
-    .getByRole('heading', { name: 'Order history' })
-    .closest('section')!;
+  const past = screen.getByRole('region', { name: 'Order history results' });
   expect(within(past).getByText('completed meal')).toBeInTheDocument();
   expect(within(past).queryByText('cancelled meal')).not.toBeInTheDocument();
   fireEvent.change(screen.getByLabelText('Order status'), {
@@ -285,7 +286,9 @@ test('supports keyboard switching and shows empty views', () => {
     key: 'ArrowRight',
   });
   expect(screen.getByRole('tab', { name: 'Order history' })).toHaveFocus();
-  expect(screen.getByText('No orders in this view.')).toBeInTheDocument();
+  expect(
+    screen.getByText('No orders match the selected dates.'),
+  ).toBeInTheDocument();
 });
 
 test('groups historical orders by placement date and applies or clears a date range', () => {

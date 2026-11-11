@@ -49,6 +49,7 @@ const AdminOrders = () => {
   const appliedSearch = searchParams.get('search') ?? '';
   const [searchInput, setSearchInput] = useState(appliedSearch);
   const [searchError, setSearchError] = useState('');
+  const [searchOpen, setSearchOpen] = useState(Boolean(appliedSearch));
   useEffect(() => {
     setSearchInput(appliedSearch);
     setSearchError('');
@@ -238,325 +239,354 @@ const AdminOrders = () => {
           }}
         />
       )}
-      {isLoading && <AdminStatusText>Loading orders...</AdminStatusText>}
-      {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
-      {hasUpdates && (
-        <AdminStatusText>
-          Orders may have changed. Refresh to load the latest orders.
-        </AdminStatusText>
-      )}
-      {!isOnline && (
-        <AdminStatusText tone="error">
-          Offline. Order updates are paused. Displayed orders may be out of
-          date.
-        </AdminStatusText>
-      )}
-
-      {!isLoading && orders.length === 0 && !error && (
-        <AdminStatusText>
-          {appliedSearch
-            ? 'No matching orders found.'
-            : activeView === 'Order history' && (dateRange.from || dateRange.to)
-              ? 'No orders match the selected dates.'
-              : 'No orders yet.'}
-        </AdminStatusText>
-      )}
-
-      <form
-        className={classes.OrderSearch}
-        role="search"
-        aria-label="Order search"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const search = searchInput.trim().replace(/^#/, '').toLowerCase();
-          if (!/^(?:[a-f0-9]{6}|[a-f0-9]{24})$/.test(search)) {
-            setSearchError(
-              'Enter a 6-character or full 24-character order number.',
-            );
-            return;
-          }
-          setSearchError('');
-          setSearchParams((current) => {
-            current.set('search', search);
-            return current;
-          });
-        }}
-      >
-        <label htmlFor="order-number-search">Order number</label>
-        <div className={classes.SearchControls}>
-          <input
-            id="order-number-search"
-            type="search"
-            value={searchInput}
-            maxLength={25}
-            placeholder="#2A094D"
-            autoComplete="off"
-            spellCheck={false}
-            aria-invalid={Boolean(searchError)}
-            aria-describedby={searchError ? 'order-search-error' : undefined}
-            onChange={(event) => {
-              setSearchInput(event.target.value);
-              setSearchError('');
-            }}
-          />
-          <button
-            type="submit"
-            aria-label="Search orders"
-            title="Search orders"
-          >
-            <FontAwesomeIcon icon={faMagnifyingGlass} />
-          </button>
-          {(appliedSearch || searchInput) && (
-            <button
-              type="button"
-              aria-label="Clear order search"
-              title="Clear order search"
-              onClick={() => {
-                setSearchInput('');
-                setSearchError('');
-                setSearchParams((current) => {
-                  current.delete('search');
-                  return current;
-                });
-              }}
-            >
-              <FontAwesomeIcon icon={faXmark} />
-            </button>
+      <div className={classes.OrdersWorkspace}>
+        <div className={classes.Feedback}>
+          {isLoading && <AdminStatusText>Loading orders...</AdminStatusText>}
+          {error && <AdminStatusText tone="error">{error}</AdminStatusText>}
+          {hasUpdates && (
+            <AdminStatusText>
+              Orders may have changed. Refresh to load the latest orders.
+            </AdminStatusText>
           )}
+          {!isOnline && (
+            <AdminStatusText tone="error">
+              Offline. Order updates are paused. Displayed orders may be out of
+              date.
+            </AdminStatusText>
+          )}
+
+          {!isLoading &&
+            !error &&
+            (appliedSearch || activeView === 'Kitchen'
+              ? orders.length === 0
+              : !orders.some((order) => order.status === historyState)) && (
+              <AdminStatusText>
+                {appliedSearch
+                  ? 'No matching orders found.'
+                  : activeView === 'Order history' &&
+                      (dateRange.from || dateRange.to)
+                    ? 'No orders match the selected dates.'
+                    : 'No orders yet.'}
+              </AdminStatusText>
+            )}
         </div>
-        {searchError && (
-          <p id="order-search-error" role="alert">
-            {searchError}
-          </p>
-        )}
-      </form>
-      {!appliedSearch && (
-        <div
-          className={classes.ViewTabs}
-          role="tablist"
-          aria-label="Order views"
-        >
-          {[
-            'Kitchen',
-            ...SECONDARY_ORDER_GROUPS.map((group) => group.title),
-          ].map((title, index, views) => (
-            <button
-              type="button"
-              role="tab"
-              id={`order-view-${index}`}
-              aria-controls="order-view-panel"
-              aria-selected={activeView === title}
-              tabIndex={activeView === title ? 0 : -1}
-              key={title}
-              onClick={() => setActiveView(title)}
-              onKeyDown={(event) => {
-                const nextIndex =
-                  event.key === 'ArrowRight'
-                    ? (index + 1) % views.length
-                    : event.key === 'ArrowLeft'
-                      ? (index + views.length - 1) % views.length
-                      : event.key === 'Home'
-                        ? 0
-                        : event.key === 'End'
-                          ? views.length - 1
-                          : null;
-                if (nextIndex === null) return;
-                event.preventDefault();
-                setActiveView(views[nextIndex]);
-                document.getElementById(`order-view-${nextIndex}`)?.focus();
-              }}
-            >
-              {title}
-            </button>
-          ))}
-        </div>
-      )}
-      <div
-        id="order-view-panel"
-        role={appliedSearch ? 'region' : 'tabpanel'}
-        aria-label={appliedSearch ? 'Order search results' : undefined}
-        aria-labelledby={
-          appliedSearch
-            ? undefined
-            : `order-view-${['Kitchen', ...SECONDARY_ORDER_GROUPS.map((group) => group.title)].indexOf(activeView)}`
-        }
-      >
-        {appliedSearch && (
-          <section className={classes.RecentSection}>
-            <div className={classes.RecentHeader}>
-              <h2 className={classes.RecentTitle}>
-                Results for #{appliedSearch.toUpperCase()}
-              </h2>
-            </div>
-            <div className={classes.RecentGrid}>
-              {orders.map((order) => renderOrderCard(order, true))}
-            </div>
-          </section>
-        )}
-        {!appliedSearch && activeView === 'Order history' && (
-          <div className={classes.HistoryState}>
-            <label htmlFor="history-order-state">Order status</label>
-            <select
-              id="history-order-state"
-              value={historyState}
-              onChange={(event) => {
-                const state = event.target.value;
-                setSearchParams((current) => {
-                  current.set('view', 'past');
-                  if (state !== 'completed') current.set('state', state);
-                  else current.delete('state');
-                  return current;
-                });
-              }}
-            >
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="pending_payment">Awaiting payment</option>
-            </select>
-          </div>
-        )}
-        {!appliedSearch && activeView === 'Order history' && (
-          <details
-            className={classes.HistoryDates}
-            open={
-              searchParams.has('from') || searchParams.has('through')
-                ? true
-                : undefined
+        <form
+          className={classes.OrderSearch}
+          hidden={activeView === 'Kitchen' && !searchOpen && !appliedSearch}
+          role="search"
+          aria-label="Order search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const search = searchInput.trim().replace(/^#/, '').toLowerCase();
+            if (!/^(?:[a-f0-9]{6}|[a-f0-9]{24})$/.test(search)) {
+              setSearchError(
+                'Enter a 6-character or full 24-character order number.',
+              );
+              return;
             }
+            setSearchError('');
+            setSearchParams((current) => {
+              current.set('search', search);
+              return current;
+            });
+          }}
+        >
+          <label htmlFor="order-number-search">Order number</label>
+          <div className={classes.SearchControls}>
+            <input
+              id="order-number-search"
+              type="search"
+              value={searchInput}
+              maxLength={25}
+              placeholder="#2A094D"
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={Boolean(searchError)}
+              aria-describedby={searchError ? 'order-search-error' : undefined}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+                setSearchError('');
+              }}
+            />
+            <button
+              type="submit"
+              aria-label="Search orders"
+              title="Search orders"
+            >
+              <FontAwesomeIcon icon={faMagnifyingGlass} />
+            </button>
+            {(appliedSearch || searchInput) && (
+              <button
+                type="button"
+                aria-label="Clear order search"
+                title="Clear order search"
+                onClick={() => {
+                  setSearchInput('');
+                  setSearchError('');
+                  setSearchParams((current) => {
+                    current.delete('search');
+                    return current;
+                  });
+                }}
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            )}
+          </div>
+          {searchError && (
+            <p id="order-search-error" role="alert">
+              {searchError}
+            </p>
+          )}
+        </form>
+        <div className={classes.Navigation}>
+          <div
+            className={classes.ViewTabs}
+            role="tablist"
+            aria-label="Order views"
           >
-            <summary>
-              {appliedFrom === today && appliedThrough === today
-                ? 'Today'
-                : `${appliedFrom} to ${appliedThrough}`}
-            </summary>
-            <form
-              className={classes.DateFilters}
-              onSubmit={(event) => {
-                event.preventDefault();
-                try {
-                  if (!fromDate || !throughDate)
-                    throw new Error(
-                      'Choose both a start date and an end date.',
-                    );
-                  orderDateRange(fromDate, throughDate);
-                  applyDateFilters();
-                  setDateError('');
-                } catch (err) {
-                  setDateError(
-                    err instanceof Error
-                      ? err.message
-                      : 'Choose valid order dates.',
-                  );
+            {[
+              'Kitchen',
+              ...SECONDARY_ORDER_GROUPS.map((group) => group.title),
+            ].map((title, index, views) => (
+              <button
+                type="button"
+                role="tab"
+                id={`order-view-${index}`}
+                aria-controls="order-view-panel"
+                aria-selected={activeView === title}
+                tabIndex={activeView === title ? 0 : -1}
+                key={title}
+                onClick={() => setActiveView(title)}
+                onKeyDown={(event) => {
+                  const nextIndex =
+                    event.key === 'ArrowRight'
+                      ? (index + 1) % views.length
+                      : event.key === 'ArrowLeft'
+                        ? (index + views.length - 1) % views.length
+                        : event.key === 'Home'
+                          ? 0
+                          : event.key === 'End'
+                            ? views.length - 1
+                            : null;
+                  if (nextIndex === null) return;
+                  event.preventDefault();
+                  setActiveView(views[nextIndex]);
+                  document.getElementById(`order-view-${nextIndex}`)?.focus();
+                }}
+              >
+                {title}
+              </button>
+            ))}
+          </div>
+          {activeView === 'Kitchen' && (
+            <button
+              className={classes.SearchToggle}
+              type="button"
+              aria-label={
+                searchOpen ? 'Hide order search' : 'Open order search'
+              }
+              aria-expanded={searchOpen || Boolean(appliedSearch)}
+              title={searchOpen ? 'Hide order search' : 'Open order search'}
+              onClick={() => {
+                setSearchOpen(!searchOpen);
+                if (searchOpen) {
+                  setSearchInput('');
+                  setSearchParams((current) => {
+                    current.delete('search');
+                    return current;
+                  });
                 }
               }}
             >
-              <label>
-                From date
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(event) => setFromDate(event.target.value)}
-                />
-              </label>
-              <label>
-                To date
-                <input
-                  type="date"
-                  value={throughDate}
-                  onChange={(event) => setThroughDate(event.target.value)}
-                />
-              </label>
-              <button type="submit">Apply dates</button>
-              <button
-                type="button"
-                onClick={() => {
-                  setFromDate(today);
-                  setThroughDate(today);
-                  applyDateFilters(true);
-                  setDateError('');
-                }}
-              >
-                Today
-              </button>
-              {dateError && <p role="alert">{dateError}</p>}
-            </form>
-          </details>
-        )}
-        {!appliedSearch && activeView === 'Kitchen' && (
-          <div className={classes.Board}>
-            {KITCHEN_COLUMNS.map((column) => {
-              const columnOrders = getOrdersByStatus(orders, column.status);
-
-              return (
-                <section className={classes.Lane} key={column.status}>
-                  <div className={classes.LaneHeader}>
-                    <h2 className={classes.LaneTitle}>{column.title}</h2>
-                    <span className={classes.LaneCount}>
-                      {columnOrders.length}
-                    </span>
-                  </div>
-
-                  <div className={classes.LaneBody}>
-                    {columnOrders.length > 0 ? (
-                      columnOrders.map((order) => renderOrderCard(order))
-                    ) : (
-                      <p className={classes.EmptyLane}>Clear</p>
-                    )}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        )}
-
-        {SECONDARY_ORDER_GROUPS.map((group) => {
-          if (appliedSearch || activeView !== group.title) return null;
-          const groupOrders = orders.filter(
-            (order) => order.status === historyState,
-          );
-          const days = new Map<string, Order[]>();
-          for (const order of groupOrders) {
-            const key = orderDayKey(order.createdAt) ?? 'unknown';
-            days.set(key, [...(days.get(key) ?? []), order]);
+              <FontAwesomeIcon
+                icon={searchOpen ? faXmark : faMagnifyingGlass}
+              />
+            </button>
+          )}
+        </div>
+        <div
+          id="order-view-panel"
+          role={appliedSearch ? 'region' : 'tabpanel'}
+          aria-label={appliedSearch ? 'Order search results' : undefined}
+          aria-labelledby={
+            appliedSearch
+              ? undefined
+              : `order-view-${['Kitchen', ...SECONDARY_ORDER_GROUPS.map((group) => group.title)].indexOf(activeView)}`
           }
-          return (
-            <section className={classes.RecentSection} key={group.title}>
+        >
+          {appliedSearch && (
+            <section className={classes.RecentSection}>
               <div className={classes.RecentHeader}>
-                <h2 className={classes.RecentTitle}>{group.title}</h2>
-                <span className={classes.LaneCount}>{groupOrders.length}</span>
+                <h2 className={classes.RecentTitle}>
+                  Results for #{appliedSearch.toUpperCase()}
+                </h2>
               </div>
-              {view !== 'awaiting_payment' ? (
-                [...days].map(([key, dayOrders]) => (
-                  <section className={classes.DayGroup} key={key}>
-                    <h3>
-                      <time dateTime={key === 'unknown' ? undefined : key}>
-                        {formatOrderDay(dayOrders[0].createdAt, now)}
-                      </time>
-                    </h3>
-                    <div className={classes.RecentGrid}>
-                      {dayOrders.map((order) => renderOrderCard(order, true))}
-                    </div>
-                  </section>
-                ))
-              ) : (
-                <div className={classes.RecentGrid}>
-                  {groupOrders.map((order) => renderOrderCard(order, true))}
-                </div>
-              )}
-              <div>
-                {groupOrders.length === 0 && (
-                  <AdminStatusText>No orders in this view.</AdminStatusText>
-                )}
+              <div className={classes.RecentGrid}>
+                {orders.map((order) => renderOrderCard(order, true))}
               </div>
             </section>
-          );
-        })}
+          )}
+          {!appliedSearch && activeView === 'Order history' && (
+            <div className={classes.HistoryState}>
+              <label htmlFor="history-order-state">Order status</label>
+              <select
+                id="history-order-state"
+                value={historyState}
+                onChange={(event) => {
+                  const state = event.target.value;
+                  setSearchParams((current) => {
+                    current.set('view', 'past');
+                    if (state !== 'completed') current.set('state', state);
+                    else current.delete('state');
+                    return current;
+                  });
+                }}
+              >
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="pending_payment">Awaiting payment</option>
+              </select>
+            </div>
+          )}
+          {!appliedSearch && activeView === 'Order history' && (
+            <details
+              className={classes.HistoryDates}
+              open={
+                searchParams.has('from') || searchParams.has('through')
+                  ? true
+                  : undefined
+              }
+            >
+              <summary>
+                {appliedFrom === today && appliedThrough === today
+                  ? 'Today'
+                  : `${appliedFrom} to ${appliedThrough}`}
+              </summary>
+              <form
+                className={classes.DateFilters}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  try {
+                    if (!fromDate || !throughDate)
+                      throw new Error(
+                        'Choose both a start date and an end date.',
+                      );
+                    orderDateRange(fromDate, throughDate);
+                    applyDateFilters();
+                    setDateError('');
+                  } catch (err) {
+                    setDateError(
+                      err instanceof Error
+                        ? err.message
+                        : 'Choose valid order dates.',
+                    );
+                  }
+                }}
+              >
+                <label>
+                  From date
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(event) => setFromDate(event.target.value)}
+                  />
+                </label>
+                <label>
+                  To date
+                  <input
+                    type="date"
+                    value={throughDate}
+                    onChange={(event) => setThroughDate(event.target.value)}
+                  />
+                </label>
+                <button type="submit">Apply dates</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFromDate(today);
+                    setThroughDate(today);
+                    applyDateFilters(true);
+                    setDateError('');
+                  }}
+                >
+                  Today
+                </button>
+                {dateError && <p role="alert">{dateError}</p>}
+              </form>
+            </details>
+          )}
+          {!appliedSearch && activeView === 'Kitchen' && (
+            <div className={classes.Board}>
+              {KITCHEN_COLUMNS.map((column) => {
+                const columnOrders = getOrdersByStatus(orders, column.status);
 
-        <AdminLoadMore
-          hasMore={hasMoreOrders}
-          isLoading={isLoadingMore}
-          onLoadMore={loadMore}
-        />
+                return (
+                  <section className={classes.Lane} key={column.status}>
+                    <div className={classes.LaneHeader}>
+                      <h2 className={classes.LaneTitle}>{column.title}</h2>
+                      <span className={classes.LaneCount}>
+                        {columnOrders.length}
+                      </span>
+                    </div>
+
+                    <div className={classes.LaneBody}>
+                      {columnOrders.length > 0 ? (
+                        columnOrders.map((order) => renderOrderCard(order))
+                      ) : (
+                        <p className={classes.EmptyLane}>Clear</p>
+                      )}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          )}
+
+          {SECONDARY_ORDER_GROUPS.map((group) => {
+            if (appliedSearch || activeView !== group.title) return null;
+            const groupOrders = orders.filter(
+              (order) => order.status === historyState,
+            );
+            const days = new Map<string, Order[]>();
+            for (const order of groupOrders) {
+              const key = orderDayKey(order.createdAt) ?? 'unknown';
+              days.set(key, [...(days.get(key) ?? []), order]);
+            }
+            return (
+              <section
+                className={classes.RecentSection}
+                aria-label="Order history results"
+                key={group.title}
+              >
+                {view !== 'awaiting_payment' ? (
+                  [...days].map(([key, dayOrders]) => (
+                    <section className={classes.DayGroup} key={key}>
+                      <h3>
+                        <time dateTime={key === 'unknown' ? undefined : key}>
+                          {formatOrderDay(dayOrders[0].createdAt, now)}
+                        </time>
+                      </h3>
+                      <div className={classes.RecentGrid}>
+                        {dayOrders.map((order) => renderOrderCard(order, true))}
+                      </div>
+                    </section>
+                  ))
+                ) : (
+                  <div className={classes.RecentGrid}>
+                    {groupOrders.map((order) => renderOrderCard(order, true))}
+                  </div>
+                )}
+              </section>
+            );
+          })}
+
+          <AdminLoadMore
+            hasMore={hasMoreOrders}
+            isLoading={isLoadingMore}
+            onLoadMore={loadMore}
+          />
+        </div>
       </div>
     </AdminLayout>
   );

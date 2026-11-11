@@ -3,7 +3,7 @@ import { BaseError } from '../errors/BaseError';
 import { ServiceError } from '../errors/ServiceError';
 
 import type { SortOrder } from 'mongoose';
-import { bumpMenuVersion, getMenuVersion } from './menu.service';
+import { mutateMenu, getMenuVersion } from './menu.service';
 import {
   menuItemRepository,
   type MenuItemQuery as MenuItemMongoQuery,
@@ -160,10 +160,10 @@ export const createMenuItem = async (
   payload: MenuItemPayload,
   actor?: AuditActor,
 ) => {
-  const menuItem = await menuItemRepository.create(payload);
+  const menuItem = await mutateMenu((session) =>
+    menuItemRepository.create(payload, session),
+  );
   const publicMenuItem = toPublicMenuItem(menuItem);
-
-  await bumpMenuVersion();
 
   if (actor) {
     await recordAuditLog({
@@ -184,16 +184,21 @@ export const updateMenuItem = async (
   payload: MenuItemPayload,
   actor?: AuditActor,
 ) => {
-  const previousMenuItem = await menuItemRepository.findById(menuItemId);
-  const menuItem = await menuItemRepository.updateById(menuItemId, payload);
-
-  if (!menuItem) {
-    throw new ServiceError('Menu item not found', 404);
-  }
+  const { previousMenuItem, menuItem } = await mutateMenu(async (session) => {
+    const previousMenuItem = await menuItemRepository.findById(
+      menuItemId,
+      session,
+    );
+    const menuItem = await menuItemRepository.updateById(
+      menuItemId,
+      payload,
+      session,
+    );
+    if (!menuItem) throw new ServiceError('Menu item not found', 404);
+    return { previousMenuItem, menuItem };
+  });
 
   const publicMenuItem = toPublicMenuItem(menuItem);
-
-  await bumpMenuVersion();
 
   if (actor) {
     await recordAuditLog({
@@ -214,15 +219,13 @@ export const deleteMenuItem = async (
   menuItemId: string,
   actor?: AuditActor,
 ) => {
-  const menuItem = await menuItemRepository.deleteById(menuItemId);
-
-  if (!menuItem) {
-    throw new ServiceError('Menu item not found', 404);
-  }
+  const menuItem = await mutateMenu(async (session) => {
+    const item = await menuItemRepository.deleteById(menuItemId, session);
+    if (!item) throw new ServiceError('Menu item not found', 404);
+    return item;
+  });
 
   const publicMenuItem = toPublicMenuItem(menuItem);
-
-  await bumpMenuVersion();
 
   if (actor) {
     await recordAuditLog({

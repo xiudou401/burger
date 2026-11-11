@@ -1,4 +1,11 @@
-import { ChangeEvent, DragEvent, FormEvent, useState } from 'react';
+import {
+  ChangeEvent,
+  DragEvent,
+  FormEvent,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import AdminButton from '../components/Admin/AdminButton';
 import AdminDialog from '../components/Admin/AdminDialog';
 import AdminFormField from '../components/Admin/AdminFormField';
@@ -35,9 +42,18 @@ const AdminMenuItemDialog = ({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const uploadActive = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const uploadImage = async (file?: File) => {
-    if (!file) return;
+    if (!file || uploadActive.current) return;
+    uploadActive.current = true;
 
     setIsUploadingImage(true);
     setIsDraggingImage(false);
@@ -45,15 +61,18 @@ const AdminMenuItemDialog = ({
 
     try {
       const imageUrl = await uploadMenuImageFile(file);
+      if (!mounted.current) return;
       updateForm('image', imageUrl);
     } catch (uploadFailure) {
+      if (!mounted.current) return;
       setUploadError(
         uploadFailure instanceof Error
           ? uploadFailure.message
           : 'Image upload failed',
       );
     } finally {
-      setIsUploadingImage(false);
+      uploadActive.current = false;
+      if (mounted.current) setIsUploadingImage(false);
     }
   };
 
@@ -92,7 +111,16 @@ const AdminMenuItemDialog = ({
       onClose={onClose}
       closeDisabled={isSubmitting}
     >
-      <form className={classes.Form} onSubmit={onSubmit}>
+      <form
+        className={classes.Form}
+        onSubmit={(event) => {
+          if (uploadActive.current) {
+            event.preventDefault();
+            return;
+          }
+          void onSubmit(event);
+        }}
+      >
         <AdminFormField
           label="Name"
           htmlFor="menu-item-name"
@@ -222,7 +250,10 @@ const AdminMenuItemDialog = ({
         {error && <p className={classes.Error}>{error}</p>}
 
         <div className={classes.FormActions}>
-          <AdminButton disabled={isSubmitting} fullWidthOnMobile>
+          <AdminButton
+            disabled={isSubmitting || isUploadingImage}
+            fullWidthOnMobile
+          >
             {isSubmitting
               ? 'Saving...'
               : isEditing
