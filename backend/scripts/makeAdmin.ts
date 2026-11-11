@@ -16,7 +16,7 @@ if (!email || !email.includes('@')) {
   const user = await UserModel.findOneAndUpdate(
     { email },
     { $set: { role: 'admin' } },
-    { new: true },
+    { returnDocument: 'after' },
   ).exec();
 
   if (!user) {

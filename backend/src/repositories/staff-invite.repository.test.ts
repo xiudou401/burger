@@ -41,7 +41,7 @@ describe('staffInviteRepository', () => {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     );
     expect(select).toHaveBeenCalledWith('+tokenHash');
@@ -73,7 +73,7 @@ describe('staffInviteRepository', () => {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     );
     expect(exec).toHaveBeenCalled();

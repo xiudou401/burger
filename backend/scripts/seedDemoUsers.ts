@@ -38,7 +38,7 @@ const demoUsers = [
           phoneVerified: false,
         },
       },
-      { new: true, upsert: true },
+      { returnDocument: 'after', upsert: true },
     ).exec();
 
     console.log(`Demo ${user.role} ready: ${user.email}`);

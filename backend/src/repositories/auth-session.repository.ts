@@ -40,7 +40,7 @@ export const authSessionRepository = {
         rotatedAt: now,
         lastUsedAt: now,
       },
-      { new: true },
+      { returnDocument: 'after' },
     )
       .select('+refreshTokenHash')
       .exec();
@@ -57,7 +57,7 @@ export const authSessionRepository = {
         familyId,
         replacedBySessionId: new Types.ObjectId(replacementSessionId),
       },
-      { new: true },
+      { returnDocument: 'after' },
     ).exec();
   },
 

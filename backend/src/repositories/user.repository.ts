@@ -52,7 +52,7 @@ export const userRepository = {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     ).exec();
   },
@@ -87,7 +87,7 @@ export const userRepository = {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     ).exec();
   },
@@ -131,7 +131,7 @@ export const userRepository = {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     ).exec();
   },

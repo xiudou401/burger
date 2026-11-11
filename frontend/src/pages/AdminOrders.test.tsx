@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { useAdminOrdersPage } from './hooks/useAdminOrdersPage';
 import type { Order, OrderStatus } from '../types/order';
 import AdminOrders from './AdminOrders';
+import { orderDateRange, orderDayKey } from '../utils/order-date';
 
 vi.mock('./hooks/useAdminOrdersPage', () => ({ useAdminOrdersPage: vi.fn() }));
 vi.mock('../components/Admin/AdminLayout', () => ({
@@ -114,13 +115,87 @@ test('restores the history view and applied dates from the URL', () => {
     false,
     '/admin/orders?view=past&from=2026-01-01&through=2026-01-02',
   );
-  expect(screen.getByRole('tab', { name: 'Past orders' })).toHaveAttribute(
+  expect(screen.getByRole('tab', { name: 'Order history' })).toHaveAttribute(
     'aria-selected',
     'true',
   );
   expect(screen.getByLabelText('From date')).toHaveValue('2026-01-01');
   expect(screen.getByLabelText('To date')).toHaveValue('2026-01-02');
-  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('completed', {
+    from: '2025-12-31T13:00:00.000Z',
+    to: '2026-01-02T13:00:00.000Z',
+  });
+});
+
+test('defaults history to today in Sydney with collapsed date controls', () => {
+  const clock = vi
+    .spyOn(Date, 'now')
+    .mockReturnValue(Date.parse('2026-11-10T13:30:00Z'));
+  try {
+    renderOrders([], false, '/admin/orders?view=past');
+    expect(useAdminOrdersPage).toHaveBeenLastCalledWith('completed', {
+      from: '2026-11-10T13:00:00.000Z',
+      to: '2026-11-11T13:00:00.000Z',
+    });
+    expect(
+      screen.getByText('Today', { selector: 'summary' }).closest('details'),
+    ).not.toHaveAttribute('open');
+    expect(
+      screen.getByRole('button', { name: 'Apply dates' }),
+    ).not.toBeVisible();
+  } finally {
+    clock.mockRestore();
+  }
+});
+
+test('keeps order-number search independent of history dates', () => {
+  renderOrders(
+    [],
+    false,
+    '/admin/orders?view=past&from=2026-01-01&through=2026-01-02&search=abcdef',
+  );
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('all', {
+    search: 'abcdef',
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Clear order search' }));
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('completed', {
+    from: '2025-12-31T13:00:00.000Z',
+    to: '2026-01-02T13:00:00.000Z',
+  });
+});
+
+test('invalid history URL dates fall back to today rather than all dates', () => {
+  renderOrders(
+    [],
+    false,
+    '/admin/orders?view=past&from=invalid&through=invalid',
+  );
+  const today = orderDayKey(Date.now())!;
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith(
+    'completed',
+    orderDateRange(today, today),
+  );
+});
+
+test('opens legacy awaiting-payment links as a history filter with preserved dates', () => {
+  renderOrders(
+    [makeOrder('pending_payment')],
+    false,
+    '/admin/orders?view=awaiting_payment&from=2026-01-01&through=2026-01-02',
+  );
+  expect(screen.getByRole('tab', { name: 'Order history' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  expect(screen.getByLabelText('Order status')).toHaveValue('pending_payment');
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('awaiting_payment', {
+    from: '2025-12-31T13:00:00.000Z',
+    to: '2026-01-02T13:00:00.000Z',
+  });
+  fireEvent.change(screen.getByLabelText('Order status'), {
+    target: { value: 'completed' },
+  });
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('completed', {
     from: '2025-12-31T13:00:00.000Z',
     to: '2026-01-02T13:00:00.000Z',
   });
@@ -153,9 +228,15 @@ test('separates awaiting payment and past orders from the kitchen lanes', () => 
       .closest('section')!;
     expect(within(lane).getByText(`${status} meal`)).toBeInTheDocument();
   }
-  fireEvent.click(screen.getByRole('tab', { name: 'Awaiting payment' }));
+  expect(
+    screen.queryByRole('tab', { name: 'Awaiting payment' }),
+  ).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('tab', { name: 'Order history' }));
+  fireEvent.change(screen.getByLabelText('Order status'), {
+    target: { value: 'pending_payment' },
+  });
   const awaiting = screen
-    .getByRole('heading', { name: 'Awaiting payment' })
+    .getByRole('heading', { name: 'Order history' })
     .closest('section')!;
   expect(
     within(awaiting).getByText('pending_payment meal'),
@@ -163,12 +244,26 @@ test('separates awaiting payment and past orders from the kitchen lanes', () => 
   expect(
     within(awaiting).queryByText('completed meal'),
   ).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole('tab', { name: 'Past orders' }));
+  fireEvent.change(screen.getByLabelText('Order status'), {
+    target: { value: 'completed' },
+  });
   const past = screen
-    .getByRole('heading', { name: 'Past orders' })
+    .getByRole('heading', { name: 'Order history' })
     .closest('section')!;
   expect(within(past).getByText('completed meal')).toBeInTheDocument();
+  expect(within(past).queryByText('cancelled meal')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Order status'), {
+    target: { value: 'cancelled' },
+  });
   expect(within(past).getByText('cancelled meal')).toBeInTheDocument();
+  expect(within(past).queryByText('completed meal')).not.toBeInTheDocument();
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith(
+    'cancelled',
+    expect.objectContaining({
+      from: expect.any(String),
+      to: expect.any(String),
+    }),
+  );
   expect(
     within(past).queryByText('pending_payment meal'),
   ).not.toBeInTheDocument();
@@ -184,18 +279,19 @@ test('supports keyboard switching and shows empty views', () => {
     screen.queryByRole('heading', { name: 'Awaiting payment' }),
   ).not.toBeInTheDocument();
   expect(
-    screen.queryByRole('heading', { name: 'Past orders' }),
+    screen.queryByRole('heading', { name: 'Order history' }),
   ).not.toBeInTheDocument();
   fireEvent.keyDown(screen.getByRole('tab', { name: 'Kitchen' }), {
     key: 'ArrowRight',
   });
-  expect(screen.getByRole('tab', { name: 'Past orders' })).toHaveFocus();
+  expect(screen.getByRole('tab', { name: 'Order history' })).toHaveFocus();
   expect(screen.getByText('No orders in this view.')).toBeInTheDocument();
 });
 
 test('groups historical orders by placement date and applies or clears a date range', () => {
   renderOrders([makeOrder('completed'), makeOrder('cancelled')]);
-  fireEvent.click(screen.getByRole('tab', { name: 'Past orders' }));
+  fireEvent.click(screen.getByRole('tab', { name: 'Order history' }));
+  fireEvent.click(screen.getByText('Today', { selector: 'summary' }));
   expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(1);
   expect(screen.getAllByText(/2026/).length).toBeGreaterThan(0);
   fireEvent.change(screen.getByLabelText('From date'), {
@@ -205,12 +301,15 @@ test('groups historical orders by placement date and applies or clears a date ra
     target: { value: '2026-01-02' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Apply dates' }));
-  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('completed', {
     from: '2025-12-31T13:00:00.000Z',
     to: '2026-01-02T13:00:00.000Z',
   });
-  fireEvent.click(screen.getByRole('button', { name: 'All dates' }));
-  expect(useAdminOrdersPage).toHaveBeenLastCalledWith('past', {});
+  fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+  expect(useAdminOrdersPage).toHaveBeenLastCalledWith(
+    'completed',
+    orderDateRange(orderDayKey(Date.now())!, orderDayKey(Date.now())!),
+  );
 });
 
 test('confirms paid order cancellation and submits the selected reason', () => {

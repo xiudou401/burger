@@ -235,7 +235,13 @@ export const listAdminOrders = async ({
   search?: string;
   limit?: number;
   cursor?: string;
-  view?: 'all' | 'kitchen' | 'awaiting_payment' | 'past';
+  view?:
+    | 'all'
+    | 'kitchen'
+    | 'awaiting_payment'
+    | 'past'
+    | 'completed'
+    | 'cancelled';
   from?: string;
   to?: string;
 } = {}): Promise<PaginatedPublicOrders> => {

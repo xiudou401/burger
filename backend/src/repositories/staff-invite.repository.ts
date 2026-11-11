@@ -78,7 +78,7 @@ export const staffInviteRepository = {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     )
       .select('+tokenHash')
@@ -104,7 +104,7 @@ export const staffInviteRepository = {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     ).exec();
   },

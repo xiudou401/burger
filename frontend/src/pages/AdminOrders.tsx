@@ -38,11 +38,7 @@ const KITCHEN_COLUMNS: Array<{
 
 const SECONDARY_ORDER_GROUPS: Array<{
   title: string;
-  statuses: OrderStatus[];
-}> = [
-  { title: 'Past orders', statuses: ['completed', 'cancelled'] },
-  { title: 'Awaiting payment', statuses: ['pending_payment'] },
-];
+}> = [{ title: 'Order history' }];
 
 const getOrdersByStatus = (orders: Order[], status: OrderStatus) =>
   orders.filter((order) => order.status === status);
@@ -58,40 +54,38 @@ const AdminOrders = () => {
     setSearchError('');
   }, [appliedSearch]);
   const selectedView = searchParams.get('view');
+  const historyState =
+    selectedView === 'awaiting_payment' ||
+    searchParams.get('state') === 'pending_payment'
+      ? 'pending_payment'
+      : searchParams.get('state') === 'cancelled'
+        ? 'cancelled'
+        : 'completed';
   const activeView =
-    selectedView === 'past'
-      ? 'Past orders'
-      : selectedView === 'awaiting_payment'
-        ? 'Awaiting payment'
-        : 'Kitchen';
+    selectedView === 'past' || selectedView === 'awaiting_payment'
+      ? 'Order history'
+      : 'Kitchen';
   const setActiveView = (title: string) => {
     setSearchParams((current) => {
       current.delete('search');
-      current.set(
-        'view',
-        title === 'Past orders'
-          ? 'past'
-          : title === 'Awaiting payment'
-            ? 'awaiting_payment'
-            : 'kitchen',
-      );
+      current.set('view', title === 'Order history' ? 'past' : 'kitchen');
+      if (selectedView === 'awaiting_payment')
+        current.set('state', 'pending_payment');
       return current;
     });
   };
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [now, setNow] = useState(Date.now);
-  const [fromDate, setFromDate] = useState(searchParams.get('from') ?? '');
-  const [throughDate, setThroughDate] = useState(
-    searchParams.get('through') ?? '',
-  );
-  let dateRange: { from?: string; to?: string } = {};
+  const today = orderDayKey(now)!;
+  const appliedFrom = searchParams.get('from') || today;
+  const appliedThrough = searchParams.get('through') || today;
+  const [fromDate, setFromDate] = useState(appliedFrom);
+  const [throughDate, setThroughDate] = useState(appliedThrough);
+  let dateRange = orderDateRange(today, today);
   try {
-    dateRange = orderDateRange(
-      searchParams.get('from') ?? '',
-      searchParams.get('through') ?? '',
-    );
+    dateRange = orderDateRange(appliedFrom, appliedThrough);
   } catch {
-    /* Ignore malformed URL filters. */
+    /* Invalid URL dates must not turn history into an unbounded query. */
   }
   const applyDateFilters = (clear = false) => {
     setSearchParams((current) => {
@@ -103,8 +97,6 @@ const AdminOrders = () => {
     });
   };
   const [dateError, setDateError] = useState('');
-  const appliedFrom = searchParams.get('from') ?? '';
-  const appliedThrough = searchParams.get('through') ?? '';
   useEffect(() => {
     setFromDate(appliedFrom);
     setThroughDate(appliedThrough);
@@ -118,9 +110,9 @@ const AdminOrders = () => {
     ? 'all'
     : activeView === 'Kitchen'
       ? 'kitchen'
-      : activeView === 'Awaiting payment'
+      : historyState === 'pending_payment'
         ? 'awaiting_payment'
-        : 'past';
+        : historyState;
   const {
     orders,
     isLoading,
@@ -139,7 +131,7 @@ const AdminOrders = () => {
     view,
     appliedSearch
       ? { search: appliedSearch }
-      : view === 'past'
+      : activeView === 'Order history'
         ? dateRange
         : {},
   );
@@ -264,7 +256,7 @@ const AdminOrders = () => {
         <AdminStatusText>
           {appliedSearch
             ? 'No matching orders found.'
-            : view === 'past' && (dateRange.from || dateRange.to)
+            : activeView === 'Order history' && (dateRange.from || dateRange.to)
               ? 'No orders match the selected dates.'
               : 'No orders yet.'}
         </AdminStatusText>
@@ -356,9 +348,6 @@ const AdminOrders = () => {
               aria-selected={activeView === title}
               tabIndex={activeView === title ? 0 : -1}
               key={title}
-              className={
-                title === 'Awaiting payment' ? classes.SecondaryTab : undefined
-              }
               onClick={() => setActiveView(title)}
               onKeyDown={(event) => {
                 const nextIndex =
@@ -404,54 +393,94 @@ const AdminOrders = () => {
             </div>
           </section>
         )}
-        {view === 'past' && (
-          <form
-            className={classes.DateFilters}
-            onSubmit={(event) => {
-              event.preventDefault();
-              try {
-                orderDateRange(fromDate, throughDate);
-                applyDateFilters();
-                setDateError('');
-              } catch (err) {
-                setDateError(
-                  err instanceof Error
-                    ? err.message
-                    : 'Choose valid order dates.',
-                );
-              }
-            }}
-          >
-            <label>
-              From date
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(event) => setFromDate(event.target.value)}
-              />
-            </label>
-            <label>
-              To date
-              <input
-                type="date"
-                value={throughDate}
-                onChange={(event) => setThroughDate(event.target.value)}
-              />
-            </label>
-            <button type="submit">Apply dates</button>
-            <button
-              type="button"
-              onClick={() => {
-                setFromDate('');
-                setThroughDate('');
-                applyDateFilters(true);
-                setDateError('');
+        {!appliedSearch && activeView === 'Order history' && (
+          <div className={classes.HistoryState}>
+            <label htmlFor="history-order-state">Order status</label>
+            <select
+              id="history-order-state"
+              value={historyState}
+              onChange={(event) => {
+                const state = event.target.value;
+                setSearchParams((current) => {
+                  current.set('view', 'past');
+                  if (state !== 'completed') current.set('state', state);
+                  else current.delete('state');
+                  return current;
+                });
               }}
             >
-              All dates
-            </button>
-            {dateError && <p role="alert">{dateError}</p>}
-          </form>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="pending_payment">Awaiting payment</option>
+            </select>
+          </div>
+        )}
+        {!appliedSearch && activeView === 'Order history' && (
+          <details
+            className={classes.HistoryDates}
+            open={
+              searchParams.has('from') || searchParams.has('through')
+                ? true
+                : undefined
+            }
+          >
+            <summary>
+              {appliedFrom === today && appliedThrough === today
+                ? 'Today'
+                : `${appliedFrom} to ${appliedThrough}`}
+            </summary>
+            <form
+              className={classes.DateFilters}
+              onSubmit={(event) => {
+                event.preventDefault();
+                try {
+                  if (!fromDate || !throughDate)
+                    throw new Error(
+                      'Choose both a start date and an end date.',
+                    );
+                  orderDateRange(fromDate, throughDate);
+                  applyDateFilters();
+                  setDateError('');
+                } catch (err) {
+                  setDateError(
+                    err instanceof Error
+                      ? err.message
+                      : 'Choose valid order dates.',
+                  );
+                }
+              }}
+            >
+              <label>
+                From date
+                <input
+                  type="date"
+                  value={fromDate}
+                  onChange={(event) => setFromDate(event.target.value)}
+                />
+              </label>
+              <label>
+                To date
+                <input
+                  type="date"
+                  value={throughDate}
+                  onChange={(event) => setThroughDate(event.target.value)}
+                />
+              </label>
+              <button type="submit">Apply dates</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFromDate(today);
+                  setThroughDate(today);
+                  applyDateFilters(true);
+                  setDateError('');
+                }}
+              >
+                Today
+              </button>
+              {dateError && <p role="alert">{dateError}</p>}
+            </form>
+          </details>
         )}
         {!appliedSearch && activeView === 'Kitchen' && (
           <div className={classes.Board}>
@@ -482,8 +511,8 @@ const AdminOrders = () => {
 
         {SECONDARY_ORDER_GROUPS.map((group) => {
           if (appliedSearch || activeView !== group.title) return null;
-          const groupOrders = orders.filter((order) =>
-            group.statuses.includes(order.status),
+          const groupOrders = orders.filter(
+            (order) => order.status === historyState,
           );
           const days = new Map<string, Order[]>();
           for (const order of groupOrders) {
@@ -496,7 +525,7 @@ const AdminOrders = () => {
                 <h2 className={classes.RecentTitle}>{group.title}</h2>
                 <span className={classes.LaneCount}>{groupOrders.length}</span>
               </div>
-              {view === 'past' ? (
+              {view !== 'awaiting_payment' ? (
                 [...days].map(([key, dayOrders]) => (
                   <section className={classes.DayGroup} key={key}>
                     <h3>

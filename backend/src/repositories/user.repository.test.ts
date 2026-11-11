@@ -95,7 +95,7 @@ describe('userRepository', () => {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     );
     expect(exec).toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('userRepository', () => {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     );
     expect(exec).toHaveBeenCalled();
@@ -151,7 +151,7 @@ describe('userRepository', () => {
         },
       },
       {
-        new: true,
+        returnDocument: 'after',
       },
     );
     expect(exec).toHaveBeenCalled();
