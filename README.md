@@ -357,9 +357,27 @@ verified results and outstanding integration checks.
 | --------------------------------------------- | ------------------------------------------- | -------------------------------------------------------- |
 | ![Storefront menu](docs/screenshots/home.png) | ![Login screen](docs/screenshots/login.png) | ![Admin dashboard](docs/screenshots/admin-dashboard.png) |
 
-| Admin menu management                                     | Kitchen order board                                       |
-| --------------------------------------------------------- | --------------------------------------------------------- |
-| ![Admin menu management](docs/screenshots/admin-menu.png) | ![Kitchen order board](docs/screenshots/admin-orders.png) |
+![Admin menu management](docs/screenshots/admin-menu.png)
+
+### Orders Console
+
+Current responsive views, captured on 12 November 2026 using the demo dataset.
+Kitchen separates New, Preparing, and Ready queues; order history combines
+order-number search, status filters, and Sydney placement-date ranges.
+
+<details>
+<summary>Kitchen queue (responsive view)</summary>
+
+![Kitchen queue with order actions](docs/screenshots/admin-orders.jpg)
+
+</details>
+
+<details>
+<summary>Order history and filters (responsive view)</summary>
+
+![Order history with search, status and date filters](docs/screenshots/admin-order-history.jpg)
+
+</details>
 
 ### AI Operations Follow-Up
 
