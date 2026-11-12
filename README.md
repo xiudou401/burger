@@ -244,6 +244,15 @@ A persistent retry marker keeps paid reconciliation eligible if the Outbox
 enqueue fails. This worker only runs while the backend process is running;
 it supplements Webhooks rather than replacing them.
 
+Order confirmation emails use a stable Resend `Idempotency-Key` derived from
+the order ID. Worker retries reuse that key, the original order snapshot, a
+fixed confirmation status, and an explicit Sydney timestamp. This reduces
+duplicate email sends if the provider accepts a message before the worker
+persists completion. [Resend retains idempotency keys for 24 hours](https://resend.com/docs/dashboard/emails/idempotency-keys),
+so this is not an unlimited exactly-once delivery guarantee. Changing the
+recipient, template, or sender during retries can also produce a provider
+payload-conflict error; failures remain retryable rather than using a new key.
+
 The backend exposes Socket.IO channels for public menu subscribers,
 authenticated customers, and authenticated staff/admin users. Realtime events
 use small payloads such as `order:paid`, `order:updated`, `order:cancelled`,

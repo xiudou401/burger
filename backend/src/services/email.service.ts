@@ -46,10 +46,12 @@ const sendEmail = async ({
   to,
   subject,
   html,
+  idempotencyKey,
 }: {
   to: string;
   subject: string;
   html: string;
+  idempotencyKey?: string;
 }) => {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
     appLogger.info('dev_email_skipped', {
@@ -65,6 +67,7 @@ const sendEmail = async ({
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
+      ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
     },
     body: JSON.stringify({
       from: env.EMAIL_FROM,
@@ -176,12 +179,13 @@ export const sendOrderConfirmationEmail = async ({
   await sendEmail({
     to: email,
     subject: `Burger Club order #${orderNumber} confirmed`,
+    idempotencyKey: `order-confirmation/${orderId}`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#292929">
         <h1>Order confirmed</h1>
         <p>Thanks for your order. We have saved the Sydney pickup or delivery details below for your records.</p>
         <p><strong>Order:</strong> #${orderNumber}</p>
-        <p><strong>Placed:</strong> ${createdAt.toLocaleString()}</p>
+        <p><strong>Placed:</strong> ${createdAt.toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })}</p>
         <p><strong>Status:</strong> ${escapeHtml(status)}</p>
         <table style="width:100%;border-collapse:collapse;margin:20px 0">
           <thead>

@@ -142,7 +142,7 @@ export const sendOrderConfirmationIfPossible = async (
       email: user.email,
       orderId: order.id,
       createdAt: order.createdAt,
-      status: order.status,
+      status: 'confirmed',
       items: order.items,
       totalCents: order.totalCents,
     });
