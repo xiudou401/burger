@@ -98,6 +98,39 @@ describe('outbox service', () => {
     });
   });
 
+  test('keeps confirmation parameters stable when a send succeeds but completion persistence fails', async () => {
+    const event = {
+      _id: 'event-1',
+      eventType: 'order.paid',
+      payload: { orderId, userId },
+    };
+    jest
+      .mocked(outboxEventRepository.claimNext)
+      .mockResolvedValueOnce({ event, claimToken: 'claim-a' } as never)
+      .mockResolvedValueOnce({ event, claimToken: 'claim-b' } as never);
+    jest
+      .mocked(orderRepository.findByIdLean)
+      .mockResolvedValueOnce(order as never)
+      .mockResolvedValueOnce({ ...order, status: 'preparing' } as never);
+    jest
+      .mocked(outboxEventRepository.markProcessed)
+      .mockRejectedValueOnce(
+        new Error('database unavailable after email accepted'),
+      )
+      .mockResolvedValueOnce(null);
+    await processNextOutboxEvent();
+    expect(outboxEventRepository.markFailed).toHaveBeenCalled();
+    await processNextOutboxEvent();
+    const calls = jest.mocked(sendOrderConfirmationEmail).mock.calls;
+    expect(calls).toHaveLength(2);
+    expect(calls[1][0]).toEqual(calls[0][0]);
+    expect(calls[1][0].status).toBe('confirmed');
+    expect(outboxEventRepository.markProcessed).toHaveBeenLastCalledWith(
+      'event-1',
+      'claim-b',
+    );
+  });
+
   test.each(['confirmed', 'preparing', 'ready', 'completed'])(
     'processes a paid order event in %s state',
     async (status) => {
