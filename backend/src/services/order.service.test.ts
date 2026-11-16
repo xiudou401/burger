@@ -981,7 +981,7 @@ describe('order service', () => {
           7,
           idempotencyKey,
         ),
-      ).rejects.toMatchObject({ details: { code: 'CHECKOUT_ENDED' } });
+      ).rejects.toMatchObject({ details: { code: 'CHECKOUT_UNAVAILABLE' } });
       expect(mockRetrieveSession).not.toHaveBeenCalled();
       expect(mockCreateSession).not.toHaveBeenCalled();
     },

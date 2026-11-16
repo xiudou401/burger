@@ -42,6 +42,7 @@ const isReusableCheckout = (
   order: CheckoutOrderDocument,
 ): order is CheckoutOrderDocument & { checkoutUrl: string } =>
   Boolean(order.checkoutUrl) &&
+  Boolean(order.payment.providerPaymentId?.startsWith('cs_')) &&
   order.status === 'pending_payment' &&
   order.payment.status === 'requires_payment';
 
@@ -80,7 +81,7 @@ const assertStripeCheckoutOpen = async (order: CheckoutOrderDocument) => {
   const sessionId = order.payment.providerPaymentId;
   if (!sessionId?.startsWith('cs_')) {
     throw new ServiceError('Checkout session is unavailable', 409, {
-      code: 'CHECKOUT_ENDED',
+      code: 'CHECKOUT_UNAVAILABLE',
     });
   }
   const session = await retrieveStripeCheckoutSession(sessionId);
