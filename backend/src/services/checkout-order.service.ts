@@ -40,7 +40,10 @@ const isMongoDuplicateKeyError = (error: unknown) => {
 
 const isReusableCheckout = (
   order: CheckoutOrderDocument,
-): order is CheckoutOrderDocument & { checkoutUrl: string } =>
+): order is CheckoutOrderDocument & {
+  checkoutUrl: string;
+  payment: CheckoutOrderDocument['payment'] & { providerPaymentId: string };
+} =>
   Boolean(order.checkoutUrl) &&
   Boolean(order.payment.providerPaymentId?.startsWith('cs_')) &&
   order.status === 'pending_payment' &&
@@ -77,19 +80,13 @@ const reloadCheckoutOrder = (
     idempotencyKey,
   );
 
-const assertStripeCheckoutOpen = async (order: CheckoutOrderDocument) => {
-  const sessionId = order.payment.providerPaymentId;
-  if (!sessionId?.startsWith('cs_')) {
-    throw new ServiceError('Checkout session is unavailable', 409, {
-      code: 'CHECKOUT_UNAVAILABLE',
-    });
-  }
+const assertStripeCheckoutOpen = async (sessionId: string, orderId: string) => {
   const session = await retrieveStripeCheckoutSession(sessionId);
   if (session.payment_status === 'paid' || session.status === 'complete') {
     throw new ServiceError(
       'Payment has been submitted. Please check your order.',
       409,
-      { code: 'ORDER_ALREADY_PAID', orderId: String(order._id) },
+      { code: 'ORDER_ALREADY_PAID', orderId },
     );
   }
   if (session.status !== 'open' || session.expires_at * 1000 <= Date.now()) {
@@ -115,7 +112,10 @@ const prepareCheckout = async (
   idempotencyKey: string,
 ): Promise<CheckoutOrder> => {
   if (isReusableCheckout(order)) {
-    await assertStripeCheckoutOpen(order);
+    await assertStripeCheckoutOpen(
+      order.payment.providerPaymentId,
+      String(order._id),
+    );
     return {
       order: toPublicOrder(order),
       checkoutUrl: order.checkoutUrl,
@@ -141,7 +141,10 @@ const prepareCheckout = async (
     }
 
     if (isReusableCheckout(latestOrder)) {
-      await assertStripeCheckoutOpen(latestOrder);
+      await assertStripeCheckoutOpen(
+        latestOrder.payment.providerPaymentId,
+        String(latestOrder._id),
+      );
       return {
         order: toPublicOrder(latestOrder),
         checkoutUrl: latestOrder.checkoutUrl,
