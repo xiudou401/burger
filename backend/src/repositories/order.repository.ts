@@ -621,7 +621,7 @@ export const orderRepository = {
     }).exec();
   },
 
-  markStripeCheckoutPaidIfUnpaid(
+  markStripeCheckoutPaidIfPending(
     orderId: string,
     sessionId: string,
     paidAt: Date,

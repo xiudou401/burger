@@ -28,6 +28,7 @@ export type CancellationReason =
   | 'staff_cancelled'
   | 'item_unavailable'
   | 'duplicate_order'
+  | 'checkout_superseded'
   | 'other';
 
 export interface OrderItem {
@@ -171,6 +172,7 @@ const orderSchema = new Schema<Order>(
         'staff_cancelled',
         'item_unavailable',
         'duplicate_order',
+        'checkout_superseded',
         'other',
       ],
     },
