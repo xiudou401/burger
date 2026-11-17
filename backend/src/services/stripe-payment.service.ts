@@ -116,7 +116,7 @@ export const markStripeCheckoutPaid = async (
     session.livemode === false &&
     typeof session.created === 'number' &&
     session.created * 1000 <= Date.now() - HISTORICAL_TEST_CHECKOUT_AGE_MS;
-  const paidOrder = await orderRepository.markStripeCheckoutPaidIfUnpaid(
+  const paidOrder = await orderRepository.markStripeCheckoutPaidIfPending(
     String(order._id),
     session.id,
     paidAt,

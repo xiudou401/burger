@@ -66,7 +66,7 @@ jest.mock('../repositories/order.repository', () => ({
     claimCheckoutSessionCreationIfPending: jest.fn(),
     markCheckoutSessionCreatedIfClaimed: jest.fn(),
     markCheckoutSessionCreationFailedIfClaimed: jest.fn(),
-    markStripeCheckoutPaidIfUnpaid: jest.fn(),
+    markStripeCheckoutPaidIfPending: jest.fn(),
     flagStripePaymentForReview: jest.fn(),
     markStripeCheckoutFailedIfNotPaid: jest.fn(),
     markStripePaymentFailedIfPending: jest.fn(),
@@ -1207,7 +1207,7 @@ describe('order service', () => {
       },
     };
     jest
-      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mocked(orderRepository.markStripeCheckoutPaidIfPending)
       .mockResolvedValue(paidOrder as never);
     const result = await markStripeCheckoutPaid(
       {
@@ -1221,7 +1221,7 @@ describe('order service', () => {
       paidAt,
     );
 
-    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledWith(
+    expect(orderRepository.markStripeCheckoutPaidIfPending).toHaveBeenCalledWith(
       orderId,
       'cs_test_123',
       paidAt,
@@ -1259,7 +1259,7 @@ describe('order service', () => {
         .mocked(orderRepository.findByStripeSessionId)
         .mockResolvedValue(pending as never);
       jest
-        .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+        .mocked(orderRepository.markStripeCheckoutPaidIfPending)
         .mockResolvedValue(paid as never);
       const result = await markStripeCheckoutPaid(
         {
@@ -1275,7 +1275,7 @@ describe('order service', () => {
         now,
       );
       expect(
-        orderRepository.markStripeCheckoutPaidIfUnpaid,
+        orderRepository.markStripeCheckoutPaidIfPending,
       ).toHaveBeenCalledWith(orderId, 'cs_test_123', expect.any(Date), archive);
       expect(result.status).toBe(archive ? 'cancelled' : 'confirmed');
       expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(
@@ -1324,7 +1324,7 @@ describe('order service', () => {
       .mocked(orderRepository.findByStripeSessionId)
       .mockResolvedValue(order as never);
     jest
-      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mocked(orderRepository.markStripeCheckoutPaidIfPending)
       .mockResolvedValue(paidOrder as never);
     await expect(
       markStripeCheckoutPaid(
@@ -1348,7 +1348,7 @@ describe('order service', () => {
       }),
     );
 
-    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalled();
+    expect(orderRepository.markStripeCheckoutPaidIfPending).toHaveBeenCalled();
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(emitOrderEvent).not.toHaveBeenCalled();
@@ -1401,7 +1401,7 @@ describe('order service', () => {
 
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(
-      orderRepository.markStripeCheckoutPaidIfUnpaid,
+      orderRepository.markStripeCheckoutPaidIfPending,
     ).not.toHaveBeenCalled();
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(order);
@@ -1445,7 +1445,7 @@ describe('order service', () => {
       .mocked(orderRepository.findByStripeSessionId)
       .mockResolvedValueOnce(order as never);
     jest
-      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mocked(orderRepository.markStripeCheckoutPaidIfPending)
       .mockResolvedValue(null);
     jest
       .mocked(orderRepository.flagStripePaymentForReview)
@@ -1463,7 +1463,7 @@ describe('order service', () => {
       providerPaidAt,
     );
 
-    expect(orderRepository.markStripeCheckoutPaidIfUnpaid).toHaveBeenCalledWith(
+    expect(orderRepository.markStripeCheckoutPaidIfPending).toHaveBeenCalledWith(
       orderId,
       'cs_test_123',
       providerPaidAt,
@@ -1534,7 +1534,7 @@ describe('order service', () => {
       .mockResolvedValueOnce(unpaidOrder as never)
       .mockResolvedValueOnce(paidOrder as never);
     jest
-      .mocked(orderRepository.markStripeCheckoutPaidIfUnpaid)
+      .mocked(orderRepository.markStripeCheckoutPaidIfPending)
       .mockResolvedValueOnce(paidOrder as never)
       .mockResolvedValueOnce(null);
     const [firstResult, secondResult] = await Promise.all([
@@ -1543,7 +1543,7 @@ describe('order service', () => {
     ]);
 
     expect(
-      orderRepository.markStripeCheckoutPaidIfUnpaid,
+      orderRepository.markStripeCheckoutPaidIfPending,
     ).toHaveBeenCalledTimes(2);
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(1);
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);

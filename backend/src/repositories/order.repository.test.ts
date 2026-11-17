@@ -298,7 +298,7 @@ describe('orderRepository', () => {
     const exec = jest.fn().mockResolvedValue(null);
     jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);
     const paidAt = new Date('2026-04-05T01:30:00Z');
-    await orderRepository.markStripeCheckoutPaidIfUnpaid(
+    await orderRepository.markStripeCheckoutPaidIfPending(
       orderId,
       'cs_retry',
       paidAt,
@@ -328,7 +328,7 @@ describe('orderRepository', () => {
   test('records an archived test payment without promoting it to the kitchen', async () => {
     const exec = jest.fn().mockResolvedValue(null);
     jest.mocked(OrderModel.findOneAndUpdate).mockReturnValue({ exec } as never);
-    await orderRepository.markStripeCheckoutPaidIfUnpaid(
+    await orderRepository.markStripeCheckoutPaidIfPending(
       orderId,
       'cs_test_old',
       new Date('2026-04-05T01:30:00Z'),
