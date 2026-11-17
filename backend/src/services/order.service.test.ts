@@ -1221,12 +1221,9 @@ describe('order service', () => {
       paidAt,
     );
 
-    expect(orderRepository.markStripeCheckoutPaidIfPending).toHaveBeenCalledWith(
-      orderId,
-      'cs_test_123',
-      paidAt,
-      false,
-    );
+    expect(
+      orderRepository.markStripeCheckoutPaidIfPending,
+    ).toHaveBeenCalledWith(orderId, 'cs_test_123', paidAt, false);
     expect(orderRepository.save).not.toHaveBeenCalled();
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
@@ -1463,12 +1460,9 @@ describe('order service', () => {
       providerPaidAt,
     );
 
-    expect(orderRepository.markStripeCheckoutPaidIfPending).toHaveBeenCalledWith(
-      orderId,
-      'cs_test_123',
-      providerPaidAt,
-      false,
-    );
+    expect(
+      orderRepository.markStripeCheckoutPaidIfPending,
+    ).toHaveBeenCalledWith(orderId, 'cs_test_123', providerPaidAt, false);
     expect(orderRepository.flagStripePaymentForReview).toHaveBeenCalledWith(
       'cs_test_123',
       providerPaidAt,
