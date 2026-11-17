@@ -320,7 +320,7 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
     const cancelled = await orderRepository.markStripeCheckoutFailedIfNotPaid(
       sessionId,
       'cancelled',
-      'duplicate_order',
+      'checkout_superseded',
     );
     if (cancelled) {
       emitOrderEvent('order:cancelled', toPublicOrder(cancelled), userId);

@@ -225,7 +225,7 @@ describe('order service', () => {
     expect(mockExpireSession).toHaveBeenCalledWith('cs_old');
     expect(
       orderRepository.markStripeCheckoutFailedIfNotPaid,
-    ).toHaveBeenCalledWith('cs_old', 'cancelled', 'duplicate_order');
+    ).toHaveBeenCalledWith('cs_old', 'cancelled', 'checkout_superseded');
     expect(mockExpireSession.mock.invocationCallOrder[0]).toBeLessThan(
       jest.mocked(validateCart).mock.invocationCallOrder[0],
     );

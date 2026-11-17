@@ -43,6 +43,7 @@ const CancellationReasonSchema = z.enum([
   'staff_cancelled',
   'item_unavailable',
   'duplicate_order',
+  'checkout_superseded',
   'other',
 ]);
 
@@ -425,6 +426,8 @@ export const getCancellationReasonFromQuestion = (
   const normalized = question.toLowerCase();
 
   if (/\bpayment failed\b/.test(normalized)) return 'payment_failed';
+  if (/\bsuperseded\b|\breplaced by (?:a )?new checkout\b/.test(normalized))
+    return 'checkout_superseded';
   if (/\babandoned\b/.test(normalized)) return 'customer_abandoned_checkout';
   if (/\bstaff\b/.test(normalized)) return 'staff_cancelled';
   if (/\bunavailable\b/.test(normalized)) return 'item_unavailable';

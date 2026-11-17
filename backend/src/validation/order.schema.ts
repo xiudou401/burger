@@ -22,6 +22,7 @@ export const CancellationReasonSchema = z.enum([
   'staff_cancelled',
   'item_unavailable',
   'duplicate_order',
+  'checkout_superseded',
   'other',
 ]);
 

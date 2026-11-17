@@ -80,7 +80,9 @@ const AdminOrderDetails = () => {
             {order.cancellationReason && (
               <p className={classes.Meta}>
                 Cancellation reason:{' '}
-                {order.cancellationReason.replaceAll('_', ' ')}
+                {order.cancellationReason === 'checkout_superseded'
+                  ? 'Replaced by a new checkout'
+                  : order.cancellationReason.replaceAll('_', ' ')}
               </p>
             )}
             {order.cancelledAt && (
