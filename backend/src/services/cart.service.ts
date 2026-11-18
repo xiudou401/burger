@@ -54,7 +54,7 @@ export const validateCart = async (
 
   let totalCents = 0;
   const invalidItems: InvalidCartItem[] = [];
-  const result: ValidatedCartMenuItem[] = [];
+  const validatedItems: ValidatedCartMenuItem[] = [];
 
   items.forEach((item) => {
     const menuItem = menuItemMap.get(item.id);
@@ -79,7 +79,7 @@ export const validateCart = async (
     const subtotalCents = menuItem.priceCents * item.quantity;
     totalCents += subtotalCents;
 
-    result.push({
+    validatedItems.push({
       id: menuItem._id.toString(),
       name: menuItem.name,
       image: menuItem.image,
@@ -99,7 +99,7 @@ export const validateCart = async (
   }
 
   return {
-    items: result,
+    items: validatedItems,
     totalCents,
     menuVersion: currentVersion,
   };
