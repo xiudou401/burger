@@ -2,8 +2,10 @@ import { MenuModel } from '../models/menu.model';
 import type { ClientSession } from 'mongoose';
 
 export const menuRepository = {
-  findMainVersion() {
-    return MenuModel.findById('main').select('version').lean();
+  findMainVersion(session?: ClientSession) {
+    const query = MenuModel.findById('main');
+    if (session) query.session(session);
+    return query.select('version').lean();
   },
 
   async incrementMainVersion(session?: ClientSession) {

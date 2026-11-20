@@ -140,6 +140,9 @@ Staff Kitchen Board -> status update -> Express -> MongoDB -> customer/admin eve
   with backend-calculated AUD cents.
 - Explicit user-action quote validation before checkout, with menu-version
   conflict handling and price-change notices.
+- Cart validation reads the menu version and product data in one MongoDB
+  snapshot transaction, preventing a quote from mixing an old version with
+  concurrently updated prices or availability.
 - Local cart persistence so customers can leave and return without losing their
   basket.
 - Checkout reuses a valid cart quote and refreshes it when necessary. Price
@@ -247,16 +250,14 @@ unknown outcomes retain their creation tokens and reconciliation retry marker.
 Administrators cannot cancel a pending Stripe checkout by changing only its
 local order status; the external checkout must be reconciled/closed first.
 An already-cancelled superseded checkout without a saved `cs_` Session ID
-does not get silently skipped. If its original key is present, its order is
-less than 23 hours old, and no active creation lease remains, the backend
-replays the original Stripe creation request to recover the Session, validates
-its order/amount/currency association, records its ID without reopening the
-order, and attempts to expire it. A confirmed expired Session clears only the
-unknown-session review marker. Stripe retains idempotency results for at least
-24 hours; the shorter recovery window uses order creation time as a conservative
-bound. Changed request parameters, older/malformed records and other uncertain
-results still block replacement and receive `stripe_checkout_session_unknown`
-for manual verification. The original recovery token is not discarded on failure.
+blocks replacement through the normal checkout state check without adding a
+review flag or clearing the current payment attempt. It never replays Session creation, even inside the recovery
+window. Already-cancelled orders with a known Session ID are still checked
+against Stripe and closed when possible. A confirmed expired Session clears
+only the unknown-session review marker. Automatic creation recovery is reserved
+for pending-payment orders, using a 23-hour window based on order creation
+time and the original idempotency key. Stripe retains those keys for at least
+24 hours. The recovery token is not discarded on an unknown outcome.
 Existing `cs_` Session IDs are never replaced by creation claims, including
 after card-payment failures. Creation responses are followed by a fresh Stripe
 lookup before returning a payment URL. Only definite provider validation
@@ -284,8 +285,9 @@ Customer checkout
   -> Stripe Checkout
   -> signed Stripe webhook
   -> backend marks order confirmed and payment paid
+  -> backend immediately attempts order:paid notification independently of email
   -> backend enqueues an order.paid outbox event
-  -> worker sends the confirmation email and emits order:paid
+  -> worker retries the notification, then sends the confirmation email
   -> admins and the order owner's user room receive the update
   -> Kitchen Board updates and customer order page updates
 

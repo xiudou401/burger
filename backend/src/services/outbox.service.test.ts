@@ -199,7 +199,7 @@ describe('outbox service', () => {
   });
 
   test.each(['realtime', 'analytics'])(
-    'does not retry email when %s fails after sending',
+    'does not block email or retry it when %s fails',
     async (sideEffect) => {
       const error = new Error('Notification unavailable');
       jest.mocked(outboxEventRepository.claimNext).mockResolvedValue({
@@ -260,6 +260,17 @@ describe('outbox service', () => {
       error,
     );
     expect(outboxEventRepository.markProcessed).not.toHaveBeenCalled();
+    expect(emitOrderEvent).toHaveBeenCalledWith(
+      'order:paid',
+      expect.objectContaining({ id: orderId }),
+      userId,
+    );
+    expect(emitCurrentAnalyticsAlerts).toHaveBeenCalledTimes(1);
+    expect(
+      jest.mocked(emitOrderEvent).mock.invocationCallOrder[0],
+    ).toBeLessThan(
+      jest.mocked(sendOrderConfirmationEmail).mock.invocationCallOrder[0],
+    );
   });
 
   test('returns false when no event is ready', async () => {

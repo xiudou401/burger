@@ -32,33 +32,6 @@ describe('orderRepository', () => {
     jest.clearAllMocks();
   });
 
-  test('attaches a recovered session only to the same cancelled unpaid creation attempt', async () => {
-    const query = chain(null);
-    jest
-      .mocked(OrderModel.findOneAndUpdate)
-      .mockReturnValueOnce({ exec: query.exec } as never);
-    await orderRepository.attachRecoveredCancelledCheckoutSession(
-      orderId,
-      'checkout_creation:old',
-      'cs_recovered',
-    );
-    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
-      {
-        _id: new Types.ObjectId(orderId),
-        status: 'cancelled',
-        'payment.provider': 'stripe',
-        'payment.status': { $in: ['requires_payment', 'failed', 'cancelled'] },
-        'payment.providerPaymentId': 'checkout_creation:old',
-      },
-      {
-        $set: { 'payment.providerPaymentId': 'cs_recovered' },
-        $unset: { 'payment.checkoutSessionCreationClaimedAt': '' },
-        $inc: { __v: 1 },
-      },
-      { returnDocument: 'after' },
-    );
-  });
-
   test('clears only the recovered closed session unknown-status review, preserving other review reasons', async () => {
     const exec = jest.fn().mockResolvedValue({ modifiedCount: 1 });
     jest.mocked(OrderModel.updateOne).mockReturnValueOnce({ exec } as never);

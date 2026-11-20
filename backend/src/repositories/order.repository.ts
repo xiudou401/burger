@@ -730,29 +730,6 @@ export const orderRepository = {
     ).exec();
   },
 
-  attachRecoveredCancelledCheckoutSession(
-    orderId: string,
-    previousSessionId: string | undefined,
-    sessionId: string,
-  ) {
-    if (!isObjectId(orderId)) return Promise.resolve(null);
-    return OrderModel.findOneAndUpdate(
-      {
-        _id: toObjectId(orderId),
-        status: 'cancelled',
-        'payment.provider': 'stripe',
-        'payment.status': { $in: ['requires_payment', 'failed', 'cancelled'] },
-        'payment.providerPaymentId': previousSessionId ?? null,
-      },
-      {
-        $set: { 'payment.providerPaymentId': sessionId },
-        $unset: { 'payment.checkoutSessionCreationClaimedAt': '' },
-        $inc: { __v: 1 },
-      },
-      { returnDocument: 'after' },
-    ).exec();
-  },
-
   clearCancelledCheckoutReviewIfClosed(orderId: string, sessionId: string) {
     if (!isObjectId(orderId)) return Promise.resolve(null);
     return OrderModel.updateOne(

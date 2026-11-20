@@ -3,6 +3,7 @@ import { ServiceError } from '../errors/ServiceError';
 import { menuItemRepository } from '../repositories/menu-item.repository';
 import type { CartPayload } from '../validation/cart.schema';
 import type { MenuItemCategory } from '../models/menu-item.model';
+import mongoose from 'mongoose';
 
 export type CartStoredItem = CartPayload['items'][number];
 
@@ -38,15 +39,18 @@ export const validateCart = async (
   items: CartStoredItem[],
   menuVersion: CartPayload['menuVersion'],
 ): Promise<ValidateCartResult> => {
-  const currentVersion = await getMenuVersion();
-
-  if (menuVersion !== currentVersion) {
-    throw new ServiceError('Menu updated', 409);
-  }
-
   const ids = items.map((item) => item.id);
-
-  const menuItems = await menuItemRepository.findByIds(ids);
+  const { currentVersion, menuItems } = await mongoose.connection.transaction(
+    async (session) => {
+      const currentVersion = await getMenuVersion(session);
+      if (menuVersion !== currentVersion) {
+        throw new ServiceError('Menu updated', 409);
+      }
+      const menuItems = await menuItemRepository.findByIds(ids, session);
+      return { currentVersion, menuItems };
+    },
+    { readConcern: { level: 'snapshot' }, readPreference: 'primary' },
+  );
 
   const menuItemMap = new Map(
     menuItems.map((menuItem) => [menuItem._id.toString(), menuItem]),

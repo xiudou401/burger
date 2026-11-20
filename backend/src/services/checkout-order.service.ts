@@ -250,72 +250,12 @@ const resumeCheckout = (
   return prepareCheckout(existingOrder, idempotencyKey);
 };
 
-const recoverCancelledCheckoutSession = async (
-  order: CheckoutOrderDocument,
-  key: string,
-) => {
-  const requireReview = async (): Promise<never> => {
-    await orderRepository.flagStripeCheckoutForReview(String(order._id));
-    throw new ServiceError(
-      'Unable to start payment. Please contact the store to check your previous checkout.',
-      409,
-      { code: 'CHECKOUT_REVIEW_REQUIRED', orderId: String(order._id) },
-    );
-  };
-  // Stripe may prune keys after 24 hours. Use creation time and a one-hour safety margin.
-  if (
-    !isCheckoutCreationRetrySafe(order.createdAt) ||
-    order.checkoutIdempotencyKey !== key ||
-    order.payment.provider !== 'stripe' ||
-    !['requires_payment', 'failed', 'cancelled'].includes(
-      order.payment.status,
-    ) ||
-    (order.payment.providerPaymentId &&
-      !order.payment.providerPaymentId.startsWith('checkout_creation:'))
-  ) {
-    return requireReview();
-  }
-  if (hasActiveCheckoutClaim(order)) {
-    throw new ServiceError(
-      'Previous checkout is still being prepared. Please retry shortly.',
-      409,
-      { code: 'CHECKOUT_PREPARING' },
-    );
-  }
-  try {
-    const session = await createStripeCheckoutSession(order, key);
-    if (
-      !session.id.startsWith('cs_') ||
-      session.metadata?.orderId !== String(order._id) ||
-      session.client_reference_id !== String(order._id) ||
-      session.amount_total !== order.totalCents ||
-      session.currency !== 'aud'
-    ) {
-      return requireReview();
-    }
-    const attached =
-      await orderRepository.attachRecoveredCancelledCheckoutSession(
-        String(order._id),
-        order.payment.providerPaymentId,
-        session.id,
-      );
-    if (!attached) {
-      const latest = await reloadCheckoutOrder(order, key);
-      if (latest?.payment.providerPaymentId?.startsWith('cs_'))
-        return latest.payment.providerPaymentId;
-      return requireReview();
-    }
-    return session.id;
-  } catch {
-    return requireReview();
-  }
-};
-
 export const recoverCheckoutSession = async (
   order: CheckoutOrderDocument,
 ): Promise<string> => {
   const key = order.checkoutIdempotencyKey;
   if (
+    order.status !== 'pending_payment' ||
     !key ||
     !isCheckoutCreationRetrySafe(order.createdAt) ||
     (order.payment.providerPaymentId &&
@@ -327,8 +267,6 @@ export const recoverCheckoutSession = async (
       code: 'CHECKOUT_REVIEW_REQUIRED',
     });
   }
-  if (order.status === 'cancelled')
-    return recoverCancelledCheckoutSession(order, key);
   try {
     return (await prepareCheckout(order, key)).order.payment!
       .providerPaymentId!;
@@ -356,35 +294,41 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
     }
     let sessionId = order.payment.providerPaymentId;
     if (!sessionId?.startsWith('cs_')) {
-      if (order.status === 'cancelled') {
-        sessionId = await recoverCancelledCheckoutSession(order, key);
-      } else {
-        try {
-          // Reuse the original key and claim lease to recover an interrupted creator.
-          const checkout = await prepareCheckout(order, key);
-          sessionId = checkout.order.payment?.providerPaymentId;
-        } catch (error) {
-          if (
-            error instanceof ServiceError &&
-            error.details?.code === 'ORDER_ALREADY_PAID'
-          ) {
-            throw new ServiceError(error.message, error.statusCode, {
-              ...error.details,
-              supersededCheckoutKey: key,
-            });
-          }
-          if (
-            error instanceof ServiceError &&
-            error.details?.code === 'CHECKOUT_PREPARING'
-          ) {
-            throw new ServiceError(
-              'Previous checkout is still being prepared. Please retry shortly.',
-              409,
-              { code: 'CHECKOUT_PREPARING' },
-            );
-          }
-          throw error;
+      try {
+        // Reuse the original key and claim lease to recover an interrupted creator.
+        const checkout = await prepareCheckout(order, key);
+        sessionId = checkout.order.payment?.providerPaymentId;
+      } catch (error) {
+        if (
+          error instanceof ServiceError &&
+          error.details?.code === 'ORDER_ALREADY_PAID'
+        ) {
+          throw new ServiceError(error.message, error.statusCode, {
+            ...error.details,
+            supersededCheckoutKey: key,
+          });
         }
+        if (
+          error instanceof ServiceError &&
+          error.details?.code === 'CHECKOUT_ENDED'
+        ) {
+          throw new ServiceError(
+            'Unable to start payment. Please contact the store to check your previous checkout.',
+            409,
+            { code: 'CHECKOUT_UNAVAILABLE' },
+          );
+        }
+        if (
+          error instanceof ServiceError &&
+          error.details?.code === 'CHECKOUT_PREPARING'
+        ) {
+          throw new ServiceError(
+            'Previous checkout is still being prepared. Please retry shortly.',
+            409,
+            { code: 'CHECKOUT_PREPARING' },
+          );
+        }
+        throw error;
       }
       if (!sessionId?.startsWith('cs_')) {
         throw new ServiceError(
