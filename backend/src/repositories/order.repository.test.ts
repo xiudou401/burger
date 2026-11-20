@@ -32,6 +32,83 @@ describe('orderRepository', () => {
     jest.clearAllMocks();
   });
 
+  test('attaches a recovered session only to the same cancelled unpaid creation attempt', async () => {
+    const query = chain(null);
+    jest
+      .mocked(OrderModel.findOneAndUpdate)
+      .mockReturnValueOnce({ exec: query.exec } as never);
+    await orderRepository.attachRecoveredCancelledCheckoutSession(
+      orderId,
+      'checkout_creation:old',
+      'cs_recovered',
+    );
+    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: new Types.ObjectId(orderId),
+        status: 'cancelled',
+        'payment.provider': 'stripe',
+        'payment.status': { $in: ['requires_payment', 'failed', 'cancelled'] },
+        'payment.providerPaymentId': 'checkout_creation:old',
+      },
+      {
+        $set: { 'payment.providerPaymentId': 'cs_recovered' },
+        $unset: { 'payment.checkoutSessionCreationClaimedAt': '' },
+        $inc: { __v: 1 },
+      },
+      { returnDocument: 'after' },
+    );
+  });
+
+  test('clears only the recovered closed session unknown-status review, preserving other review reasons', async () => {
+    const exec = jest.fn().mockResolvedValue({ modifiedCount: 1 });
+    jest.mocked(OrderModel.updateOne).mockReturnValueOnce({ exec } as never);
+    await orderRepository.clearCancelledCheckoutReviewIfClosed(
+      orderId,
+      'cs_recovered',
+    );
+    expect(OrderModel.updateOne).toHaveBeenCalledWith(
+      {
+        _id: new Types.ObjectId(orderId),
+        status: 'cancelled',
+        'payment.providerPaymentId': 'cs_recovered',
+        'payment.reviewReason': 'stripe_checkout_session_unknown',
+      },
+      {
+        $unset: {
+          'payment.requiresReview': '',
+          'payment.reviewReason': '',
+          'payment.reviewCreatedAt': '',
+        },
+      },
+    );
+  });
+
+  test('flags an unknown cancelled Stripe checkout without overwriting payment state or recovery identifiers', async () => {
+    const query = chain(null);
+    jest
+      .mocked(OrderModel.findOneAndUpdate)
+      .mockReturnValueOnce({ exec: query.exec } as never);
+    await orderRepository.flagStripeCheckoutForReview(orderId);
+    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: new Types.ObjectId(orderId),
+        status: { $in: ['pending_payment', 'cancelled'] },
+        'payment.provider': 'stripe',
+        'payment.status': { $nin: ['paid', 'refunded'] },
+        'payment.providerPaymentId': { $not: /^cs_/ },
+        'payment.requiresReview': { $ne: true },
+      },
+      {
+        $set: {
+          'payment.requiresReview': true,
+          'payment.reviewReason': 'stripe_checkout_session_unknown',
+          'payment.reviewCreatedAt': expect.any(Date),
+        },
+      },
+      { returnDocument: 'after' },
+    );
+  });
+
   test.each(['completed', 'cancelled'] as const)(
     'filters %s before pagination',
     async (view) => {
@@ -386,6 +463,7 @@ describe('orderRepository', () => {
         status: 'pending_payment',
         'payment.status': { $in: ['requires_payment', 'failed'] },
         'payment.reviewReason': { $ne: 'stripe_paid_charge_unverified' },
+        createdAt: { $gt: expect.any(Date) },
         $and: expect.arrayContaining([
           expect.objectContaining({
             $or: expect.arrayContaining([
@@ -420,6 +498,39 @@ describe('orderRepository', () => {
           'payment.checkoutSessionCreationClaimedAt': expect.any(Date),
         }),
       }),
+      { returnDocument: 'after' },
+    );
+  });
+
+  test('creation claims cannot bypass a saved Session ID just because payment failed', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    jest
+      .mocked(OrderModel.findOneAndUpdate)
+      .mockReturnValueOnce({ exec } as never);
+    await orderRepository.claimCheckoutSessionCreationIfPending(
+      orderId,
+      'checkout_creation:new',
+    );
+    const filter = jest.mocked(OrderModel.findOneAndUpdate).mock.calls[0][0];
+    expect(JSON.stringify(filter)).not.toContain('"payment.status":"failed"');
+  });
+
+  test('unknown creation outcomes retain the lock and schedule reconciliation', async () => {
+    const exec = jest.fn().mockResolvedValue(null);
+    jest
+      .mocked(OrderModel.findOneAndUpdate)
+      .mockReturnValueOnce({ exec } as never);
+    await orderRepository.markCheckoutSessionCreationUnknownIfClaimed(
+      orderId,
+      'checkout_creation:original',
+    );
+    expect(OrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: new Types.ObjectId(orderId),
+        status: 'pending_payment',
+        'payment.providerPaymentId': 'checkout_creation:original',
+      },
+      { $set: { 'payment.reconciliationRequired': true } },
       { returnDocument: 'after' },
     );
   });

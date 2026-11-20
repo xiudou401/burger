@@ -19,6 +19,10 @@ import {
 } from './stripe-checkout.service';
 import { emitOrderEvent } from './realtime.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
+import {
+  isCheckoutCreationRetrySafe,
+  isDefinitiveCheckoutCreationFailure,
+} from './checkout-recovery-policy';
 
 const toOrderSnapshotItem = (menuItem: ValidatedCartMenuItem) => ({
   menuItemId: menuItem.id,
@@ -41,13 +45,11 @@ const isMongoDuplicateKeyError = (error: unknown) => {
 const isReusableCheckout = (
   order: CheckoutOrderDocument,
 ): order is CheckoutOrderDocument & {
-  checkoutUrl: string;
   payment: CheckoutOrderDocument['payment'] & { providerPaymentId: string };
 } =>
-  Boolean(order.checkoutUrl) &&
   Boolean(order.payment.providerPaymentId?.startsWith('cs_')) &&
   order.status === 'pending_payment' &&
-  order.payment.status === 'requires_payment';
+  ['requires_payment', 'failed'].includes(order.payment.status);
 
 const assertCheckoutCanBeStarted = (order: CheckoutOrderDocument) => {
   if (order.status === 'confirmed' || order.payment.status === 'paid') {
@@ -96,6 +98,20 @@ const assertStripeCheckoutOpen = async (sessionId: string, orderId: string) => {
       { code: 'CHECKOUT_ENDED' },
     );
   }
+  return session;
+};
+
+const reuseCheckout = async (
+  order: CheckoutOrderDocument,
+  sessionId: string,
+): Promise<CheckoutOrder> => {
+  const session = await assertStripeCheckoutOpen(sessionId, String(order._id));
+  const checkoutUrl = session.url ?? order.checkoutUrl;
+  if (!checkoutUrl)
+    throw new ServiceError('Checkout session has no payment URL', 409, {
+      code: 'CHECKOUT_UNAVAILABLE',
+    });
+  return { order: toPublicOrder(order), checkoutUrl };
 };
 
 const hasActiveCheckoutClaim = (order: CheckoutOrderDocument) => {
@@ -112,17 +128,18 @@ const prepareCheckout = async (
   idempotencyKey: string,
 ): Promise<CheckoutOrder> => {
   if (isReusableCheckout(order)) {
-    await assertStripeCheckoutOpen(
-      order.payment.providerPaymentId,
-      String(order._id),
-    );
-    return {
-      order: toPublicOrder(order),
-      checkoutUrl: order.checkoutUrl,
-    };
+    return reuseCheckout(order, order.payment.providerPaymentId);
   }
 
   assertCheckoutCanBeStarted(order);
+  if (!isCheckoutCreationRetrySafe(order.createdAt)) {
+    await orderRepository.flagStripeCheckoutForReview(String(order._id));
+    throw new ServiceError(
+      'Unable to safely recover this checkout. Please contact the store.',
+      409,
+      { code: 'CHECKOUT_REVIEW_REQUIRED', orderId: String(order._id) },
+    );
+  }
 
   const claimToken = `checkout_creation:${randomUUID()}`;
   const claimedOrder =
@@ -141,14 +158,7 @@ const prepareCheckout = async (
     }
 
     if (isReusableCheckout(latestOrder)) {
-      await assertStripeCheckoutOpen(
-        latestOrder.payment.providerPaymentId,
-        String(latestOrder._id),
-      );
-      return {
-        order: toPublicOrder(latestOrder),
-        checkoutUrl: latestOrder.checkoutUrl,
-      };
+      return reuseCheckout(latestOrder, latestOrder.payment.providerPaymentId);
     }
 
     assertCheckoutCanBeStarted(latestOrder);
@@ -166,50 +176,52 @@ const prepareCheckout = async (
     });
   }
 
+  let orderWithCheckoutSession: CheckoutOrderDocument;
+  let providerAccepted = false;
   try {
     const session = await createStripeCheckoutSession(
       claimedOrder,
       idempotencyKey,
     );
 
-    if (!session.url) {
-      await orderRepository.markCheckoutSessionCreationFailedIfClaimed(
-        String(claimedOrder._id),
-        claimToken,
-      );
-      throw new ServiceError(
-        'Stripe checkout session has no redirect URL',
-        502,
-      );
-    }
+    providerAccepted = true;
+    if (!session.id?.startsWith('cs_'))
+      throw new ServiceError('Stripe checkout session ID unavailable', 502);
 
-    const orderWithCheckoutSession =
+    const storedOrder =
       await orderRepository.markCheckoutSessionCreatedIfClaimed(
         String(claimedOrder._id),
         claimToken,
         session.id,
-        session.url,
+        session.url ?? undefined,
       );
 
-    if (!orderWithCheckoutSession) {
+    if (!storedOrder) {
       throw new ServiceError(
         'Checkout state changed while creating session',
         409,
       );
     }
 
-    return {
-      order: toPublicOrder(orderWithCheckoutSession),
-      checkoutUrl: session.url,
-    };
+    orderWithCheckoutSession = storedOrder;
   } catch (error) {
-    await orderRepository.markCheckoutSessionCreationFailedIfClaimed(
-      String(claimedOrder._id),
-      claimToken,
-    );
-
+    if (!providerAccepted && isDefinitiveCheckoutCreationFailure(error)) {
+      await orderRepository.markCheckoutSessionCreationFailedIfClaimed(
+        String(claimedOrder._id),
+        claimToken,
+      );
+    } else {
+      await orderRepository.markCheckoutSessionCreationUnknownIfClaimed(
+        String(claimedOrder._id),
+        claimToken,
+      );
+    }
     throw error;
   }
+  return reuseCheckout(
+    orderWithCheckoutSession,
+    orderWithCheckoutSession.payment.providerPaymentId!,
+  );
 };
 
 const resumeCheckout = (
@@ -238,6 +250,96 @@ const resumeCheckout = (
   return prepareCheckout(existingOrder, idempotencyKey);
 };
 
+const recoverCancelledCheckoutSession = async (
+  order: CheckoutOrderDocument,
+  key: string,
+) => {
+  const requireReview = async (): Promise<never> => {
+    await orderRepository.flagStripeCheckoutForReview(String(order._id));
+    throw new ServiceError(
+      'Unable to start payment. Please contact the store to check your previous checkout.',
+      409,
+      { code: 'CHECKOUT_REVIEW_REQUIRED', orderId: String(order._id) },
+    );
+  };
+  // Stripe may prune keys after 24 hours. Use creation time and a one-hour safety margin.
+  if (
+    !isCheckoutCreationRetrySafe(order.createdAt) ||
+    order.checkoutIdempotencyKey !== key ||
+    order.payment.provider !== 'stripe' ||
+    !['requires_payment', 'failed', 'cancelled'].includes(
+      order.payment.status,
+    ) ||
+    (order.payment.providerPaymentId &&
+      !order.payment.providerPaymentId.startsWith('checkout_creation:'))
+  ) {
+    return requireReview();
+  }
+  if (hasActiveCheckoutClaim(order)) {
+    throw new ServiceError(
+      'Previous checkout is still being prepared. Please retry shortly.',
+      409,
+      { code: 'CHECKOUT_PREPARING' },
+    );
+  }
+  try {
+    const session = await createStripeCheckoutSession(order, key);
+    if (
+      !session.id.startsWith('cs_') ||
+      session.metadata?.orderId !== String(order._id) ||
+      session.client_reference_id !== String(order._id) ||
+      session.amount_total !== order.totalCents ||
+      session.currency !== 'aud'
+    ) {
+      return requireReview();
+    }
+    const attached =
+      await orderRepository.attachRecoveredCancelledCheckoutSession(
+        String(order._id),
+        order.payment.providerPaymentId,
+        session.id,
+      );
+    if (!attached) {
+      const latest = await reloadCheckoutOrder(order, key);
+      if (latest?.payment.providerPaymentId?.startsWith('cs_'))
+        return latest.payment.providerPaymentId;
+      return requireReview();
+    }
+    return session.id;
+  } catch {
+    return requireReview();
+  }
+};
+
+export const recoverCheckoutSession = async (
+  order: CheckoutOrderDocument,
+): Promise<string> => {
+  const key = order.checkoutIdempotencyKey;
+  if (
+    !key ||
+    !isCheckoutCreationRetrySafe(order.createdAt) ||
+    (order.payment.providerPaymentId &&
+      !order.payment.providerPaymentId.startsWith('checkout_creation:') &&
+      !order.payment.providerPaymentId.startsWith('cs_'))
+  ) {
+    await orderRepository.flagStripeCheckoutForReview(String(order._id));
+    throw new ServiceError('Checkout requires review', 409, {
+      code: 'CHECKOUT_REVIEW_REQUIRED',
+    });
+  }
+  if (order.status === 'cancelled')
+    return recoverCancelledCheckoutSession(order, key);
+  try {
+    return (await prepareCheckout(order, key)).order.payment!
+      .providerPaymentId!;
+  } catch (error) {
+    const latest = await reloadCheckoutOrder(order, key);
+    if (latest?.payment.providerPaymentId?.startsWith('cs_'))
+      return latest.payment.providerPaymentId;
+    throw error;
+  }
+};
+
 const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
   for (const key of new Set(keys)) {
     const order = await orderRepository.findCheckoutByIdempotencyKey(
@@ -254,32 +356,35 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
     }
     let sessionId = order.payment.providerPaymentId;
     if (!sessionId?.startsWith('cs_')) {
-      if (order.status === 'cancelled') continue;
-      try {
-        // Reuse the original key and claim lease to recover an interrupted creator.
-        const checkout = await prepareCheckout(order, key);
-        sessionId = checkout.order.payment?.providerPaymentId;
-      } catch (error) {
-        if (
-          error instanceof ServiceError &&
-          error.details?.code === 'ORDER_ALREADY_PAID'
-        ) {
-          throw new ServiceError(error.message, error.statusCode, {
-            ...error.details,
-            supersededCheckoutKey: key,
-          });
+      if (order.status === 'cancelled') {
+        sessionId = await recoverCancelledCheckoutSession(order, key);
+      } else {
+        try {
+          // Reuse the original key and claim lease to recover an interrupted creator.
+          const checkout = await prepareCheckout(order, key);
+          sessionId = checkout.order.payment?.providerPaymentId;
+        } catch (error) {
+          if (
+            error instanceof ServiceError &&
+            error.details?.code === 'ORDER_ALREADY_PAID'
+          ) {
+            throw new ServiceError(error.message, error.statusCode, {
+              ...error.details,
+              supersededCheckoutKey: key,
+            });
+          }
+          if (
+            error instanceof ServiceError &&
+            error.details?.code === 'CHECKOUT_PREPARING'
+          ) {
+            throw new ServiceError(
+              'Previous checkout is still being prepared. Please retry shortly.',
+              409,
+              { code: 'CHECKOUT_PREPARING' },
+            );
+          }
+          throw error;
         }
-        if (
-          error instanceof ServiceError &&
-          error.details?.code === 'CHECKOUT_PREPARING'
-        ) {
-          throw new ServiceError(
-            'Previous checkout is still being prepared. Please retry shortly.',
-            409,
-            { code: 'CHECKOUT_PREPARING' },
-          );
-        }
-        throw error;
       }
       if (!sessionId?.startsWith('cs_')) {
         throw new ServiceError(
@@ -315,6 +420,12 @@ const closeSupersededCheckouts = async (userId: string, keys: string[]) => {
         'Could not close previous checkout. Please retry.',
         409,
         { code: 'CHECKOUT_PREPARING' },
+      );
+    }
+    if (order.status === 'cancelled') {
+      await orderRepository.clearCancelledCheckoutReviewIfClosed(
+        String(order._id),
+        sessionId,
       );
     }
     const cancelled = await orderRepository.markStripeCheckoutFailedIfNotPaid(

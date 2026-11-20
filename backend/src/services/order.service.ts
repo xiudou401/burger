@@ -340,6 +340,18 @@ export const updateOrderStatus = async (
     throw new ServiceError('Stripe payments must be confirmed by webhook', 400);
   }
 
+  if (
+    nextStatus === 'cancelled' &&
+    order.status === 'pending_payment' &&
+    order.payment?.provider === 'stripe'
+  ) {
+    throw new ServiceError(
+      'Pending Stripe checkouts must be closed through Stripe before cancellation. Please reconcile the checkout first.',
+      409,
+      { code: 'CHECKOUT_REVIEW_REQUIRED', orderId },
+    );
+  }
+
   order.status = nextStatus;
 
   if (nextStatus === 'confirmed') {

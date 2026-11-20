@@ -23,6 +23,23 @@ test('shows late Stripe payment review even without local paid status', () => {
   ).toMatch(/Stripe recorded a payment/);
 });
 
+test('does not claim payment was received when the cancelled checkout session is unknown', () => {
+  expect(
+    getAdminOrderPaymentNotice({
+      ...order,
+      status: 'cancelled',
+      payment: {
+        status: 'cancelled',
+        currency: 'aud',
+        requiresReview: true,
+        reviewReason: 'stripe_checkout_session_unknown',
+      },
+    }),
+  ).toBe(
+    'Stripe checkout status unknown - verify and close any payment session',
+  );
+});
+
 test('distinguishes unverified Stripe payment from ordinary pending payment', () => {
   expect(
     getAdminOrderPaymentNotice({

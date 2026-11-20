@@ -9,11 +9,17 @@ import {
   startStripeReconciliationWorker,
 } from './stripe-reconciliation.service';
 import { appLogger } from '../utils/logger';
+import { recoverCheckoutSession } from './checkout-order.service';
+jest.mock('./checkout-order.service', () => ({
+  recoverCheckoutSession: jest.fn(),
+}));
 
 jest.mock('../config/env', () => ({ env: { STRIPE_SECRET_KEY: 'test-key' } }));
 jest.mock('../repositories/order.repository', () => ({
   orderRepository: {
     listStripeReconciliationCandidates: jest.fn(),
+    listStripeCheckoutRecoveryCandidates: jest.fn(),
+    clearCancelledCheckoutReviewIfClosed: jest.fn(),
     setStripeReconciliationRequired: jest.fn(),
     flagUnverifiedStripeCharge: jest.fn(),
   },
@@ -33,6 +39,9 @@ const candidate = (id = 'order-A') => ({
 });
 beforeEach(() => {
   jest.resetAllMocks();
+  jest
+    .mocked(orderRepository.listStripeCheckoutRecoveryCandidates)
+    .mockResolvedValue([]);
   jest
     .mocked(orderRepository.listStripeReconciliationCandidates)
     .mockResolvedValue([candidate()] as never);
@@ -66,6 +75,52 @@ test('only cancels a session confirmed expired and unpaid by Stripe', async () =
     'cancelled',
     'customer_abandoned_checkout',
   );
+});
+
+test('recovers an interrupted creation without waiting for the customer to click Pay again', async () => {
+  jest
+    .mocked(orderRepository.listStripeReconciliationCandidates)
+    .mockResolvedValue([]);
+  jest
+    .mocked(orderRepository.listStripeCheckoutRecoveryCandidates)
+    .mockResolvedValue([
+      {
+        ...candidate(),
+        status: 'pending_payment',
+        payment: { providerPaymentId: 'checkout_creation:old' },
+      },
+    ] as never);
+  jest.mocked(recoverCheckoutSession).mockResolvedValue('cs_test_recovered');
+  jest.mocked(retrieveStripeCheckoutSession).mockResolvedValue({
+    status: 'expired',
+    payment_status: 'unpaid',
+  } as never);
+  await reconcileStripeCheckouts();
+  expect(recoverCheckoutSession).toHaveBeenCalledTimes(1);
+  expect(markStripeCheckoutFailed).toHaveBeenCalledWith(
+    'cs_test_recovered',
+    'cancelled',
+    'customer_abandoned_checkout',
+  );
+  expect(
+    orderRepository.setStripeReconciliationRequired,
+  ).toHaveBeenLastCalledWith('order-A', 'cs_test_recovered', false);
+});
+
+test('does not mark an unknown creation cancelled when automatic recovery cannot confirm it', async () => {
+  jest
+    .mocked(orderRepository.listStripeReconciliationCandidates)
+    .mockResolvedValue([]);
+  jest
+    .mocked(orderRepository.listStripeCheckoutRecoveryCandidates)
+    .mockResolvedValue([{ _id: 'order-A', payment: {} }] as never);
+  jest
+    .mocked(recoverCheckoutSession)
+    .mockRejectedValue(new Error('requires review'));
+  await reconcileStripeCheckouts();
+  expect(markStripeCheckoutFailed).not.toHaveBeenCalled();
+  expect(markStripeCheckoutPaid).not.toHaveBeenCalled();
+  expect(appLogger.error).toHaveBeenCalled();
 });
 
 const capturedCharge = {

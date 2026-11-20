@@ -235,11 +235,32 @@ the demo analytics and must not be interpreted as commercial revenue.
 
 The backend also starts a Stripe reconciliation worker when a Stripe secret
 key is configured. It runs immediately and every five minutes, checking up to
-25 orders per tick with a rotating ID cursor. Pending checkouts at least 15
+25 known-Session orders and up to 25 incomplete creations per tick with a rotating
+ID cursor. Pending checkouts at least 15
 minutes old are checked against Stripe: paid sessions use the existing order,
 amount and currency validation; expired unpaid sessions are cancelled.
-Open sessions and failed lookups are not cancelled. Fake demo IDs, missing
-Session IDs and interrupted creation locks require separate investigation.
+Open sessions and failed lookups are not cancelled. Demo checkout attempts
+are excluded from automatic creation recovery. Missing Session IDs and stale
+creation locks use the same 23-hour retry window as the request path; missing
+keys, malformed records or older attempts are marked for review. Temporary
+unknown outcomes retain their creation tokens and reconciliation retry marker.
+Administrators cannot cancel a pending Stripe checkout by changing only its
+local order status; the external checkout must be reconciled/closed first.
+An already-cancelled superseded checkout without a saved `cs_` Session ID
+does not get silently skipped. If its original key is present, its order is
+less than 23 hours old, and no active creation lease remains, the backend
+replays the original Stripe creation request to recover the Session, validates
+its order/amount/currency association, records its ID without reopening the
+order, and attempts to expire it. A confirmed expired Session clears only the
+unknown-session review marker. Stripe retains idempotency results for at least
+24 hours; the shorter recovery window uses order creation time as a conservative
+bound. Changed request parameters, older/malformed records and other uncertain
+results still block replacement and receive `stripe_checkout_session_unknown`
+for manual verification. The original recovery token is not discarded on failure.
+Existing `cs_` Session IDs are never replaced by creation claims, including
+after card-payment failures. Creation responses are followed by a fresh Stripe
+lookup before returning a payment URL. Only definite provider validation
+rejections clear creation claims; network errors and persistence failures do not.
 A persistent retry marker keeps paid reconciliation eligible if the Outbox
 enqueue fails. This worker only runs while the backend process is running;
 it supplements Webhooks rather than replacing them.

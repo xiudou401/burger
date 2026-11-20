@@ -67,6 +67,33 @@ export interface OrderAnalyticsAttachmentRate {
 }
 
 export const orderRepository = {
+  listStripeCheckoutRecoveryCandidates(
+    before: Date,
+    afterId?: string,
+    limit = 25,
+  ) {
+    return OrderModel.find({
+      'payment.provider': 'stripe',
+      status: { $in: ['pending_payment', 'cancelled'] },
+      'payment.status': { $in: ['requires_payment', 'failed', 'cancelled'] },
+      'payment.providerPaymentId': { $not: /^cs_/ },
+      checkoutIdempotencyKey: { $not: /^demo-/ },
+      createdAt: { $lte: before },
+      $or: [
+        { 'payment.checkoutSessionCreationClaimedAt': { $exists: false } },
+        {
+          'payment.checkoutSessionCreationClaimedAt': {
+            $lt: new Date(Date.now() - TTL_MS.CHECKOUT_SESSION_CREATION_LEASE),
+          },
+        },
+      ],
+      ...(afterId ? { _id: { $gt: toObjectId(afterId) } } : {}),
+    })
+      .sort({ _id: 1 })
+      .limit(limit)
+      .lean()
+      .exec();
+  },
   listStripeReconciliationCandidates(
     before: Date,
     afterId?: string,
@@ -681,6 +708,70 @@ export const orderRepository = {
     ).exec();
   },
 
+  flagStripeCheckoutForReview(orderId: string) {
+    if (!isObjectId(orderId)) return Promise.resolve(null);
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: { $in: ['pending_payment', 'cancelled'] },
+        'payment.provider': 'stripe',
+        'payment.status': { $nin: ['paid', 'refunded'] },
+        'payment.providerPaymentId': { $not: /^cs_/ },
+        'payment.requiresReview': { $ne: true },
+      },
+      {
+        $set: {
+          'payment.requiresReview': true,
+          'payment.reviewReason': 'stripe_checkout_session_unknown',
+          'payment.reviewCreatedAt': new Date(),
+        },
+      },
+      { returnDocument: 'after' },
+    ).exec();
+  },
+
+  attachRecoveredCancelledCheckoutSession(
+    orderId: string,
+    previousSessionId: string | undefined,
+    sessionId: string,
+  ) {
+    if (!isObjectId(orderId)) return Promise.resolve(null);
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: 'cancelled',
+        'payment.provider': 'stripe',
+        'payment.status': { $in: ['requires_payment', 'failed', 'cancelled'] },
+        'payment.providerPaymentId': previousSessionId ?? null,
+      },
+      {
+        $set: { 'payment.providerPaymentId': sessionId },
+        $unset: { 'payment.checkoutSessionCreationClaimedAt': '' },
+        $inc: { __v: 1 },
+      },
+      { returnDocument: 'after' },
+    ).exec();
+  },
+
+  clearCancelledCheckoutReviewIfClosed(orderId: string, sessionId: string) {
+    if (!isObjectId(orderId)) return Promise.resolve(null);
+    return OrderModel.updateOne(
+      {
+        _id: toObjectId(orderId),
+        status: 'cancelled',
+        'payment.providerPaymentId': sessionId,
+        'payment.reviewReason': 'stripe_checkout_session_unknown',
+      },
+      {
+        $unset: {
+          'payment.requiresReview': '',
+          'payment.reviewReason': '',
+          'payment.reviewCreatedAt': '',
+        },
+      },
+    ).exec();
+  },
+
   flagStripePaymentForReview(sessionId: string, paidAt: Date) {
     return OrderModel.findOneAndUpdate(
       {
@@ -779,19 +870,17 @@ export const orderRepository = {
         status: 'pending_payment',
         'payment.status': { $in: ['requires_payment', 'failed'] },
         'payment.reviewReason': { $ne: 'stripe_paid_charge_unverified' },
+        createdAt: {
+          $gt: new Date(now.getTime() - TTL_MS.CHECKOUT_CREATION_RETRY_WINDOW),
+        },
         $and: [
           {
-            $or: [
-              { checkoutUrl: { $exists: false } },
-              { checkoutUrl: null },
-              { 'payment.status': 'failed' },
-            ],
+            $or: [{ checkoutUrl: { $exists: false } }, { checkoutUrl: null }],
           },
           {
             $or: [
               { 'payment.providerPaymentId': { $exists: false } },
               { 'payment.providerPaymentId': null },
-              { 'payment.status': 'failed' },
               {
                 $and: [
                   {
@@ -838,7 +927,7 @@ export const orderRepository = {
     orderId: string,
     claimToken: string,
     sessionId: string,
-    checkoutUrl: string,
+    checkoutUrl?: string,
   ) {
     if (!isObjectId(orderId)) {
       return Promise.resolve(null);
@@ -854,7 +943,7 @@ export const orderRepository = {
       {
         $set: {
           'payment.providerPaymentId': sessionId,
-          checkoutUrl,
+          ...(checkoutUrl ? { checkoutUrl } : {}),
         },
         $unset: {
           'payment.checkoutSessionCreationClaimedAt': '',
@@ -890,6 +979,22 @@ export const orderRepository = {
           'payment.checkoutSessionCreationClaimedAt': '',
         },
       },
+      { returnDocument: 'after' },
+    ).exec();
+  },
+
+  markCheckoutSessionCreationUnknownIfClaimed(
+    orderId: string,
+    claimToken: string,
+  ) {
+    if (!isObjectId(orderId)) return Promise.resolve(null);
+    return OrderModel.findOneAndUpdate(
+      {
+        _id: toObjectId(orderId),
+        status: 'pending_payment',
+        'payment.providerPaymentId': claimToken,
+      },
+      { $set: { 'payment.reconciliationRequired': true } },
       { returnDocument: 'after' },
     ).exec();
   },
