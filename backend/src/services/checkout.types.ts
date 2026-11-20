@@ -34,6 +34,7 @@ export type CheckoutOrderDocument = {
   totalCents: number;
   menuVersion: number;
   checkoutUrl?: string;
+  checkoutIdempotencyKey?: string;
   status: OrderStatus;
   payment: {
     provider?: 'stripe';

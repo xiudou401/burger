@@ -3,6 +3,8 @@ import type { Order, OrderStatus } from '../types/order';
 export const getAdminOrderPaymentNotice = (order: Order, now = Date.now()) => {
   if (order.cancellationReason === 'archived_test_checkout')
     return 'Archived test checkout - no real charge';
+  if (order.payment?.reviewReason === 'stripe_checkout_session_unknown')
+    return 'Stripe checkout status unknown - verify and close any payment session';
   if (order.payment?.reviewReason === 'stripe_paid_charge_unverified')
     return 'Stripe reports payment - charge verification pending';
   if (order.payment?.requiresReview)

@@ -7,6 +7,8 @@ import {
   markStripeCheckoutPaid,
 } from './stripe-payment.service';
 import { appLogger } from '../utils/logger';
+import { recoverCheckoutSession } from './checkout-order.service';
+import type { CheckoutOrderDocument } from './checkout.types';
 
 const MIN_AGE_MS = 15 * 60 * 1000;
 const BATCH_SIZE = 25;
@@ -20,11 +22,21 @@ export const reconcileStripeCheckouts = async (
     afterId,
     BATCH_SIZE,
   );
-  for (const order of orders) {
+  const incomplete = await orderRepository.listStripeCheckoutRecoveryCandidates(
+    new Date(now.getTime() - MIN_AGE_MS),
+    afterId,
+    BATCH_SIZE,
+  );
+  for (const order of [...orders, ...incomplete]) {
     const orderId = String(order._id);
-    const sessionId = order.payment.providerPaymentId;
-    if (!sessionId || !/^cs_(test|live)_/.test(sessionId)) continue;
+    let sessionId = order.payment.providerPaymentId;
     try {
+      if (!sessionId?.startsWith('cs_')) {
+        sessionId = await recoverCheckoutSession(
+          order as unknown as CheckoutOrderDocument,
+        );
+      }
+      if (!/^cs_(test|live)_/.test(sessionId)) continue;
       const session = await retrieveStripeCheckoutSession(sessionId, {
         expand: ['payment_intent.latest_charge'],
       });
@@ -67,6 +79,16 @@ export const reconcileStripeCheckouts = async (
           'cancelled',
           'customer_abandoned_checkout',
         );
+        await orderRepository.setStripeReconciliationRequired(
+          orderId,
+          sessionId,
+          false,
+        );
+        if (order.status === 'cancelled')
+          await orderRepository.clearCancelledCheckoutReviewIfClosed(
+            orderId,
+            sessionId,
+          );
       }
     } catch (error) {
       appLogger.error('stripe_checkout_reconciliation_failed', {
@@ -75,8 +97,11 @@ export const reconcileStripeCheckouts = async (
       });
     }
   }
-  return orders.length === BATCH_SIZE
-    ? String(orders[orders.length - 1]._id)
+  const fullBatches = [orders, incomplete].filter(
+    (batch) => batch.length === BATCH_SIZE,
+  );
+  return fullBatches.length
+    ? fullBatches.map((batch) => String(batch[batch.length - 1]._id)).sort()[0]
     : undefined;
 };
 

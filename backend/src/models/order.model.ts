@@ -19,6 +19,7 @@ export type PaymentStatus =
 
 export type PaymentReviewReason =
   | 'stripe_paid_after_order_not_payable'
+  | 'stripe_checkout_session_unknown'
   | 'stripe_paid_charge_unverified';
 
 export type CancellationReason =
@@ -219,6 +220,7 @@ const orderSchema = new Schema<Order>(
         type: String,
         enum: [
           'stripe_paid_after_order_not_payable',
+          'stripe_checkout_session_unknown',
           'stripe_paid_charge_unverified',
         ],
       },
