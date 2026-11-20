@@ -22,10 +22,12 @@ export const menuItemRepository = {
     return MenuItemModel.countDocuments(query);
   },
 
-  findByIds(ids: string[]) {
-    return MenuItemModel.find({
+  findByIds(ids: string[], session?: ClientSession) {
+    const query = MenuItemModel.find({
       _id: { $in: ids },
-    }).lean();
+    });
+    if (session) query.session(session);
+    return query.lean();
   },
 
   findById(menuItemId: string, session?: ClientSession) {

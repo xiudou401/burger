@@ -108,7 +108,14 @@ export const markStripeCheckoutPaid = async (
   const wasAlreadyPaid = order.payment.status === 'paid';
 
   if (wasAlreadyPaid) {
-    if (order.status !== 'cancelled') await enqueueOrderPaidSideEffects(order);
+    if (order.status !== 'cancelled') {
+      await emitStripeOrderEventIfPossible(
+        'order:paid',
+        toPublicOrder(order),
+        String(order.userId),
+      );
+      await enqueueOrderPaidSideEffects(order);
+    }
     return toPublicOrder(order);
   }
 
@@ -150,8 +157,14 @@ export const markStripeCheckoutPaid = async (
   }
 
   const publicOrder = toPublicOrder(paidOrder);
-  if (!archiveTestCheckout) await enqueueOrderPaidSideEffects(paidOrder);
-  else
+  if (!archiveTestCheckout) {
+    await emitStripeOrderEventIfPossible(
+      'order:paid',
+      publicOrder,
+      String(paidOrder.userId),
+    );
+    await enqueueOrderPaidSideEffects(paidOrder);
+  } else
     void emitStripeOrderEventIfPossible(
       'order:cancelled',
       publicOrder,

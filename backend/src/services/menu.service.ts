@@ -19,8 +19,10 @@ export const mutateMenu = async <T>(
   return committed.result;
 };
 
-export const getMenuVersion = async (): Promise<number> => {
-  const menuDoc = await menuRepository.findMainVersion();
+export const getMenuVersion = async (
+  session?: ClientSession,
+): Promise<number> => {
+  const menuDoc = await menuRepository.findMainVersion(session);
 
   return menuDoc?.version ?? 0;
 };

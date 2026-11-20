@@ -49,9 +49,6 @@ const processOrderPaidEvent = async (payload: Record<string, unknown>) => {
 
   const publicOrder = toPublicOrder(order);
 
-  await sendOrderConfirmationIfPossible(userId, publicOrder, {
-    throwOnFailure: true,
-  });
   try {
     emitOrderEvent('order:paid', publicOrder, userId);
   } catch (error) {
@@ -62,6 +59,9 @@ const processOrderPaidEvent = async (payload: Record<string, unknown>) => {
   } catch (error) {
     appLogger.error('order_paid_analytics_alert_failed', { orderId, error });
   }
+  await sendOrderConfirmationIfPossible(userId, publicOrder, {
+    throwOnFailure: true,
+  });
 };
 
 export const processNextOutboxEvent = async () => {
