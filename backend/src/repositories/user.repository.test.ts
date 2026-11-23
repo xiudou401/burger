@@ -35,23 +35,6 @@ describe('userRepository', () => {
     expect(exec).toHaveBeenCalled();
   });
 
-  test('finds valid password reset tokens with hidden fields selected', async () => {
-    const exec = jest.fn().mockResolvedValue(null);
-    const select = jest.fn().mockReturnValue({ exec });
-
-    jest.mocked(UserModel.findOne).mockReturnValue({ select } as never);
-
-    await userRepository.findByValidPasswordResetToken('token-hash');
-
-    expect(UserModel.findOne).toHaveBeenCalledWith({
-      passwordResetTokenHash: 'token-hash',
-      passwordResetExpiresAt: { $gt: expect.any(Date) },
-    });
-    expect(select).toHaveBeenCalledWith(
-      '+passwordHash +passwordResetTokenHash +passwordResetExpiresAt',
-    );
-  });
-
   test('updates email verification token by id', async () => {
     const exec = jest.fn().mockResolvedValue(null);
     const expiresAt = new Date('2026-01-01T00:00:00.000Z');

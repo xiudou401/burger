@@ -26,15 +26,6 @@ export const userRepository = {
     return UserModel.findOne({ email }).select('+passwordHash').exec();
   },
 
-  findByValidEmailVerificationToken(tokenHash: string, now = new Date()) {
-    return UserModel.findOne({
-      emailVerificationTokenHash: tokenHash,
-      emailVerificationExpiresAt: { $gt: now },
-    })
-      .select('+emailVerificationTokenHash +emailVerificationExpiresAt')
-      .exec();
-  },
-
   consumeEmailVerificationToken(tokenHash: string, now = new Date()) {
     return UserModel.findOneAndUpdate(
       {
@@ -55,15 +46,6 @@ export const userRepository = {
         returnDocument: 'after',
       },
     ).exec();
-  },
-
-  findByValidPasswordResetToken(tokenHash: string, now = new Date()) {
-    return UserModel.findOne({
-      passwordResetTokenHash: tokenHash,
-      passwordResetExpiresAt: { $gt: now },
-    })
-      .select('+passwordHash +passwordResetTokenHash +passwordResetExpiresAt')
-      .exec();
   },
 
   consumePasswordResetToken(

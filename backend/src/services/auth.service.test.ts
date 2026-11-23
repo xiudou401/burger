@@ -23,8 +23,6 @@ jest.mock('../repositories/user.repository', () => ({
     create: jest.fn(),
     findByEmail: jest.fn(),
     findByEmailWithPassword: jest.fn(),
-    findByValidEmailVerificationToken: jest.fn(),
-    findByValidPasswordResetToken: jest.fn(),
     consumeEmailVerificationToken: jest.fn(),
     consumePasswordResetToken: jest.fn(),
     save: jest.fn(),
