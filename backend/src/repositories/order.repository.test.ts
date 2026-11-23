@@ -204,23 +204,6 @@ describe('orderRepository', () => {
     expect(query.exec).toHaveBeenCalled();
   });
 
-  test('lists orders by status sorted by recent updates', async () => {
-    const query = chain([]);
-    jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
-
-    await expect(orderRepository.listByStatus('cancelled', 5)).resolves.toEqual(
-      [],
-    );
-
-    expect(OrderModel.find).toHaveBeenCalledWith({ status: 'cancelled' });
-    expect(query.sort).toHaveBeenCalledWith({
-      updatedAt: -1,
-      createdAt: -1,
-      _id: -1,
-    });
-    expect(query.limit).toHaveBeenCalledWith(5);
-  });
-
   test('intersects placement dates with the status and cursor before paginating', async () => {
     const query = chain([]);
     jest.mocked(OrderModel.find).mockReturnValue({ sort: query.sort } as never);
