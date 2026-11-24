@@ -131,7 +131,6 @@ describe('stripe webhook event repository', () => {
           eventType: 'checkout.session.completed',
           status: 'processing',
           processingClaimToken: expect.any(String),
-          lastReceivedAt: expect.any(Date),
         }),
         $inc: {
           attempts: 1,
@@ -233,7 +232,6 @@ describe('stripe webhook event repository', () => {
         $set: {
           status: 'failed',
           lastError: 'boom',
-          lastReceivedAt: expect.any(Date),
         },
         $unset: {
           processingClaimToken: '',

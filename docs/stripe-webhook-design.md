@@ -45,8 +45,9 @@ a Stripe event collection:
 - `eventType`
 - `status`
 - `orderId`
-- `receivedAt`
-- `lastReceivedAt`
+- `processingClaimToken`
+- `createdAt`
+- `updatedAt`
 - `attempts`
 - `processedAt`
 - `lastError`
@@ -55,8 +56,8 @@ Processing flow:
 
 1. Verify the Stripe signature.
 2. Atomically claim the event id for processing.
-3. If it was already processed or is still inside an active processing lease,
-   return `200`.
+3. If it was already processed, return `200`. If another request holds an active
+   processing lease, return `409` so delivery is not acknowledged as complete.
 4. Apply the order update.
 5. Mark the event as processed.
 6. If processing fails, mark the event failed and return through error handling.

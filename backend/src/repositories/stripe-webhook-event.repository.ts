@@ -48,7 +48,6 @@ export const stripeWebhookEventRepository = {
           eventType,
           status: 'processing',
           processingClaimToken: claimToken,
-          lastReceivedAt: now,
         },
         $inc: {
           attempts: 1,
@@ -72,7 +71,6 @@ export const stripeWebhookEventRepository = {
         status: 'processing',
         processingClaimToken: claimToken,
         attempts: 1,
-        lastReceivedAt: now,
       });
 
       return { shouldProcess: true, isDuplicate: false, claimToken };
@@ -122,7 +120,6 @@ export const stripeWebhookEventRepository = {
         $set: {
           status: 'failed',
           lastError: message,
-          lastReceivedAt: new Date(),
         },
         $unset: {
           processingClaimToken: '',

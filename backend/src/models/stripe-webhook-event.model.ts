@@ -11,7 +11,6 @@ export interface StripeWebhookEvent {
   attempts: number;
   lastError?: string;
   processedAt?: Date;
-  lastReceivedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,11 +51,6 @@ const stripeWebhookEventSchema = new Schema<StripeWebhookEvent>(
     },
     lastError: String,
     processedAt: Date,
-    lastReceivedAt: {
-      type: Date,
-      required: true,
-      default: Date.now,
-    },
   },
   { timestamps: true },
 );

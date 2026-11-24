@@ -106,7 +106,7 @@ describe('realtime service permissions', () => {
     getConnectionHandler()(socket);
 
     expect(socket.join).toHaveBeenCalledWith('menu-subscribers');
-    expect(socket.join).not.toHaveBeenCalledWith('admins');
+    expect(socket.join).not.toHaveBeenCalledWith('backoffice');
   });
 
   test('rejects admin sockets without an auth token', async () => {
@@ -161,7 +161,7 @@ describe('realtime service permissions', () => {
 
     expect(socket.join).toHaveBeenCalledWith('menu-subscribers');
     expect(socket.join).toHaveBeenCalledWith('user:user-1');
-    expect(socket.join).not.toHaveBeenCalledWith('admins');
+    expect(socket.join).not.toHaveBeenCalledWith('backoffice');
   });
 
   test('puts staff admin sockets into the admin room', async () => {
@@ -179,7 +179,7 @@ describe('realtime service permissions', () => {
 
     expect(socket.join).toHaveBeenCalledWith('menu-subscribers');
     expect(socket.join).toHaveBeenCalledWith('user:staff-1');
-    expect(socket.join).toHaveBeenCalledWith('admins');
+    expect(socket.join).toHaveBeenCalledWith('backoffice');
   });
 
   test('disconnects active realtime sockets for a disabled user room', () => {
