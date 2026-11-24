@@ -9,7 +9,7 @@ import { appLogger } from '../utils/logger';
 import type { PublicOrder } from './order.service';
 import type { AnalyticsAlert } from './admin-alert.service';
 
-const ADMIN_ROOM = 'admins';
+const BACKOFFICE_ROOM = 'backoffice';
 const MENU_ROOM = 'menu-subscribers';
 
 type OrderRealtimeEvent =
@@ -120,7 +120,7 @@ export const initializeRealtimeServer = (server: HttpServer) => {
       hasPermission(socket.data.user, 'view_orders') &&
       requiresAdminAccess(socket.handshake.auth)
     ) {
-      socket.join(ADMIN_ROOM);
+      socket.join(BACKOFFICE_ROOM);
       appLogger.info('realtime_admin_connected', {
         socketId: socket.id,
         userId: socket.data.user.id,
@@ -153,7 +153,7 @@ export const emitOrderEvent = (
 
   const payload = toOrderPayload(order);
 
-  io.to(ADMIN_ROOM).emit(event, payload);
+  io.to(BACKOFFICE_ROOM).emit(event, payload);
 
   if (userId) {
     io.to(getUserRoom(userId)).emit(event, payload);
@@ -169,7 +169,7 @@ export const emitMenuUpdated = (payload: MenuUpdatedPayload) => {
 export const emitAnalyticsAlert = (payload: AnalyticsAlert) => {
   if (!io) return;
 
-  io.to(ADMIN_ROOM).emit('analytics:alert', payload);
+  io.to(BACKOFFICE_ROOM).emit('analytics:alert', payload);
 };
 
 export const disconnectRealtimeUser = (userId: string) => {
