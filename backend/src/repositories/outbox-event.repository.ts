@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import type { ClientSession } from 'mongoose';
 import {
   OutboxEventModel,
   type OutboxEvent,
@@ -15,12 +16,34 @@ const isMongoDuplicateKeyError = (error: unknown) => {
 };
 
 export const outboxEventRepository = {
-  async enqueue(data: {
-    eventType: OutboxEventType;
-    eventKey: string;
-    aggregateId: string;
-    payload: Record<string, unknown>;
-  }) {
+  async enqueue(
+    data: {
+      eventType: OutboxEventType;
+      eventKey: string;
+      aggregateId: string;
+      payload: Record<string, unknown>;
+    },
+    session?: ClientSession,
+  ) {
+    if (session) {
+      const now = new Date();
+      // A duplicate insert aborts a transaction, so ensure existence with an upsert.
+      await OutboxEventModel.updateOne(
+        { eventKey: data.eventKey },
+        {
+          $setOnInsert: {
+            ...data,
+            status: 'pending',
+            attempts: 0,
+            availableAt: now,
+            createdAt: now,
+            updatedAt: now,
+          },
+        },
+        { upsert: true, session, timestamps: false },
+      ).exec();
+      return;
+    }
     try {
       await OutboxEventModel.create({
         ...data,

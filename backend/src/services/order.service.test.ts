@@ -17,6 +17,7 @@ import {
 import { listAdminOrders, updateOrderStatus } from './order.service';
 import { getPermissionsForRole } from '../types/permissions';
 import { recoverCheckoutSession } from './checkout-order.service';
+import mongoose from 'mongoose';
 
 const mockCreateSession = jest.fn();
 const mockRetrieveSession = jest.fn();
@@ -99,6 +100,7 @@ type CheckoutOrderTestDocument = {
 };
 
 describe('order service', () => {
+  const dbSession = {} as mongoose.ClientSession;
   const userId = '507f1f77bcf86cd799439011';
   const orderId = '507f1f77bcf86cd799439012';
   const menuItemId = '507f1f77bcf86cd799439013';
@@ -161,6 +163,9 @@ describe('order service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest
+      .spyOn(mongoose.connection, 'transaction')
+      .mockImplementation(async (work) => work(dbSession));
     jest.spyOn(Date, 'now').mockReturnValue(now.getTime());
     mockExpireSession
       .mockReset()
@@ -1476,9 +1481,12 @@ describe('order service', () => {
 
     expect(
       orderRepository.markStripeCheckoutPaidIfPending,
-    ).toHaveBeenCalledWith(orderId, 'cs_test_123', paidAt, false);
+    ).toHaveBeenCalledWith(orderId, 'cs_test_123', paidAt, false, dbSession);
     expect(orderRepository.save).not.toHaveBeenCalled();
-    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(
+      paidOrder,
+      dbSession,
+    );
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(result.status).toBe('confirmed');
     expect(result.payment?.status).toBe('paid');
@@ -1526,7 +1534,13 @@ describe('order service', () => {
       );
       expect(
         orderRepository.markStripeCheckoutPaidIfPending,
-      ).toHaveBeenCalledWith(orderId, 'cs_test_123', expect.any(Date), archive);
+      ).toHaveBeenCalledWith(
+        orderId,
+        'cs_test_123',
+        expect.any(Date),
+        archive,
+        dbSession,
+      );
       expect(result.status).toBe(archive ? 'cancelled' : 'confirmed');
       expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(
         archive ? 0 : 1,
@@ -1535,7 +1549,7 @@ describe('order service', () => {
   );
 
   test.each([false, true])(
-    'notifies before enqueueing email even when realtime fails: %s',
+    'notifies after committing the outbox even when realtime fails: %s',
     async (realtimeFails) => {
       if (realtimeFails) {
         jest.mocked(emitOrderEvent).mockImplementationOnce(() => {
@@ -1608,7 +1622,10 @@ describe('order service', () => {
       expect(
         orderRepository.markStripeCheckoutPaidIfPending,
       ).toHaveBeenCalled();
-      expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
+      expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(
+        paidOrder,
+        dbSession,
+      );
       expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
       expect(emitOrderEvent).toHaveBeenCalledWith(
         'order:paid',
@@ -1617,7 +1634,7 @@ describe('order service', () => {
       );
       expect(
         jest.mocked(emitOrderEvent).mock.invocationCallOrder[0],
-      ).toBeLessThan(
+      ).toBeGreaterThan(
         jest.mocked(enqueueOrderPaidSideEffects).mock.invocationCallOrder[0],
       );
       expect(emitCurrentAnalyticsAlerts).not.toHaveBeenCalled();
@@ -1734,7 +1751,13 @@ describe('order service', () => {
 
     expect(
       orderRepository.markStripeCheckoutPaidIfPending,
-    ).toHaveBeenCalledWith(orderId, 'cs_test_123', providerPaidAt, false);
+    ).toHaveBeenCalledWith(
+      orderId,
+      'cs_test_123',
+      providerPaidAt,
+      false,
+      dbSession,
+    );
     expect(orderRepository.flagStripePaymentForReview).toHaveBeenCalledWith(
       'cs_test_123',
       providerPaidAt,
@@ -1812,7 +1835,10 @@ describe('order service', () => {
       orderRepository.markStripeCheckoutPaidIfPending,
     ).toHaveBeenCalledTimes(2);
     expect(enqueueOrderPaidSideEffects).toHaveBeenCalledTimes(1);
-    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(paidOrder);
+    expect(enqueueOrderPaidSideEffects).toHaveBeenCalledWith(
+      paidOrder,
+      dbSession,
+    );
     expect(sendOrderConfirmationEmail).not.toHaveBeenCalled();
     expect(firstResult.payment?.status).toBe('paid');
     expect(secondResult.payment?.status).toBe('paid');

@@ -11,6 +11,7 @@ import { emitOrderEvent } from './realtime.service';
 import { emitCurrentAnalyticsAlerts } from './admin-alert.service';
 import { appLogger } from '../utils/logger';
 import { enqueueOrderPaidSideEffects } from './outbox.service';
+import mongoose from 'mongoose';
 
 const HISTORICAL_TEST_CHECKOUT_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -109,12 +110,12 @@ export const markStripeCheckoutPaid = async (
 
   if (wasAlreadyPaid) {
     if (order.status !== 'cancelled') {
+      await enqueueOrderPaidSideEffects(order);
       await emitStripeOrderEventIfPossible(
         'order:paid',
         toPublicOrder(order),
         String(order.userId),
       );
-      await enqueueOrderPaidSideEffects(order);
     }
     return toPublicOrder(order);
   }
@@ -123,11 +124,22 @@ export const markStripeCheckoutPaid = async (
     session.livemode === false &&
     typeof session.created === 'number' &&
     session.created * 1000 <= Date.now() - HISTORICAL_TEST_CHECKOUT_AGE_MS;
-  const paidOrder = await orderRepository.markStripeCheckoutPaidIfPending(
-    String(order._id),
-    session.id,
-    paidAt,
-    archiveTestCheckout,
+  const paidOrder = await mongoose.connection.transaction(
+    async (dbSession) => {
+      const updatedOrder =
+        await orderRepository.markStripeCheckoutPaidIfPending(
+          String(order._id),
+          session.id,
+          paidAt,
+          archiveTestCheckout,
+          dbSession,
+        );
+      if (updatedOrder && !archiveTestCheckout) {
+        await enqueueOrderPaidSideEffects(updatedOrder, dbSession);
+      }
+      return updatedOrder;
+    },
+    { readPreference: 'primary', writeConcern: { w: 'majority' } },
   );
 
   if (!paidOrder) {
@@ -163,7 +175,6 @@ export const markStripeCheckoutPaid = async (
       publicOrder,
       String(paidOrder.userId),
     );
-    await enqueueOrderPaidSideEffects(paidOrder);
   } else
     void emitStripeOrderEventIfPossible(
       'order:cancelled',

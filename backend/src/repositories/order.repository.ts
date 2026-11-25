@@ -1,4 +1,4 @@
-import { Types } from 'mongoose';
+import { Types, type ClientSession } from 'mongoose';
 import {
   OrderModel,
   type Order,
@@ -645,6 +645,7 @@ export const orderRepository = {
     sessionId: string,
     paidAt: Date,
     archiveTestCheckout = false,
+    session?: ClientSession,
   ) {
     if (!isObjectId(orderId)) {
       return Promise.resolve(null);
@@ -676,7 +677,7 @@ export const orderRepository = {
           'payment.reviewCreatedAt': '',
         },
       },
-      { returnDocument: 'after' },
+      { returnDocument: 'after', ...(session ? { session } : {}) },
     ).exec();
   },
 

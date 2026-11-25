@@ -7,22 +7,29 @@ import {
   toPublicOrder,
 } from './order.service';
 import { emitOrderEvent } from './realtime.service';
+import type { ClientSession } from 'mongoose';
 
 const ORDER_PAID_EVENT_TYPE = 'order.paid';
 
-export const enqueueOrderPaidSideEffects = (order: {
-  _id: unknown;
-  userId: unknown;
-}) =>
-  outboxEventRepository.enqueue({
-    eventType: ORDER_PAID_EVENT_TYPE,
-    eventKey: `${ORDER_PAID_EVENT_TYPE}:${String(order._id)}`,
-    aggregateId: String(order._id),
-    payload: {
-      orderId: String(order._id),
-      userId: String(order.userId),
+export const enqueueOrderPaidSideEffects = (
+  order: {
+    _id: unknown;
+    userId: unknown;
+  },
+  session?: ClientSession,
+) =>
+  outboxEventRepository.enqueue(
+    {
+      eventType: ORDER_PAID_EVENT_TYPE,
+      eventKey: `${ORDER_PAID_EVENT_TYPE}:${String(order._id)}`,
+      aggregateId: String(order._id),
+      payload: {
+        orderId: String(order._id),
+        userId: String(order.userId),
+      },
     },
-  });
+    ...(session ? [session] : []),
+  );
 
 const processOrderPaidEvent = async (payload: Record<string, unknown>) => {
   const orderId = typeof payload.orderId === 'string' ? payload.orderId : '';
