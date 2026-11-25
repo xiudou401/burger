@@ -262,8 +262,12 @@ Existing `cs_` Session IDs are never replaced by creation claims, including
 after card-payment failures. Creation responses are followed by a fresh Stripe
 lookup before returning a payment URL. Only definite provider validation
 rejections clear creation claims; network errors and persistence failures do not.
-A persistent retry marker keeps paid reconciliation eligible if the Outbox
-enqueue fails. This worker only runs while the backend process is running;
+Both Webhook and reconciliation payment confirmation update the order and
+ensure its unique Outbox task in one MongoDB transaction. An enqueue or commit
+failure leaves neither change committed; realtime notifications run only after
+commit. Already-paid historical orders can still have missing tasks repaired.
+A persistent retry marker also keeps interrupted reconciliation eligible.
+This worker only runs while the backend process is running;
 it supplements Webhooks rather than replacing them.
 
 Order confirmation emails use a stable Resend `Idempotency-Key` derived from
@@ -284,9 +288,8 @@ use small payloads such as `order:paid`, `order:updated`, `order:cancelled`,
 Customer checkout
   -> Stripe Checkout
   -> signed Stripe webhook
-  -> backend marks order confirmed and payment paid
-  -> backend immediately attempts order:paid notification independently of email
-  -> backend enqueues an order.paid outbox event
+  -> backend commits confirmed / paid and its order.paid outbox task atomically
+  -> backend attempts order:paid notification after commit, independently of email
   -> worker retries the notification, then sends the confirmation email
   -> admins and the order owner's user room receive the update
   -> Kitchen Board updates and customer order page updates

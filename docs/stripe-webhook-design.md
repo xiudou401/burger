@@ -58,7 +58,8 @@ Processing flow:
 2. Atomically claim the event id for processing.
 3. If it was already processed, return `200`. If another request holds an active
    processing lease, return `409` so delivery is not acknowledged as complete.
-4. Apply the order update.
+4. Commit the conditional paid-order update and unique Outbox task in the same
+   MongoDB transaction, then attempt realtime notification after commit.
 5. Mark the event as processed.
 6. If processing fails, mark the event failed and return through error handling.
 
@@ -67,6 +68,12 @@ retryable event into `processing`. Failed events can be retried, and
 `processing` events older than the lease window can be reclaimed. This prevents
 a worker crash from leaving an event permanently stuck while still avoiding
 duplicate work for fresh in-flight deliveries.
+
+Webhook and reconciliation use the same payment transaction. No Stripe API,
+email delivery, or Socket.IO notification runs inside its callback. Transaction
+failures propagate so the caller can retry; existing paid orders retain the
+idempotent missing-task repair path. The transaction does not make external
+email delivery exactly-once.
 
 ## Payment Matching
 

@@ -17,9 +17,9 @@ import { ApiError } from '../../api/request';
 import { useAuth } from '../../store/auth/hooks/useAuth';
 import type { CancellationReason, Order, OrderStatus } from '../../types/order';
 import { getNextStatusesByUser } from '../utils/admin-order-status-permissions';
+import { createFallbackPolling } from '../../utils/fallback-polling';
 
 const ORDER_PAGE_LIMIT = 50;
-const REALTIME_FALLBACK_POLL_MS = 30_000;
 
 type InFlightEntry = {
   promise: Promise<void>;
@@ -144,40 +144,13 @@ export const useAdminOrdersPage = (
 
   useEffect(() => {
     let refreshTimeout: number | null = null;
-    let fallbackTimer: number | null = null;
     let isDisposed = false;
-    let fallbackActive = false;
     const refreshAutomatically = () => {
-      if (view === 'kitchen') void loadOrders();
+      if (view === 'kitchen') return loadOrders();
       else setHasUpdates(true);
     };
+    const polling = createFallbackPolling(refreshAutomatically);
     setConnectionStatus(navigator.onLine ? 'connecting' : 'offline');
-
-    const clearFallbackPolling = () => {
-      fallbackActive = false;
-
-      if (fallbackTimer !== null) {
-        window.clearTimeout(fallbackTimer);
-        fallbackTimer = null;
-      }
-    };
-
-    const startFallbackPolling = () => {
-      if (isDisposed || fallbackActive) return;
-
-      fallbackActive = true;
-
-      const tick = () => {
-        if (isDisposed || !fallbackActive) return;
-
-        refreshAutomatically();
-        if (fallbackActive) {
-          fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
-        }
-      };
-
-      fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
-    };
 
     const scheduleRefresh = () => {
       if (isDisposed) return;
@@ -203,14 +176,14 @@ export const useAdminOrdersPage = (
       },
       onConnected: () => {
         if (isDisposed) return;
-        clearFallbackPolling();
+        polling.stop();
         setConnectionStatus('live');
         refreshAutomatically();
       },
       onDisconnected: () => {
         if (isDisposed) return;
         setConnectionStatus(navigator.onLine ? 'reconnecting' : 'offline');
-        startFallbackPolling();
+        polling.start();
       },
     });
 
@@ -228,7 +201,7 @@ export const useAdminOrdersPage = (
 
     if (!socket) {
       setConnectionStatus(navigator.onLine ? 'reconnecting' : 'offline');
-      startFallbackPolling();
+      polling.start();
     }
 
     return () => {
@@ -238,7 +211,7 @@ export const useAdminOrdersPage = (
         window.clearTimeout(refreshTimeout);
       }
 
-      clearFallbackPolling();
+      polling.dispose();
       window.removeEventListener('offline', onOffline);
       window.removeEventListener('online', onOnline);
       socket?.disconnect();

@@ -13,8 +13,7 @@ import type {
   AdminDashboardSummary,
 } from '../../types/admin-dashboard';
 import { useAdminResource } from './useAdminResource';
-
-const REALTIME_FALLBACK_POLL_MS = 30_000;
+import { createFallbackPolling } from '../../utils/fallback-polling';
 
 interface AdminDashboardPageData {
   brief: AdminDailyBrief;
@@ -49,35 +48,7 @@ export const useAdminDashboardPage = () => {
 
   useEffect(() => {
     let refreshTimeout: number | null = null;
-    let fallbackTimer: number | null = null;
-    let isDisposed = false;
-    let fallbackActive = false;
-
-    const clearFallbackPolling = () => {
-      fallbackActive = false;
-
-      if (fallbackTimer !== null) {
-        window.clearTimeout(fallbackTimer);
-        fallbackTimer = null;
-      }
-    };
-
-    const startFallbackPolling = () => {
-      if (isDisposed || fallbackActive) return;
-
-      fallbackActive = true;
-
-      const tick = () => {
-        if (isDisposed || !fallbackActive) return;
-
-        void refresh();
-        if (fallbackActive) {
-          fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
-        }
-      };
-
-      fallbackTimer = window.setTimeout(tick, REALTIME_FALLBACK_POLL_MS);
-    };
+    const polling = createFallbackPolling(() => refresh());
 
     const scheduleRefresh = () => {
       if (refreshTimeout !== null) {
@@ -94,24 +65,22 @@ export const useAdminDashboardPage = () => {
       onMenuUpdated: scheduleRefresh,
       onAnalyticsAlert: scheduleRefresh,
       onConnected: () => {
-        clearFallbackPolling();
+        polling.stop();
         void refresh();
       },
-      onDisconnected: startFallbackPolling,
+      onDisconnected: polling.start,
     });
 
     if (!socket) {
-      startFallbackPolling();
+      polling.start();
     }
 
     return () => {
-      isDisposed = true;
-
       if (refreshTimeout !== null) {
         window.clearTimeout(refreshTimeout);
       }
 
-      clearFallbackPolling();
+      polling.dispose();
       socket?.disconnect();
     };
   }, [refresh]);
