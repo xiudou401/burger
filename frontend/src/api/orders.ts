@@ -23,8 +23,10 @@ export const fetchMyOrders = (limit = 5) => {
   return request<{ orders: Order[] }>(`/orders/me?limit=${limit}`);
 };
 
-export const fetchOrder = (orderId: string) => {
-  return request<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}`);
+export const fetchOrder = (orderId: string, signal?: AbortSignal) => {
+  return request<{ order: Order }>(`/orders/${encodeURIComponent(orderId)}`, {
+    signal,
+  });
 };
 
 export type AdminOrdersView =

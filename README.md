@@ -305,9 +305,12 @@ Admin disables customer
   -> active sockets in user:<id> are disconnected
 ```
 
-Order pages use WebSocket payloads to update visible order status locally when
-the order is already loaded. New orders, missing orders, and aggregate admin
-dashboard data still trigger REST refreshes so MongoDB and backend analytics
+Customer order details refetch on realtime order events and reconnect, and use
+30-second fallback polling while disconnected. Superseded requests and payment
+confirmation waits are cancelled so stale responses cannot replace newer data.
+
+The Kitchen Board, customer order details, and aggregate admin dashboard use
+realtime events to trigger REST refreshes so MongoDB and backend analytics
 remain the source of truth. Admin Orders and Admin Dashboard fall back to
 30-second polling only when the authenticated realtime connection disconnects
 or cannot be established. Public menu clients keep the same behavior for menu

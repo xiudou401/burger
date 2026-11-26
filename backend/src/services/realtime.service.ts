@@ -121,7 +121,15 @@ export const initializeRealtimeServer = (server: HttpServer) => {
       requiresAdminAccess(socket.handshake.auth)
     ) {
       socket.join(BACKOFFICE_ROOM);
-      appLogger.info('realtime_admin_connected', {
+      appLogger.info('realtime_backoffice_connected', {
+        socketId: socket.id,
+        userId: socket.data.user.id,
+      });
+      return;
+    }
+
+    if (socket.data.user && requiresCustomerAccess(socket.handshake.auth)) {
+      appLogger.info('realtime_customer_connected', {
         socketId: socket.id,
         userId: socket.data.user.id,
       });

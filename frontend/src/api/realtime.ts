@@ -40,6 +40,8 @@ interface AdminRealtimeHandlers {
 }
 
 interface CustomerRealtimeHandlers {
+  onConnected?: () => void;
+  onDisconnected?: () => void;
   onOrderEvent?: (
     eventName: AdminRealtimeOrderEventName,
     payload: OrderRealtimeEvent,
@@ -101,6 +103,8 @@ export const connectAdminRealtime = ({
 
 export const connectCustomerRealtime = ({
   onOrderEvent,
+  onConnected,
+  onDisconnected,
 }: CustomerRealtimeHandlers = {}): Socket | null => {
   const token = getAccessToken();
 
@@ -119,6 +123,10 @@ export const connectCustomerRealtime = ({
       onOrderEvent?.(eventName, payload);
     });
   });
+
+  socket.on('connect', () => onConnected?.());
+  socket.on('disconnect', () => onDisconnected?.());
+  socket.on('connect_error', () => onDisconnected?.());
 
   return socket;
 };
