@@ -1,5 +1,6 @@
 import { userRepository } from '../repositories/user.repository';
 import { verifyAuthToken } from '../utils/token';
+import { appLogger } from '../utils/logger';
 import {
   disconnectRealtimeUser,
   initializeRealtimeServer,
@@ -107,6 +108,11 @@ describe('realtime service permissions', () => {
 
     expect(socket.join).toHaveBeenCalledWith('menu-subscribers');
     expect(socket.join).not.toHaveBeenCalledWith('backoffice');
+    expect(appLogger.info).toHaveBeenCalledTimes(1);
+    expect(appLogger.info).toHaveBeenCalledWith(
+      'realtime_menu_subscriber_connected',
+      { socketId: socket.id },
+    );
   });
 
   test('rejects admin sockets without an auth token', async () => {
@@ -146,7 +152,7 @@ describe('realtime service permissions', () => {
     expect(error?.message).toBe('Unauthorized');
   });
 
-  test('puts customer sockets into their user room but not the admin room', async () => {
+  test('puts customer sockets into their user room and logs customer scope', async () => {
     jest.mocked(verifyAuthToken).mockResolvedValue({ sub: 'user-1' } as never);
     jest.mocked(userRepository.findLeanById).mockResolvedValue({
       _id: { toString: () => 'user-1' },
@@ -162,9 +168,14 @@ describe('realtime service permissions', () => {
     expect(socket.join).toHaveBeenCalledWith('menu-subscribers');
     expect(socket.join).toHaveBeenCalledWith('user:user-1');
     expect(socket.join).not.toHaveBeenCalledWith('backoffice');
+    expect(appLogger.info).toHaveBeenCalledTimes(1);
+    expect(appLogger.info).toHaveBeenCalledWith('realtime_customer_connected', {
+      socketId: socket.id,
+      userId: 'user-1',
+    });
   });
 
-  test('puts staff admin sockets into the admin room', async () => {
+  test('puts staff admin sockets into the backoffice room and logs backoffice scope', async () => {
     jest.mocked(verifyAuthToken).mockResolvedValue({ sub: 'staff-1' } as never);
     jest.mocked(userRepository.findLeanById).mockResolvedValue({
       _id: { toString: () => 'staff-1' },
@@ -180,6 +191,28 @@ describe('realtime service permissions', () => {
     expect(socket.join).toHaveBeenCalledWith('menu-subscribers');
     expect(socket.join).toHaveBeenCalledWith('user:staff-1');
     expect(socket.join).toHaveBeenCalledWith('backoffice');
+    expect(appLogger.info).toHaveBeenCalledTimes(1);
+    expect(appLogger.info).toHaveBeenCalledWith(
+      'realtime_backoffice_connected',
+      { socketId: socket.id, userId: 'staff-1' },
+    );
+  });
+
+  test('logs an authenticated public menu connection as a menu subscriber', async () => {
+    jest.mocked(verifyAuthToken).mockResolvedValue({ sub: 'user-1' } as never);
+    jest.mocked(userRepository.findLeanById).mockResolvedValue({
+      _id: { toString: () => 'user-1' },
+      role: 'customer',
+      status: 'active',
+    } as never);
+    const socket = createSocket({ token: 'token' });
+    await expect(runMiddleware(socket)).resolves.toBeUndefined();
+    getConnectionHandler()(socket);
+    expect(appLogger.info).toHaveBeenCalledTimes(1);
+    expect(appLogger.info).toHaveBeenCalledWith(
+      'realtime_menu_subscriber_connected',
+      { socketId: socket.id },
+    );
   });
 
   test('disconnects active realtime sockets for a disabled user room', () => {

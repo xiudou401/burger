@@ -1,37 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchOrder } from '../../api/orders';
-import {
-  connectCustomerRealtime,
-  type OrderRealtimeEvent,
-} from '../../api/realtime';
+import { connectCustomerRealtime } from '../../api/realtime';
 import type { Order } from '../../types/order';
 import { isObjectId } from '../../utils/object-id';
+import { createFallbackPolling } from '../../utils/fallback-polling';
 
 const PAYMENT_CONFIRMATION_POLL_ATTEMPTS = 5;
 const PAYMENT_CONFIRMATION_POLL_DELAY_MS = 1500;
 
-const wait = (ms: number) =>
-  new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
+const wait = (ms: number, signal: AbortSignal) =>
+  new Promise<void>((resolve) => {
+    if (signal.aborted) {
+      resolve();
+      return;
+    }
+    const finish = () => {
+      window.clearTimeout(timer);
+      signal.removeEventListener('abort', finish);
+      resolve();
+    };
+    const timer = window.setTimeout(finish, ms);
+    signal.addEventListener('abort', finish, { once: true });
   });
 
 export const isConfirmedStripeOrder = (order: Order) =>
   order.status === 'confirmed' || order.payment?.status === 'paid';
-
-const applyRealtimeOrderEvent = (
-  order: Order,
-  payload: OrderRealtimeEvent,
-): Order => ({
-  ...order,
-  status: payload.status,
-  updatedAt: payload.updatedAt,
-  payment: order.payment
-    ? {
-        ...order.payment,
-        status: payload.paymentStatus ?? order.payment.status,
-      }
-    : order.payment,
-});
 
 export const useOrderDetailsPage = (
   orderId: string,
@@ -41,44 +34,66 @@ export const useOrderDetailsPage = (
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loadRequestIdRef = useRef(0);
+  const controllerRef = useRef<AbortController | null>(null);
 
   const loadOrder = useCallback(
-    async ({ showLoading = true }: { showLoading?: boolean } = {}) => {
+    async ({
+      showLoading = true,
+      signal,
+      retryPayment = confirmPayment,
+    }: {
+      showLoading?: boolean;
+      signal?: AbortSignal;
+      retryPayment?: boolean;
+    } = {}) => {
+      if (signal?.aborted) return;
+      controllerRef.current?.abort();
+      const controller = new AbortController();
+      controllerRef.current = controller;
+      const abort = () => controller.abort();
+      signal?.addEventListener('abort', abort, { once: true });
       const requestId = loadRequestIdRef.current + 1;
       loadRequestIdRef.current = requestId;
+      const isActive = () =>
+        !controller.signal.aborted && requestId === loadRequestIdRef.current;
 
-      if (showLoading) {
-        setIsLoading(true);
-      }
+      setIsLoading(showLoading);
 
       setError(null);
 
       try {
         for (
           let attempt = 0;
-          attempt < PAYMENT_CONFIRMATION_POLL_ATTEMPTS;
+          attempt < (retryPayment ? PAYMENT_CONFIRMATION_POLL_ATTEMPTS : 1);
           attempt++
         ) {
           if (attempt > 0) {
-            await wait(PAYMENT_CONFIRMATION_POLL_DELAY_MS);
+            await wait(PAYMENT_CONFIRMATION_POLL_DELAY_MS, controller.signal);
           }
+          if (!isActive()) return;
 
-          const res = await fetchOrder(orderId);
+          const res = await fetchOrder(orderId, controller.signal);
 
-          if (requestId !== loadRequestIdRef.current) return;
+          if (!isActive()) return;
 
           setOrder(res.order);
 
-          if (!confirmPayment || isConfirmedStripeOrder(res.order)) {
+          if (
+            !retryPayment ||
+            isConfirmedStripeOrder(res.order) ||
+            res.order.status === 'cancelled'
+          ) {
             return;
           }
         }
       } catch (err) {
-        if (requestId === loadRequestIdRef.current) {
+        if (isActive()) {
           setError(err instanceof Error ? err.message : 'Could not load order');
         }
       } finally {
-        if (requestId === loadRequestIdRef.current && showLoading) {
+        signal?.removeEventListener('abort', abort);
+        if (controllerRef.current === controller) controllerRef.current = null;
+        if (requestId === loadRequestIdRef.current) {
           setIsLoading(false);
         }
       }
@@ -87,6 +102,9 @@ export const useOrderDetailsPage = (
   );
 
   useEffect(() => {
+    setOrder(null);
+    setError(null);
+    setIsLoading(false);
     if (!isObjectId(orderId)) {
       setError('Order not found');
       return;
@@ -96,6 +114,7 @@ export const useOrderDetailsPage = (
 
     return () => {
       loadRequestIdRef.current += 1;
+      controllerRef.current?.abort();
     };
   }, [loadOrder, orderId]);
 
@@ -104,24 +123,33 @@ export const useOrderDetailsPage = (
       return undefined;
     }
 
+    let disposed = false;
+    const polling = createFallbackPolling((signal) =>
+      loadOrder({ showLoading: false, signal, retryPayment: false }),
+    );
     const socket = connectCustomerRealtime({
+      onConnected: () => {
+        if (disposed) return;
+        polling.stop();
+        void loadOrder({ showLoading: false });
+      },
+      onDisconnected: () => {
+        if (!disposed) polling.start();
+      },
       onOrderEvent: (_eventName, payload) => {
-        if (payload.orderId !== orderId) {
+        if (disposed || payload.orderId !== orderId) {
           return;
         }
 
-        setOrder((current) => {
-          if (!current) {
-            void loadOrder({ showLoading: false });
-            return current;
-          }
-
-          return applyRealtimeOrderEvent(current, payload);
-        });
+        // Fetch authoritative details instead of applying partial or out-of-order events.
+        void loadOrder({ showLoading: false });
       },
     });
+    if (!socket) polling.start();
 
     return () => {
+      disposed = true;
+      polling.dispose();
       socket?.disconnect();
     };
   }, [loadOrder, orderId]);
